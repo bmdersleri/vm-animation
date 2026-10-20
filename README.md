@@ -6,9 +6,9 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 
 ## Canlı site
 
-- Ana sayfa: https://bmdersleri.github.io/vmAutomation/
-- k-NN: https://bmdersleri.github.io/vmAutomation/knn/
-- Ders modu: https://bmdersleri.github.io/vmAutomation/knn/?mod=ders
+- Ana sayfa: https://bmdersleri.github.io/vm-animation/
+- k-NN: https://bmdersleri.github.io/vm-animation/knn/
+- Ders modu: https://bmdersleri.github.io/vm-animation/knn/?mod=ders
 
 Site, GitHub Pages etkinleştirildiğinde (Settings > Pages > Source: GitHub Actions) `main` dalına her push ile yayına girer.
 
