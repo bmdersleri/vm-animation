@@ -1,6 +1,6 @@
 import { StepPlayer, type PlayerState, type Scenario } from './player';
 import { readMode, writeMode, type Mode } from './mode';
-import { bindKeys, type Shortcut } from './keyboard';
+import { bindKeys, isFormControl, type Shortcut } from './keyboard';
 
 export interface SceneHandle {
   resize(widthPx: number, heightPx: number): void;
@@ -46,11 +46,16 @@ function button(cls: string, label: string, text: string): HTMLButtonElement {
 /**
  * Mouse clicks must not leave focus on a button: keyboard.ts ignores the step
  * keys (→, ←, Space, Home, End) while a button is focused, which would make
- * the teacher's arrow keys stop working after clicking a control. Keyboard
- * users can still Tab to the buttons.
+ * the teacher's arrow keys stop working after clicking a control. A control
+ * that already has focus (e.g. a slider in .params) is blurred for the same
+ * reason. Keyboard users can still Tab to the buttons.
  */
 function noMouseFocus(el: HTMLElement): void {
-  el.addEventListener('mousedown', (e) => e.preventDefault());
+  el.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && isFormControl(active)) active.blur();
+  });
 }
 
 let uid = 0;
@@ -245,6 +250,7 @@ export function mountConceptPage<P extends object>(
     else if (paramsOpen) {
       paramsOpen = false;
       applyMode();
+      paramsToggle.focus();
     }
   };
   window.addEventListener('keydown', onEscape);

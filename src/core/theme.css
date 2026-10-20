@@ -84,8 +84,6 @@ body {
   border: 2px solid var(--navy);
   border-radius: 8px;
   background: var(--surface);
-  /* keep ▶ ◀ as text glyphs, not colour emoji */
-  font-variant-emoji: text;
 }
 .concept-page button:where(:hover:not(:disabled)) {
   /* :where keeps this below pressed/primary button rules */
@@ -208,6 +206,8 @@ body {
 }
 .player-bar .transport button {
   min-width: calc(var(--ctl) * 1.2);
+  /* keep ▶ ◀ as text glyphs, not colour emoji */
+  font-variant-emoji: text;
 }
 .player-bar .play {
   background: var(--navy);

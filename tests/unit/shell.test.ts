@@ -185,6 +185,40 @@ describe('shell', () => {
     expect(params.hidden).toBe(true);
   });
 
+  it('clicking a shell button blurs a focused form control so arrows step again', () => {
+    for (const mode of ['ders', 'lab']) {
+      const { player, q, destroy } = setup(`?mod=${mode}`);
+      if (mode === 'ders') q<HTMLButtonElement>('button.params-toggle').click();
+      const range = document.createElement('input');
+      range.type = 'range';
+      q('.params').appendChild(range);
+      range.focus();
+      expect(document.activeElement).toBe(range);
+      const next = q<HTMLButtonElement>('button.next');
+      next.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      next.click();
+      expect(player.state.index).toBe(1);
+      expect(document.activeElement).not.toBe(range);
+      press('ArrowRight');
+      expect(player.state.index).toBe(2);
+      destroy();
+      mounted = null;
+    }
+  });
+
+  it('Escape closes the Ders params overlay and focuses its toggle', () => {
+    const { q } = setup('?mod=ders');
+    const toggle = q<HTMLButtonElement>('button.params-toggle');
+    toggle.click();
+    const range = document.createElement('input');
+    range.type = 'range';
+    q('.params').appendChild(range);
+    range.focus();
+    range.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(q('.params').hidden).toBe(true);
+    expect(document.activeElement).toBe(toggle);
+  });
+
   it('explain shows current step title and text', () => {
     const { player, q } = setup();
     expect(q('.explain .step-title').textContent).toBe('Birinci');
