@@ -243,6 +243,12 @@ describe('shell', () => {
     expect(q('.explain .step-text').textContent).toBe('İki metni');
   });
 
+  it('side column puts the explanation (and its table) before the params', () => {
+    const { q } = setup('?mod=lab');
+    const side = q('.side');
+    expect([...side.children].map((c) => c.className)).toEqual(['explain', 'params']);
+  });
+
   it('Ders mode shows only the step title in explain', () => {
     const { q } = setup('?mod=ders');
     expect(q('.step-title').hidden).toBe(false);
