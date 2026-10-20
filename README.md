@@ -52,6 +52,6 @@ python scripts/make_knn_data.py <csv yolu>
 
 ## Yeni kavram ekleme
 
-1. `src/core/shell.ts` içindeki `ConceptPage` arayüzünü uygulayan bir kavram modülü yazın.
-2. `<kavram>/index.html` oluşturun ve `vite.config.ts` içindeki `build.rollupOptions.input` listesine ekleyin.
+1. İskeleti üretin: `npm run yeni-kavram -- <kimlik> "<Başlık>"`. Betik `<kimlik>/index.html`, `src/concepts/<kimlik>/` (`main.ts`, `scenario.ts`, `<kimlik>.css`), birim ve e2e test dosyalarını oluşturur ve `vite.config.ts` girdisini ekler.
+2. `main.ts` içindeki `ConceptPage` (bkz. `src/core/shell.ts`) sahnesini, parametrelerini ve senaryosunu doldurun.
 3. `src/concepts/registry.ts` içinde ilgili kaydı `hazir` durumuna çevirip `href` değerini verin.

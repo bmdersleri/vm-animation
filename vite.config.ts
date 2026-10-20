@@ -12,6 +12,8 @@ export default defineConfig({
       input: {
         main: resolve(root, 'index.html'),
         knn: resolve(root, 'knn/index.html'),
+        'karar-agaci': resolve(root, 'karar-agaci/index.html'),
+        'naive-bayes': resolve(root, 'naive-bayes/index.html'),
       },
     },
   },
