@@ -1,12 +1,12 @@
 import '../../core/theme.css';
 import './naive-bayes.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
-import { naiveBayesScenario, type NaiveBayesParams } from './scenario';
+import { nbScenario, type NbParams } from './scenario';
 
-const naiveBayesPage: ConceptPage<NaiveBayesParams> = {
+const naiveBayesPage: ConceptPage<NbParams> = {
   title: 'Naive Bayes',
   chapter: 'Bölüm ? · …',
-  scenario: naiveBayesScenario,
+  scenario: nbScenario,
   mountScene: () => ({ resize() {}, setMode() {}, destroy() {} }),
   mountParams: () => {},
 };
