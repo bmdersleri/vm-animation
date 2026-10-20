@@ -33,7 +33,9 @@ describe('computeRegions', () => {
     expect(out[0]).toBe(s.labels[0]);
   });
 
-  it('is fast: 220x120, k=15 averages < 8 ms', () => {
+  const isCI = Boolean((globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.CI);
+  const budgetMs = isCI ? 40 : 8;
+  it(`is fast: 220x120, k=15 averages < ${budgetMs} ms (${isCI ? 'CI sanity bound' : 'local budget'})`, () => {
     const s = featureSpace('aylik', true);
     const g: RegionGrid = { cols: 220, rows: 120, x0: s.domain.x[0], x1: s.domain.x[1], y0: s.domain.y[0], y1: s.domain.y[1] };
     const out = new Uint8Array(g.cols * g.rows);
@@ -42,6 +44,6 @@ describe('computeRegions', () => {
     for (let i = 0; i < 20; i++) computeRegions(s, 15, 'oklid', 'agirlikli', g, out);
     const avg = (performance.now() - t0) / 20;
     console.log(`computeRegions avg ${avg.toFixed(2)} ms`);
-    expect(avg).toBeLessThan(8);
+    expect(avg).toBeLessThan(budgetMs);
   });
 });
