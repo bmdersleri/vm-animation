@@ -12,6 +12,8 @@ test('home lists 20 concepts and the k-NN card opens the k-NN page', async ({ pa
 test('both pages link a favicon that loads', async ({ page, request }) => {
   for (const path of ['/', '/knn/']) {
     await page.goto(path);
+    // a root-absolute href would load here but 404 under the Pages sub-path
+    expect(await page.locator('link[rel="icon"]').getAttribute('href')).not.toMatch(/^\//);
     const href = await page.locator('link[rel="icon"]').evaluate((l: HTMLLinkElement) => l.href);
     const res = await request.get(href);
     expect(res.status(), `${path} → ${href}`).toBe(200);

@@ -99,7 +99,7 @@ export function mountConceptPage<P extends object>(
   const extra = h('div', { class: 'explain-extra' });
   const explain = h('section', { class: 'explain', 'aria-label': 'Adım açıklaması' }, stepTitle, stepTerm, stepText, extra);
   // explain first: in Lab the step text and distance table must be visible without
-  // scrolling (params follow); in Ders params is an overlay, so order does not show
+  // scrolling (params follow); in Ders the grid places each panel, so order does not show
   const workspace = h('main', { class: 'workspace' }, stage, h('div', { class: 'side' }, explain, params));
 
   // ---- player bar ----
