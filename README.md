@@ -10,7 +10,7 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - k-NN: https://bmdersleri.github.io/vm-animation/knn/
 - Ders modu: https://bmdersleri.github.io/vm-animation/knn/?mod=ders
 
-Site, GitHub Pages etkinleştirildiğinde (Settings > Pages > Source: GitHub Actions) `main` dalına her push ile yayına girer.
+Site, GitHub Pages etkinleştirildiğinde (Settings > Pages > Source: GitHub Actions) `main` dalına her push ile yayına girer. GitHub Actions yalnızca derleyip yayınlar; testler yerelde çalışır, bu yüzden `main`'e push etmeden önce `npm run check` çalıştırın.
 
 ## Ders modu
 
@@ -40,6 +40,7 @@ npm run dev        # geliştirme sunucusu
 npm test           # birim testleri
 npm run build      # tip denetimi + üretim derlemesi (dist/)
 npm run test:e2e   # Playwright; Google Chrome kurulu olmalı
+npm run check      # yayın öncesi kapı: birim testleri + derleme + Playwright
 ```
 
 ## Veriyi yeniden üretme
