@@ -2,9 +2,10 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
 import { treeScenario, type TreeParams } from '../../../src/concepts/karar-agaci/scenario';
-import { mountTreeScene } from '../../../src/concepts/karar-agaci/scene';
-import { sweep, toSamples } from '../../../src/concepts/karar-agaci/cart';
-import { train, test } from '../../../src/concepts/karar-agaci/data';
+import { mountTreeScene, regionFill, treeKey } from '../../../src/concepts/karar-agaci/scene';
+import { buildTree, sweep, toSamples } from '../../../src/concepts/karar-agaci/cart';
+import { DOMAIN, train, test } from '../../../src/concepts/karar-agaci/data';
+import { fitViewport } from '../../../src/core/plot/viewport';
 import fixture from '../../fixtures/karar-agaci_sklearn.json';
 
 type Handle = ReturnType<typeof mountTreeScene>;
@@ -197,5 +198,49 @@ describe('mountTreeScene', () => {
     expect(got[0][0].y).toBeGreaterThan(2);
     expect(got[0][0].x).toBeGreaterThan(0);
     expect(got[0][0].x).toBeLessThan(60);
+  });
+});
+
+describe('regionFill', () => {
+  // plot rect 600×300 px at (50, 20); 100 × 60 cells of 0,6 months × 0,1 complaints
+  const sc = fitViewport({ x: [DOMAIN.x[0], DOMAIN.x[1]], y: [DOMAIN.y[0], DOMAIN.y[1]] },
+    { left: 50, top: 20, width: 600, height: 300 }, false);
+  const g = { cols: 100, rows: 60 };
+  const S = toSamples(train);
+  const fill = (depth: number): Uint8Array => {
+    const out = new Uint8Array(g.cols * g.rows);
+    regionFill(buildTree(S, depth, 'gini', DOMAIN), sc)(g, out);
+    return out;
+  };
+  /** Cell whose centre is nearest to (t months, c complaints); row 0 is the top of the plot. */
+  const cell = (t: number, c: number): number => {
+    const col = Math.round(((t - DOMAIN.x[0]) / (DOMAIN.x[1] - DOMAIN.x[0])) * g.cols - 0.5);
+    const row = Math.round(((DOMAIN.y[1] - c) / (DOMAIN.y[1] - DOMAIN.y[0])) * g.rows - 0.5);
+    return row * g.cols + col;
+  };
+
+  it('depth 1 (complaints <= 2,5): top cells are ayrıldı, bottom cells kaldı', () => {
+    const out = fill(1);
+    expect([...out.subarray(0, g.cols)].every((v) => v === 1)).toBe(true); // top row, about 5,45 complaints
+    expect([...out.subarray((g.rows - 1) * g.cols)].every((v) => v === 0)).toBe(true); // bottom row
+    expect(out[cell(30, 3.5)]).toBe(1);
+    expect(out[cell(30, 1.5)]).toBe(0);
+  });
+
+  it('depth 2 splits the high-complaint side along x at 11,5 months', () => {
+    const out = fill(2);
+    expect(out[cell(5, 3.5)]).toBe(1);
+    expect(out[cell(11, 4.5)]).toBe(1);
+    expect(out[cell(12, 4.5)]).toBe(0);
+    expect(out[cell(30, 3.5)]).toBe(0);
+    expect(out[cell(5, 1.5)]).toBe(0); // low complaints stay kaldı whatever the contract
+    expect(out[0]).toBe(1); // top-left corner
+    expect(out[g.cols - 1]).toBe(0); // top-right corner
+  });
+
+  it('treeKey changes with the tree structure only', () => {
+    expect(treeKey(buildTree(S, 1, 'gini', DOMAIN))).toBe(treeKey(buildTree(S, 1, 'gini', DOMAIN)));
+    expect(treeKey(buildTree(S, 2, 'gini', DOMAIN))).not.toBe(treeKey(buildTree(S, 1, 'gini', DOMAIN)));
+    expect(treeKey(buildTree(S, Infinity, 'gini', DOMAIN))).not.toBe(treeKey(buildTree(S, 2, 'gini', DOMAIN)));
   });
 });

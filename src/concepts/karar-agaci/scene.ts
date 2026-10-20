@@ -5,7 +5,7 @@ import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
 import { fitViewport, type Rect, type Scales } from '../../core/plot/viewport';
 import { AxesLayer, type AxesSpec } from '../../core/plot/axes';
-import { GridLayer } from '../../core/plot/grid-layer';
+import { GridLayer, type GridSize } from '../../core/plot/grid-layer';
 import { TextMeasure, type Fonts } from '../../core/plot/text-measure';
 import { tr, type AnySel } from '../../core/plot/transition';
 import { formatNumber } from '../../core/plot/format';
@@ -106,9 +106,30 @@ function computeLayout(w: number, h: number, mode: Mode, m: TextMeasure, treeW: 
 }
 
 /** Structure of a tree as a short string: the region tint is recomputed only when it changes. */
-function treeKey(n: TreeNode): string {
+export function treeKey(n: TreeNode): string {
   if (!n.split || !n.left || !n.right) return n.counts[1] > n.counts[0] ? '1' : '0';
   return `${n.split.feature}:${n.split.threshold}(${treeKey(n.left)})(${treeKey(n.right)})`;
+}
+
+/**
+ * GridLayer fill for the tree's regions: each cell gets `predict` at its centre
+ * in data space (x over the scale's x domain, row 0 = the top of the plot).
+ */
+export function regionFill(tree: TreeNode, sc: Scales): (g: GridSize, out: Uint8Array) => void {
+  const [x0, x1] = sc.x.domain();
+  const [y0, y1] = sc.y.domain();
+  return (g, out) => {
+    const xs = new Float64Array(g.cols);
+    for (let c = 0; c < g.cols; c++) xs[c] = x0 + ((c + 0.5) / g.cols) * (x1 - x0);
+    const at: [number, number] = [0, 0];
+    for (let r = 0, i = 0; r < g.rows; r++) {
+      at[1] = y1 - ((r + 0.5) / g.rows) * (y1 - y0); // row 0 = top
+      for (let c = 0; c < g.cols; c++, i++) {
+        at[0] = xs[c];
+        out[i] = predict(tree, at);
+      }
+    }
+  };
 }
 
 const fullTrees = new Map<Criterion, TreeNode>();
@@ -288,18 +309,7 @@ export function mountTreeScene(
     }
     const [x0, x1] = sc.x.domain();
     const [y0, y1] = sc.y.domain();
-    grid.update(`${treeKey(tree)}|${x0}|${x1}|${y0}|${y1}`, plot, (g, out) => {
-      const xs = new Float64Array(g.cols);
-      for (let c = 0; c < g.cols; c++) xs[c] = x0 + ((c + 0.5) / g.cols) * (x1 - x0);
-      const at: [number, number] = [0, 0];
-      for (let r = 0, i = 0; r < g.rows; r++) {
-        at[1] = y1 - ((r + 0.5) / g.rows) * (y1 - y0); // row 0 = top
-        for (let c = 0; c < g.cols; c++, i++) {
-          at[0] = xs[c];
-          out[i] = predict(tree, at);
-        }
-      }
-    });
+    grid.update(`${treeKey(tree)}|${x0}|${x1}|${y0}|${y1}`, plot, regionFill(tree, sc));
     const c = select(canvas);
     if (!regionsOn && ms > 0) c.style('opacity', '0').transition('regions').duration(ms).style('opacity', '1');
     else c.style('opacity', '1');
