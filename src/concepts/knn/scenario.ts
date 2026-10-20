@@ -58,7 +58,7 @@ export const knnScenario: Scenario<KnnParams> = {
     {
       id: 'k1',
       title: 'k = 1: tek komşu',
-      text: "Arka plan, her bölgeye verilecek tahmini gösteriyor. k = 1'de sınır tırtıklı: tek bir müşteri bile kararı değiştirir.",
+      text: "Arka plan karar bölgelerini (decision regions), yani her bölgeye verilecek tahmini gösteriyor. k = 1'de sınır tırtıklı: tek bir müşteri bile kararı değiştirir.",
       params: {
         dataset: 'aylik', scaled: true, metric: 'oklid', weighting: 'esit',
         k: 1, regions: true, query: demo.kSwallow,
@@ -80,7 +80,7 @@ export const knnScenario: Scenario<KnnParams> = {
     {
       id: 'oklid',
       title: 'Komşuluk: Öklid',
-      text: 'Öklid uzaklığında komşuluk bir dairedir (kuş uçuşu).',
+      text: 'Öklid (Euclidean) uzaklığında komşuluk bir dairedir (kuş uçuşu).',
       params: { dataset: 'aylik', scaled: true, metric: 'oklid', weighting: 'esit', k: 5, query: demo.metricSplit },
     },
     {
@@ -92,7 +92,7 @@ export const knnScenario: Scenario<KnnParams> = {
     {
       id: 'toplam',
       title: 'Toplam fatura, ölçekli',
-      text: 'Dikey eksen artık toplam fatura (kısmen süre × aylık faturadan türer). Ölçekleme açık: iki öznitelik eşit söz sahibi.',
+      text: 'Dikey eksen artık toplam fatura (kısmen süre × aylık faturadan türer). Ölçekleme (feature scaling) açık: iki öznitelik eşit söz sahibi.',
       params: { dataset: 'toplam', scaled: true, metric: 'oklid', weighting: 'esit', k: 5, query: demo.scaleSplit },
     },
     {
@@ -116,22 +116,22 @@ export function knnShortcuts(player: StepPlayer<KnnParams>): Shortcut[] {
     player.setParam('k', Math.max(K_MIN, Math.min(K_MAX, p().k + d)));
   };
   return [
-    { keys: ['+', '='], label: "k'yi artır", run: () => stepK(2) },
-    { keys: ['-'], label: "k'yi azalt", run: () => stepK(-2) },
+    { keys: ['+', '='], display: '+', label: "k'yi artır", run: () => stepK(2) },
+    { keys: ['-'], display: '-', label: "k'yi azalt", run: () => stepK(-2) },
     {
-      keys: ['m', 'M'], label: 'Öklid / Manhattan',
+      keys: ['m', 'M'], display: 'M', label: 'Öklid / Manhattan',
       run: () => player.setParam('metric', p().metric === 'oklid' ? 'manhattan' : 'oklid'),
     },
     {
-      keys: ['s', 'S'], label: 'Ölçekleme aç / kapat',
+      keys: ['s', 'S'], display: 'S', label: 'Ölçekleme aç / kapat',
       run: () => player.setParam('scaled', !p().scaled),
     },
     {
-      keys: ['d', 'D'], label: 'Veri setini değiştir',
+      keys: ['d', 'D'], display: 'D', label: 'Veri setini değiştir',
       run: () => switchDataset(player, p().dataset === 'aylik' ? 'toplam' : 'aylik'),
     },
     {
-      keys: ['b', 'B'], label: 'Karar bölgelerini göster / gizle',
+      keys: ['b', 'B'], display: 'B', label: 'Karar bölgelerini göster / gizle',
       run: () => player.setParam('regions', !p().regions),
     },
   ];

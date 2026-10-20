@@ -1,7 +1,10 @@
 import type { StepPlayer } from './player';
 
 export interface Shortcut {
+  /** Key values that trigger the shortcut (matching). */
   keys: string[];
+  /** How the help overlay shows the keys; default keys.join(' / '). */
+  display?: string;
   label: string;
   run(): void;
 }

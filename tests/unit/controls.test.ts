@@ -52,7 +52,7 @@ describe('mountKnnParams', () => {
     const labels = [...el.querySelectorAll('label')].map((l) => l.textContent);
     expect(labels).toEqual([
       'k (komşu sayısı)', 'Uzaklık ölçüsü', 'Oylama', 'Ölçekleme (StandardScaler)',
-      'Veri seti', 'Karar bölgeleri', 'Anında sonuç',
+      'Veri seti', 'Karar bölgeleri (decision regions)', 'Anında sonuç',
     ]);
     for (const l of el.querySelectorAll('label')) {
       const target = document.getElementById(l.htmlFor);
@@ -63,7 +63,7 @@ describe('mountKnnParams', () => {
     expect([k.type, k.min, k.max, k.step, k.value]).toEqual(['range', '1', '15', '2', '5']);
     expect(el.querySelector('.k-value')!.textContent).toBe('5');
     expect([...control<HTMLSelectElement>(el, 'metric').options].map((o) => [o.value, o.text])).toEqual([
-      ['oklid', 'Öklid'], ['manhattan', 'Manhattan'],
+      ['oklid', 'Öklid (Euclidean)'], ['manhattan', 'Manhattan'],
     ]);
     expect([...control<HTMLSelectElement>(el, 'weighting').options].map((o) => [o.value, o.text])).toEqual([
       ['esit', 'Eşit'], ['agirlikli', 'Uzaklığa göre ağırlıklı'],

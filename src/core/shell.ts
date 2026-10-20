@@ -133,7 +133,7 @@ export function mountConceptPage<P extends object>(
   const shortcuts = page.shortcuts?.(player) ?? [];
   const helpItems = [
     ...BUILTIN_HELP,
-    ...shortcuts.map((s): [string, string] => [s.keys.join(' / '), s.label]),
+    ...shortcuts.map((s): [string, string] => [s.display ?? s.keys.join(' / '), s.label]),
   ].map(([keys, label]) => h('li', {}, h('kbd', {}, keys), `: ${label}`));
   const help = h(
     'div',

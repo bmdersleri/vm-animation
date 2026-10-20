@@ -35,7 +35,7 @@ export function mountKnnParams(host: HTMLElement, p: StepPlayer<KnnParams>): voi
     min: String(K_MIN), max: String(K_MAX), step: '2',
   });
   const kValue = el('output', { class: 'k-value', for: k.id });
-  const metric = select(`${id}-metric`, 'metric', [['oklid', 'Öklid'], ['manhattan', 'Manhattan']]);
+  const metric = select(`${id}-metric`, 'metric', [['oklid', 'Öklid (Euclidean)'], ['manhattan', 'Manhattan']]);
   const weighting = select(`${id}-weighting`, 'weighting', [['esit', 'Eşit'], ['agirlikli', 'Uzaklığa göre ağırlıklı']]);
   const scaled = checkbox(`${id}-scaled`, 'scaled');
   const dataset = select(`${id}-dataset`, 'dataset', [
@@ -59,7 +59,7 @@ export function mountKnnParams(host: HTMLElement, p: StepPlayer<KnnParams>): voi
     row(weighting, 'Oylama'),
     check(scaled, 'Ölçekleme (StandardScaler)'),
     row(dataset, 'Veri seti', datasetNote),
-    check(regions, 'Karar bölgeleri'),
+    check(regions, 'Karar bölgeleri (decision regions)'),
     check(instant, 'Anında sonuç'),
   ));
 

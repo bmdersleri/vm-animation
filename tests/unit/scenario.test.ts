@@ -29,6 +29,13 @@ describe('knnScenario', () => {
     expect(knnScenario.steps[11].title).toBe('Ölçekleme kapalı');
   });
 
+  it('gives the English term in parentheses on first use', () => {
+    const text = (id: string) => knnScenario.steps.find((s) => s.id === id)!.text;
+    expect(text('k1')).toContain('karar bölgelerini (decision regions)');
+    expect(text('oklid')).toContain('Öklid (Euclidean)');
+    expect(text('toplam')).toContain('Ölçekleme (feature scaling)');
+  });
+
   it('explanation steps hide regions, demo steps show them', () => {
     for (let i = 0; i < 5; i++) expect(at(i).regions).toBe(false);
     for (let i = 5; i < 12; i++) expect(at(i).regions).toBe(true);
@@ -125,6 +132,8 @@ describe('knnShortcuts', () => {
     expect(sc[0].keys).toEqual(['+', '=']);
     expect(sc[1].keys).toEqual(['-']);
     expect(sc[2].keys).toEqual(['m', 'M']);
+    // help shows one label per shortcut, no case variants
+    expect(sc.map((s) => s.display)).toEqual(['+', '-', 'M', 'S', 'D', 'B']);
   });
 
   it('k up/down clamp to [1, 15] and stay odd steps of 2', () => {

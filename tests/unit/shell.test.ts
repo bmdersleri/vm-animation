@@ -275,6 +275,23 @@ describe('shell', () => {
     ]);
   });
 
+  it('help shows a shortcut by its display label when it has one; matching uses keys', () => {
+    const run = vi.fn();
+    const m = mountConceptPage<P>(root, {
+      title: 't', chapter: 'c',
+      scenario: { defaults: { k: 5 }, steps: [{ id: 'a', title: 'A', text: 'a' }] },
+      mountScene: () => ({ resize() {}, setMode() {}, destroy() {} }),
+      mountParams: () => {},
+      shortcuts: () => [{ keys: ['m', 'M'], display: 'M', label: 'Öklid / Manhattan', run }],
+    });
+    mounted = m;
+    const items = [...root.querySelectorAll('.help li')].map((li) => li.textContent);
+    expect(items.at(-1)).toBe('M: Öklid / Manhattan');
+    press('m');
+    press('M');
+    expect(run).toHaveBeenCalledTimes(2);
+  });
+
   it('help opens with ?, closes with ?, Escape and click', () => {
     const { q } = setup();
     const help = q('.help');
