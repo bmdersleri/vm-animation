@@ -44,6 +44,12 @@ const SORT_STEP = 8;
 /** Percent with one decimal: "%8,3". */
 export const pct = (x: number): string => `%${formatNumber(x * 100, 1)}`;
 const f2 = (x: number): string => formatNumber(x, 2);
+/** A likelihood with two decimals, or the fewest more that keep a non-zero value from printing 0,00 (1/208 → 0,005). */
+function lik(x: number): string {
+  let d = 2;
+  while (x > 0 && d < 6 && Math.round(x * 10 ** d) === 0) d++;
+  return formatNumber(x, d);
+}
 /** Slider value without trailing zeros: 0,01 / 0,9 / 0,1. */
 const plain = (x: number): string => formatNumber(x, 3).replace(/,?0+$/, '');
 
@@ -70,8 +76,8 @@ function part2Strip(words: string[], alpha: 0 | 1, tr: (number | null)[]): strin
   const w = words[words.length - 1];
   const label = words.length === 1 ? 'öncül' : 'yeni öncül';
   return (
-    `${label} ${f2(prev)} · P(${w} | spam) ${f2(likelihood(w, 1, alpha))}  vs  ` +
-    `${f2(1 - prev)} · P(${w} | normal) ${f2(likelihood(w, 0, alpha))} → ${pct(post)} spam`
+    `${label} ${f2(prev)} · P(${w} | spam) ${lik(likelihood(w, 1, alpha))}  vs  ` +
+    `${f2(1 - prev)} · P(${w} | normal) ${lik(likelihood(w, 0, alpha))} → ${pct(post)} spam`
   );
 }
 

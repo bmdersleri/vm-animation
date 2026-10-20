@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deriveNbView } from '../../../src/concepts/naive-bayes/view';
 import { nbScenario, type NbParams } from '../../../src/concepts/naive-bayes/scenario';
-import { trail } from '../../../src/concepts/naive-bayes/spam';
+import { likelihood, trail } from '../../../src/concepts/naive-bayes/spam';
 import { gauss } from '../../../src/concepts/naive-bayes/data';
 import { fitGaussian, pdf } from '../../../src/concepts/naive-bayes/gaussian';
 
@@ -22,6 +22,15 @@ describe('deriveNbView', () => {
     ]);
     expect(v.bar).toBeNull();
     expect(v.gauss).toBeNull();
+  });
+
+  it('unseen-word likelihood never prints 0,00 under Laplace', () => {
+    const words = ['bedava', 'kazandınız', 'toplantı', 'rapor'];
+    // α = 1: (0 + 1) / (200 + 8) = 1/208 ≈ 0,0048 → the fewest decimals that are non-zero
+    expect(likelihood('rapor', 1, 1)).toBeCloseTo(1 / 208, 12);
+    expect(deriveNbView(9, p({ words, alpha: 1 })).strip).toContain('P(rapor | spam) 0,005 ');
+    // α = 0: it really is zero
+    expect(deriveNbView(9, p({ words, alpha: 0 })).strip).toContain('P(rapor | spam) 0,00 ');
   });
 
   it('step 6 strip says yeni öncül', () => {
