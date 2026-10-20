@@ -137,3 +137,89 @@
 .cards-layer .formula .term {
   white-space: nowrap;
 }
+
+/* ---------- decision-tree scene (scene.ts, scene-scan.ts, scene-tree.ts) ---------- */
+/* Text sizes come only from the --fs-* tokens; no svg has a viewBox. */
+.stage > .cards-host {
+  position: absolute;
+  inset: 0;
+}
+.tree-scene {
+  position: absolute;
+  inset: 0;
+  font-family: var(--font);
+}
+.tree-scene > canvas,
+.tree-scene > svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+.tree-plot {
+  touch-action: none; /* dragging a threshold line must not scroll the page */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tree-scene .tick text {
+  font-variant-numeric: tabular-nums;
+}
+.tree-plot .legend {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+}
+.curve .curve-best {
+  font-size: var(--fs-tick);
+  fill: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* the right column: tree, (cards at the best-threshold step), accuracies */
+.tree-col {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  overflow: auto;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--navy);
+}
+.tree-col > svg {
+  flex: none;
+  display: block;
+}
+.tree-col .tree-acc {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.tree-text {
+  font-size: var(--fs-axis);
+}
+
+/* cards inside the tree column: in the flow under the tree; the legend above
+   the scatter replaces the cards legend */
+.tree-col > .cards-host .cards-layer {
+  position: static;
+  padding: 0;
+  overflow: visible;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.tree-col > .cards-host .cards-legend {
+  display: none;
+}
+.tree-col > .cards-host .cards {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tree-col > .cards-host .card {
+  flex: 1 1 6em; /* the two candidates stay side by side down to narrow columns */
+  padding: 6px 10px;
+}
