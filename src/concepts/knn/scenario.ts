@@ -81,7 +81,7 @@ export const knnScenario: Scenario<KnnParams> = {
       id: 'oklid',
       title: 'Komşuluk: Öklid',
       text: 'Öklid uzaklığında komşuluk bir dairedir (kuş uçuşu).',
-      params: { k: 5, metric: 'oklid', query: demo.metricSplit },
+      params: { dataset: 'aylik', scaled: true, metric: 'oklid', weighting: 'esit', k: 5, query: demo.metricSplit },
     },
     {
       id: 'manhattan',
@@ -93,7 +93,7 @@ export const knnScenario: Scenario<KnnParams> = {
       id: 'toplam',
       title: 'Toplam fatura, ölçekli',
       text: 'Dikey eksen artık toplam fatura (kısmen süre × aylık faturadan türer). Ölçekleme açık: iki öznitelik eşit söz sahibi.',
-      params: { dataset: 'toplam', scaled: true, metric: 'oklid', k: 5, query: demo.scaleSplit },
+      params: { dataset: 'toplam', scaled: true, metric: 'oklid', weighting: 'esit', k: 5, query: demo.scaleSplit },
     },
     {
       id: 'olceksiz',

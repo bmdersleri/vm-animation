@@ -87,6 +87,24 @@ describe('knnScenario', () => {
     expect(at(11).query).toEqual(demo.scaleSplit);
     expect(a.ids.filter((i) => b.ids.includes(i))).toHaveLength(0);
   });
+
+  it('demo steps pin dataset, scaling and weighting over earlier manual changes', () => {
+    const pl = new StepPlayer<KnnParams>(knnScenario);
+    pl.goto(6);
+    switchDataset(pl, 'toplam');
+    pl.setParams({ scaled: false, weighting: 'agirlikli' });
+    pl.goto(8);
+    expect(pl.state.params).toMatchObject({
+      dataset: 'aylik', scaled: true, weighting: 'esit', k: 5, metric: 'oklid', query: demo.metricSplit,
+    });
+    pl.setParam('weighting', 'agirlikli');
+    pl.goto(5);
+    expect(pl.state.params.weighting).toBe('esit');
+    pl.setParam('weighting', 'agirlikli');
+    pl.goto(10);
+    expect(pl.state.params).toMatchObject({ dataset: 'toplam', scaled: true, weighting: 'esit', k: 5 });
+    pl.destroy();
+  });
 });
 
 describe('knnShortcuts', () => {
