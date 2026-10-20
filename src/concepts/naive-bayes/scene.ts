@@ -5,12 +5,18 @@ import type { NbParams } from './scenario';
 import { deriveNbView, type NbPart, type NbView } from './view';
 import { IconsLayer } from './scene-icons';
 import { BarLayer } from './scene-bar';
+import { GaussLayer, type QueryPointer } from './scene-gauss';
 
 const MS_STEP = 450;
 /** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
 const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
+
+export type NbSceneHandle = SceneHandle & {
+  /** Lab drags of the new customer in part 3, already clamped (scene-gauss.ts). */
+  onPointer(cb: QueryPointer): void;
+};
 
 /**
  * One part's layer inside `div.nb-main`: it gets the area it may fill and the
@@ -20,13 +26,15 @@ export interface NbPartLayer {
   resize(w: number, h: number, mode: Mode): void;
   update(v: NbView, ms: number): void;
   interrupt(): void;
+  /** Optional: the part was hidden, so its next update is an entry. */
+  leave?(): void;
   destroy(): void;
 }
 
 /**
  * Naive Bayes scene. Part 1 is the 1.000-person icon table (scene-icons.ts),
- * part 2 the sliding posterior bar with its trail (scene-bar.ts), part 3 an
- * empty host (`div.nb-gauss`) for the GaussianNB layer. Under every part the
+ * part 2 the sliding posterior bar with its trail (scene-bar.ts), part 3 the
+ * GaussianNB scatter with bell curves and regions (scene-gauss.ts). Under every part the
  * calculation strip is an HTML `p.formula` (one `span.line` per line, wrapping
  * between terms, never shrinking). Every render interrupts all running
  * transitions first, so rapid step changes end in the final state; player
@@ -34,7 +42,7 @@ export interface NbPartLayer {
  */
 export function mountNbScene(
   el: HTMLElement, player: StepPlayer<NbParams>, initialMode: Mode, opts: { durationScale?: number } = {},
-): SceneHandle {
+): NbSceneHandle {
   const ds = opts.durationScale ?? 1;
   const doc = el.ownerDocument;
   const div = (cls: string): HTMLDivElement => {
@@ -53,14 +61,17 @@ export function mountNbScene(
   scene.append(main, strip);
   el.append(scene);
 
-  const layers: Partial<Record<NbPart, NbPartLayer>> = {
+  const gaussLayer = new GaussLayer(hosts[3]);
+  const layers: Record<NbPart, NbPartLayer> = {
     1: new IconsLayer(hosts[1]),
     2: new BarLayer(hosts[2]),
+    3: gaussLayer,
   };
 
   let mode = initialMode;
   let size: { w: number; h: number } | null = null;
   let rendered = false;
+  let shownPart: NbPart | null = null;
   let stripText: string | null = null;
   let pending: { s: PlayerState<NbParams>; cause: ChangeCause } | null = null;
   let rafId: number | null = null;
@@ -106,13 +117,13 @@ export function mountNbScene(
 
     scene.dataset.part = String(v.part);
     for (const p of [1, 2, 3] as const) hosts[p].hidden = p !== v.part;
+    if (shownPart !== null && shownPart !== v.part) layers[shownPart].leave?.();
+    shownPart = v.part;
     setStrip(v.strip);
     const layer = layers[v.part];
-    if (layer) {
-      const a = mainSize(v.part);
-      layer.resize(a.w, a.h, mode);
-      layer.update(v, ms);
-    }
+    const a = mainSize(v.part);
+    layer.resize(a.w, a.h, mode);
+    layer.update(v, ms);
     rendered = true;
   }
 
@@ -159,6 +170,9 @@ export function mountNbScene(
       interruptAll();
       for (const l of Object.values(layers)) l.destroy();
       scene.remove();
+    },
+    onPointer(cb: QueryPointer): void {
+      gaussLayer.onPointer(cb);
     },
   };
 }

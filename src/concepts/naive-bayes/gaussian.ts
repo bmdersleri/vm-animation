@@ -31,7 +31,8 @@ export function fitGaussian(x: Row[], y: (0 | 1)[]): GaussModel {
   return { prior, theta, var: variance };
 }
 
-function logPdf(m: GaussModel, cls: 0 | 1, feature: 0 | 1, v: number): number {
+/** Log Gaussian density of one feature under one class. */
+export function logPdf(m: GaussModel, cls: 0 | 1, feature: 0 | 1, v: number): number {
   const s2 = m.var[cls][feature];
   return -0.5 * Math.log(2 * Math.PI * s2) - (v - m.theta[cls][feature]) ** 2 / (2 * s2);
 }

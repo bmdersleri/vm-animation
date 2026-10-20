@@ -135,7 +135,7 @@ describe('mountNbScene', () => {
     expect(spamShare(el)).toBeCloseTo(0.4, 2);
   });
 
-  it('shows one part at a time; part 3 is an empty layer', () => {
+  it('shows one part at a time', () => {
     const { el, player } = setup();
     const part = (cls: string): boolean => !el.querySelector<HTMLElement>(cls)!.hidden;
     expect([part('.nb-icons'), part('.nb-bar'), part('.nb-gauss')]).toEqual([true, false, false]);
@@ -143,7 +143,7 @@ describe('mountNbScene', () => {
     expect([part('.nb-icons'), part('.nb-bar'), part('.nb-gauss')]).toEqual([false, true, false]);
     player.goto(11);
     expect([part('.nb-icons'), part('.nb-bar'), part('.nb-gauss')]).toEqual([false, false, true]);
-    expect(el.querySelector('.nb-gauss')!.childElementCount).toBe(0);
+    expect(el.querySelector('.nb-gauss svg.gauss-plot')).not.toBeNull();
   });
 
   it('icon canvas reports a cell of at least 12 px in Ders', () => {

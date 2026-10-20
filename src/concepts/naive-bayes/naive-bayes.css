@@ -1,6 +1,6 @@
 /* Naive Bayes concept styles. Loaded after core/theme.css. */
 
-/* ---------- scene (scene.ts, scene-icons.ts, scene-bar.ts) ---------- */
+/* ---------- scene (scene.ts, scene-icons.ts, scene-bar.ts, scene-gauss.ts) ---------- */
 /* Text sizes come only from the --fs-* tokens; no svg has a viewBox.
    Red line: strip, legend and chip text is never smaller than --fs-body. */
 .nb-scene {
@@ -88,4 +88,32 @@
 }
 .nb-scene .tick {
   font-variant-numeric: tabular-nums;
+}
+
+/* GaussianNB: scatter, bell curves, regions; the posterior bar in its band */
+.nb-gauss .gauss-plot {
+  touch-action: none; /* dragging the new customer must not scroll the page */
+  user-select: none;
+  -webkit-user-select: none;
+}
+[data-mode="lab"] .nb-gauss .gauss-plot .hit {
+  cursor: crosshair;
+}
+.nb-gauss .gauss-bar {
+  position: absolute;
+  left: 0;
+}
+.nb-gauss .legend text {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+}
+.nb-gauss .query-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  fill: var(--navy);
+  /* white halo keeps the label readable over points and tinted regions */
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
 }
