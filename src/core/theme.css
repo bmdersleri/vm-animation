@@ -1,0 +1,372 @@
+/* Concept page shell theme. Imported by each page entry (not by shell.ts). */
+
+:root {
+  --navy: #14365c;
+  --orange: #f08a00; /* Ayrıldı */
+  --teal: #0ea5a4; /* Kaldı */
+  --bg: #f6f9fc;
+  --surface: #ffffff;
+  --muted: #3f526a; /* secondary text, 7.4:1 on --bg */
+  --line: #c9d5e3;
+  --navy-soft: #dbe5f0;
+
+  --font: "Segoe UI", system-ui, sans-serif;
+
+  /* Lab sizes are the default so text is sized even before data-mode is set. */
+  --fs-body: 16px;
+  --fs-title: 22px;
+  --fs-axis: 14px;
+  --fs-tick: 13px;
+  --gap: 12px;
+  --ctl: 40px; /* control height */
+  --dot: 18px;
+}
+
+/* Font-size tokens per mode. Ders values never drop below 22/32/18/18 px and
+   grow with the viewport on large projectors (1280 px wide: 23/33/19/18 px). */
+[data-mode="ders"] {
+  --fs-body: clamp(22px, 1.8vw, 34px);
+  --fs-title: clamp(32px, 2.6vw, 50px);
+  --fs-axis: clamp(18px, 1.45vw, 28px);
+  --fs-tick: clamp(18px, 1.4vw, 26px);
+  --gap: 10px;
+  --ctl: 48px;
+  --dot: 26px;
+}
+[data-mode="lab"] {
+  --fs-body: 16px;
+  --fs-title: 22px;
+  --fs-axis: 14px;
+  --fs-tick: 13px;
+}
+
+/* ---------- base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+}
+[hidden] {
+  display: none !important;
+}
+
+.concept-page {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  color: var(--navy);
+  background: var(--bg);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+.concept-page button,
+.concept-page select,
+.concept-page input {
+  font: inherit;
+  color: inherit;
+}
+.concept-page :focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: 2px;
+}
+.concept-page button {
+  cursor: pointer;
+  min-height: var(--ctl);
+  padding: 0 0.75em;
+  border: 2px solid var(--navy);
+  border-radius: 8px;
+  background: var(--surface);
+  /* keep ▶ ◀ as text glyphs, not colour emoji */
+  font-variant-emoji: text;
+}
+.concept-page button:where(:hover:not(:disabled)) {
+  /* :where keeps this below pressed/primary button rules */
+  background: var(--navy-soft);
+}
+.concept-page button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* ---------- top bar ---------- */
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.top-bar .home {
+  color: var(--navy);
+  text-decoration: none;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.top-bar .home:hover {
+  text-decoration: underline;
+}
+.top-bar .heading {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.75em;
+}
+.top-bar .title {
+  margin: 0;
+  font-size: inherit;
+  font-weight: 700;
+}
+.top-bar .chapter {
+  color: var(--muted);
+}
+.mode-toggle {
+  display: flex;
+  flex-shrink: 0;
+}
+.mode-toggle button {
+  border-radius: 0;
+  white-space: nowrap;
+}
+.mode-toggle button:first-child {
+  border-radius: 8px 0 0 8px;
+}
+.mode-toggle button:last-child {
+  border-radius: 0 8px 8px 0;
+  border-left-width: 0;
+}
+.mode-toggle button[aria-pressed="true"] {
+  background: var(--navy);
+  color: #fff;
+}
+
+/* ---------- workspace ---------- */
+.workspace {
+  position: relative;
+  min-height: 0;
+  display: grid;
+}
+.stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--surface);
+}
+/* Scene layers sit on top of each other and never affect the stage size
+   (the stage size is observed and fed back to the scene). */
+.stage > canvas,
+.stage > svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+
+.params,
+.explain {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.step-title {
+  margin: 0;
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.step-text {
+  margin: 0.5em 0 0;
+}
+.explain-extra:not(:empty) {
+  margin-top: 0.75em;
+}
+
+/* ---------- player bar ---------- */
+.player-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+.player-bar .transport {
+  display: flex;
+  gap: 8px;
+}
+.player-bar .transport button {
+  min-width: calc(var(--ctl) * 1.2);
+}
+.player-bar .play {
+  background: var(--navy);
+  color: #fff;
+}
+.player-bar .steps {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.concept-page .step-dot {
+  min-height: 0;
+  width: var(--dot);
+  height: var(--dot);
+  padding: 0;
+  border-radius: 50%;
+  background: var(--surface);
+}
+.concept-page .step-dot.done {
+  background: var(--navy-soft);
+}
+.concept-page .step-dot[aria-current="step"] {
+  background: var(--navy);
+  transform: scale(1.25);
+}
+.step-count {
+  white-space: nowrap;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- help overlay ---------- */
+.help {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 54, 92, 0.55);
+  cursor: pointer;
+}
+.help-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 24px 32px;
+  max-width: min(90vw, 760px);
+  max-height: 90vh;
+  overflow: auto;
+}
+.help h2 {
+  margin: 0 0 0.5em;
+  font-size: var(--fs-title);
+}
+.help ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.help li {
+  padding: 0.2em 0;
+}
+.help kbd {
+  font: inherit;
+  font-weight: 700;
+}
+.help-hint {
+  margin: 1em 0 0;
+  color: var(--muted);
+}
+
+/* ---------- Ders: stage fills the screen, title band below it ---------- */
+[data-mode="ders"] .workspace {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+[data-mode="ders"] .side {
+  /* second grid row: only the explain band stays in flow (params is an
+     overlay), so the title never covers the scene's own bottom area */
+  min-width: 0;
+}
+[data-mode="ders"] .explain {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding: 6px 20px;
+}
+[data-mode="ders"] .params {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 10;
+  width: min(440px, 45vw);
+  overflow: auto;
+  box-shadow: 0 8px 28px rgba(20, 54, 92, 0.3);
+}
+[data-mode="ders"] .params-toggle[aria-expanded="true"] {
+  background: var(--navy);
+  color: #fff;
+}
+[data-mode="ders"] .top-bar .home {
+  font-weight: 400;
+}
+
+/* ---------- Lab: stage ≈ 60 % left, params + explain right ---------- */
+[data-mode="lab"] .workspace {
+  grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr);
+  gap: var(--gap);
+  padding: var(--gap);
+}
+[data-mode="lab"] .stage {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+[data-mode="lab"] .side {
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+@media (max-width: 900px) {
+  [data-mode="lab"].concept-page {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+  [data-mode="lab"] .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  [data-mode="lab"] .stage {
+    height: clamp(320px, 60vh, 640px);
+  }
+  [data-mode="lab"] .side {
+    overflow: visible;
+  }
+  [data-mode="lab"] .player-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------- text inside the stage (SVG), rendered by concept scenes ---------- */
+.axis-title {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+  fill: var(--navy);
+}
+.tick,
+.tick text {
+  font-size: var(--fs-tick);
+  fill: var(--navy);
+}
+.prediction {
+  font-size: var(--fs-title);
+  font-weight: 700;
+}
