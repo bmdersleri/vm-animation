@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
 import {
-  DEPTH_MAX, SCAN_N, treeScenario, treeShortcuts, type TreeParams,
+  DEPTH_MAX, SCAN_N, SUB_N, treeScenario, treeShortcuts, type TreeParams,
 } from '../../../src/concepts/karar-agaci/scenario';
+import { childSweeps, toSamples } from '../../../src/concepts/karar-agaci/cart';
+import { DOMAIN, train } from '../../../src/concepts/karar-agaci/data';
 import { deriveTreeView } from '../../../src/concepts/karar-agaci/view';
 import { ATTRS, candidates, winner } from '../../../src/concepts/karar-agaci/tennis';
 import { formatNumber } from '../../../src/core/plot/format';
@@ -62,7 +64,7 @@ describe('treeScenario', () => {
 
   it('defaults and constants', () => {
     expect(treeScenario.defaults).toEqual({
-      criterion: 'gini', shown: 0, scan: -1, depth: 0, showTest: false, userSplit: null,
+      criterion: 'gini', shown: 0, scan: -1, subScan: -1, depth: 0, showTest: false, userSplit: null,
     });
     expect(SCAN_N).toBeGreaterThan(0);
     expect(DEPTH_MAX).toBe(6);
@@ -105,10 +107,30 @@ describe('treeScenario', () => {
     pl.destroy();
   });
 
+  it('step 10 replays the sub-branch search briefly, then ends at -1 with depth 2', () => {
+    const want = childSweeps(toSamples(train), 'gini', DOMAIN).reduce((s, c) => s + c.points.length, 0);
+    expect(SUB_N).toBe(want);
+    const pl = make();
+    pl.goto(9);
+    const seen = [pl.state.params.subScan];
+    pl.subscribe((s) => seen.push(s.params.subScan));
+    const step = treeScenario.steps[9];
+    expect(step.sweep?.key).toBe('subScan');
+    // brief: the whole replay is over in well under the e2e settle time (1,5 s)
+    expect(step.sweep!.intervalMs * (SUB_N + 1)).toBeLessThanOrEqual(1200);
+    vi.advanceTimersByTime(step.sweep!.intervalMs * (SUB_N + 2));
+    expect(seen.slice(0, SUB_N)).toEqual(Array.from({ length: SUB_N }, (_, i) => i));
+    expect(pl.state.params).toMatchObject({ subScan: -1, depth: 2 });
+    pl.goto(10);
+    expect(pl.state.params.subScan).toBe(-1);
+    pl.destroy();
+  });
+
   it('depth sweep ends at Infinity with test points on', () => {
     const pl = make();
     pl.goto(9);
     expect(pl.state.params.depth).toBe(2);
+    vi.advanceTimersByTime(2000);
     pl.goto(10);
     const seen = [pl.state.params.depth];
     pl.subscribe((s) => seen.push(s.params.depth));

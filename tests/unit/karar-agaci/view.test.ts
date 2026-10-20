@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { deriveTreeView } from '../../../src/concepts/karar-agaci/view';
-import { SCAN_N, treeScenario, type TreeParams } from '../../../src/concepts/karar-agaci/scenario';
-import { bestSplit, forcedSplit, sweep, toSamples } from '../../../src/concepts/karar-agaci/cart';
-import { train } from '../../../src/concepts/karar-agaci/data';
+import { SCAN_N, SUB_N, treeScenario, type TreeParams } from '../../../src/concepts/karar-agaci/scenario';
+import { bestSplit, childSweeps, forcedSplit, sweep, toSamples } from '../../../src/concepts/karar-agaci/cart';
+import { DOMAIN, train } from '../../../src/concepts/karar-agaci/data';
 import { formulaText, impurity, rootFormula } from '../../../src/concepts/karar-agaci/impurity';
 import { formatNumber } from '../../../src/core/plot/format';
 
@@ -178,6 +178,34 @@ describe('deriveTreeView', () => {
     expect(e.strip).not.toContain('NaN');
     // without a user split, steps 7-8 have no cards
     expect(deriveTreeView(6, p()).cards).toHaveLength(0);
+  });
+
+  it('step 10 sub-search: a depth-1 tree, a scan line inside the child, its own curve', () => {
+    const subs = childSweeps(samples, 'gini', DOMAIN);
+    const first = subs[0];
+    const a = deriveTreeView(9, p({ depth: 2, subScan: 3 }));
+    expect(a.tree?.split).not.toBeNull();
+    expect(a.tree?.left?.split).toBeNull();
+    expect(a.tree?.right?.split).toBeNull(); // the children grow only once the search is over
+    expect(a.scanLine).toEqual({ feature: first.feature, threshold: first.points[3].threshold, box: first.box });
+    expect(a.curve?.points).toEqual(first.points);
+    expect(a.curve?.upTo).toBe(3);
+    expect(a.curve?.sub).toBe(true);
+    // the child's range: its candidates sit below the child's own impurity, rounded up
+    const [lo, hi] = a.curve!.range!;
+    expect(hi).toBeCloseTo(Math.ceil(impurity(first.counts, 'gini') * 10 - 1e-9) / 10, 12);
+    expect(lo).toBeLessThanOrEqual(Math.min(...first.points.map((q) => q.impurity)));
+    // the last frame: the child's complaint scan, the contract best as the corner note
+    const last = subs.at(-1)!;
+    const z = deriveTreeView(9, p({ depth: 2, subScan: SUB_N - 1 }));
+    expect(z.scanLine?.feature).toBe(last.feature);
+    expect(z.curve?.upTo).toBe(last.points.length - 1);
+    expect(z.curve?.otherBest).toEqual(first.points.reduce((m, q) => (q.impurity < m.impurity - 1e-12 ? q : m)));
+    // done: the depth-2 tree, no scan line, no curve
+    const done = deriveTreeView(9, p({ depth: 2 }));
+    expect(done.tree?.right?.split).not.toBeNull();
+    expect(done.scanLine).toBeNull();
+    expect(done.curve).toBeNull();
   });
 
   it('deep tree reaches full training accuracy and shows test only when asked', () => {

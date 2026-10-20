@@ -1,8 +1,8 @@
 import type { Scenario, StepPlayer } from '../../core/player';
 import type { Shortcut } from '../../core/keyboard';
 import type { Criterion } from './impurity';
-import { sweep, toSamples } from './cart';
-import { train } from './data';
+import { childSweeps, sweep, toSamples } from './cart';
+import { DOMAIN, train } from './data';
 
 export interface TreeParams {
   criterion: Criterion;
@@ -10,6 +10,8 @@ export interface TreeParams {
   shown: number;
   /** Part 2 scan progress: -1 = no line; 0..SCAN_N-1. */
   scan: number;
+  /** Step 10 sub-branch search progress: -1 = none; 0..SUB_N-1. */
+  subScan: number;
   /** 0 = root only, Infinity = unlimited. */
   depth: number;
   showTest: boolean;
@@ -20,16 +22,21 @@ const trainSamples = toSamples(train);
 /** Candidate thresholds scanned across both axes of the root split. */
 export const SCAN_N: number =
   sweep(trainSamples, 0, 'gini').length + sweep(trainSamples, 1, 'gini').length;
+/** Candidate thresholds the depth-2 tree scans below its root (the step-10 replay). */
+export const SUB_N: number =
+  childSweeps(trainSamples, 'gini', DOMAIN).reduce((s, c) => s + c.points.length, 0);
 /** Largest finite depth; the slider's 7 means unlimited. */
 export const DEPTH_MAX = 6;
 
 const scanValues = Array.from({ length: SCAN_N }, (_, i) => i);
+const subValues = Array.from({ length: SUB_N }, (_, i) => i);
 
 export const treeScenario: Scenario<TreeParams> = {
   defaults: {
     criterion: 'gini',
     shown: 0,
     scan: -1,
+    subScan: -1,
     depth: 0,
     showTest: false,
     userSplit: null,
@@ -105,7 +112,9 @@ export const treeScenario: Scenario<TreeParams> = {
       title: 'Alt dallarda tekrar',
       text: 'Her dalda aynı arama yinelenir. Derinlik 2: ağaç iki özniteliğin etkileşimini (interaction) kendisi buldu.',
       term: 'etkileşim (interaction)',
-      params: { depth: 2, userSplit: null },
+      // the search below the root replays quickly; subScan returns to -1 when it ends
+      params: { depth: 2, subScan: -1, userSplit: null },
+      sweep: { key: 'subScan', values: subValues, intervalMs: 80 },
     },
     {
       id: 'ezber',

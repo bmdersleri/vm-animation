@@ -3,8 +3,8 @@ import {
 } from './impurity';
 import { ATTRS, candidates, winner } from './tennis';
 import {
-  accuracy, bestSplit, buildTree, forcedSplit, sweep, toSamples,
-  type Split, type SweepPoint, type TreeNode,
+  accuracy, bestSplit, buildTree, childSweeps, forcedSplit, sweep, toSamples,
+  type ChildSweep, type Split, type SweepPoint, type TreeNode,
 } from './cart';
 import { DOMAIN, test, train } from './data';
 import { treeScenario, SCAN_N, type TreeParams } from './scenario';
@@ -49,13 +49,17 @@ export interface TreeView {
   /** Formula strip of the focused card, or null. */
   strip: string | null;
   gainLabel: 'Gini azalması' | 'bilgi kazancı (bit)';
-  scanLine: { feature: 0 | 1; threshold: number } | null;
+  /** The moving scan line; `box` clips it to a child's region (step 10's sub-search). */
+  scanLine: { feature: 0 | 1; threshold: number; box?: TreeNode['box'] } | null;
   curve: {
     feature: 0 | 1;
     points: SweepPoint[];
     upTo: number;
     best: SweepPoint;
     otherBest: SweepPoint | null;
+    /** Step 10: the curve of a child's search, with its own vertical range. */
+    sub?: boolean;
+    range?: [number, number];
   } | null;
   /** Part 2: the tree at the shown depth (a forced root with two leaves when userSplit is set). */
   tree: TreeNode | null;
@@ -121,6 +125,39 @@ function splitCard(title: string, s: Split, root: Counts, k: Criterion, win: boo
 }
 
 const other = (k: Criterion): Criterion => (k === 'gini' ? 'entropi' : 'gini');
+
+const childSweepCache = new Map<Criterion, ChildSweep[]>();
+
+/**
+ * Frame `i` of the step-10 replay (clamped): the child sweep it falls in, the
+ * point reached, the same child's contract sweep when this is its complaint
+ * sweep (the corner note), and a vertical range that fits the child's curve.
+ */
+function subSearch(i: number, k: Criterion): {
+  box: TreeNode['box']; feature: 0 | 1; points: SweepPoint[]; upTo: number;
+  prev: SweepPoint[] | null; range: [number, number];
+} | null {
+  let all = childSweepCache.get(k);
+  if (!all) {
+    all = childSweeps(trainSamples, k, DOMAIN);
+    childSweepCache.set(k, all);
+  }
+  const n = all.reduce((s, c) => s + c.points.length, 0);
+  if (n === 0) return null;
+  let at = Math.min(i, n - 1);
+  let j = 0;
+  while (at >= all[j].points.length) at -= all[j++].points.length;
+  const c = all[j];
+  const before = j > 0 ? all[j - 1] : null;
+  const prev = c.feature === 1 && before && before.feature === 0 && before.box === c.box ? before.points : null;
+  // one range per child, so the axis does not jump between its two sweeps
+  const lows = all.filter((d) => d.box === c.box).flatMap((d) => d.points.map((q) => q.impurity));
+  const range: [number, number] = [
+    Math.max(0, Math.floor(Math.min(...lows) * 10) / 10 - 0.1),
+    Math.ceil(impurity(c.counts, k) * 10 - 1e-9) / 10,
+  ];
+  return { box: c.box, feature: c.feature, points: c.points, upTo: at, prev, range };
+}
 
 export function deriveTreeView(index: number, p: TreeParams): TreeView {
   const part = partOf(index);
@@ -194,7 +231,10 @@ export function deriveTreeView(index: number, p: TreeParams): TreeView {
   const root: Counts = buildTree(trainSamples, 0, k, DOMAIN).counts;
   const chosen = bestSplit(trainSamples, k);
   const user = p.userSplit ? forcedSplit(trainSamples, p.userSplit.feature, p.userSplit.threshold, k) : null;
-  const tree = user ? forcedTree(user) : buildTree(trainSamples, p.depth, k, DOMAIN);
+  const sub = !user && p.subScan >= 0 ? subSearch(p.subScan, k) : null;
+  // while the children's search replays, the tree keeps only its root question
+  const depth = sub ? Math.min(p.depth, 1) : p.depth;
+  const tree = user ? forcedTree(user) : buildTree(trainSamples, depth, k, DOMAIN);
   const view: TreeView = {
     ...base,
     root,
@@ -214,6 +254,17 @@ export function deriveTreeView(index: number, p: TreeParams): TreeView {
     const upTo = feature === 0 ? scan : scan - pts0.length;
     view.scanLine = { feature, threshold: points[upTo].threshold };
     view.curve = { feature, points, upTo, best: lowest(points), otherBest: feature === 1 ? lowest(pts0) : null };
+  } else if (sub) {
+    view.scanLine = { feature: sub.feature, threshold: sub.points[sub.upTo].threshold, box: sub.box };
+    view.curve = {
+      feature: sub.feature,
+      points: sub.points,
+      upTo: sub.upTo,
+      best: lowest(sub.points),
+      otherBest: sub.prev ? lowest(sub.prev) : null,
+      sub: true,
+      range: sub.range,
+    };
   }
 
   if (user && index <= LAST_DRAG_STEP && chosen) {

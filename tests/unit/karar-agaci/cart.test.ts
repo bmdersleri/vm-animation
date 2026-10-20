@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  sweep, buildTree, accuracy, forcedSplit, toSamples, type TreeNode,
+  sweep, buildTree, accuracy, childSweeps, forcedSplit, toSamples, type Sample, type TreeNode,
 } from '../../../src/concepts/karar-agaci/cart';
 import { impurity, type Criterion } from '../../../src/concepts/karar-agaci/impurity';
 import { train, test, DOMAIN } from '../../../src/concepts/karar-agaci/data';
@@ -75,6 +75,28 @@ describe('cart', () => {
     const sp = forcedSplit(S, 0, min - 1, 'gini');
     expect(Array.from(sp.left)).toEqual([0, 0]);
     expect(sp.impurity).toBe(impurity(sp.right, 'gini'));
+  });
+
+  it('child sweeps: the search each splitting child of the root runs at depth 2', () => {
+    for (const k of crits) {
+      const t = buildTree(S, 2, k, DOMAIN);
+      const r = t.split!;
+      const got = childSweeps(S, k, DOMAIN);
+      // every child of the root that splits, left first, contract then complaints
+      const want = ([[t.left!, (p: Sample) => p.x[r.feature] <= r.threshold], [t.right!, (p: Sample) => p.x[r.feature] > r.threshold]] as const)
+        .filter(([n]) => n.split)
+        .flatMap(([n, side]) => ([0, 1] as const)
+          .map((f) => ({ box: n.box, counts: n.counts, feature: f, points: sweep(S.filter(side), f, k) }))
+          .filter((c) => c.points.length > 0));
+      expect(got, k).toEqual(want);
+      expect(got.length).toBeGreaterThan(0);
+      // the child's own best is the threshold the depth-2 tree chose there
+      const right = got.filter((c) => JSON.stringify(c.box) === JSON.stringify(t.right!.box));
+      const low = right.flatMap((c) => c.points.map((q) => ({ ...q, f: c.feature })))
+        .reduce((m, q) => (q.impurity < m.impurity - 1e-12 ? q : m));
+      expect(low.f).toBe(t.right!.split!.feature);
+      expect(low.threshold).toBe(t.right!.split!.threshold);
+    }
   });
 
   it('boxes tile the domain', () => {

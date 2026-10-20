@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
 import { SCAN_N, treeScenario, type TreeParams } from '../../../src/concepts/karar-agaci/scenario';
 import { mountTreeScene, regionFill, treeKey } from '../../../src/concepts/karar-agaci/scene';
-import { buildTree, sweep, toSamples } from '../../../src/concepts/karar-agaci/cart';
+import { buildTree, childSweeps, sweep, toSamples } from '../../../src/concepts/karar-agaci/cart';
 import { DOMAIN, train, test } from '../../../src/concepts/karar-agaci/data';
 import { fitViewport } from '../../../src/core/plot/viewport';
 import fixture from '../../fixtures/karar-agaci_sklearn.json';
@@ -116,13 +116,43 @@ describe('mountTreeScene', () => {
     expect(all(el, 'line.scan')).toHaveLength(0);
   });
 
-  it('depth 2 draws three internal nodes (as many as the fixture tree)', () => {
+  it('depth 2 draws as many internal nodes as the fixture tree, after the sub-branch search', () => {
+    vi.useFakeTimers();
+    try {
+      const { el, player } = setup();
+      player.goto(9);
+      // the search replays first: the depth-1 tree and a scan line inside the right child
+      expect(all(el, 'div.tree-col g.node.internal')).toHaveLength(1);
+      expect(all(el, 'line.scan')).toHaveLength(1);
+      vi.advanceTimersByTime(2000);
+      const want = internalNodes(fixture.trees.gini['2'] as FxNode);
+      expect(all(el, 'div.tree-col g.node.internal')).toHaveLength(want);
+      expect(all(el, 'div.tree-col g.node.leaf')).toHaveLength(want + 1);
+      expect(all(el, 'line.split')).toHaveLength(want - 1); // root split is line.chosen
+      expect(all(el, 'line.scan')).toHaveLength(0);
+      expect(all(el, 'path.curve-line')).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('the sub-branch scan line stays inside its child and the curve panel says so', () => {
     const { el, player } = setup();
     player.goto(9);
-    const want = internalNodes(fixture.trees.gini['2'] as FxNode);
-    expect(all(el, 'div.tree-col g.node.internal')).toHaveLength(want);
-    expect(all(el, 'div.tree-col g.node.leaf')).toHaveLength(want + 1);
-    expect(all(el, 'line.split')).toHaveLength(want - 1); // root split is line.chosen
+    const sub = childSweeps(toSamples(train), 'gini', DOMAIN)[0];
+    player.setParam('subScan', 2);
+    const line = el.querySelector('line.scan')!;
+    const hit = el.querySelector('rect.hit')!;
+    const [T, H] = [num(hit, 'y'), num(hit, 'height')];
+    const yOf = (c: number): number => T + (H * (DOMAIN.y[1] - c)) / (DOMAIN.y[1] - DOMAIN.y[0]);
+    if (sub.feature === 0) {
+      expect(num(line, 'x1')).toBe(num(line, 'x2'));
+      const ys = [num(line, 'y1'), num(line, 'y2')].sort((a, b) => a - b);
+      expect(ys[0]).toBeCloseTo(yOf(sub.box.y[1]), 0);
+      expect(ys[1]).toBeCloseTo(yOf(sub.box.y[0]), 0);
+    }
+    expect(vertices(el.querySelector('path.curve-line')!.getAttribute('d')!)).toBe(3);
+    expect(el.querySelector('text.curve-title')!.textContent).toContain('alt dal');
   });
 
   it('test points appear only when showTest', () => {

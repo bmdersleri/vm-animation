@@ -114,6 +114,34 @@ export function buildTree(
   });
 }
 
+export interface ChildSweep {
+  /** The child's region and class counts. */
+  box: TreeNode['box'];
+  counts: Counts;
+  feature: 0 | 1;
+  points: SweepPoint[];
+}
+
+/**
+ * The search a depth-2 tree runs below its root (the step-10 replay): for every
+ * child of the root that splits, left first, the sweep of each feature (contract,
+ * then complaints) over that child's samples. Features with no candidate are skipped.
+ */
+export function childSweeps(
+  s: Sample[], k: Criterion, domain: { readonly x: Range; readonly y: Range },
+): ChildSweep[] {
+  const t = buildTree(s, 2, k, domain);
+  const r = t.split;
+  if (!r || !t.left || !t.right) return [];
+  const sides: [TreeNode, Sample[]][] = [
+    [t.left, s.filter((p) => p.x[r.feature] <= r.threshold)],
+    [t.right, s.filter((p) => p.x[r.feature] > r.threshold)],
+  ];
+  return sides.filter(([n]) => n.split).flatMap(([n, rows]) => ([0, 1] as const)
+    .map((feature) => ({ box: n.box, counts: n.counts, feature, points: sweep(rows, feature, k) }))
+    .filter((c) => c.points.length > 0));
+}
+
 /** Majority class of the leaf reached; ties go to class 0. */
 export function predict(t: TreeNode, x: [number, number]): 0 | 1 {
   let n = t;

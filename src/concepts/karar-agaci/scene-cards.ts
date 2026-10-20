@@ -23,6 +23,10 @@ const CLASSES: Record<'tennis' | 'churn', readonly [string, string]> = {
 
 const pct = (x: number): string => `${Math.round(x * 1e6) / 1e4}%`;
 const total = (c: readonly number[]): number => c[0] + c[1];
+/** Writes text only when it changed: a drag frame leaves most of it as it was. */
+const setText = (el: HTMLElement, t: string): void => {
+  if (el.textContent !== t) el.textContent = t;
+};
 /** Branch counts as "kaldı/ayrıldı"; an empty branch says so. */
 const countText = (c: readonly number[]): string => (total(c) === 0 ? '0 müşteri' : `${c[0]}/${c[1]}`);
 
@@ -49,6 +53,8 @@ export class CardsLayer {
   private cards: CardEls[] = [];
   /** Identities and branch labels of the built cards; a change rebuilds them empty. */
   private key = '';
+  /** Text the strip shows (undefined: never filled). */
+  private stripText: string | null | undefined;
 
   constructor(host: HTMLElement) {
     this.doc = host.ownerDocument;
@@ -91,6 +97,9 @@ export class CardsLayer {
     v.cards.forEach((c, i) => this.fillCard(this.cards[i], c, v.criterion, ms));
 
     this.strip.hidden = v.strip === null;
+    // a drag frame usually leaves the counts, and so the strip, unchanged
+    if (v.strip === this.stripText) return;
+    this.stripText = v.strip;
     // one item per term so a long strip wraps between terms (flex-wrap), never inside one
     const terms = v.strip === null ? [] : v.strip.split(/(?= [+=] )/);
     this.strip.replaceChildren(...terms.map((t) => {
@@ -171,29 +180,29 @@ export class CardsLayer {
       return;
     }
     const t = total(r.counts);
-    e.label.textContent = r.label;
-    e.count.textContent = countText(r.counts);
+    setText(e.label, r.label);
+    setText(e.count, countText(r.counts));
     e.segs.forEach((s, k) => { s.style.width = pct(t > 0 ? r.counts[k] / t : 0); });
     if (e.fill.style.width !== '100%') tr(select(e.fill), T, ms).style('width', '100%');
-    e.score.textContent = r.measures.map((m) => `${SCORE[m.criterion].measure} ${formatNumber(m.value, 3)}`).join(' · ');
+    setText(e.score, r.measures.map((m) => `${SCORE[m.criterion].measure} ${formatNumber(m.value, 3)}`).join(' · '));
   }
 
   private fillScore(els: ScoreEls, s: Score | null, impurity: number, decrease: number): void {
-    els.measure.textContent = s ? `${s.measure} ${formatNumber(impurity, 3)}` : '';
-    els.sep.textContent = s ? ' · ' : '';
-    els.gain.textContent = s ? `${s.gain} ${formatNumber(decrease, 3)}${s.unit}` : '';
+    setText(els.measure, s ? `${s.measure} ${formatNumber(impurity, 3)}` : '');
+    setText(els.sep, s ? ' · ' : '');
+    setText(els.gain, s ? `${s.gain} ${formatNumber(decrease, 3)}${s.unit}` : '');
   }
 
   private fillCard(els: CardEls, c: CardView, k: Criterion, ms: number): void {
     els.card.classList.toggle('win', c.win);
     els.card.classList.toggle('empty', !c.filled);
-    els.title.textContent = c.ask ? `${c.title}?` : c.title;
+    setText(els.title, c.ask ? `${c.title}?` : c.title);
     const n = c.branches.reduce((s, b) => s + total(b.counts), 0);
     c.branches.forEach((b, j) => {
       const e = els.branches[j];
       const t = total(b.counts);
-      e.label.textContent = b.label;
-      e.count.textContent = c.filled ? countText(b.counts) : '';
+      setText(e.label, b.label);
+      setText(e.count, c.filled ? countText(b.counts) : '');
       e.row.classList.toggle('pure', c.win && t > 0 && (b.counts[0] === 0 || b.counts[1] === 0));
       e.segs.forEach((s, i) => { s.style.width = pct(t > 0 ? b.counts[i] / t : 0); });
       const w = pct(c.filled && n > 0 ? t / n : 0);

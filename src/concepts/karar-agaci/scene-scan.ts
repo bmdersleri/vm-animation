@@ -45,8 +45,8 @@ type Threshold = { feature: 0 | 1; threshold: number };
 // ------------------------------------------------------------------ lines on the scatter
 
 export interface LinesModel {
-  /** Scan line (step 8) or the Lab line (userSplit). */
-  scan: Threshold | null;
+  /** Scan line (step 8, or step 10 inside a child's `box`) or the Lab line (userSplit). */
+  scan: (Threshold & { box?: TreeNode['box'] }) | null;
   /** The tree's own root split; faint while a Lab line replaces it. */
   chosen: Threshold | null;
   faintChosen: boolean;
@@ -146,9 +146,9 @@ export function drawLines(
   );
   place(hits);
 
-  const one = (cls: string, t: Threshold | null, width: number, dash: string | null, opacity: number): void => {
+  const one = (cls: string, t: LinesModel['scan'], width: number, dash: string | null, opacity: number): void => {
     // keyed by axis: switching from the contract to the complaint axis swaps the line
-    const [x1, y1, x2, y2] = t ? ends(t, FULL, sc) : [0, 0, 0, 0];
+    const [x1, y1, x2, y2] = t ? ends(t, t.box ?? FULL, sc) : [0, 0, 0, 0];
     const sel = g.selectAll<SVGLineElement, Threshold>(`line.${cls}`).data(t ? [t] : [], (d) => `f${d.feature}`).join(
       (enter) => enter.append('line').attr('class', cls).attr('stroke', NAVY).attr('opacity', 0)
         .attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2),
@@ -189,6 +189,9 @@ export interface CurveModel {
   mark: SweepPoint | null;
   /** Corner note: the contract curve's best during the complaint scan, or the tree's choice. */
   note: string | null;
+  /** Step 10: a child's search (title says so) with its own vertical range. */
+  sub?: boolean;
+  range?: [number, number];
 }
 
 export function curveModel(v: TreeView, p: TreeParams): CurveModel | null {
@@ -208,7 +211,7 @@ export function curveModel(v: TreeView, p: TreeParams): CurveModel | null {
     };
   }
   if (!v.curve) return null;
-  const { feature, points, upTo, otherBest } = v.curve;
+  const { feature, points, upTo, otherBest, sub, range } = v.curve;
   return {
     feature,
     points,
@@ -216,6 +219,8 @@ export function curveModel(v: TreeView, p: TreeParams): CurveModel | null {
     dot: points[upTo],
     mark: null,
     note: otherBest ? `Sözleşme en iyisi: ≤ ${fmtThreshold(otherBest.threshold)} → ${imp(otherBest.impurity)}` : null,
+    sub,
+    range,
   };
 }
 
@@ -264,7 +269,7 @@ export class CurvePanel {
     this.frame.attr('x', plot.left).attr('y', plot.top).attr('width', plot.width).attr('height', plot.height)
       .attr('opacity', show ? 1 : 0);
 
-    const [ylo, yhi] = curveRange(k);
+    const [ylo, yhi] = m?.range ?? curveRange(k);
     const y = scaleLinear().domain([ylo, yhi]).range([bottom, plot.top]);
     const x = m?.feature === 1
       ? scaleLinear().domain(DOMAIN.y).range([plot.left, right])
@@ -294,7 +299,7 @@ export class CurvePanel {
     xs.select('text').attr('y', r1(bottom + L.gap * 0.6 + L.tickPx * 0.9)).text((d) => fx(d));
 
     this.title.attr('x', r1(plot.left)).attr('y', r1(plot.top - L.gap * 0.6))
-      .text(show ? `${measureName(k)} — ${AXIS_LOWER[m.feature]} eşikleri` : '');
+      .text(show ? `${measureName(k)} — ${AXIS_LOWER[m.feature]} eşikleri${m.sub ? ' (alt dal)' : ''}` : '');
     this.best.attr('x', r1(right)).attr('y', r1(plot.top - L.gap * 0.6)).text(m?.note ?? '');
 
     // the curve up to the scanned point, its dot and (Lab) the tree's own mark

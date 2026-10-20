@@ -22,7 +22,7 @@ import {
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const MS_STEP = 450;
-/** Scan sweep frames come every 70 ms: the line glides for less than that. */
+/** Scan sweep frames come every 70 ms (80 ms at step 10): the line glides for less than that. */
 const MS_SCAN = 60;
 const NAMES = ['axes', 'pts', LINES_T, CURVE_T, TREE_T] as const;
 /** Tint opacity per mode: a projector washes light tints out, so Ders is stronger (as k-NN). */
@@ -237,7 +237,9 @@ export function mountTreeScene(
     const v = deriveTreeView(state.index, p);
     const dragOnly = cause === 'param' && lastParams !== null && state.index === lastIndex && onlyUserSplitChanged(lastParams, p);
     let ms = 0;
-    if (ds > 0 && !instant && !dragOnly) ms = (cause === 'sweep' && v.stepId === 'tarama' ? MS_SCAN : MS_STEP) * ds;
+    // scan frames (the root scan, step 10's sub-branch search) glide briefly
+    const scanFrame = cause === 'sweep' && (v.stepId === 'tarama' || p.subScan >= 0);
+    if (ds > 0 && !instant && !dragOnly) ms = (scanFrame ? MS_SCAN : MS_STEP) * ds;
 
     const part2 = v.part === 2;
     scene.hidden = !part2;
