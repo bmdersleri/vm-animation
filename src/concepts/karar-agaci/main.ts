@@ -1,12 +1,12 @@
 import '../../core/theme.css';
 import './karar-agaci.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
-import { kararAgaciScenario, type KararAgaciParams } from './scenario';
+import { treeScenario, type TreeParams } from './scenario';
 
-const kararAgaciPage: ConceptPage<KararAgaciParams> = {
+const kararAgaciPage: ConceptPage<TreeParams> = {
   title: 'Karar Ağacı',
   chapter: 'Bölüm ? · …',
-  scenario: kararAgaciScenario,
+  scenario: treeScenario,
   mountScene: () => ({ resize() {}, setMode() {}, destroy() {} }),
   mountParams: () => {},
 };
