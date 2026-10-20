@@ -51,11 +51,12 @@ export function createLabPointer(
       const at = clamped(raw, s);
       pressed = at;
       dragging = false;
-      const { instant, dataset, scaled } = p.state.params;
-      // Pin the plot the user clicked on: restarting at step 2 must not swap
-      // the dataset or scaling under the new query (e.g. a click on step 12).
-      p.setParams({ query: s.toRaw(at), dataset, scaled });
-      p.goto(instant ? VOTE_STEP : 1);
+      // Pin every effective param of the plot the user clicked on (one emit):
+      // restarting at step 2 must not swap the demo step's k, metric,
+      // regions, dataset or scaling under the new query.
+      const { query: _query, ...keep } = p.state.params;
+      p.setParams({ ...keep, query: s.toRaw(at) });
+      p.goto(keep.instant ? VOTE_STEP : 1);
     } else if (kind === 'move') {
       if (!pressed) return;
       const s = space();
@@ -66,8 +67,9 @@ export function createLabPointer(
         if (travel <= DRAG_DEAD_ZONE) return;
         dragging = true;
       }
-      if (p.state.index < VOTE_STEP) p.goto(VOTE_STEP);
+      // query first, so the step change (if any) renders with the new query
       p.setParam('query', s.toRaw(at));
+      if (p.state.index < VOTE_STEP) p.goto(VOTE_STEP);
     } else {
       end();
     }

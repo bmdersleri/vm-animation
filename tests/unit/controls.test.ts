@@ -164,10 +164,66 @@ describe('mountKnnTable', () => {
   const rows = (el: HTMLElement) => [...el.querySelectorAll('tbody tr')];
   const headers = (el: HTMLElement) => [...el.querySelectorAll('thead th')].map((t) => t.textContent);
 
-  it('before phase 2 shows only the caption and the hint', () => {
+  // Manual animation frames: the table renders at most once per frame.
+  let frames: FrameRequestCallback[] = [];
+  const frame = (): void => {
+    const run = frames;
+    frames = [];
+    for (const cb of run) cb(0);
+  };
+  beforeEach(() => {
+    frames = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb));
+  });
+  /** Mount, then flush the frame after every notification (subscribed after the table). */
+  const mountTable = (el: HTMLElement, p: StepPlayer<KnnParams>): void => {
+    mountKnnTable(el, p);
+    p.subscribe(() => frame());
+  };
+
+  it('renders at most once per animation frame, with the latest state', () => {
     const el = host();
     const p = player();
     mountKnnTable(el, p);
+    p.goto(2);
+    frame();
+    const table = el.querySelector('table')!;
+    const writes = vi.fn();
+    const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML')!;
+    Object.defineProperty(table, 'innerHTML', {
+      get: () => desc.get!.call(table),
+      set: (v: string) => { writes(); desc.set!.call(table, v); },
+    });
+    p.setParam('weighting', 'agirlikli');
+    p.setParam('k', 7);
+    p.goto(3);
+    expect(writes).not.toHaveBeenCalled();
+    expect(frames).toHaveLength(1);
+    frame();
+    expect(writes).toHaveBeenCalledTimes(1);
+    // the one render shows the latest state: phase 3, k = 7, weighted
+    expect(el.querySelectorAll('tr.neighbor')).toHaveLength(7);
+    expect(headers(el)).toContain('Ağırlık');
+  });
+
+  it('skips rendering while hidden and catches up when shown again', async () => {
+    const el = host();
+    const p = player();
+    el.hidden = true;
+    mountKnnTable(el, p);
+    p.goto(3);
+    expect(frames).toHaveLength(0);
+    expect(rows(el)).toHaveLength(0);
+    el.hidden = false; // e.g. switching from Ders to Lab, no player notification
+    await new Promise((r) => setTimeout(r, 0)); // MutationObserver delivery
+    frame();
+    expect(el.querySelectorAll('tr.neighbor')).toHaveLength(5);
+  });
+
+  it('before phase 2 shows only the caption and the hint', () => {
+    const el = host();
+    const p = player();
+    mountTable(el, p);
     expect(el.textContent).toContain('Yeni müşteriye uzaklıklar (küçükten büyüğe)');
     const hint = el.querySelector<HTMLElement>('.knn-table-hint')!;
     const scroll = el.querySelector<HTMLElement>('.knn-table-scroll')!;
@@ -187,7 +243,7 @@ describe('mountKnnTable', () => {
   it('lists all distances sorted, with id, class and 2-decimal distance', () => {
     const el = host();
     const p = player();
-    mountKnnTable(el, p);
+    mountTable(el, p);
     p.goto(2);
     expect(headers(el)).toEqual(['#', 'Müşteri', 'Sınıf', 'Uzaklık']);
     const view = deriveKnnView(2, p.state.params);
@@ -205,7 +261,7 @@ describe('mountKnnTable', () => {
   it('marks rows 1..k as neighbours from phase 3 and dims the rest', () => {
     const el = host();
     const p = player();
-    mountKnnTable(el, p);
+    mountTable(el, p);
     p.goto(3);
     const k = p.state.params.k;
     const all = rows(el);
@@ -218,7 +274,7 @@ describe('mountKnnTable', () => {
   it('table shows weight column only when weighted', () => {
     const el = host();
     const p = player();
-    mountKnnTable(el, p);
+    mountTable(el, p);
     p.goto(2);
     p.setParam('weighting', 'agirlikli');
     expect(headers(el)).not.toContain('Ağırlık'); // step 3: no neighbours, no weights yet
@@ -246,7 +302,7 @@ describe('mountKnnTable', () => {
   it('uses the sklearn zero-distance rule for weights of the k rows', () => {
     const el = host();
     const p = player();
-    mountKnnTable(el, p);
+    mountTable(el, p);
     p.goto(4);
     const c = customers[0];
     p.setParams({ weighting: 'agirlikli', query: { tenure: c.tenure, value: c.monthly } });
@@ -259,7 +315,7 @@ describe('mountKnnTable', () => {
   it('class cells carry the class name for colouring', () => {
     const el = host();
     const p = player();
-    mountKnnTable(el, p);
+    mountTable(el, p);
     p.goto(2);
     expect(el.querySelectorAll('td.cls.kaldi')).toHaveLength(36);
     expect(el.querySelectorAll('td.cls.ayrildi')).toHaveLength(12);
@@ -303,6 +359,50 @@ describe('createLabPointer', () => {
     near(p.state.params.query, inside);
   });
 
+  it("down on a demo step keeps that step's effective params", () => {
+    const { p, handle } = setup();
+    p.goto(9); // Manhattan
+    handle(inside, 'down');
+    expect(p.state.index).toBe(1);
+    expect(p.state.params.metric).toBe('manhattan');
+    p.goto(5); // k = 1, regions on
+    handle(inside, 'down');
+    expect(p.state.index).toBe(1);
+    expect(p.state.params).toMatchObject({ k: 1, regions: true });
+    p.goto(7); // k = 15
+    handle(inside, 'down');
+    expect(p.state.index).toBe(1);
+    expect(p.state.params.k).toBe(15);
+    near(p.state.params.query, inside);
+  });
+
+  it('with instant on, down lands on index 4 with the demo params kept', () => {
+    const { p, handle } = setup();
+    p.setParam('instant', true);
+    p.goto(9);
+    handle(inside, 'down');
+    expect(p.state.index).toBe(4);
+    expect(p.state.params).toMatchObject({ metric: 'manhattan', k: 5, regions: true, instant: true });
+    p.goto(5);
+    handle(inside, 'down');
+    expect(p.state.index).toBe(4);
+    expect(p.state.params).toMatchObject({ k: 1, regions: true });
+    p.goto(7);
+    handle(inside, 'down');
+    expect(p.state.index).toBe(4);
+    expect(p.state.params.k).toBe(15);
+  });
+
+  it('down: one param emit, then the step change already carries the new query', () => {
+    const { p, handle } = setup();
+    p.goto(9);
+    const seen: [string, RawPoint][] = [];
+    p.subscribe((s, c) => seen.push([c, s.params.query]));
+    handle(inside, 'down');
+    expect(seen.map((x) => x[0])).toEqual(['param', 'step']);
+    near(seen[1][1], inside);
+  });
+
   it('down on a later step keeps the visible dataset and scaling', () => {
     const { p, handle } = setup();
     p.goto(11); // Toplam fatura, unscaled
@@ -335,13 +435,17 @@ describe('createLabPointer', () => {
     handle(inside, 'down');
     const causes: string[] = [];
     p.subscribe((_s, c) => causes.push(c));
+    const queries: RawPoint[] = [];
+    p.subscribe((s) => queries.push(s.params.query));
     handle({ tenure: 25, value: 70 }, 'move');
     expect(p.state.index).toBe(4);
     near(p.state.params.query, { tenure: 25, value: 70 });
     handle({ tenure: 30, value: 75 }, 'move');
     expect(p.state.index).toBe(4);
     near(p.state.params.query, { tenure: 30, value: 75 });
-    expect(causes).toEqual(['step', 'param', 'param']);
+    // first drag frame: query first, then the step change renders with it
+    expect(causes).toEqual(['param', 'step', 'param']);
+    near(queries[1], { tenure: 25, value: 70 });
   });
 
   it('drag on a later step keeps that step', () => {

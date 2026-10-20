@@ -34,6 +34,10 @@ function isTextEntry(el: EventTarget | null): boolean {
   return isFormControl(e) && tag !== 'select' && tag !== 'button';
 }
 
+function isSelect(el: EventTarget | null): boolean {
+  return asElement(el)?.tagName.toLowerCase() === 'select';
+}
+
 export function bindKeys(
   target: Window,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,7 +68,9 @@ export function bindKeys(
           return done(() => player.last());
       }
     }
-    if (typing) return;
+    // A focused <select> uses letters for native type-ahead ('S' would both
+    // pick an option and toggle scaling), so it gets no letter shortcuts.
+    if (typing || isSelect(e.target)) return;
     switch (e.key) {
       case 'p':
       case 'P':

@@ -62,6 +62,31 @@ export function mountKnnTable(host: HTMLElement, p: StepPlayer<KnnParams>): void
       shown = html;
     }
   };
-  render(p.state);
-  p.subscribe((s) => render(s));
+  // During a drag the player notifies every pointer move: render at most once
+  // per animation frame, always from the latest state, and not at all while
+  // the panel is hidden (Ders mode); catch up when it is shown again.
+  const hidden = (): boolean => host.closest('[hidden]') !== null;
+  let dirty = true;
+  let frame = false;
+  const flush = (): void => {
+    frame = false;
+    if (!dirty || hidden()) return;
+    dirty = false;
+    render(p.state);
+  };
+  const schedule = (): void => {
+    dirty = true;
+    if (frame || hidden()) return;
+    if (typeof requestAnimationFrame !== 'function') return flush();
+    frame = true;
+    requestAnimationFrame(flush);
+  };
+  flush();
+  p.subscribe(schedule);
+  // The shell toggles `hidden` on this host on a mode switch, which is not a
+  // player notification.
+  if (typeof MutationObserver === 'function') {
+    new MutationObserver(() => { if (dirty) schedule(); })
+      .observe(host, { attributes: true, attributeFilter: ['hidden'] });
+  }
 }

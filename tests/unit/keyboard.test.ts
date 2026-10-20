@@ -82,9 +82,26 @@ describe('keyboard', () => {
     expect(actions.toggleFullscreen).not.toHaveBeenCalled();
     press('f', {}, el('input', { type: 'range' }));
     press('f', {}, el('input', { type: 'checkbox' }));
-    press('f', {}, el('select'));
     press('f', {}, el('button'));
-    expect(actions.toggleFullscreen).toHaveBeenCalledTimes(4);
+    expect(actions.toggleFullscreen).toHaveBeenCalledTimes(3);
+  });
+  it('letter and extra shortcuts ignored in a select (native type-ahead), step keys too', () => {
+    const run = vi.fn();
+    const { player, actions } = setup([{ keys: ['s', 'S', '+'], label: 'ölçekleme', run }]);
+    const sel = el('select');
+    for (const key of ['s', 'S', '+', 'f', 'p', '?', 'ArrowRight', ' ']) {
+      const ev = press(key, {}, sel);
+      expect(ev.defaultPrevented, key).toBe(false);
+    }
+    expect(run).not.toHaveBeenCalled();
+    expect(actions.toggleFullscreen).not.toHaveBeenCalled();
+    expect(actions.toggleHelp).not.toHaveBeenCalled();
+    expect(player.state.index).toBe(0);
+    expect(player.state.playing).toBe(false);
+    press('s', {}, el('input', { type: 'range' }));
+    press('s', {}, el('input', { type: 'checkbox' }));
+    press('s', {}, el('button'));
+    expect(run).toHaveBeenCalledTimes(3);
   });
   it('extra shortcut runs (and not in text input)', () => {
     const run = vi.fn();

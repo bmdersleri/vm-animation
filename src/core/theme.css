@@ -460,8 +460,10 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .knn-params .note {
-  margin: 0;
-  font-size: 0.85em;
+  /* body size (Lab text stays >= 16 px); set apart by colour and spacing */
+  margin: 2px 0 0;
+  padding-left: 8px;
+  border-left: 3px solid var(--line);
   color: var(--muted);
 }
 
