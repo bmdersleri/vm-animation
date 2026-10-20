@@ -227,3 +227,6 @@
   border-left: 3px solid var(--line);
   color: var(--muted);
 }
+.nb-extra-hata + .nb-extra-hata {
+  margin-top: 12px;
+}

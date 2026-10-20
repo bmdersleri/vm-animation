@@ -118,10 +118,30 @@ describe('mountNbExtra', () => {
     expect(host.querySelector('.nb-extra-hata')!.hasAttribute('hidden')).toBe(true);
     player.goto(11);
     await frame();
-    const hata = host.querySelector<HTMLElement>('.nb-extra-hata')!;
+    const hata = [...host.querySelectorAll<HTMLElement>('.nb-extra-hata')].at(-1)!; // Hata 2
     expect(hata.hidden).toBe(false);
     expect(hata.querySelector('code')!.textContent).toBe('predict_proba');
     expect(hata.textContent).toContain('Sınıflandırma kararı (hangi sınıf daha olası) çoğunlukla doğru kalsa da');
+  });
+
+  it('part 3 names the book\'s Hata 1 above Hata 2, in the same markup', async () => {
+    const { player, host } = make();
+    mountNbExtra(host, player);
+    player.goto(11);
+    await frame();
+    const blocks = [...host.querySelectorAll<HTMLElement>('.nb-extra-hata')];
+    expect(blocks).toHaveLength(2);
+    expect(blocks.every((b) => !b.hidden)).toBe(true);
+    const [h1, h2] = blocks;
+    expect(h1.querySelector('.nb-extra-hata-title')!.textContent).toBe('Hata 1 — Kategorik/metin verisinde GaussianNB kullanmak');
+    expect(h1.querySelector('.nb-extra-hata-title code')!.textContent).toBe('GaussianNB');
+    expect(h1.querySelector('p:not(.nb-extra-hata-title)')!.innerHTML).toBe(
+      '<code>GaussianNB</code>, her özniteliğin sınıf içinde normal dağıldığını varsayar; kategorik veya sayım (count) verisinde bu varsayım geçersizdir ve yanlış olasılık tahminlerine yol açar.',
+    );
+    expect(h2.querySelector('.nb-extra-hata-title')!.textContent).toMatch(/^Hata 2 — /);
+    player.goto(9);
+    await frame();
+    expect(blocks.every((b) => b.hidden)).toBe(true);
   });
 });
 

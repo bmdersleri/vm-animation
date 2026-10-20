@@ -5,15 +5,24 @@ import type { NbParams } from './scenario';
 import { likelihood } from './spam';
 import { deriveNbView, pct } from './view';
 
-const HATA_HEADING = 'Hata 2 — <code>predict_proba</code> çıktısını ham olasılık gibi yorumlayıp aşırı güvenmek';
-const HATA_TEXT = 'Sınıflandırma kararı (hangi sınıf daha olası) çoğunlukla doğru kalsa da, olasılık değerlerinin mutlak büyüklüğüne aşırı güvenilmemelidir; bunlar göreli bir sıralama/skor aracı olarak kullanılmalıdır.';
+/** The book's two pitfalls in part 3; headings are static markup (no user input). */
+const HATA: readonly { heading: string; html: string }[] = [
+  {
+    heading: 'Hata 1 — Kategorik/metin verisinde <code>GaussianNB</code> kullanmak',
+    html: '<code>GaussianNB</code>, her özniteliğin sınıf içinde normal dağıldığını varsayar; kategorik veya sayım (count) verisinde bu varsayım geçersizdir ve yanlış olasılık tahminlerine yol açar.',
+  },
+  {
+    heading: 'Hata 2 — <code>predict_proba</code> çıktısını ham olasılık gibi yorumlayıp aşırı güvenmek',
+    html: 'Sınıflandırma kararı (hangi sınıf daha olası) çoğunlukla doğru kalsa da, olasılık değerlerinin mutlak büyüklüğüne aşırı güvenilmemelidir; bunlar göreli bir sıralama/skor aracı olarak kullanılmalıdır.',
+  },
+];
 
 let uid = 0;
 
 /**
  * Lab-only panel. Part 1: the exact Bayes value when it differs from the
  * rounded one; part 2: per-word likelihoods at the current alpha; part 3: the
- * book's second pitfall.
+ * book's two pitfalls (Hata 1 and Hata 2).
  */
 export function mountNbExtra(host: HTMLElement, p: StepPlayer<NbParams>): void {
   const doc = host.ownerDocument;
@@ -43,16 +52,19 @@ export function mountNbExtra(host: HTMLElement, p: StepPlayer<NbParams>): void {
   scroll.append(table);
   words.append(caption, scroll);
 
-  const hata = doc.createElement('div');
-  hata.className = 'nb-extra-hata';
-  const heading = doc.createElement('p');
-  heading.className = 'nb-extra-hata-title';
-  heading.innerHTML = HATA_HEADING;
-  const sentence = doc.createElement('p');
-  sentence.textContent = HATA_TEXT;
-  hata.append(heading, sentence);
+  const hatas = HATA.map((h) => {
+    const block = doc.createElement('div');
+    block.className = 'nb-extra-hata';
+    const heading = doc.createElement('p');
+    heading.className = 'nb-extra-hata-title';
+    heading.innerHTML = h.heading;
+    const sentence = doc.createElement('p');
+    sentence.innerHTML = h.html;
+    block.append(heading, sentence);
+    return block;
+  });
 
-  wrap.append(exact, words, hata);
+  wrap.append(exact, words, ...hatas);
   host.append(wrap);
 
   const render = (s: PlayerState<NbParams>): void => {
@@ -72,7 +84,7 @@ export function mountNbExtra(host: HTMLElement, p: StepPlayer<NbParams>): void {
         cells[2].textContent = formatNumber(likelihood(x.w, 1, a), 3);
       });
     }
-    hata.hidden = v.part !== 3;
+    for (const h of hatas) h.hidden = v.part !== 3;
   };
   // Sliders notify on every move: render at most once per frame, from the
   // latest state, and not at all while the panel is hidden (Ders mode).
