@@ -89,7 +89,8 @@ export function mountConceptPage<P extends object>(
   );
 
   // ---- workspace: stage + side panels ----
-  const stage = h('div', { class: 'stage' });
+  // tabindex -1: focus can be parked here (not in the tab order) so the step keys work
+  const stage = h('div', { class: 'stage', tabindex: '-1' });
   const params = h('section', { class: 'params', id: `${id}-params`, 'aria-label': 'Parametreler' });
   const stepTitle = h('h2', { class: 'step-title', 'aria-live': 'polite' });
   const stepText = h('p', { class: 'step-text' });
@@ -250,7 +251,10 @@ export function mountConceptPage<P extends object>(
     else if (paramsOpen) {
       paramsOpen = false;
       applyMode();
-      paramsToggle.focus();
+      // Park focus on the stage, not on a button: keyboard.ts ignores the step
+      // keys while a button or control is focused, so →/Space/← must work
+      // straight after Escape (and Space must not reopen the panel).
+      stage.focus({ preventScroll: true });
     }
   };
   window.addEventListener('keydown', onEscape);

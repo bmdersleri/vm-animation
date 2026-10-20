@@ -206,17 +206,32 @@ describe('shell', () => {
     }
   });
 
-  it('Escape closes the Ders params overlay and focuses its toggle', () => {
-    const { q } = setup('?mod=ders');
+  it('Escape closes the Ders params overlay and leaves the step keys working', () => {
+    const { player, q } = setup('?mod=ders');
     const toggle = q<HTMLButtonElement>('button.params-toggle');
     toggle.click();
     const range = document.createElement('input');
     range.type = 'range';
     q('.params').appendChild(range);
     range.focus();
-    range.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    // real key events go to the focused element and bubble to window
+    const pressFocused = (key: string): void => {
+      const t = (document.activeElement ?? document.body) as HTMLElement;
+      t.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+    };
+    pressFocused('Escape');
     expect(q('.params').hidden).toBe(true);
-    expect(document.activeElement).toBe(toggle);
+    expect(document.activeElement).not.toBe(toggle);
+    expect(document.activeElement).not.toBe(range);
+    expect(document.activeElement).toBe(q('.stage'));
+    pressFocused('ArrowRight');
+    expect(player.state.index).toBe(1);
+    pressFocused(' ');
+    expect(player.state.index).toBe(2);
+    expect(q('.params').hidden).toBe(true);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    pressFocused('ArrowLeft');
+    expect(player.state.index).toBe(1);
   });
 
   it('explain shows current step title and text', () => {

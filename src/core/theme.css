@@ -161,6 +161,10 @@ body {
   overflow: hidden;
   background: var(--surface);
 }
+/* focus is parked on the stage after Escape (shell.ts); it is not a control */
+.concept-page .stage:focus {
+  outline: none;
+}
 /* Scene layers sit on top of each other and never affect the stage size
    (the stage size is observed and fed back to the scene). */
 .stage > canvas,
