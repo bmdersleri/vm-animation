@@ -1,0 +1,66 @@
+import type { PlayerState, StepPlayer } from '../../core/player';
+import { customers } from './data';
+import type { KnnParams } from './scenario';
+import { formatNumber } from './scene-layout';
+import { deriveKnnView } from './view';
+
+const CLASS_CELL = ['<td class="cls kaldi">● Kaldı</td>', '<td class="cls ayrildi">▲ Ayrıldı</td>'] as const;
+
+let uid = 0;
+
+const escapeHtml = (s: string): string =>
+  s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+/** Lab-only distance table: all customers sorted by distance to the query. */
+export function mountKnnTable(host: HTMLElement, p: StepPlayer<KnnParams>): void {
+  const doc = host.ownerDocument;
+  const wrap = doc.createElement('div');
+  wrap.className = 'knn-table';
+  const caption = doc.createElement('p');
+  caption.className = 'knn-table-caption';
+  caption.id = `knn-table-caption-${++uid}`;
+  caption.textContent = 'Yeni müşteriye uzaklıklar (küçükten büyüğe)';
+  const hint = doc.createElement('p');
+  hint.className = 'knn-table-hint';
+  hint.textContent = 'Uzaklıklar 3. adımda hesaplanır.';
+  const scroll = doc.createElement('div');
+  scroll.className = 'knn-table-scroll';
+  scroll.tabIndex = 0; // a scrollable region must be keyboard reachable
+  scroll.setAttribute('role', 'region');
+  scroll.setAttribute('aria-labelledby', caption.id);
+  const table = doc.createElement('table');
+  table.setAttribute('aria-labelledby', caption.id);
+  scroll.append(table);
+  wrap.append(caption, hint, scroll);
+  host.append(wrap);
+
+  let shown = '';
+  const render = (s: PlayerState<KnnParams>): void => {
+    const view = deriveKnnView(s.index, s.params);
+    const ready = view.phase >= 2;
+    hint.hidden = ready;
+    scroll.hidden = !ready;
+    if (!ready) return;
+    const weighted = view.weighting === 'agirlikli';
+    const marked = view.phase >= 3;
+    let html = '<thead><tr><th scope="col">#</th><th scope="col">Müşteri</th><th scope="col">Sınıf</th>'
+      + `<th scope="col">Uzaklık</th>${weighted ? '<th scope="col">Ağırlık</th>' : ''}</tr></thead><tbody>`;
+    view.distances.forEach((n, i) => {
+      const isNeighbor = i < view.neighbors.length;
+      const cls = marked ? (isNeighbor ? ' class="neighbor"' : ' class="dim"') : '';
+      // Only the k neighbours vote; their weights follow the sklearn rule in view.neighbors.
+      const weight = weighted
+        ? `<td class="num">${isNeighbor ? formatNumber(view.neighbors[i].weight, 3) : '—'}</td>`
+        : '';
+      html += `<tr${cls}><td class="num">${i + 1}</td><td>${escapeHtml(customers[n.index].id)}</td>`
+        + `${CLASS_CELL[n.cls]}<td class="num">${formatNumber(n.distance, 2)}</td>${weight}</tr>`;
+    });
+    html += '</tbody>';
+    if (html !== shown) {
+      table.innerHTML = html;
+      shown = html;
+    }
+  };
+  render(p.state);
+  p.subscribe((s) => render(s));
+}
