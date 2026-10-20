@@ -370,3 +370,40 @@ body {
   font-size: var(--fs-title);
   font-weight: 700;
 }
+
+/* ---------- k-NN scene ---------- */
+/* Text sizes come only from the --fs-* tokens; the SVG has no viewBox. */
+.knn-plot {
+  touch-action: none; /* dragging the query must not scroll the page */
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: var(--font);
+}
+[data-mode="lab"] .knn-plot .hit {
+  cursor: crosshair;
+}
+.knn-plot .query-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  fill: var(--navy);
+  /* white halo keeps the label readable over lines and tinted regions */
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.knn-plot .rank text {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  fill: #fff;
+}
+.knn-plot .vote-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+}
+.knn-plot .prediction {
+  fill: var(--navy);
+}
+.knn-plot .tick text {
+  font-variant-numeric: tabular-nums;
+}
