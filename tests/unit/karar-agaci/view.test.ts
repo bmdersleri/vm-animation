@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { deriveTreeView } from '../../../src/concepts/karar-agaci/view';
 import { SCAN_N, treeScenario, type TreeParams } from '../../../src/concepts/karar-agaci/scenario';
-import { bestSplit, sweep, toSamples } from '../../../src/concepts/karar-agaci/cart';
+import { bestSplit, forcedSplit, sweep, toSamples } from '../../../src/concepts/karar-agaci/cart';
 import { train } from '../../../src/concepts/karar-agaci/data';
+import { formulaText, impurity, rootFormula } from '../../../src/concepts/karar-agaci/impurity';
+import { formatNumber } from '../../../src/core/plot/format';
 
 const D = treeScenario.defaults;
 const p = (over: Partial<TreeParams> = {}): TreeParams => ({ ...D, ...over });
@@ -101,6 +103,81 @@ describe('deriveTreeView', () => {
     expect(v.tree?.right?.box.y[0]).toBe(0.5);
     expect(v.chosen?.threshold).toBe(best.threshold);
     expect(v.chosen?.feature).toBe(best.feature);
+  });
+
+  it('root row from step 2 on in parts 1 and 3, never in part 2', () => {
+    expect(deriveTreeView(0, p()).rootRow).toBeNull();
+    const g = deriveTreeView(1, p());
+    expect(g.rootRow).toEqual({ label: 'Kök: 14 gün', counts: [9, 5], measures: [{ criterion: 'gini', value: impurity([9, 5], 'gini') }] });
+    // the root step's strip is the root's own Gini
+    expect(g.strip).toBe(rootFormula([9, 5], 'gini'));
+    expect(g.strip).toContain('= 0,459');
+    expect(deriveTreeView(1, p({ criterion: 'entropi' })).strip).toBe(rootFormula([9, 5], 'entropi'));
+    for (const i of [2, 3, 4]) expect(deriveTreeView(i, p({ shown: 4 })).rootRow?.counts).toEqual([9, 5]);
+    expect(deriveTreeView(5, p({ shown: 4, criterion: 'entropi' })).rootRow?.measures).toEqual([
+      { criterion: 'entropi', value: impurity([9, 5], 'entropi') },
+    ]);
+    for (const i of [6, 7, 8, 9, 10]) expect(deriveTreeView(i, p({ depth: 1 })).rootRow, `index ${i}`).toBeNull();
+  });
+
+  it('book step: the root row and the card carry both criteria', () => {
+    const v = deriveTreeView(11, p());
+    expect(v.rootRow).toEqual({
+      label: 'Kök: 100 müşteri',
+      counts: [60, 40],
+      measures: [
+        { criterion: 'gini', value: impurity([60, 40], 'gini') },
+        { criterion: 'entropi', value: impurity([60, 40], 'entropi') },
+      ],
+    });
+    const c = v.cards[0];
+    expect(c.alt?.criterion).toBe('entropi');
+    expect(c.alt?.impurity).toBeCloseTo(0.675, 3);
+    expect(c.alt?.decrease).toBeCloseTo(0.296, 3);
+    // with entropy chosen, entropy comes first and Gini is the alternative
+    const e = deriveTreeView(11, p({ criterion: 'entropi' }));
+    expect(e.rootRow?.measures.map((m) => m.criterion)).toEqual(['entropi', 'gini']);
+    expect(e.cards[0].alt?.criterion).toBe('gini');
+    expect(e.cards[0].alt?.impurity).toBeCloseTo(0.3, 12);
+  });
+
+  it('only candidate questions are asked (title + "?")', () => {
+    expect(deriveTreeView(2, p({ shown: 1 })).cards.every((c) => c.ask)).toBe(true);
+    expect(deriveTreeView(8, p({ depth: 1 })).cards.every((c) => c.ask)).toBe(true);
+    expect(deriveTreeView(11, p()).cards[0].ask).toBe(false);
+  });
+
+  it('a Lab user split at steps 7-9 shows its own card beside the tree\'s choice', () => {
+    const best = bestSplit(samples, 'gini')!;
+    for (const [i, depth] of [[6, 0], [7, 0], [8, 1]] as const) {
+      const v = deriveTreeView(i, p({ depth, scan: -1, userSplit: { feature: 0, threshold: 23.4 } }));
+      const s = forcedSplit(samples, 0, 23.4, 'gini');
+      expect(v.cards, `index ${i}`).toHaveLength(2);
+      const [own, tree] = v.cards;
+      expect(own.title).toBe('Senin eşiğin: Sözleşme ≤ 23,4');
+      expect(own.id).toBe('user');
+      expect(own.ask).toBe(false);
+      expect(own.win).toBe(false);
+      expect(own.filled).toBe(true);
+      expect(own.branches.map((b) => b.label)).toEqual(['≤ 23,4', '> 23,4']);
+      expect(own.branches.map((b) => b.counts)).toEqual([s.left, s.right]);
+      expect(own.impurity).toBeCloseTo(s.impurity, 12);
+      expect(own.decrease).toBeCloseTo(impurity(v.tree!.counts, 'gini') - s.impurity, 12);
+      expect(tree.title).toBe(`Ağacın seçimi: Şikâyet ≤ ${formatNumber(best.threshold, 1)}`);
+      expect(tree.id).toBe('tree');
+      expect(tree.win).toBe(true);
+      expect(tree.impurity).toBeCloseTo(best.impurity, 12);
+      expect(tree.branches.map((b) => b.counts)).toEqual([best.left, best.right]);
+      // the strip follows the dragged split: its weighted Gini, live
+      expect(v.strip).toBe(formulaText([s.left, s.right], 'gini'));
+    }
+    // dragged to the end of the axis: one side is empty, the weighted Gini equals the root's
+    const e = deriveTreeView(6, p({ userSplit: { feature: 0, threshold: Math.max(...train.map((r) => r.t)) } }));
+    expect(e.cards[0].branches[1].counts).toEqual([0, 0]);
+    expect(e.cards[0].impurity).toBeCloseTo(impurity(e.tree!.counts, 'gini'), 12);
+    expect(e.strip).not.toContain('NaN');
+    // without a user split, steps 7-8 have no cards
+    expect(deriveTreeView(6, p()).cards).toHaveLength(0);
   });
 
   it('deep tree reaches full training accuracy and shows test only when asked', () => {

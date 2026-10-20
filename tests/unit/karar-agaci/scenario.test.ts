@@ -3,6 +3,9 @@ import { StepPlayer } from '../../../src/core/player';
 import {
   DEPTH_MAX, SCAN_N, treeScenario, treeShortcuts, type TreeParams,
 } from '../../../src/concepts/karar-agaci/scenario';
+import { deriveTreeView } from '../../../src/concepts/karar-agaci/view';
+import { ATTRS, candidates, winner } from '../../../src/concepts/karar-agaci/tennis';
+import { formatNumber } from '../../../src/core/plot/format';
 
 function make(): StepPlayer<TreeParams> {
   return new StepPlayer<TreeParams>(treeScenario);
@@ -25,7 +28,36 @@ describe('treeScenario', () => {
         expect(s.term, s.id).toContain(en);
       }
     }
-    expect(n).toBeGreaterThanOrEqual(8);
+    expect(n).toBeGreaterThanOrEqual(13);
+  });
+
+  it('every step has a Ders term', () => {
+    for (const s of treeScenario.steps) expect(s.term, s.id).toBeTruthy();
+  });
+
+  it('the numbers in the step texts are the computed ones', () => {
+    const f3 = (x: number): string => formatNumber(x, 3);
+    const text = (id: string): string => treeScenario.steps.find((s) => s.id === id)!.text;
+    // root of the tennis table
+    const root = deriveTreeView(1, { ...treeScenario.defaults }).rootRow!;
+    expect(text('kok')).toContain(`${root.counts[0]} evet, ${root.counts[1]} hayır`);
+    expect(text('kok')).toContain(`(${root.counts[0]}/14)² − (${root.counts[1]}/14)²`);
+    expect(text('kok')).toContain(f3(root.measures[0].value));
+    // the entropy winner's information gain
+    const e = candidates('entropi');
+    expect(ATTRS[e[winner(e)].attr]).toBe('Hava');
+    expect(text('entropi')).toContain(`${f3(e[winner(e)].decrease)} bit`);
+    // the book example, under both criteria
+    const g = deriveTreeView(11, { ...treeScenario.defaults });
+    const k = deriveTreeView(11, { ...treeScenario.defaults, criterion: 'entropi' });
+    const [kaldi, ayrildi] = g.rootRow!.counts;
+    expect(text('kitap')).toContain(`${kaldi + ayrildi} müşteri: ${ayrildi} ayrılan, ${kaldi} kalan`);
+    expect(text('kitap')).toContain(`Gini ${f3(g.rootRow!.measures[0].value)} değerinden ${f3(g.cards[0].impurity)} değerine`);
+    expect(text('kitap')).toContain(`entropi ${f3(k.rootRow!.measures[0].value)} değerinden ${f3(k.cards[0].impurity)} değerine`);
+    expect(text('kitap')).toContain(`${f3(k.cards[0].decrease)} bit`);
+    const [short, long] = g.cards[0].branches.map((b) => b.counts);
+    expect(text('kitap')).toContain(`${short[1]} ayrılan ve ${short[0]} kalan`);
+    expect(text('kitap')).toContain(`${long[1]} ayrılan ve ${long[0]} kalan`);
   });
 
   it('defaults and constants', () => {

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
-import { treeScenario, type TreeParams } from '../../../src/concepts/karar-agaci/scenario';
+import { SCAN_N, treeScenario, type TreeParams } from '../../../src/concepts/karar-agaci/scenario';
 import { mountTreeScene, regionFill, treeKey } from '../../../src/concepts/karar-agaci/scene';
 import { buildTree, sweep, toSamples } from '../../../src/concepts/karar-agaci/cart';
 import { DOMAIN, train, test } from '../../../src/concepts/karar-agaci/data';
@@ -237,6 +237,61 @@ describe('lab threshold handles', () => {
     const x30 = num(el.querySelector('line.scan')!, 'x1');
     expect(num(el.querySelector('line.handle.x')!, 'x1')).toBe(x30);
     expect(all(el, 'line.handle.y')).toHaveLength(1);
+  });
+
+  it('once the step-8 scan is over, both handles are back in Lab and the scan line is gone', () => {
+    vi.useFakeTimers();
+    try {
+      const { el, player } = setup('lab', [1000, 600]);
+      const handles = () => [all(el, 'line.handle.x').length, all(el, 'line.handle.y').length];
+      player.goto(7);
+      expect(handles()).toEqual([0, 0]); // moving
+      vi.advanceTimersByTime(70 * (SCAN_N + 2));
+      expect(player.state.params.scan).toBe(SCAN_N - 1);
+      expect(handles()).toEqual([1, 1]);
+      expect(all(el, 'line.scan')).toHaveLength(0);
+      // the contract handle can be grabbed now
+      const hx = el.querySelector('line.handle.x')!;
+      expect(num(hx, 'x1')).toBe(num(hx, 'x2'));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('in Ders the finished scan line stays on the plot', () => {
+    vi.useFakeTimers();
+    try {
+      const { el, player } = setup('ders');
+      player.goto(7);
+      vi.advanceTimersByTime(70 * (SCAN_N + 2));
+      expect(all(el, 'line.scan')).toHaveLength(1);
+      expect(all(el, 'line.handle')).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('a user split shows its card and the tree\'s choice under the tree, live', () => {
+    const { el, player } = setup('lab', [1000, 600]);
+    player.goto(6);
+    const col = el.querySelector('div.tree-col')!;
+    const layer = () => col.querySelector<HTMLElement>('.cards-layer');
+    expect(layer()?.hidden ?? true).toBe(true);
+    player.setParams({ userSplit: { feature: 0, threshold: 20 }, scan: -1 });
+    expect(layer()!.hidden).toBe(false);
+    const titles = () => all(col, '.card h3.card-title').map((t) => t.textContent);
+    expect(titles()).toEqual(['Senin eşiğin: Sözleşme ≤ 20', 'Ağacın seçimi: Şikâyet ≤ 2,5']);
+    const score = () => col.querySelector('.card p.card-score')!.textContent;
+    const before = score();
+    player.setParams({ userSplit: { feature: 0, threshold: 12 } });
+    expect(titles()[0]).toBe('Senin eşiğin: Sözleşme ≤ 12');
+    expect(score()).not.toBe(before);
+    // an empty branch reads "0 müşteri" in the tree as well
+    const max = Math.max(...train.map((r) => r.t));
+    player.setParams({ userSplit: { feature: 0, threshold: max } });
+    const leaves = all(col, 'g.node.leaf').map((n) => n.textContent ?? '');
+    expect(leaves.some((t) => t.includes('0 müşteri'))).toBe(true);
+    expect(leaves.join('|')).not.toContain('NaN');
   });
 
   it('no handles in Ders', () => {

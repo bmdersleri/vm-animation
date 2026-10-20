@@ -8,7 +8,7 @@ import type { Rect, Scales } from '../../core/plot/viewport';
 import { sweep, toSamples, type Split, type SweepPoint, type TreeNode } from './cart';
 import { DOMAIN, train } from './data';
 import { impurity, type Criterion } from './impurity';
-import type { TreeParams } from './scenario';
+import { SCAN_N, type TreeParams } from './scenario';
 import type { TreeView } from './view';
 import { AXIS_NAMES, fmtThreshold } from './scene-tree';
 
@@ -87,13 +87,17 @@ export function linesModel(v: TreeView, p: TreeParams, index: number, lab: boole
   }
   // with a Lab line, the tree's own threshold stays as a faint line once the tree has a root
   const chosen: Split | null = user ? (p.depth >= 1 ? v.chosen : null) : root;
+  // the step-8 sweep leaves scan at its last value: the scan is over, not moving
+  const scanning = p.scan >= 0 && p.scan < SCAN_N - 1;
   const handles: Threshold[] = [];
-  if (lab && (DRAG_STEPS as readonly number[]).includes(index) && p.scan < 0) {
+  const drag = lab && (DRAG_STEPS as readonly number[]).includes(index) && !scanning;
+  if (drag) {
     const b = bestThresholds(v.criterion);
     for (const f of [0, 1] as const) handles.push({ feature: f, threshold: user?.feature === f ? user.threshold : b[f] });
   }
   return {
-    scan: user ? { feature: user.feature, threshold: user.threshold } : v.scanLine,
+    // in Lab the finished scan line gives way to the two handles
+    scan: user ? { feature: user.feature, threshold: user.threshold } : drag ? null : v.scanLine,
     chosen: chosen ? { feature: chosen.feature, threshold: chosen.threshold } : null,
     faintChosen: user !== null,
     splits,

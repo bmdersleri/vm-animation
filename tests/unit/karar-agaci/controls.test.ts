@@ -131,7 +131,31 @@ describe('tree extra panel', () => {
     expect(host.querySelector<HTMLElement>('.tree-extra-scroll')!.hidden).toBe(true);
     expect(host.textContent).toContain('Eğitim doğruluğu %');
     expect(host.textContent).toContain('Test doğruluğu %');
-    expect(host.textContent).toContain('scikit-learn (CART) her düğümü ikiye böler; burada kategorileri ayrı dallar olarak gösteriyoruz.');
+  });
+
+  it('the CART note shows only in the tennis part, the ccp_alpha note only in part 2', async () => {
+    const { player, host } = make();
+    mountTreeExtra(host, player);
+    const notes = () => [...host.querySelectorAll<HTMLElement>('.tree-extra-note')];
+    const cart = () => notes().find((n) => n.textContent!.startsWith('scikit-learn (CART)'))!;
+    const prune = () => host.querySelector<HTMLElement>('.tree-extra-prune')!;
+    await frame();
+    expect(cart().textContent).toBe('scikit-learn (CART) her düğümü ikiye böler; burada kategorileri ayrı dallar olarak gösteriyoruz.');
+    expect(cart().hidden).toBe(false);
+    expect(prune().hidden).toBe(true);
+    for (const i of [6, 8, 10]) {
+      player.goto(i);
+      await frame();
+      expect(cart().hidden, `index ${i}`).toBe(true);
+      expect(prune().hidden, `index ${i}`).toBe(false);
+    }
+    expect(prune().innerHTML).toBe(
+      'Kitapta ağaç tam büyüdükten sonra geriye dönük budama (post-pruning) da anlatılır: scikit-learn\'de <code>ccp_alpha</code> ile maliyet-karmaşıklık budaması. Burada budamayı derinlik sınırıyla gösteriyoruz.',
+    );
+    player.goto(11);
+    await frame();
+    expect(cart().hidden).toBe(true);
+    expect(prune().hidden).toBe(true);
   });
 
   it('test accuracy is hidden while test points are hidden', async () => {

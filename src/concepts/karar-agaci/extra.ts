@@ -6,6 +6,8 @@ import { deriveTreeView, pct } from './view';
 const CLS = ['● Evet', '▲ Hayır'] as const;
 const NOTE = 'scikit-learn (CART) her düğümü ikiye böler; burada kategorileri ayrı dallar olarak gösteriyoruz.';
 const CURVE_NOTE = 'Eğri yalnızca aday eşikleri gösterir; sürüklerken nokta iki aday arasında eğrinin dışında kalabilir.';
+/** Static markup (no user input): the book's post-pruning, which the page shows as a depth limit. */
+const PRUNE_NOTE = 'Kitapta ağaç tam büyüdükten sonra geriye dönük budama (post-pruning) da anlatılır: scikit-learn\'de <code>ccp_alpha</code> ile maliyet-karmaşıklık budaması. Burada budamayı derinlik sınırıyla gösteriyoruz.';
 
 let uid = 0;
 
@@ -42,13 +44,17 @@ export function mountTreeExtra(host: HTMLElement, p: StepPlayer<TreeParams>): vo
   const curveNote = doc.createElement('p');
   curveNote.className = 'tree-extra-note';
   curveNote.textContent = CURVE_NOTE;
-  wrap.append(caption, scroll, acc, note, curveNote);
+  const prune = doc.createElement('p');
+  prune.className = 'tree-extra-note tree-extra-prune';
+  prune.innerHTML = PRUNE_NOTE;
+  wrap.append(caption, scroll, acc, note, curveNote, prune);
   host.append(wrap);
 
   const render = (s: PlayerState<TreeParams>): void => {
     const v = deriveTreeView(s.index, s.params);
     const part1 = v.part === 1;
-    caption.hidden = scroll.hidden = !part1;
+    caption.hidden = scroll.hidden = note.hidden = !part1;
+    prune.hidden = v.part !== 2;
     // Branch of the focused candidate (the last filled card, or the winner) per day.
     let focus = v.cards.findIndex((c) => c.win);
     if (focus < 0) focus = v.cards.reduce((f, c, i) => (c.filled ? i : f), -1);

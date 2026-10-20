@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { CardsLayer } from '../../../src/concepts/karar-agaci/scene-cards';
 import { deriveTreeView } from '../../../src/concepts/karar-agaci/view';
 import { treeScenario, type TreeParams } from '../../../src/concepts/karar-agaci/scenario';
+import { train } from '../../../src/concepts/karar-agaci/data';
 
 const D = treeScenario.defaults;
 const view = (i: number, over: Partial<TreeParams> = {}) => deriveTreeView(i, { ...D, ...over });
@@ -123,6 +124,60 @@ describe('CardsLayer', () => {
     }
     layer.update(view(8, { depth: 1 }), 0);
     expect(layerEl(host).hidden).toBe(false);
+  });
+
+  it('root row: hidden at step 1, the 9/5 bar and its Gini from step 2 on', () => {
+    const { host, layer } = setup();
+    const row = () => host.querySelector<HTMLElement>('.root-row')!;
+    layer.update(view(0, { shown: 0 }), 0);
+    expect(row().hidden).toBe(true);
+    layer.update(view(1, { shown: 0 }), 0);
+    expect(row().hidden).toBe(false);
+    expect(text(row().querySelector('.root-label'))).toBe('Kök: 14 gün');
+    expect(text(row().querySelector('.root-count'))).toBe('9/5');
+    expect(text(row().querySelector('.root-score'))).toBe('Gini 0,459');
+    expect(parseFloat(row().querySelector<HTMLElement>('.fill')!.style.width)).toBe(100);
+    const segs = all(row(), '.seg');
+    expect(parseFloat(segs[0].style.width)).toBeCloseTo((9 / 14) * 100, 3);
+    expect(parseFloat(segs[1].style.width)).toBeCloseTo((5 / 14) * 100, 3);
+    // the root step's strip shows the root formula
+    expect(text(host.querySelector('p.formula'))).toBe('1 − (9/14)² − (5/14)² = 0,459');
+    layer.update(view(5, { shown: 4, criterion: 'entropi' }), 0);
+    expect(text(row().querySelector('.root-score'))).toBe('Entropi 0,940');
+    layer.update(view(8, { depth: 1 }), 0);
+    expect(row().hidden).toBe(true);
+  });
+
+  it('book step: root 0,480 / 0,971 and the card shows both criteria', () => {
+    const { host, layer } = setup();
+    layer.update(view(11), 0);
+    const row = host.querySelector<HTMLElement>('.root-row')!;
+    expect(row.hidden).toBe(false);
+    expect(text(row.querySelector('.root-label'))).toBe('Kök: 100 müşteri');
+    expect(text(row.querySelector('.root-count'))).toBe('60/40');
+    expect(text(row.querySelector('.root-score'))).toBe('Gini 0,480 · Entropi 0,971');
+    const scores = all(host, '.card p.card-score').filter((p) => !p.hidden).map(text);
+    expect(scores).toEqual(['Gini 0,300 · azalma 0,180', 'Entropi 0,675 · bilgi kazancı 0,296 bit']);
+    // part 1 cards have no second score line
+    layer.update(view(4, { shown: 4 }), 0);
+    expect(all(host, '.card p.card-score.alt').every((p) => p.hidden)).toBe(true);
+  });
+
+  it('user split card: no question mark, "0 müşteri" for an empty branch, no rebuild while dragging', () => {
+    const { host, layer } = setup();
+    layer.update(view(6, { userSplit: { feature: 0, threshold: 20 } }), 0);
+    const cards = all(host, '.card');
+    expect(cards.map((c) => text(c.querySelector('h3.card-title')))).toEqual([
+      'Senin eşiğin: Sözleşme ≤ 20', 'Ağacın seçimi: Şikâyet ≤ 2,5',
+    ]);
+    const first = cards[0];
+    const max = Math.max(...train.map((r) => r.t));
+    const v = view(6, { userSplit: { feature: 0, threshold: max } });
+    layer.update(v, 0);
+    expect(all(host, '.card')[0]).toBe(first); // same element: the drag never rebuilds the cards
+    expect(text(first.querySelector('h3.card-title'))).toBe(`Senin eşiğin: Sözleşme ≤ ${max}`);
+    expect(all(first, '.branch-count').map(text)[1]).toBe('0 müşteri');
+    expect(text(host.querySelector('p.formula'))).toBe(v.strip);
   });
 
   it('rapid updates cancel running fills and end in the final state', async () => {

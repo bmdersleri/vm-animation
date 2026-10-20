@@ -33,6 +33,11 @@ function childFormula(c: Counts, k: Criterion): string {
   return terms.map((t, i) => (i === 0 ? `−${t}` : `− ${t}`)).join(' ');
 }
 
+/** One node's impurity formula with the numbers filled in: "1 − (9/14)² − (5/14)² = 0,459". */
+export function rootFormula(c: Counts, k: Criterion): string {
+  return `${childFormula(c, k)} = ${formatNumber(impurity(c, k), 3)}`;
+}
+
 /** The weighted-impurity formula with the numbers filled in, ending in "= value". */
 export function formulaText(children: readonly Counts[], k: Criterion): string {
   const n = children.reduce((s, c) => s + total(c), 0);

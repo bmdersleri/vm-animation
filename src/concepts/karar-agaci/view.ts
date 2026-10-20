@@ -1,4 +1,6 @@
-import { decrease, formulaText, weighted, type Counts, type Criterion } from './impurity';
+import {
+  decrease, formulaText, impurity, rootFormula, weighted, type Counts, type Criterion,
+} from './impurity';
 import { ATTRS, candidates, winner } from './tennis';
 import {
   accuracy, bestSplit, buildTree, forcedSplit, sweep, toSamples,
@@ -13,11 +15,25 @@ export type TreePart = 1 | 2 | 3;
 
 export interface CardView {
   title: string;
+  /** The title is a candidate question: the layer shows it with "?". */
+  ask: boolean;
+  /** Stable identity while the title changes (the Lab drag card); defaults to the title. */
+  id?: string;
   branches: { label: string; counts: Counts }[];
   impurity: number;
   decrease: number;
+  /** The book step: the same split under the other criterion. */
+  alt?: { criterion: Criterion; impurity: number; decrease: number };
   filled: boolean;
   win: boolean;
+}
+
+/** The parent node above the cards: a two-colour bar and its impurity. */
+export interface RootView {
+  label: string;
+  counts: Counts;
+  /** The page's criterion first; the book step adds the other one. */
+  measures: { criterion: Criterion; value: number }[];
 }
 
 export interface TreeView {
@@ -26,6 +42,8 @@ export interface TreeView {
   criterion: Criterion;
   /** Parts 1 and 3: the parent counts. */
   root: Counts;
+  /** Parts 1 (from step 2 on) and 3: the root row shown above the cards. */
+  rootRow: RootView | null;
   /** Part 1: 4 cards; part 2 step 8: 2 cards (best threshold per axis); part 3: 1 card. */
   cards: CardView[];
   /** Formula strip of the focused card, or null. */
@@ -50,6 +68,11 @@ export interface TreeView {
 const trainSamples = toSamples(train);
 const testSamples = toSamples(test);
 const AXIS_NAMES = ['Sözleşme', 'Şikâyet'] as const;
+/** Tennis root: 9 evet / 5 hayır. */
+const TENNIS_ROOT: Counts = [9, 5];
+/** Step index of the root's best-threshold race, and the last step a Lab drag can set userSplit. */
+const ESIK_STEP = 8;
+const LAST_DRAG_STEP = 8;
 /** Book example in codebase order: index 0 = kaldı, index 1 = ayrıldı. */
 const BOOK_ROOT: Counts = [60, 40];
 const BOOK_KIDS: readonly [Counts, Counts] = [[15, 35], [45, 5]];
@@ -84,10 +107,20 @@ function forcedTree(split: Split): TreeNode {
   };
 }
 
-function card(title: string, branches: CardView['branches'], root: Counts, k: Criterion, win: boolean): CardView {
+function card(title: string, branches: CardView['branches'], root: Counts, k: Criterion, win: boolean, ask = true): CardView {
   const kids = branches.map((b) => b.counts);
-  return { title, branches, impurity: weighted(kids, k), decrease: decrease(root, kids, k), filled: true, win };
+  return { title, ask, branches, impurity: weighted(kids, k), decrease: decrease(root, kids, k), filled: true, win };
 }
+
+/** A root split as a two-branch card: "≤ t" and "> t". */
+function splitCard(title: string, s: Split, root: Counts, k: Criterion, win: boolean, ask: boolean): CardView {
+  return card(title, [
+    { label: `≤ ${fmt(s.threshold)}`, counts: s.left },
+    { label: `> ${fmt(s.threshold)}`, counts: s.right },
+  ], root, k, win, ask);
+}
+
+const other = (k: Criterion): Criterion => (k === 'gini' ? 'entropi' : 'gini');
 
 export function deriveTreeView(index: number, p: TreeParams): TreeView {
   const part = partOf(index);
@@ -97,6 +130,7 @@ export function deriveTreeView(index: number, p: TreeParams): TreeView {
     stepId: treeScenario.steps[index].id,
     criterion: k,
     root: [0, 0],
+    rootRow: null,
     cards: [],
     strip: null,
     gainLabel: k === 'gini' ? 'Gini azalması' : 'bilgi kazancı (bit)',
@@ -114,6 +148,7 @@ export function deriveTreeView(index: number, p: TreeParams): TreeView {
     const decided = index >= 4;
     const cards: CardView[] = cs.map((c, i) => ({
       title: ATTRS[c.attr],
+      ask: true,
       branches: c.branches.map((b) => ({ label: b.value, counts: b.counts })),
       impurity: c.impurity,
       decrease: c.decrease,
@@ -121,13 +156,17 @@ export function deriveTreeView(index: number, p: TreeParams): TreeView {
       win: decided && i === w,
     }));
     const focus = index <= 1 ? -1 : decided ? w : p.shown - 1;
+    let strip: string | null = null;
+    if (index === 1) strip = rootFormula(TENNIS_ROOT, k);
+    else if (focus >= 0 && cards[focus].filled) strip = formulaText(cards[focus].branches.map((b) => b.counts), k);
     return {
       ...base,
-      root: [9, 5],
-      cards,
-      strip: focus >= 0 && cards[focus].filled
-        ? formulaText(cards[focus].branches.map((b) => b.counts), k)
+      root: TENNIS_ROOT,
+      rootRow: index >= 1
+        ? { label: 'Kök: 14 gün', counts: TENNIS_ROOT, measures: [{ criterion: k, value: impurity(TENNIS_ROOT, k) }] }
         : null,
+      cards,
+      strip,
     };
   }
 
@@ -135,16 +174,27 @@ export function deriveTreeView(index: number, p: TreeParams): TreeView {
     const c = card('Kitabın örneği', [
       { label: 'Kısa sözleşme', counts: BOOK_KIDS[0] },
       { label: 'Uzun sözleşme', counts: BOOK_KIDS[1] },
-    ], BOOK_ROOT, k, true);
-    return { ...base, root: BOOK_ROOT, cards: [c], strip: formulaText(BOOK_KIDS, k) };
+    ], BOOK_ROOT, k, true, false);
+    const k2 = other(k);
+    c.alt = { criterion: k2, impurity: weighted(BOOK_KIDS, k2), decrease: decrease(BOOK_ROOT, BOOK_KIDS, k2) };
+    return {
+      ...base,
+      root: BOOK_ROOT,
+      rootRow: {
+        label: 'Kök: 100 müşteri',
+        counts: BOOK_ROOT,
+        measures: [k, k2].map((criterion) => ({ criterion, value: impurity(BOOK_ROOT, criterion) })),
+      },
+      cards: [c],
+      strip: formulaText(BOOK_KIDS, k),
+    };
   }
 
   // Part 2: numeric data.
   const root: Counts = buildTree(trainSamples, 0, k, DOMAIN).counts;
   const chosen = bestSplit(trainSamples, k);
-  const tree = p.userSplit
-    ? forcedTree(forcedSplit(trainSamples, p.userSplit.feature, p.userSplit.threshold, k))
-    : buildTree(trainSamples, p.depth, k, DOMAIN);
+  const user = p.userSplit ? forcedSplit(trainSamples, p.userSplit.feature, p.userSplit.threshold, k) : null;
+  const tree = user ? forcedTree(user) : buildTree(trainSamples, p.depth, k, DOMAIN);
   const view: TreeView = {
     ...base,
     root,
@@ -166,15 +216,16 @@ export function deriveTreeView(index: number, p: TreeParams): TreeView {
     view.curve = { feature, points, upTo, best: lowest(points), otherBest: feature === 1 ? lowest(pts0) : null };
   }
 
-  if (index === 8 && chosen) {
+  if (user && index <= LAST_DRAG_STEP && chosen) {
+    // Lab drag: the student's split, live, beside the tree's own choice
+    const own = splitCard(`Senin eşiğin: ${AXIS_NAMES[user.feature]} ≤ ${fmt(user.threshold)}`, user, root, k, false, false);
+    const best = splitCard(`Ağacın seçimi: ${AXIS_NAMES[chosen.feature]} ≤ ${fmt(chosen.threshold)}`, chosen, root, k, true, false);
+    view.cards = [{ ...own, id: 'user' }, { ...best, id: 'tree' }];
+    view.strip = formulaText([user.left, user.right], k);
+  } else if (index === ESIK_STEP && chosen) {
     view.cards = ([0, 1] as const).map((f) => {
-      const t = lowest(sweep(trainSamples, f, k)).threshold;
-      const s = forcedSplit(trainSamples, f, t, k);
-      const c = card(`${AXIS_NAMES[f]} ≤ ${fmt(t)}`, [
-        { label: `≤ ${fmt(t)}`, counts: s.left },
-        { label: `> ${fmt(t)}`, counts: s.right },
-      ], root, k, f === chosen.feature);
-      return c;
+      const s = forcedSplit(trainSamples, f, lowest(sweep(trainSamples, f, k)).threshold, k);
+      return splitCard(`${AXIS_NAMES[f]} ≤ ${fmt(s.threshold)}`, s, root, k, f === chosen.feature, true);
     });
     const w = view.cards.find((c) => c.win);
     view.strip = w ? formulaText(w.branches.map((b) => b.counts), k) : null;

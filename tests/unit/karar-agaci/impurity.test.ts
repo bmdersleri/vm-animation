@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { impurity, weighted, decrease, formulaText } from '../../../src/concepts/karar-agaci/impurity';
+import { impurity, weighted, decrease, formulaText, rootFormula } from '../../../src/concepts/karar-agaci/impurity';
 import { ATTRS, DAYS, candidates, winner } from '../../../src/concepts/karar-agaci/tennis';
 import fixture from '../../fixtures/karar-agaci_sklearn.json';
 
@@ -54,6 +54,11 @@ describe('impurity', () => {
     expect(t).toContain('−2/5·log₂(2/5) − 3/5·log₂(3/5)');
     expect(t).toContain('4/4·log₂(4/4)');
     expect(t).toContain('0');
+  });
+
+  it('root formula with the numbers filled in', () => {
+    expect(rootFormula([9, 5], 'gini')).toBe('1 − (9/14)² − (5/14)² = 0,459');
+    expect(rootFormula([9, 5], 'entropi')).toBe('−9/14·log₂(9/14) − 5/14·log₂(5/14) = 0,940');
   });
 
   it('empty child', () => {

@@ -40,7 +40,12 @@ interface Sub { items: { p: Placed; dx: number; depth: number }[]; left: number[
 
 
 function nodeLines(n: TreeNode, k: Criterion): [Line, Line] {
-  const measure = { parts: [{ text: `${k === 'gini' ? 'Gini' : 'Entropi'} ${formatNumber(impurity(n.counts, k), 3)}`, cls: null }] } as Line;
+  const name = k === 'gini' ? 'Gini' : 'Entropi';
+  // a Lab threshold at the end of an axis leaves one branch without customers
+  if (n.counts[0] + n.counts[1] === 0) {
+    return [{ parts: [{ text: '0 müşteri', cls: null }] }, { parts: [{ text: `${name} —`, cls: null }] }];
+  }
+  const measure = { parts: [{ text: `${name} ${formatNumber(impurity(n.counts, k), 3)}`, cls: null }] } as Line;
   if (n.split && n.left && n.right) {
     return [{ parts: [{ text: `${AXIS_NAMES[n.split.feature]} ≤ ${fmtThreshold(n.split.threshold)}?`, cls: null }] }, measure];
   }
@@ -63,6 +68,11 @@ export class TreeLayer {
   private readonly measure: TextMeasure;
   /** Last drawn centre of each node id: new children grow from their parent's old place. */
   private at = new Map<string, { x: number; y: number }>();
+  /**
+   * Measured text widths by font px and text: scan ticks and drag frames reuse
+   * them instead of forcing a layout per render. Bounded: cleared when large.
+   */
+  private widths = new Map<string, number>();
 
   constructor(host: HTMLElement) {
     const doc = host.ownerDocument;
@@ -217,12 +227,23 @@ export class TreeLayer {
     this.svg.remove();
   }
 
+  private textWidth(text: string, fs: number): number {
+    const key = `${fs}|${text}`;
+    let w = this.widths.get(key);
+    if (w === undefined) {
+      if (this.widths.size >= 512) this.widths.clear();
+      w = this.measure.width(text, 'tree-text', fs);
+      this.widths.set(key, w);
+    }
+    return w;
+  }
+
   private layout(
     n: TreeNode, k: Criterion, parent: Placed | null, side: 0 | 1, id: string, gap: number, padX: number, fs: number,
   ): Sub {
     const lines = nodeLines(n, k);
     const lineW = (l: Line): number =>
-      l.parts.reduce((s, q) => s + this.measure.width(q.text, 'tree-text', fs), 0) + (l.parts.length - 1) * GAP_EM * fs;
+      l.parts.reduce((s, q) => s + this.textWidth(q.text, fs), 0) + (l.parts.length - 1) * GAP_EM * fs;
     const w = Math.max(...lines.map(lineW)) + 2 * padX;
     const leaf = !(n.split && n.left && n.right);
     const p: Placed = { id, node: n, leaf, lines, w, x: 0, y: 0, parent, side };

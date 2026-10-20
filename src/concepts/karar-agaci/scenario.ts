@@ -59,7 +59,8 @@ export const treeScenario: Scenario<TreeParams> = {
     {
       id: 'adaylar',
       title: 'Diğer adaylar',
-      text: 'Sıcaklık, Nem ve Rüzgâr da aynı hesapla sırayla denenir.',
+      text: 'Sıcaklık, Nem ve Rüzgâr da birer aday bölünme (candidate split): aynı hesapla sırayla denenir.',
+      term: 'aday bölünme (candidate split)',
       params: { shown: 4 },
       sweep: { key: 'shown', values: [2, 3, 4], intervalMs: 700 },
     },
@@ -80,7 +81,8 @@ export const treeScenario: Scenario<TreeParams> = {
     {
       id: 'dagilim',
       title: 'Sayısal veri',
-      text: 'Şimdi müşteriler: sözleşme süresi ve şikâyet sayısı. Ağaçta yalnızca kök var.',
+      text: 'Şimdi müşteriler: sözleşme süresi ve şikâyet sayısı, iki sayısal öznitelik (numerical feature). Ağaçta yalnızca kök var.',
+      term: 'sayısal öznitelik (numerical feature)',
       params: { criterion: 'gini', depth: 0, scan: -1, showTest: false, userSplit: null },
     },
     {
@@ -116,7 +118,8 @@ export const treeScenario: Scenario<TreeParams> = {
     {
       id: 'kitap',
       title: 'Kitabın örneği',
-      text: '100 müşteri: 40 ayrılan, 60 kalan. Gini 0,480 değerinden 0,300 değerine, entropi 0,971 değerinden 0,675 değerine iner; kazanç 0,296 bit.',
+      text: '100 müşteri: 40 ayrılan, 60 kalan. Kısa sözleşme dalında 35 ayrılan ve 15 kalan, uzun sözleşme dalında 5 ayrılan ve 45 kalan var. Gini 0,480 değerinden 0,300 değerine, entropi 0,971 değerinden 0,675 değerine iner; bilgi kazancı (information gain) 0,296 bit.',
+      term: 'bilgi kazancı (information gain)',
       params: { userSplit: null },
     },
   ],

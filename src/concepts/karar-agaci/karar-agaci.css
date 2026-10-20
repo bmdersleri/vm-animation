@@ -33,6 +33,30 @@
 .cards-layer .key.c1 {
   color: #a85a00;
 }
+/* the parent node above the cards: label, full-width two-colour bar, counts, impurity */
+.cards-layer .root-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  column-gap: 0.6em;
+  row-gap: 0.2em;
+  margin: 0;
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+}
+.cards-layer .root-row[hidden] {
+  display: none;
+}
+.cards-layer .root-label {
+  font-weight: 700;
+}
+.cards-layer .root-row .bar {
+  flex: 0 1 10em;
+}
+.cards-layer .root-count {
+  font-weight: 600;
+}
 .cards-layer .cards {
   display: flex;
   justify-content: center;
@@ -121,6 +145,12 @@
 }
 .cards-layer .card.win .card-score {
   font-weight: 700;
+}
+.cards-layer .card-score.alt {
+  margin-top: 0;
+}
+.cards-layer .card-score[hidden] {
+  display: none;
 }
 .cards-layer .formula {
   margin: 0;
