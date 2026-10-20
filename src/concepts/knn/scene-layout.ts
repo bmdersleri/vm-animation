@@ -2,85 +2,9 @@ import { scaleLinear } from 'd3-scale';
 import type { Mode } from '../../core/mode';
 import type { Weighting } from './knn';
 import { featureSpace, type FeatureSpace } from './space';
-import type { Rect } from './viewport';
-
-export interface Fonts { tick: number; axis: number; title: number }
-
-/** Used when computed styles are unavailable (jsdom, theme not loaded); matches theme.css at 1280 px. */
-const FALLBACK: Record<Mode, Fonts> = {
-  lab: { tick: 13, axis: 14, title: 22 },
-  ders: { tick: 18, axis: 19, title: 33 },
-};
-
-/**
- * Reads real font sizes and text widths from a hidden SVG <text> carrying the
- * same CSS class as the text being laid out. Only used on (re)layout, never per
- * frame. Falls back to estimates where layout is unavailable.
- */
-export class TextMeasure {
-  constructor(private readonly probe: SVGTextElement) {}
-
-  private use(cls: string, text: string): void {
-    this.probe.setAttribute('class', `probe ${cls}`);
-    this.probe.textContent = text;
-  }
-
-  private done(): void {
-    this.probe.setAttribute('class', 'probe');
-    this.probe.textContent = '';
-  }
-
-  fontPx(cls: string, fallback: number): number {
-    this.use(cls, 'M');
-    const v = parseFloat(getComputedStyle(this.probe).fontSize);
-    this.done();
-    return Number.isFinite(v) && v > 0 ? v : fallback;
-  }
-
-  fonts(mode: Mode): Fonts {
-    const f = FALLBACK[mode];
-    return {
-      tick: this.fontPx('tick', f.tick),
-      axis: this.fontPx('axis-title', f.axis),
-      title: this.fontPx('prediction', f.title),
-    };
-  }
-
-  /** Width in px of `text` rendered with class `cls`; estimate = 0.62 em per character. */
-  width(text: string, cls: string, fontPx: number): number {
-    this.use(cls, text);
-    let w = 0;
-    if (typeof this.probe.getComputedTextLength === 'function') {
-      try { w = this.probe.getComputedTextLength(); } catch { w = 0; }
-    }
-    this.done();
-    return w > 0 ? w : text.length * fontPx * 0.62;
-  }
-
-  maxWidth(texts: string[], cls: string, fontPx: number): number {
-    return Math.max(0, ...texts.map((t) => this.width(t, cls, fontPx)));
-  }
-}
-
-// ---------- number formatting (Turkish: 1.234,5 and U+2212 minus) ----------
-
-const fmtCache = new Map<number, Intl.NumberFormat>();
-
-export function formatNumber(v: number, decimals: number): string {
-  let f = fmtCache.get(decimals);
-  if (!f) {
-    f = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-    fmtCache.set(decimals, f);
-  }
-  return f.format(v === 0 ? 0 : v).replace('-', '−');
-}
-
-/** Formatter with just enough decimals for evenly spaced d3 ticks (steps are 1, 2 or 5 × 10^n). */
-export function tickFormat(ticks: number[]): (v: number) => string {
-  const step = ticks.length > 1 ? Math.abs(ticks[1] - ticks[0]) : 1;
-  const dec = step > 0 ? Math.max(0, Math.min(6, -Math.floor(Math.log10(step) + 1e-9))) : 0;
-  return (v) => formatNumber(v, dec);
-}
+import type { Rect } from '../../core/plot/viewport';
+import { formatNumber, tickFormat } from '../../core/plot/format';
+import { TextMeasure, type Fonts } from '../../core/plot/text-measure';
 
 // ---------- axis titles ----------
 

@@ -1,7 +1,7 @@
 import { computeRegions } from './regions';
-import { MARK } from './scene-shapes';
+import { MARK } from '../../core/plot/marks';
 import type { KnnView } from './view';
-import type { Rect, Scales } from './viewport';
+import type { Rect, Scales } from '../../core/plot/viewport';
 import type { Mode } from '../../core/mode';
 
 const CELL_PX = 6;

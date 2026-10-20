@@ -7,7 +7,7 @@ import type { Vec } from './knn';
 import { knnScenario, knnShortcuts, type KnnParams } from './scenario';
 import { mountKnnScene, type PointerKind } from './scene';
 import { featureSpace, type FeatureSpace } from './space';
-import type { Domain } from './viewport';
+import type { Domain } from '../../core/plot/viewport';
 import { mountKnnParams } from './controls';
 import { mountKnnTable } from './table';
 

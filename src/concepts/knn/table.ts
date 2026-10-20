@@ -1,7 +1,7 @@
 import type { PlayerState, StepPlayer } from '../../core/player';
 import { customers } from './data';
 import type { KnnParams } from './scenario';
-import { formatNumber } from './scene-layout';
+import { formatNumber } from '../../core/plot/format';
 import { deriveKnnView } from './view';
 
 const CLASS_CELL = ['<td class="cls kaldi">● Kaldı</td>', '<td class="cls ayrildi">▲ Ayrıldı</td>'] as const;

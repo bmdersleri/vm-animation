@@ -6,7 +6,7 @@ import { knnScenario, type KnnParams } from '../../src/concepts/knn/scenario';
 import { demo, customers, type RawPoint } from '../../src/concepts/knn/data';
 import { featureSpace } from '../../src/concepts/knn/space';
 import { deriveKnnView } from '../../src/concepts/knn/view';
-import { formatNumber } from '../../src/concepts/knn/scene-layout';
+import { formatNumber } from '../../src/core/plot/format';
 import { mountKnnParams } from '../../src/concepts/knn/controls';
 import { mountKnnTable } from '../../src/concepts/knn/table';
 import { clampToDomain, createLabPointer, knnPage } from '../../src/concepts/knn/main';

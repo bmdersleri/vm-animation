@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fitEqualAspect, fitViewport } from '../../src/concepts/knn/viewport';
+import { fitEqualAspect, fitViewport } from '../../../src/core/plot/viewport';
 
 const domain = { x: [0, 10] as [number, number], y: [0, 100] as [number, number] };
 const rect = { left: 20, top: 10, width: 500, height: 300 };

@@ -1,4 +1,4 @@
-import { select, type Selection } from 'd3-selection';
+import { select } from 'd3-selection';
 import 'd3-transition';
 import { easeCubicInOut } from 'd3-ease';
 import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
@@ -9,13 +9,15 @@ import type { Neighbor } from './knn';
 import type { KnnParams } from './scenario';
 import type { FeatureSpace } from './space';
 import { deriveKnnView, type KnnView } from './view';
-import { fitViewport, type Domain, type Scales } from './viewport';
+import { fitViewport, type Domain, type Scales } from '../../core/plot/viewport';
 import { REGION_ALPHA, RegionsLayer } from './scene-regions';
 import { placeBadges, placeQueryLabel, type P } from './scene-labels';
-import { computeLayout, TextMeasure, tickFormat, voteLabel, type Layout } from './scene-layout';
-import {
-  FRAME, GRID, MARK, NAVY, TEXT, WHITE, boundaryShape, lerpShape, r1, shapePath, trianglePath, type Shape,
-} from './scene-shapes';
+import { computeLayout, voteLabel, type Layout } from './scene-layout';
+import { tickFormat } from '../../core/plot/format';
+import { TextMeasure } from '../../core/plot/text-measure';
+import { tr, type AnySel } from '../../core/plot/transition';
+import { FRAME, GRID, MARK, NAVY, TEXT, WHITE, r1, trianglePath } from '../../core/plot/marks';
+import { boundaryShape, lerpShape, shapePath, type Shape } from './scene-shapes';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const MS_STEP = 450;
@@ -37,17 +39,6 @@ export type KnnSceneHandle = SceneHandle & {
 
 interface Pt { i: number; x: number; y: number }
 interface Rank { r: number; i: number; x: number; y: number }
-
-// Selection and Transition share attr/style/text/remove. A transition is typed
-// as its selection so one code path serves both the animated and the instant case.
-type AnySel = Selection<any, any, any, any>;
-
-function tr<S extends AnySel>(sel: S, name: string, ms: number, delay?: (d: never, i: number) => number): S {
-  if (ms <= 0) return sel;
-  const t = sel.transition(name).duration(ms).ease(easeCubicInOut);
-  if (delay) t.delay(delay as (d: unknown, i: number) => number);
-  return t as unknown as S;
-}
 
 function onlyQueryChanged(a: KnnParams, b: KnnParams): boolean {
   for (const k of Object.keys(b) as (keyof KnnParams)[]) if (k !== 'query' && a[k] !== b[k]) return false;
