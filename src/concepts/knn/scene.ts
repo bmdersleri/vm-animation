@@ -13,10 +13,10 @@ import { fitViewport, type Domain, type Scales } from '../../core/plot/viewport'
 import { REGION_ALPHA, RegionsLayer } from './scene-regions';
 import { placeBadges, placeQueryLabel, type P } from './scene-labels';
 import { computeLayout, voteLabel, type Layout } from './scene-layout';
-import { tickFormat } from '../../core/plot/format';
+import { AxesLayer } from '../../core/plot/axes';
 import { TextMeasure } from '../../core/plot/text-measure';
 import { tr, type AnySel } from '../../core/plot/transition';
-import { FRAME, GRID, MARK, NAVY, TEXT, WHITE, r1, trianglePath } from '../../core/plot/marks';
+import { GRID, MARK, NAVY, TEXT, WHITE, r1, trianglePath } from '../../core/plot/marks';
 import { boundaryShape, lerpShape, shapePath, type Shape } from './scene-shapes';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -66,11 +66,7 @@ export function mountKnnScene(
   const clipId = `knn-clip-${++uid}`;
   const clipRect = svg.append('defs').append('clipPath').attr('id', clipId).append('rect');
   const gAxes = svg.append('g').attr('class', 'axes');
-  const frame = gAxes.append('rect').attr('class', 'frame').attr('fill', 'none').attr('stroke', FRAME);
-  const gx = gAxes.append('g').attr('class', 'axis x');
-  const gy = gAxes.append('g').attr('class', 'axis y');
-  const xTitle = gAxes.append('text').attr('class', 'axis-title x').attr('text-anchor', 'middle');
-  const yTitle = gAxes.append('text').attr('class', 'axis-title y').attr('text-anchor', 'middle');
+  const axes = new AxesLayer(gAxes);
   const hit = svg.append('rect').attr('class', 'hit').attr('fill', 'transparent').attr('pointer-events', 'all');
   const gClip = svg.append('g').attr('class', 'clipped').attr('clip-path', `url(#${clipId})`).attr('pointer-events', 'none');
   const gLines = gClip.append('g').attr('class', 'lines');
@@ -160,54 +156,9 @@ export function mountKnnScene(
 
   function drawAxes(v: KnnView, sc: Scales, L: Layout, ms: number): void {
     const { plot } = L;
-    const bottom = plot.top + plot.height;
-    const right = plot.left + plot.width;
-    const sk = `${v.space.dataset}${v.space.scaled}`;
     clipRect.attr('x', plot.left).attr('y', plot.top).attr('width', plot.width).attr('height', plot.height);
-    frame.attr('x', plot.left).attr('y', plot.top).attr('width', plot.width).attr('height', plot.height);
     hit.attr('x', plot.left).attr('y', plot.top).attr('width', plot.width).attr('height', plot.height);
-
-    const xt = sc.x.ticks(L.xTickCount);
-    const fx = tickFormat(xt);
-    const xs = gx.selectAll<SVGGElement, number>('g.tick').data(xt, (d) => `${sk}:${d}`).join(
-      (enter) => {
-        const g = enter.append('g').attr('class', 'tick').attr('opacity', 0)
-          .attr('transform', (d) => `translate(${r1(sc.x(d))},0)`);
-        g.append('line').attr('stroke', GRID);
-        g.append('text').attr('text-anchor', 'middle');
-        return g;
-      },
-      (update) => update,
-      (exit) => { tr(exit, 'axes', ms).attr('opacity', 0).remove(); },
-    );
-    xs.select('line').attr('y1', plot.top).attr('y2', bottom);
-    xs.select<SVGTextElement>('text').attr('y', r1(L.xTickY)).text((d) => fx(d));
-    tr(xs, 'axes', ms).attr('transform', (d) => `translate(${r1(sc.x(d))},0)`).attr('opacity', 1);
-
-    const yt = sc.y.ticks(L.yTickCount);
-    const fy = tickFormat(yt);
-    const ys = gy.selectAll<SVGGElement, number>('g.tick').data(yt, (d) => `${sk}:${d}`).join(
-      (enter) => {
-        const g = enter.append('g').attr('class', 'tick').attr('opacity', 0)
-          .attr('transform', (d) => `translate(0,${r1(sc.y(d))})`);
-        g.append('line').attr('stroke', GRID);
-        g.append('text').attr('text-anchor', 'end');
-        return g;
-      },
-      (update) => update,
-      (exit) => { tr(exit, 'axes', ms).attr('opacity', 0).remove(); },
-    );
-    ys.select('line').attr('x1', plot.left).attr('x2', right);
-    ys.select<SVGTextElement>('text').attr('x', r1(L.yTickX)).attr('dy', '0.35em').text((d) => fy(d));
-    tr(ys, 'axes', ms).attr('transform', (d) => `translate(0,${r1(sc.y(d))})`).attr('opacity', 1);
-
-    xTitle.attr('x', r1(L.xTitle.x)).attr('y', r1(L.xTitle.y)).text(L.xTitle.text);
-    yTitle.attr('transform', `translate(${r1(L.yTitle.x)},${r1(L.yTitle.y)}) rotate(-90)`);
-    const lines = L.yTitle.lines;
-    yTitle.selectAll('tspan').data(lines).join('tspan')
-      .attr('x', 0)
-      .attr('dy', (_, i) => (i === 0 ? `${r1(-(lines.length - 1) * 0.6)}em` : '1.2em'))
-      .text((d) => d);
+    axes.draw(sc, plot, L, ms, `${v.space.dataset}${v.space.scaled}`);
   }
 
   function drawLines(v: KnnView, sc: Scales, ms: number): void {
