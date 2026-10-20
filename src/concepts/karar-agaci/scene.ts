@@ -63,8 +63,8 @@ function computeLayout(w: number, h: number, mode: Mode, m: TextMeasure, treeW: 
   const pad = 10;
   const gap = Math.round(fonts.tick * 0.45);
   const ptR = mode === 'ders' ? 9 : 7;
-  // wide enough for the unlimited-depth tree (no sideways scrolling), within 34-45 %
-  const colW = Math.min(Math.round(w * 0.45), Math.max(Math.round(w * 0.34), Math.ceil(treeW) + COL_PAD));
+  // wide enough for the unlimited-depth tree (no sideways scrolling), within 34-50 %
+  const colW = Math.min(Math.round(w * 0.5), Math.max(Math.round(w * 0.34), Math.ceil(treeW) + COL_PAD));
   const leftW = w - colW;
   const curveH = Math.max(Math.round(h * 0.24), Math.round(fonts.axis * 1.3 + fonts.tick * 1.5 + 40));
   const scatterH = h - curveH;
