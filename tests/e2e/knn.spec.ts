@@ -56,6 +56,19 @@ test('ders keyboard walkthrough', async ({ page }) => {
   await expect(stepCount(page)).toHaveText('Adım 11 / 12');
 });
 
+test('ders: Escape closes params and the step keys work at once', async ({ page }) => {
+  await open(page, 'ders');
+  await page.locator('.params-toggle').click();
+  await page.locator('.params input[type=range]').first().focus();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.params')).toBeHidden();
+  await page.keyboard.press('ArrowRight');
+  await expect(stepCount(page)).toHaveText('Adım 2 / 12');
+  await page.keyboard.press(' ');
+  await expect(stepCount(page)).toHaveText('Adım 3 / 12');
+  await expect(page.locator('.params')).toBeHidden();
+});
+
 test('ders readability at 1280×720', async ({ page }, info) => {
   await open(page, 'ders');
   const measured: Record<string, Record<string, number[]>> = {};
