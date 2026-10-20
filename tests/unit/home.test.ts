@@ -16,17 +16,18 @@ describe('home page', () => {
     expect(concepts.length).toBe(20);
   });
 
-  it('only hazir cards are links and k-NN links to knn/', () => {
+  it('only hazir cards are links: karar-agaci/ and knn/', () => {
     const root = render();
     const links = [...root.querySelectorAll<HTMLAnchorElement>('a.card')];
-    expect(links.length).toBe(1);
-    expect(links[0].getAttribute('href')).toBe('knn/');
-    expect(links[0].textContent).toContain('k-En Yakın Komşu (k-NN)');
-    const ders = root.querySelector<HTMLAnchorElement>('a.card-ders');
+    expect(links.length).toBe(2);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['karar-agaci/', 'knn/']);
+    expect(links[1].textContent).toContain('k-En Yakın Komşu (k-NN)');
+    const ders = root.querySelector<HTMLAnchorElement>('a.card-ders[href="knn/?mod=ders"]');
     expect(ders?.getAttribute('href')).toBe('knn/?mod=ders');
     expect(ders?.textContent).toBe('Ders modunda aç');
     const soon = root.querySelectorAll('.card.yakinda');
-    expect(soon.length).toBe(concepts.length - 1);
+    expect(soon.length).toBe(18);
+    expect(concepts.length - links.length).toBe(18);
     soon.forEach((c) => {
       expect(c.tagName).not.toBe('A');
       expect(c.textContent).toContain('Yakında');

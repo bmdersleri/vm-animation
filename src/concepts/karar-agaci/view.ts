@@ -63,6 +63,9 @@ function lowest(points: SweepPoint[]): SweepPoint {
   return points.reduce((m, q) => (q.impurity < m.impurity - 1e-12 ? q : m));
 }
 
+/** Accuracy as the lesson shows it: "%70" or "%83,3". */
+export const pct = (x: number): string => `%${formatNumber(x * 100, 1)}`;
+
 const fmt = (x: number): string => formatNumber(x, Number.isInteger(x) ? 0 : 1);
 
 function forcedTree(split: Split): TreeNode {

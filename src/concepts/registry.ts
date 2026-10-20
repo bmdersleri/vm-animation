@@ -32,7 +32,14 @@ export const concepts: ConceptEntry[] = [
   soon('iqr-aykiri', 3, 'IQR ile aykırı değer'),
   soon('olcekleme', 3, 'Ölçekleme'),
   soon('pca', 4, 'PCA'),
-  soon('karar-agaci', 5, 'Karar ağacı (Gini/Entropi)'),
+  {
+    id: 'karar-agaci',
+    chapter: 5,
+    chapterTitle: CH[5],
+    title: 'Karar ağacı (Gini/Entropi)',
+    status: 'hazir',
+    href: 'karar-agaci/',
+  },
   {
     id: 'knn',
     chapter: 5,

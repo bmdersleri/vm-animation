@@ -8,13 +8,12 @@ import { AxesLayer, type AxesSpec } from '../../core/plot/axes';
 import { GridLayer, type GridSize } from '../../core/plot/grid-layer';
 import { TextMeasure, type Fonts } from '../../core/plot/text-measure';
 import { tr, type AnySel } from '../../core/plot/transition';
-import { formatNumber } from '../../core/plot/format';
 import { MARK, NAVY, TEXT, WHITE, r1, trianglePath } from '../../core/plot/marks';
 import { buildTree, predict, toSamples, type TreeNode } from './cart';
 import type { Criterion } from './impurity';
 import { DOMAIN, FEATURES, test, train, type Row } from './data';
 import type { TreeParams } from './scenario';
-import { deriveTreeView, type TreeView } from './view';
+import { deriveTreeView, pct, type TreeView } from './view';
 import { CardsLayer } from './scene-cards';
 import { TreeLayer, TREE_T } from './scene-tree';
 import {
@@ -142,8 +141,6 @@ function fullTree(k: Criterion): TreeNode {
   }
   return t;
 }
-
-const pct = (x: number): string => `%${formatNumber(x * 100, 1)}`;
 
 function onlyUserSplitChanged(a: TreeParams, b: TreeParams): boolean {
   for (const k of Object.keys(b) as (keyof TreeParams)[]) if (k !== 'userSplit' && a[k] !== b[k]) return false;
