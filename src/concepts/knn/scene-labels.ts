@@ -11,9 +11,27 @@ export interface Circle extends P { r: number }
  * point facing away from the query (so the query diamond, drawn on top, never
  * hides a rank), then a few relaxation passes push overlapping badges apart,
  * out of the diamond and off the other neighbour points (radius `ptR`) while
- * keeping each badge next to its own point.
+ * keeping each badge next to its own point. Badges never stacking wins over
+ * avoiding points: in a cluster too dense for both, the points are ignored.
  */
 export function placeBadges(points: P[], q: P, off: number, badgeR: number, queryHalf: number, ptR = 0): P[] {
+  const out = relax(points, q, off, badgeR, queryHalf, ptR);
+  if (ptR <= 0) return out;
+  const n = badgeOverlaps(out, badgeR);
+  if (n === 0) return out;
+  const plain = relax(points, q, off, badgeR, queryHalf, 0);
+  return badgeOverlaps(plain, badgeR) < n ? plain : out;
+}
+
+function badgeOverlaps(out: P[], badgeR: number): number {
+  let n = 0;
+  for (let i = 0; i < out.length; i++) {
+    for (let j = i + 1; j < out.length; j++) if (Math.hypot(out[i].x - out[j].x, out[i].y - out[j].y) < 2 * badgeR) n++;
+  }
+  return n;
+}
+
+function relax(points: P[], q: P, off: number, badgeR: number, queryHalf: number, ptR: number): P[] {
   const out = points.map((p) => {
     let dx = p.x - q.x;
     let dy = p.y - q.y;

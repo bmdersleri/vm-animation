@@ -7,6 +7,11 @@ describe('placeBadges', () => {
   const R = 13;
   const off = (9 * 0.7 + R * 0.75) * Math.SQRT2;
   const q = { x: 200, y: 200 };
+  const badgeOverlaps = (out: { x: number; y: number }[]): number => {
+    let n = 0;
+    for (let i = 0; i < out.length; i++) for (let j = i + 1; j < out.length; j++) if (dist(out[i], out[j]) < 2 * R - 0.5) n++;
+    return n;
+  };
 
   it('puts a lone badge on the far side of its point, off the query', () => {
     const p = { x: 230, y: 200 };
@@ -64,6 +69,15 @@ describe('placeBadges', () => {
     let covered = 0;
     out.forEach((bd, i) => pts.forEach((p, j) => { if (j !== i && dist(bd, p) < ptR + R - 0.5) covered++; }));
     expect(covered).toBe(0);
+    expect(badgeOverlaps(out)).toBe(0);
+  });
+
+  it('avoiding points never stacks rank badges (toplam, bottom-left cluster, k = 15)', () => {
+    // real neighbours from a 600x430 plot, where the point push used to win over badge separation
+    const pts = [[121, 418], [121, 415], [137, 420], [168, 371], [215, 363], [215, 336], [255, 393], [247, 371],
+      [223, 339], [239, 350], [255, 359], [262, 369], [262, 364], [247, 336], [294, 342]].map(([x, y]) => ({ x, y }));
+    const out = placeBadges(pts, { x: 110, y: 450 }, off, R, 14.4, 9);
+    expect(badgeOverlaps(out)).toBe(0);
   });
 });
 
