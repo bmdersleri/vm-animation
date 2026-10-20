@@ -6,6 +6,7 @@ import { mountKnnScene } from '../../src/concepts/knn/scene';
 import { deriveKnnView } from '../../src/concepts/knn/view';
 import { customers, type RawPoint } from '../../src/concepts/knn/data';
 import { featureSpace } from '../../src/concepts/knn/space';
+import { RegionsLayer, REGION_ALPHA } from '../../src/concepts/knn/scene-regions';
 
 type Handle = ReturnType<typeof mountKnnScene>;
 let cleanup: (() => void)[] = [];
@@ -403,5 +404,47 @@ describe('mountKnnScene', () => {
     expect(v.x[1]).toBeGreaterThanOrEqual(d.x[1]);
     expect(v.y[0]).toBeLessThanOrEqual(d.y[0]);
     expect(v.y[1]).toBeGreaterThanOrEqual(d.y[1]);
+  });
+});
+
+describe('RegionsLayer alpha', () => {
+  it('ders tint is stronger; an alpha change repaints the cached grid without recomputing', () => {
+    vi.restoreAllMocks();
+    const calls = { draws: 0, alpha: [] as number[] };
+    const ctx = {
+      imageSmoothingEnabled: true,
+      setTransform: () => {}, clearRect: () => {},
+      putImageData: (img: ImageData) => { calls.alpha.push(img.data[3]); },
+      drawImage: () => { calls.draws++; },
+      createImageData: (w: number, h: number) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }),
+    };
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
+    expect(REGION_ALPHA.ders).toBeGreaterThanOrEqual(0.2);
+    expect(REGION_ALPHA.lab).toBe(0.12);
+    const layer = new RegionsLayer(document.createElement('canvas'), REGION_ALPHA.lab);
+    layer.resize(400, 300);
+    const player = new StepPlayer(knnScenario);
+    player.goto(5);
+    const v = deriveKnnView(5, player.state.params);
+    const plot = { left: 10, top: 10, width: 300, height: 200 };
+    const scales = {
+      x: { domain: () => v.space.domain.x }, y: { domain: () => v.space.domain.y },
+    } as unknown as Parameters<RegionsLayer['update']>[1];
+    const measures = () => performance.getEntriesByName('regions').length;
+    const m0 = measures();
+    layer.update(v, scales, plot);
+    expect(calls.draws).toBe(1);
+    expect(measures()).toBe(m0 + 1);
+    expect(calls.alpha.at(-1)).toBe(Math.round(REGION_ALPHA.lab * 255));
+    layer.update(v, scales, plot); // same inputs: nothing to do
+    expect(calls.draws).toBe(1);
+    layer.setAlpha(REGION_ALPHA.ders);
+    layer.update(v, scales, plot); // repaint from the cached grid only
+    expect(calls.draws).toBe(2);
+    expect(measures()).toBe(m0 + 1);
+    expect(calls.alpha.at(-1)).toBe(Math.round(REGION_ALPHA.ders * 255));
+    layer.update(v, scales, plot);
+    expect(calls.draws).toBe(2);
+    player.destroy();
   });
 });

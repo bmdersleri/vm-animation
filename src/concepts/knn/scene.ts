@@ -10,7 +10,7 @@ import type { KnnParams } from './scenario';
 import type { FeatureSpace } from './space';
 import { deriveKnnView, type KnnView } from './view';
 import { fitViewport, type Domain, type Scales } from './viewport';
-import { RegionsLayer } from './scene-regions';
+import { REGION_ALPHA, RegionsLayer } from './scene-regions';
 import { placeBadges, placeQueryLabel, type P } from './scene-labels';
 import { computeLayout, TextMeasure, tickFormat, voteLabel, type Layout } from './scene-layout';
 import {
@@ -70,7 +70,7 @@ export function mountKnnScene(
   svgEl.setAttribute('aria-label', 'k-NN saçılım grafiği');
   el.append(canvas, svgEl);
 
-  const regions = new RegionsLayer(canvas);
+  const regions = new RegionsLayer(canvas, REGION_ALPHA[initialMode]);
   const svg = select(svgEl);
   const clipId = `knn-clip-${++uid}`;
   const clipRect = svg.append('defs').append('clipPath').attr('id', clipId).append('rect');
@@ -481,6 +481,7 @@ export function mountKnnScene(
       if (m === mode) return;
       mode = m;
       layoutKey = '';
+      regions.setAlpha(REGION_ALPHA[m]);
       if (size) render(player.state, 'step', true);
     },
     destroy(): void {
