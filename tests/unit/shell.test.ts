@@ -58,7 +58,7 @@ function setup(search = '') {
     scenario: {
       defaults: { k: 5 },
       steps: [
-        { id: 'a', title: 'Birinci', text: 'Bir metni' },
+        { id: 'a', title: 'Birinci', text: 'Bir metni', term: 'tembel öğrenme (lazy learning)' },
         { id: 'b', title: 'İkinci', text: 'İki metni' },
         { id: 'c', title: 'Üçüncü', text: 'Üç metni' },
       ],
@@ -257,6 +257,18 @@ describe('shell', () => {
     q<HTMLButtonElement>('[data-mode-btn=lab]').click();
     expect(q('.step-text').hidden).toBe(false);
     expect(q('.explain-extra').hidden).toBe(false);
+  });
+
+  it('Ders shows the step term beside the title; Lab leaves it to the step text', () => {
+    const { player, q } = setup('?mod=ders');
+    expect(q('.explain .step-term').textContent).toBe('tembel öğrenme (lazy learning)');
+    expect(q('.step-term').hidden).toBe(false);
+    player.next(); // step without a term
+    expect(q('.step-term').hidden).toBe(true);
+    player.prev();
+    expect(q('.step-term').hidden).toBe(false);
+    q<HTMLButtonElement>('[data-mode-btn=lab]').click();
+    expect(q('.step-term').hidden).toBe(true);
   });
 
   it('help lists extra shortcuts', () => {

@@ -102,6 +102,7 @@ test('ders readability at 1280×720', async ({ page }, info) => {
       '.axis-title': await fontSizes(page, '.axis-title'),
       '.tick text': await fontSizes(page, '.tick text'),
       '.step-text': await fontSizes(page, '.step-text'),
+      '.step-term': await fontSizes(page, '.step-term'),
       // other plot labels share the tick size
       'labels': await fontSizes(page, '.vote-label, .query-label, .rank text'),
     };
@@ -112,7 +113,8 @@ test('ders readability at 1280×720', async ({ page }, info) => {
     if (step >= 4) expect(m['.prediction'].length, 'prediction shown').toBeGreaterThan(0);
     for (const fs of [...m['.step-title'], ...m['.prediction']]) expect(fs).toBeGreaterThanOrEqual(32);
     for (const fs of [...m['.axis-title'], ...m['.tick text'], ...m.labels]) expect(fs).toBeGreaterThanOrEqual(18);
-    for (const fs of m['.step-text']) expect(fs).toBeGreaterThanOrEqual(22);
+    if (step === 0) expect(m['.step-term'].length, 'English term shown').toBeGreaterThan(0);
+    for (const fs of [...m['.step-text'], ...m['.step-term']]) expect(fs).toBeGreaterThanOrEqual(22);
   }
   const summary = Object.fromEntries(Object.entries(measured).map(([k, m]) => [
     k, Object.fromEntries(Object.entries(m).map(([sel, xs]) => [sel, xs.length ? Math.min(...xs) : null])),

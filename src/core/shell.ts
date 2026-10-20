@@ -93,9 +93,11 @@ export function mountConceptPage<P extends object>(
   const stage = h('div', { class: 'stage', tabindex: '-1' });
   const params = h('section', { class: 'params', id: `${id}-params`, 'aria-label': 'Parametreler' });
   const stepTitle = h('h2', { class: 'step-title', 'aria-live': 'polite' });
+  // Ders hides the step text, so the step's new term rides next to the title instead
+  const stepTerm = h('p', { class: 'step-term' });
   const stepText = h('p', { class: 'step-text' });
   const extra = h('div', { class: 'explain-extra' });
-  const explain = h('section', { class: 'explain', 'aria-label': 'Adım açıklaması' }, stepTitle, stepText, extra);
+  const explain = h('section', { class: 'explain', 'aria-label': 'Adım açıklaması' }, stepTitle, stepTerm, stepText, extra);
   // explain first: in Lab the step text and distance table must be visible without
   // scrolling (params follow); in Ders params is an overlay, so order does not show
   const workspace = h('main', { class: 'workspace' }, stage, h('div', { class: 'side' }, explain, params));
@@ -164,6 +166,7 @@ export function mountConceptPage<P extends object>(
   root.replaceChildren(topBar, workspace, playerBar, help);
 
   // ---- state rendering ----
+  const showTerm = (): void => { stepTerm.hidden = mode !== 'ders' || !stepTerm.textContent; };
   let shownIndex = -1;
   let shownPlaying: boolean | null = null;
   const render = (s: PlayerState<P>): void => {
@@ -174,6 +177,8 @@ export function mountConceptPage<P extends object>(
       stepCount.textContent = `Adım ${s.index + 1} / ${s.count}`;
       stepTitle.textContent = s.step.title;
       stepText.textContent = s.step.text;
+      stepTerm.textContent = s.step.term ?? '';
+      showTerm();
       prevBtn.disabled = s.index === 0;
       nextBtn.disabled = s.index === s.count - 1;
       shownIndex = s.index;
@@ -196,6 +201,7 @@ export function mountConceptPage<P extends object>(
     paramsToggle.setAttribute('aria-expanded', String(paramsOpen));
     params.hidden = ders && !paramsOpen;
     stepText.hidden = ders;
+    showTerm();
     extra.hidden = ders;
   };
   applyMode();

@@ -36,6 +36,17 @@ describe('knnScenario', () => {
     expect(text('toplam')).toContain('Ölçekleme (feature scaling)');
   });
 
+  it('every English term in a step text is also its Ders term', () => {
+    let n = 0;
+    for (const s of knnScenario.steps) {
+      for (const [, en] of s.text.matchAll(/\(([A-Za-z][A-Za-z ]*)\)/g)) {
+        n++;
+        expect(s.term, s.id).toContain(en);
+      }
+    }
+    expect(n).toBe(5);
+  });
+
   it('explanation steps hide regions, demo steps show them', () => {
     for (let i = 0; i < 5; i++) expect(at(i).regions).toBe(false);
     for (let i = 5; i < 12; i++) expect(at(i).regions).toBe(true);

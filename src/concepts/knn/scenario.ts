@@ -33,6 +33,7 @@ export const knnScenario: Scenario<KnnParams> = {
       id: 'veri',
       title: 'Eğitim verisi',
       text: 'Her nokta bir müşteri. k-NN eğitimde hiçbir şey öğrenmez; veriyi yalnızca saklar: tembel öğrenme (lazy learning).',
+      term: 'tembel öğrenme (lazy learning)',
       params: { regions: false },
     },
     {
@@ -49,6 +50,7 @@ export const knnScenario: Scenario<KnnParams> = {
       id: 'komsu',
       title: 'En yakın k komşuyu seç',
       text: 'Uzaklıklar küçükten büyüğe sıralanır; ilk k müşteri en yakın komşudur (nearest neighbor).',
+      term: 'en yakın komşu (nearest neighbor)',
     },
     {
       id: 'oylama',
@@ -59,6 +61,7 @@ export const knnScenario: Scenario<KnnParams> = {
       id: 'k1',
       title: 'k = 1: tek komşu',
       text: "Arka plan karar bölgelerini (decision regions), yani her bölgeye verilecek tahmini gösteriyor. k = 1'de sınır tırtıklı: tek bir müşteri bile kararı değiştirir.",
+      term: 'karar bölgeleri (decision regions)',
       params: {
         dataset: 'aylik', scaled: true, metric: 'oklid', weighting: 'esit',
         k: 1, regions: true, query: demo.kSwallow,
@@ -81,6 +84,7 @@ export const knnScenario: Scenario<KnnParams> = {
       id: 'oklid',
       title: 'Komşuluk: Öklid',
       text: 'Öklid (Euclidean) uzaklığında komşuluk bir dairedir (kuş uçuşu).',
+      term: 'Öklid uzaklığı (Euclidean distance)',
       params: { dataset: 'aylik', scaled: true, metric: 'oklid', weighting: 'esit', k: 5, query: demo.metricSplit },
     },
     {
@@ -93,6 +97,7 @@ export const knnScenario: Scenario<KnnParams> = {
       id: 'toplam',
       title: 'Toplam fatura, ölçekli',
       text: 'Dikey eksen artık toplam fatura (kısmen süre × aylık faturadan türer). Ölçekleme (feature scaling) açık: iki öznitelik eşit söz sahibi.',
+      term: 'ölçekleme (feature scaling)',
       params: { dataset: 'toplam', scaled: true, metric: 'oklid', weighting: 'esit', k: 5, query: demo.scaleSplit },
     },
     {

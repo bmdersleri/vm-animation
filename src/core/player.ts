@@ -2,6 +2,8 @@ export interface Step<P> {
   id: string;
   title: string;
   text: string;
+  /** Term introduced by this step, e.g. "tembel öğrenme (lazy learning)"; Ders shows it beside the title. */
+  term?: string;
   params?: Partial<P>;
   sweep?: { key: keyof P; values: unknown[]; intervalMs: number };
 }
