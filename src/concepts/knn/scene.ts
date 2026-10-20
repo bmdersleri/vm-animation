@@ -300,7 +300,7 @@ export function mountKnnScene(
     const at = v.neighbors.map((n): P => ({ x: sc.x(pts[n.index].x), y: sc.y(pts[n.index].y) }));
     const q = { x: sc.x(v.query.x), y: sc.y(v.query.y) };
     const off = (L.ptR * 0.7 + L.badgeR * 0.75) * Math.SQRT2;
-    const pos = placeBadges(at, q, off, L.badgeR, (L.querySide * Math.SQRT2) / 2);
+    const pos = placeBadges(at, q, off, L.badgeR, (L.querySide * Math.SQRT2) / 2, L.ptR);
     return v.neighbors.map((n, r) => ({ r: r + 1, i: n.index, x: pos[r].x, y: pos[r].y }));
   }
 

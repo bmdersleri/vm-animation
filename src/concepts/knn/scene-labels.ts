@@ -9,10 +9,11 @@ export interface Circle extends P { r: number }
 /**
  * Badge centres for the k neighbours. Each badge starts on the side of its
  * point facing away from the query (so the query diamond, drawn on top, never
- * hides a rank), then a few relaxation passes push overlapping badges apart
- * and out of the diamond while keeping each badge next to its own point.
+ * hides a rank), then a few relaxation passes push overlapping badges apart,
+ * out of the diamond and off the other neighbour points (radius `ptR`) while
+ * keeping each badge next to its own point.
  */
-export function placeBadges(points: P[], q: P, off: number, badgeR: number, queryHalf: number): P[] {
+export function placeBadges(points: P[], q: P, off: number, badgeR: number, queryHalf: number, ptR = 0): P[] {
   const out = points.map((p) => {
     let dx = p.x - q.x;
     let dy = p.y - q.y;
@@ -22,6 +23,7 @@ export function placeBadges(points: P[], q: P, off: number, badgeR: number, quer
   });
   const minGap = 2 * badgeR + 2;
   const minQ = queryHalf + badgeR + 2;
+  const minP = ptR + badgeR + 1;
   const maxOff = off + badgeR;
   const minOff = off * 0.85;
   for (let it = 0; it < 24; it++) {
@@ -46,6 +48,21 @@ export function placeBadges(points: P[], q: P, off: number, badgeR: number, quer
     for (let i = 0; i < out.length; i++) {
       const b = out[i];
       const p = points[i];
+      // off the other neighbour points (a point on top of this one cannot be avoided)
+      if (ptR > 0) {
+        for (let j = 0; j < points.length; j++) {
+          const o = points[j];
+          if (j === i || Math.hypot(o.x - p.x, o.y - p.y) < 1e-6) continue;
+          let ox = b.x - o.x;
+          let oy = b.y - o.y;
+          let od = Math.hypot(ox, oy);
+          if (od >= minP) continue;
+          if (od < 1e-6) [ox, oy, od] = [p.y - o.y, o.x - p.x, Math.hypot(o.x - p.x, o.y - p.y)]; // dead centre: step sideways
+          b.x = o.x + (ox / od) * minP;
+          b.y = o.y + (oy / od) * minP;
+          moved = true;
+        }
+      }
       // out of the query diamond
       const qd = Math.hypot(b.x - q.x, b.y - q.y);
       if (qd < minQ && qd > 1e-6) {

@@ -34,6 +34,37 @@ describe('placeBadges', () => {
     expect(overlaps).toBe(0);
     out.forEach((b, i) => expect(dist(b, pts[i])).toBeLessThanOrEqual(off + R + 1e-6));
   });
+
+  it('a badge does not cover another neighbour point sitting on its far side', () => {
+    const ptR = 9;
+    const a = { x: 230, y: 200 };
+    const b = { x: 253, y: 203 }; // where a's badge would start
+    const [ba] = placeBadges([a, b], q, off, R, 14.4, ptR);
+    expect(dist(ba, b)).toBeGreaterThanOrEqual(ptR + R);
+    expect(dist(ba, a)).toBeLessThanOrEqual(off + R + 1e-6);
+    expect(dist(ba, q) - R).toBeGreaterThan(14.4);
+  });
+
+  it('a neighbour point exactly at the badge start still pushes the badge off it', () => {
+    const ptR = 9;
+    const a = { x: 230, y: 200 };
+    const b = { x: 230 + off, y: 200 };
+    const [ba] = placeBadges([a, b], q, off, R, 14.4, ptR);
+    expect(Number.isFinite(ba.x) && Number.isFinite(ba.y)).toBe(true);
+    expect(dist(ba, b)).toBeGreaterThanOrEqual(ptR + R);
+  });
+
+  it('a dense cluster of 15: no badge covers another neighbour point', () => {
+    const ptR = 9;
+    const pts = Array.from({ length: 15 }, (_, i) => ({
+      x: 200 + 40 * Math.cos(i * 2.4) * (1 + (i % 3) * 0.5),
+      y: 200 + 40 * Math.sin(i * 2.4) * (1 + (i % 3) * 0.5),
+    }));
+    const out = placeBadges(pts, q, off, R, 14.4, ptR);
+    let covered = 0;
+    out.forEach((bd, i) => pts.forEach((p, j) => { if (j !== i && dist(bd, p) < ptR + R - 0.5) covered++; }));
+    expect(covered).toBe(0);
+  });
 });
 
 describe('placeQueryLabel', () => {
