@@ -18,39 +18,58 @@ export function clampToDomain(v: Vec, domain: FeatureSpace['domain']): Vec {
 
 /** Index of step 5 (vote and prediction): the step a live drag runs at. */
 const VOTE_STEP = 4;
+/** Fraction of the domain span (per axis) a press must travel to become a drag. */
+const DRAG_DEAD_ZONE = 0.015;
 
 /**
  * Lab click / drag on the plot. The scene reports hover moves without a
  * prior 'down' and may report 'up' at bogus coordinates (pointercancel), so
  * the drag state lives here: only moves between 'down' and 'up' count, and
- * 'up' never moves the query. `isLab` is read at event time because the mode
- * can change while the page is open.
+ * 'up' never moves the query. A move becomes a drag only after the pointer
+ * has travelled more than DRAG_DEAD_ZONE of the domain span from the down
+ * point, so a click that wobbles still restarts at step 2 (or 5). `isLab` is
+ * read at event time because the mode can change while the page is open.
  */
 export function createLabPointer(
   p: StepPlayer<KnnParams>, isLab: () => boolean,
 ): (raw: RawPoint, kind: PointerKind) => void {
+  let pressed: Vec | null = null; // clamped down point in space units
   let dragging = false;
-  const clamped = (raw: RawPoint): RawPoint => {
-    const { dataset, scaled } = p.state.params;
-    const space = featureSpace(dataset, scaled);
-    return space.toRaw(clampToDomain(space.toSpace(raw), space.domain));
+  const space = (): FeatureSpace => featureSpace(p.state.params.dataset, p.state.params.scaled);
+  const clamped = (raw: RawPoint, s: FeatureSpace): Vec => clampToDomain(s.toSpace(raw), s.domain);
+  const end = (): void => {
+    pressed = null;
+    dragging = false;
   };
   return (raw, kind) => {
     if (!isLab()) {
-      dragging = false;
+      end();
       return;
     }
     if (kind === 'down') {
-      dragging = true;
-      const instant = p.state.params.instant;
-      p.setParam('query', clamped(raw));
+      const s = space();
+      const at = clamped(raw, s);
+      pressed = at;
+      dragging = false;
+      const { instant, dataset, scaled } = p.state.params;
+      // Pin the plot the user clicked on: restarting at step 2 must not swap
+      // the dataset or scaling under the new query (e.g. a click on step 12).
+      p.setParams({ query: s.toRaw(at), dataset, scaled });
       p.goto(instant ? VOTE_STEP : 1);
     } else if (kind === 'move') {
-      if (!dragging) return;
+      if (!pressed) return;
+      const s = space();
+      const at = clamped(raw, s);
+      if (!dragging) {
+        const { x, y } = s.domain;
+        const travel = Math.max(Math.abs(at.x - pressed.x) / (x[1] - x[0]), Math.abs(at.y - pressed.y) / (y[1] - y[0]));
+        if (travel <= DRAG_DEAD_ZONE) return;
+        dragging = true;
+      }
       if (p.state.index < VOTE_STEP) p.goto(VOTE_STEP);
-      p.setParam('query', clamped(raw));
+      p.setParam('query', s.toRaw(at));
     } else {
-      dragging = false;
+      end();
     }
   };
 }

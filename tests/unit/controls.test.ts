@@ -219,6 +219,15 @@ describe('mountKnnTable', () => {
     const el = host();
     const p = player();
     mountKnnTable(el, p);
+    p.goto(2);
+    p.setParam('weighting', 'agirlikli');
+    expect(headers(el)).not.toContain('Ağırlık'); // step 3: no neighbours, no weights yet
+    expect(rows(el)[0].querySelectorAll('td')).toHaveLength(4);
+    p.goto(3);
+    p.setParam('weighting', 'agirlikli');
+    expect(headers(el)).toContain('Ağırlık');
+    expect(rows(el)[0].querySelectorAll('td')).toHaveLength(5);
+    p.setParam('weighting', 'esit');
     p.goto(4);
     expect(headers(el)).not.toContain('Ağırlık');
     expect(rows(el)[0].querySelectorAll('td')).toHaveLength(4);
@@ -294,6 +303,16 @@ describe('createLabPointer', () => {
     near(p.state.params.query, inside);
   });
 
+  it('down on a later step keeps the visible dataset and scaling', () => {
+    const { p, handle } = setup();
+    p.goto(11); // Toplam fatura, unscaled
+    const click: RawPoint = { tenure: 30, value: 3000 };
+    handle(click, 'down');
+    expect(p.state.index).toBe(1);
+    expect(p.state.params).toMatchObject({ dataset: 'toplam', scaled: false });
+    near(p.state.params.query, click);
+  });
+
   it('down clamps a point beyond the domain to its edges', () => {
     const { p, handle } = setup();
     handle({ tenure: -500, value: 1e6 }, 'down');
@@ -332,6 +351,33 @@ describe('createLabPointer', () => {
     p.goto(6 + 2); // e.g. teacher moved on; drag must not pull the step back
     handle({ tenure: 25, value: 70 }, 'move');
     expect(p.state.index).toBe(8);
+  });
+
+  it('a tiny move after down is not a drag (click with wobble)', () => {
+    const { p, handle } = setup();
+    handle(inside, 'down');
+    const s = featureSpace('aylik', true);
+    const at = s.toSpace(inside);
+    const { x, y } = s.domain;
+    const wobble = s.toRaw({ x: at.x + 0.01 * (x[1] - x[0]), y: at.y - 0.01 * (y[1] - y[0]) });
+    handle(wobble, 'move');
+    handle(wobble, 'up');
+    expect(p.state.index).toBe(1);
+    near(p.state.params.query, inside);
+  });
+
+  it('a large move after down becomes a drag and keeps dragging without a dead zone', () => {
+    const { p, handle } = setup();
+    handle(inside, 'down');
+    const s = featureSpace('aylik', true);
+    const at = s.toSpace(inside);
+    const far = s.toRaw({ x: at.x + 0.02 * (s.domain.x[1] - s.domain.x[0]), y: at.y });
+    handle(far, 'move');
+    expect(p.state.index).toBe(4);
+    near(p.state.params.query, far);
+    const tiny = s.toRaw({ x: at.x + 0.021 * (s.domain.x[1] - s.domain.x[0]), y: at.y });
+    handle(tiny, 'move'); // once dragging, every move counts
+    near(p.state.params.query, tiny);
   });
 
   it('up does not move the query and ends the drag', () => {

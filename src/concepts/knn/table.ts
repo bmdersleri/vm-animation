@@ -41,8 +41,9 @@ export function mountKnnTable(host: HTMLElement, p: StepPlayer<KnnParams>): void
     hint.hidden = ready;
     scroll.hidden = !ready;
     if (!ready) return;
-    const weighted = view.weighting === 'agirlikli';
     const marked = view.phase >= 3;
+    // Weights belong to the selected neighbours, so they appear with them (step 4).
+    const weighted = marked && view.weighting === 'agirlikli';
     let html = '<thead><tr><th scope="col">#</th><th scope="col">Müşteri</th><th scope="col">Sınıf</th>'
       + `<th scope="col">Uzaklık</th>${weighted ? '<th scope="col">Ağırlık</th>' : ''}</tr></thead><tbody>`;
     view.distances.forEach((n, i) => {
