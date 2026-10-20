@@ -286,29 +286,36 @@ body {
 }
 
 /* ---------- Ders: stage fills the screen, title band below it ---------- */
+/* The open params panel takes its own column instead of floating over the
+   scene: the stage narrows and the scene re-lays out, so nothing is covered. */
 [data-mode="ders"] .workspace {
+  grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: minmax(0, 1fr) auto;
 }
 [data-mode="ders"] .side {
-  /* second grid row: only the explain band stays in flow (params is an
-     overlay), so the title never covers the scene's own bottom area */
-  min-width: 0;
+  display: contents;
+}
+[data-mode="ders"] .stage {
+  grid-column: 1;
+  grid-row: 1;
 }
 [data-mode="ders"] .explain {
+  grid-column: 1 / -1;
+  grid-row: 2;
   border: 0;
   border-top: 1px solid var(--line);
   border-radius: 0;
   padding: 6px 20px;
 }
 [data-mode="ders"] .params {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  bottom: 12px;
-  z-index: 10;
+  grid-column: 2;
+  grid-row: 1;
+  min-height: 0;
   width: min(440px, 45vw);
   overflow: auto;
-  box-shadow: 0 8px 28px rgba(20, 54, 92, 0.3);
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
 }
 [data-mode="ders"] .params-toggle[aria-expanded="true"] {
   background: var(--navy);

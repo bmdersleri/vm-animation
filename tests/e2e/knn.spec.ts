@@ -69,6 +69,28 @@ test('ders: Escape closes params and the step keys work at once', async ({ page 
   await expect(page.locator('.params')).toBeHidden();
 });
 
+test('ders: the open params panel covers no part of the scene', async ({ page }) => {
+  await open(page, 'ders');
+  await gotoStep(page, 4);
+  await page.locator('.params-toggle').click();
+  await expect(page.locator('.params')).toBeVisible();
+  await page.waitForTimeout(1000);
+  const r = await page.evaluate(() => {
+    const box = (el: Element) => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+    return {
+      params: box(document.querySelector('.params')!),
+      stage: box(document.querySelector('.stage')!),
+      marks: [...document.querySelectorAll('svg.plot :is(g.vote, g.prediction, .query-label, .axis-title, g.q, g.rank)')].map(box),
+    };
+  });
+  expect(r.marks.length).toBeGreaterThan(0);
+  expect(r.stage.r).toBeLessThanOrEqual(r.params.l + 1);
+  for (const m of r.marks) {
+    expect(m.r <= r.params.l || m.l >= r.params.r || m.b <= r.params.t || m.t >= r.params.b, JSON.stringify(m)).toBe(true);
+    expect(m.r).toBeLessThanOrEqual(r.stage.r + 1);
+  }
+});
+
 test('ders readability at 1280×720', async ({ page }, info) => {
   await open(page, 'ders');
   const measured: Record<string, Record<string, number[]>> = {};
