@@ -74,8 +74,9 @@ const testSamples = toSamples(test);
 const AXIS_NAMES = ['Sözleşme', 'Şikâyet'] as const;
 /** Tennis root: 9 evet / 5 hayır. */
 const TENNIS_ROOT: Counts = [9, 5];
-/** Step index of the root's best-threshold race, and the last step a Lab drag can set userSplit. */
+/** Step index of the root's best-threshold race (two candidate cards). */
 const ESIK_STEP = 8;
+/** Last step index whose root threshold a Lab drag can set (main.ts, scene-scan.ts DRAG_STEPS). */
 const LAST_DRAG_STEP = 8;
 /** Book example in codebase order: index 0 = kaldı, index 1 = ayrıldı. */
 const BOOK_ROOT: Counts = [60, 40];
