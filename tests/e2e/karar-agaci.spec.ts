@@ -36,6 +36,7 @@ test('ders readability at 1280×720', async ({ page }, info) => {
     if (step > 0) await gotoStep(page, step, STEPS, step === 10 ? SWEEP_DONE_MS : 1500);
     const m: Record<string, number[]> = {
       '.card *': await fontSizes(page, '.card *'),
+      '.root-row *': await fontSizes(page, '.root-row *'),
       '.formula': await fontSizes(page, '.formula'),
       '.axis-title': await fontSizes(page, '.axis-title'),
       '.tick text': await fontSizes(page, '.tick text'),
@@ -45,13 +46,16 @@ test('ders readability at 1280×720', async ({ page }, info) => {
     if (step <= 5 || step === 8 || step === 11) {
       expect(m['.card *'].length, `step ${step + 1}: cards shown`).toBeGreaterThan(0);
     }
-    if ((step >= 2 && step <= 5) || step === 8 || step === 11) expect(m['.formula'].length, `step ${step + 1}: formula shown`).toBeGreaterThan(0);
+    // from step 2 on, parts 1 and 3 show the root (bar + impurity); step 2's strip is the root formula
+    const rootShown = (step >= 1 && step <= 5) || step === 11;
+    expect(m['.root-row *'].length > 0, `step ${step + 1}: root row shown`).toBe(rootShown);
+    if ((step >= 1 && step <= 5) || step === 8 || step === 11) expect(m['.formula'].length, `step ${step + 1}: formula shown`).toBeGreaterThan(0);
     if (part2) {
       expect(m['.axis-title'].length, `step ${step + 1}: axis titles`).toBeGreaterThan(0);
       expect(m['.tick text'].length, `step ${step + 1}: ticks`).toBeGreaterThan(0);
       expect(m['.node text'].length, `step ${step + 1}: tree nodes`).toBeGreaterThan(0);
     }
-    for (const fs of [...m['.card *'], ...m['.formula']]) expect(fs, `step ${step + 1} card/formula`).toBeGreaterThanOrEqual(22);
+    for (const fs of [...m['.card *'], ...m['.root-row *'], ...m['.formula']]) expect(fs, `step ${step + 1} card/root/formula`).toBeGreaterThanOrEqual(22);
     for (const sel of ['.axis-title', '.tick text', '.node text']) {
       for (const fs of m[sel]) expect(fs, `step ${step + 1} ${sel}`).toBeGreaterThanOrEqual(18);
     }
@@ -67,7 +71,7 @@ function sceneBoxes(page: Page) {
     const box = (el: Element) => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
     const sel = [
       'svg.tree-plot :is(.axis-title, .legend)',
-      '.card', '.formula', '.cards-legend',
+      '.card', '.root-row', '.formula', '.cards-legend',
       '.tree-col', '.tree-col .node', '.tree-col .tree-acc',
     ].join(', ');
     const col = document.querySelector('.tree-col') as HTMLElement | null;
@@ -164,6 +168,33 @@ test('lab threshold drag changes leaf counts', async ({ page }) => {
   const moved = await lineBox(page, 'line.scan');
   expect(moved.vertical).toBe(true);
   expect(Math.abs(moved.x - to.x)).toBeLessThanOrEqual(2);
+  // the student's split and its weighted Gini sit beside the tree's own choice
+  const titles = await page.locator('.tree-col .card .card-title').allTextContents();
+  expect(titles).toHaveLength(2);
+  expect(titles[0]).toMatch(/^Senin eşiğin: Sözleşme ≤ \d+(,\d)?$/);
+  expect(titles[1]).toMatch(/^Ağacın seçimi: /);
+  await expect(page.locator('.tree-col .card').first().locator('.card-score:not(.alt)')).toHaveText(/^Gini \d,\d{3} · azalma /);
+  await expect(page.locator('.tree-col .formula')).toBeVisible();
+});
+
+test('lab step 8: after the scan both root handles are draggable', async ({ page }) => {
+  await open(page, PAGE, 'lab', READY);
+  await gotoStep(page, 7, STEPS, 3000); // the scan takes about 1,6 s
+  await expect(page.locator('svg.tree-plot line.handle.x')).toBeAttached();
+  await expect(page.locator('svg.tree-plot line.handle.y')).toBeAttached();
+  await expect(page.locator('svg.tree-plot line.scan')).toHaveCount(0);
+  const ln = await lineBox(page, 'line.handle.x');
+  const plot = (await page.locator('svg.tree-plot rect.hit').boundingBox())!;
+  const from = { x: ln.x, y: plot.y + plot.height * 0.25 };
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x + plot.width * 0.2, from.y, { steps: 6 });
+  await page.mouse.up();
+  await page.waitForTimeout(600);
+  const moved = await lineBox(page, 'line.scan');
+  expect(moved.vertical).toBe(true);
+  expect(Math.abs(moved.x - (from.x + plot.width * 0.2))).toBeLessThanOrEqual(2);
+  await expect(stepCount(page)).toHaveText(`Adım 8 / ${STEPS}`);
 });
 
 test('screenshots: ders and lab key steps', async ({ page }) => {
