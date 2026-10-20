@@ -245,6 +245,15 @@ test('lab click moves query', async ({ page }) => {
   expect(Math.abs(q.x + q.width / 2 - (plot.x + plot.width * 0.3))).toBeLessThanOrEqual(2);
   expect(Math.abs(q.y + q.height / 2 - (plot.y + plot.height * 0.4))).toBeLessThanOrEqual(2);
 
+  // a click in the plot's side margin (outside the data, inside the visible axes) lands where clicked
+  const mx = plot.x + plot.width * 0.03;
+  const my = plot.y + plot.height * 0.5;
+  await page.mouse.click(mx, my);
+  await page.waitForTimeout(800);
+  const qm = (await page.locator('svg.plot rect.query').boundingBox())!;
+  expect(Math.abs(qm.x + qm.width / 2 - mx)).toBeLessThanOrEqual(2);
+  expect(Math.abs(qm.y + qm.height / 2 - my)).toBeLessThanOrEqual(2);
+
   await page.getByLabel('Anında sonuç').check();
   await page.mouse.click(plot.x + plot.width * 0.7, plot.y + plot.height * 0.6);
   await expect(stepCount(page)).toHaveText('Adım 5 / 12');

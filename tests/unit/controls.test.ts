@@ -413,10 +413,40 @@ describe('createLabPointer', () => {
     near(p.state.params.query, click);
   });
 
-  it('down clamps a point beyond the domain to its edges', () => {
+  it('without a visible extent, down clamps a point beyond the data domain to its edges', () => {
     const { p, handle } = setup();
     handle({ tenure: -500, value: 1e6 }, 'down');
     const s = featureSpace('aylik', true);
+    const q = s.toSpace(p.state.params.query);
+    expect(q.x).toBeCloseTo(s.domain.x[0], 9);
+    expect(q.y).toBeCloseTo(s.domain.y[1], 9);
+  });
+
+  it('clamps to the visible plot extent, so a click in the side margin lands where clicked', () => {
+    const s = featureSpace('aylik', true);
+    const d = s.domain;
+    // equal-aspect plot wider than the data: one extra unit left and right
+    const vis = { x: [d.x[0] - 1, d.x[1] + 1] as [number, number], y: [...d.y] as [number, number] };
+    const p = player();
+    const handle = createLabPointer(p, () => true, () => vis);
+    const margin = { x: d.x[0] - 0.5, y: 0.25 };
+    handle(s.toRaw(margin), 'down');
+    let q = s.toSpace(p.state.params.query);
+    expect(q.x).toBeCloseTo(margin.x, 9);
+    expect(q.y).toBeCloseTo(margin.y, 9);
+    handle(s.toRaw({ x: 1e3, y: -1e3 }), 'move'); // drag far outside: stops at the visible edge
+    q = s.toSpace(p.state.params.query);
+    expect(q.x).toBeCloseTo(vis.x[1], 9);
+    expect(q.y).toBeCloseTo(vis.y[0], 9);
+    handle(s.toRaw({ x: 0, y: 0 }), 'up');
+  });
+
+  it('ignores a visible extent that does not cover the current data domain', () => {
+    const s = featureSpace('aylik', true);
+    const p = player();
+    // e.g. an extent left over from another feature space
+    const handle = createLabPointer(p, () => true, () => ({ x: [0, 0.5], y: [0, 0.5] }));
+    handle({ tenure: -500, value: 1e6 }, 'down');
     const q = s.toSpace(p.state.params.query);
     expect(q.x).toBeCloseTo(s.domain.x[0], 9);
     expect(q.y).toBeCloseTo(s.domain.y[1], 9);

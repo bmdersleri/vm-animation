@@ -6,15 +6,22 @@ import type { Vec } from './knn';
 import { knnScenario, knnShortcuts, type KnnParams } from './scenario';
 import { mountKnnScene, type PointerKind } from './scene';
 import { featureSpace, type FeatureSpace } from './space';
+import type { Domain } from './viewport';
 import { mountKnnParams } from './controls';
 import { mountKnnTable } from './table';
 
 const clamp = (v: number, [lo, hi]: [number, number]): number => Math.max(lo, Math.min(hi, v));
 
-/** Keep a point (in feature-space units) inside the data domain. */
-export function clampToDomain(v: Vec, domain: FeatureSpace['domain']): Vec {
+/** Keep a point (in feature-space units) inside a domain (e.g. the visible plot extent). */
+export function clampToDomain(v: Vec, domain: Domain): Vec {
   return { x: clamp(v.x, domain.x), y: clamp(v.y, domain.y) };
 }
+
+const contains = (outer: Domain, inner: Domain): boolean => {
+  const eps = 1e-9 * Math.max(1, Math.abs(inner.x[1] - inner.x[0]), Math.abs(inner.y[1] - inner.y[0]));
+  return outer.x[0] <= inner.x[0] + eps && outer.x[1] >= inner.x[1] - eps
+    && outer.y[0] <= inner.y[0] + eps && outer.y[1] >= inner.y[1] - eps;
+};
 
 /** Index of step 5 (vote and prediction): the step a live drag runs at. */
 const VOTE_STEP = 4;
@@ -29,14 +36,21 @@ const DRAG_DEAD_ZONE = 0.015;
  * has travelled more than DRAG_DEAD_ZONE of the domain span from the down
  * point, so a click that wobbles still restarts at step 2 (or 5). `isLab` is
  * read at event time because the mode can change while the page is open.
+ * Points are clamped to `visible()` — the plot's feature-space extent, which
+ * for equal-aspect spaces is wider than the data — so a click in the margin
+ * lands where it was made; the data domain is the fallback (no scene yet, or
+ * an extent that does not belong to the current space).
  */
 export function createLabPointer(
-  p: StepPlayer<KnnParams>, isLab: () => boolean,
+  p: StepPlayer<KnnParams>, isLab: () => boolean, visible: () => Domain | null = () => null,
 ): (raw: RawPoint, kind: PointerKind) => void {
   let pressed: Vec | null = null; // clamped down point in space units
   let dragging = false;
   const space = (): FeatureSpace => featureSpace(p.state.params.dataset, p.state.params.scaled);
-  const clamped = (raw: RawPoint, s: FeatureSpace): Vec => clampToDomain(s.toSpace(raw), s.domain);
+  const clamped = (raw: RawPoint, s: FeatureSpace): Vec => {
+    const vis = visible();
+    return clampToDomain(s.toSpace(raw), vis && contains(vis, s.domain) ? vis : s.domain);
+  };
   const end = (): void => {
     pressed = null;
     dragging = false;
@@ -82,7 +96,8 @@ export const knnPage: ConceptPage<KnnParams> = {
   scenario: knnScenario,
   mountScene: (el, p, m) => {
     const h = mountKnnScene(el, p, m);
-    h.onPointer(createLabPointer(p, () => el.closest<HTMLElement>('[data-mode]')?.dataset.mode === 'lab'));
+    const isLab = (): boolean => el.closest<HTMLElement>('[data-mode]')?.dataset.mode === 'lab';
+    h.onPointer(createLabPointer(p, isLab, () => h.visibleDomain()));
     return h;
   },
   mountParams: mountKnnParams,
