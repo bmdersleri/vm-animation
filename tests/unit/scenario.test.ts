@@ -66,7 +66,7 @@ describe('knnScenario', () => {
     const s = featureSpace(p.dataset, p.scaled);
     const g: RegionGrid = { cols: 80, rows: 50, x0: s.domain.x[0], x1: s.domain.x[1], y0: s.domain.y[0], y1: s.domain.y[1] };
     const count = (k: number) => computeRegions(s, k, p.metric, p.weighting, g).reduce((a, c) => a + c, 0);
-    expect(count(15)).toBeLessThan(count(1));
+    expect(count(15)).toBeLessThan(count(1) * 0.5);
   });
 
   it('metric step changes neighbour set by 3', () => {
