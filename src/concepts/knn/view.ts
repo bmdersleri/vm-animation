@@ -35,7 +35,7 @@ export function deriveKnnView(stepIndex: number, p: KnnParams): KnnView {
     const win = v.scores[v.winner];
     const detail = p.weighting === 'esit'
       ? `${win}/${p.k} oy`
-      : `ağırlığın %${Math.round((100 * win) / (v.scores[0] + v.scores[1]))}'si`;
+      : `ağırlık payı %${Math.round((100 * win) / (v.scores[0] + v.scores[1]))}`;
     prediction = {
       cls: v.winner,
       label: v.winner === 1 ? 'AYRILACAK' : 'KALACAK',

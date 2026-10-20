@@ -42,7 +42,7 @@ describe('deriveKnnView', () => {
     const a = deriveKnnView(4, { ...base, weighting: 'agirlikli' });
     const sc = a.vote!.scores;
     const pct = Math.round((100 * sc[a.vote!.winner]) / (sc[0] + sc[1]));
-    expect(a.prediction!.detail).toBe(`ağırlığın %${pct}'si`);
+    expect(a.prediction!.detail).toBe(`ağırlık payı %${pct}`);
     expect(a.prediction!.label).toBe(a.vote!.winner === 1 ? 'AYRILACAK' : 'KALACAK');
     expect(vote(a.neighbors)).toEqual(a.vote);
   });
