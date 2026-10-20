@@ -1,4 +1,5 @@
 import '../../core/theme.css';
+import './knn.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
 import type { StepPlayer } from '../../core/player';
 import type { RawPoint } from './data';

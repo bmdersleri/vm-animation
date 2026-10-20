@@ -1,4 +1,5 @@
 import '../core/theme.css';
+import './home.css';
 import { concepts, type ConceptEntry } from '../concepts/registry';
 
 const INTRO =
