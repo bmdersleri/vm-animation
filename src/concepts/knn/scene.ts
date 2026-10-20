@@ -9,8 +9,9 @@ import type { Neighbor } from './knn';
 import type { KnnParams } from './scenario';
 import type { FeatureSpace } from './space';
 import { deriveKnnView, type KnnView } from './view';
-import { fitViewport, type Scales } from './viewport';
+import { fitViewport, type Domain, type Scales } from './viewport';
 import { RegionsLayer } from './scene-regions';
+import { placeBadges, placeQueryLabel, type P } from './scene-labels';
 import { computeLayout, TextMeasure, tickFormat, voteLabel, type Layout } from './scene-layout';
 import {
   FRAME, GRID, MARK, NAVY, TEXT, WHITE, boundaryShape, lerpShape, r1, shapePath, trianglePath, type Shape,
@@ -26,10 +27,16 @@ const NAMES = ['axes', 'pts', 'lines', 'boundary', 'ranks', 'query', 'vote'] as 
 export type PointerKind = 'down' | 'move' | 'up';
 export type KnnSceneHandle = SceneHandle & {
   onPointer(cb: (raw: RawPoint, kind: PointerKind) => void): void;
+  /**
+   * Feature-space extent of the plot rect as last drawn (the scale domains,
+   * which for equal-aspect spaces can be wider than the data domain), or null
+   * before the first draw.
+   */
+  visibleDomain(): Domain | null;
 };
 
 interface Pt { i: number; x: number; y: number }
-interface Rank { r: number; i: number }
+interface Rank { r: number; i: number; x: number; y: number }
 
 // Selection and Transition share attr/style/text/remove. A transition is typed
 // as its selection so one code path serves both the animated and the instant case.
@@ -98,6 +105,7 @@ export function mountKnnScene(
   let axesKey = '';
   let shapeNow: Shape | null = null;
   let pending: { s: PlayerState<KnnParams>; cause: ChangeCause } | null = null;
+  let queryLabelPick = 0; // last chosen query-label spot (kept on ties: no flicker while dragging)
   let rafId: number | null = null;
 
   const now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -140,8 +148,9 @@ export function mountKnnScene(
     drawLines(v, sc, ms);
     drawBoundary(v, sc, ms);
     drawPoints(v, sc, L, ms);
-    drawRanks(v, sc, L, ms);
-    drawQuery(v, sc, L, ms);
+    const ranks = rankBadges(v, sc, L);
+    drawRanks(ranks, L, ms);
+    drawQuery(v, sc, L, ranks, ms);
     drawVote(v, L, ms);
 
     regions.update(v, sc, L.plot);
@@ -285,10 +294,18 @@ export function mountKnnScene(
     }
   }
 
-  function drawRanks(v: KnnView, sc: Scales, L: Layout, ms: number): void {
-    const data: Rank[] = v.phase >= 3 ? v.neighbors.map((n, r) => ({ r: r + 1, i: n.index })) : [];
-    const off = L.ptR * 0.7 + L.badgeR * 0.75;
-    const pos = (d: Rank): string => `translate(${r1(sc.x(pts[d.i].x) + off)},${r1(sc.y(pts[d.i].y) - off)})`;
+  /** Rank badge centres (px) for the k neighbours, placed away from the query and from each other. */
+  function rankBadges(v: KnnView, sc: Scales, L: Layout): Rank[] {
+    if (v.phase < 3) return [];
+    const at = v.neighbors.map((n): P => ({ x: sc.x(pts[n.index].x), y: sc.y(pts[n.index].y) }));
+    const q = { x: sc.x(v.query.x), y: sc.y(v.query.y) };
+    const off = (L.ptR * 0.7 + L.badgeR * 0.75) * Math.SQRT2;
+    const pos = placeBadges(at, q, off, L.badgeR, (L.querySide * Math.SQRT2) / 2);
+    return v.neighbors.map((n, r) => ({ r: r + 1, i: n.index, x: pos[r].x, y: pos[r].y }));
+  }
+
+  function drawRanks(data: Rank[], L: Layout, ms: number): void {
+    const pos = (d: Rank): string => `translate(${r1(d.x)},${r1(d.y)})`;
     const sel = gRanks.selectAll<SVGGElement, Rank>('g.rank').data(data, (d) => d.r).join(
       (enter) => {
         const g = enter.append('g').attr('class', 'rank').attr('opacity', 0).attr('transform', pos);
@@ -305,14 +322,14 @@ export function mountKnnScene(
       .attr('transform', pos).attr('opacity', 1);
   }
 
-  function drawQuery(v: KnnView, sc: Scales, L: Layout, ms: number): void {
+  function drawQuery(v: KnnView, sc: Scales, L: Layout, ranks: Rank[], ms: number): void {
     const qx = r1(sc.x(v.query.x));
     const qy = r1(sc.y(v.query.y));
     const sel = gQuery.selectAll<SVGGElement, number>('g.q').data(v.showQuery ? [0] : []).join(
       (enter) => {
         const g = enter.append('g').attr('class', 'q').attr('opacity', 0).attr('transform', `translate(${qx},${qy})`);
         g.append('rect').attr('class', 'query').attr('transform', 'rotate(45)')
-          .attr('stroke', NAVY).attr('stroke-width', 3).attr('fill', WHITE);
+          .attr('stroke', NAVY).attr('stroke-width', 2.5).attr('fill', WHITE);
         g.append('text').attr('class', 'query-label').text('Yeni müşteri');
         return g;
       },
@@ -322,14 +339,19 @@ export function mountKnnScene(
     if (!v.showQuery) return;
     const s = L.querySide;
     const half = (s * Math.SQRT2) / 2;
-    const { plot } = L;
-    const flipX = qx + half + 6 + L.queryLabelW > plot.left + plot.width;
-    const flipY = qy + half + L.fonts.tick * 1.1 > plot.top + plot.height;
+    // the label goes where it covers the fewest rank badges and points
+    const label = placeQueryLabel(
+      { x: qx, y: qy }, half, L.queryLabelW, L.fonts.tick,
+      ranks.map((b) => ({ x: b.x, y: b.y, r: L.badgeR })),
+      pts.map((p) => ({ x: sc.x(p.x), y: sc.y(p.y), r: L.ptR })),
+      L.plot, queryLabelPick,
+    );
+    queryLabelPick = label.index;
     sel.select('rect.query').attr('x', r1(-s / 2)).attr('y', r1(-s / 2)).attr('width', r1(s)).attr('height', r1(s));
     sel.select('text.query-label')
-      .attr('text-anchor', flipX ? 'end' : 'start')
-      .attr('x', r1(flipX ? -half * 0.6 : half * 0.6))
-      .attr('y', r1(flipY ? -half - 4 : half + L.fonts.tick * 0.8));
+      .attr('text-anchor', label.pos.anchor)
+      .attr('x', r1(label.pos.x))
+      .attr('y', r1(label.pos.y));
     tr(sel, 'query', ms).attr('transform', `translate(${qx},${qy})`).attr('opacity', 1);
     tr(sel.select<SVGRectElement>('rect.query'), 'query', ms)
       .attr('fill', v.prediction ? MARK[v.prediction.cls] : WHITE);
@@ -371,7 +393,9 @@ export function mountKnnScene(
     const p = sel.select('text.prediction').attr('x', r1(V.predX)).attr('y', r1(V.predY))
       .attr('text-anchor', V.predAnchor);
     p.select('tspan.pred-label').attr('fill', TEXT[v.prediction.cls]).text(v.prediction.label);
-    p.select('tspan.pred-detail').text(` (${v.prediction.detail})`);
+    const detail = p.select('tspan.pred-detail').text(` (${v.prediction.detail})`);
+    if (V.predDetailDy > 0) detail.attr('x', r1(V.predX)).attr('dy', r1(V.predDetailDy));
+    else detail.attr('x', null).attr('dy', null);
     tr(sel, 'vote', ms).attr('opacity', 1);
   }
 
@@ -476,6 +500,12 @@ export function mountKnnScene(
     },
     onPointer(cb): void {
       pointerCbs.add(cb);
+    },
+    visibleDomain(): Domain | null {
+      if (!scales) return null;
+      const [x0, x1] = scales.x.domain();
+      const [y0, y1] = scales.y.domain();
+      return { x: [Math.min(x0, x1), Math.max(x0, x1)], y: [Math.min(y0, y1), Math.max(y0, y1)] };
     },
   };
 }

@@ -5,6 +5,7 @@ import { knnScenario, type KnnParams } from '../../src/concepts/knn/scenario';
 import { mountKnnScene } from '../../src/concepts/knn/scene';
 import { deriveKnnView } from '../../src/concepts/knn/view';
 import { customers, type RawPoint } from '../../src/concepts/knn/data';
+import { featureSpace } from '../../src/concepts/knn/space';
 
 type Handle = ReturnType<typeof mountKnnScene>;
 let cleanup: (() => void)[] = [];
@@ -21,13 +22,15 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-function setup(patch?: Partial<KnnParams>): { el: HTMLElement; player: StepPlayer<KnnParams>; scene: Handle } {
+function setup(
+  patch?: Partial<KnnParams>, mode: 'lab' | 'ders' = 'lab', size: [number, number] = [1000, 600],
+): { el: HTMLElement; player: StepPlayer<KnnParams>; scene: Handle } {
   const el = document.createElement('div');
   document.body.append(el);
   const player = new StepPlayer(knnScenario);
   if (patch) player.setParams(patch);
-  const scene = mountKnnScene(el, player, 'lab', { durationScale: 0 });
-  scene.resize(1000, 600);
+  const scene = mountKnnScene(el, player, mode, { durationScale: 0 });
+  scene.resize(...size);
   cleanup.push(() => { scene.destroy(); player.destroy(); });
   return { el, player, scene };
 }
@@ -286,5 +289,119 @@ describe('mountKnnScene', () => {
     player.setParam('regions', false);
     player.setParam('regions', true);
     expect(draws).toBe(3);
+  });
+
+  // ---------------------------------------------------------------- layout (final review fix 2)
+  const num = (e: Element, a: string): number => Number(e.getAttribute(a));
+  const hitRect = (el: Element) => {
+    const r = el.querySelector('rect.hit')!;
+    return { left: num(r, 'x'), top: num(r, 'y'), width: num(r, 'width'), height: num(r, 'height') };
+  };
+  const translate = (e: Element): [number, number] => {
+    const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(e.getAttribute('transform')!)!;
+    return [Number(m[1]), Number(m[2])];
+  };
+  // Ders stage at 1280×720 (top bar, title band and player bar taken off)
+  const DERS: [number, number] = [1280, 540];
+
+  it('ders, wide stage: scaled plot is sized to the data, vote and prediction sit beside it', () => {
+    const { el, player, scene } = setup(undefined, 'ders', DERS);
+    player.goto(4);
+    const plot = hitRect(el);
+    const d = featureSpace('aylik', true).domain;
+    // the data fills the plot height and (equal px per unit) nearly its width
+    expect(plot.width / plot.height).toBeCloseTo((d.x[1] - d.x[0]) / (d.y[1] - d.y[0]), 2);
+    expect(plot.height).toBeGreaterThan(DERS[1] * 0.8);
+    const vis = scene.visibleDomain()!;
+    expect((vis.x[1] - vis.x[0]) / (d.x[1] - d.x[0])).toBeLessThan(1.02);
+    expect((vis.y[1] - vis.y[0]) / (d.y[1] - d.y[0])).toBeLessThan(1.02);
+    // equal px per unit: a circle stays a circle
+    const sx = plot.width / (vis.x[1] - vis.x[0]);
+    const sy = plot.height / (vis.y[1] - vis.y[0]);
+    expect(sx).toBeCloseTo(sy, 6);
+    // vote bar and prediction to the right of the plot, vertically inside it
+    const right = plot.left + plot.width;
+    const track = el.querySelector('g.vote rect.track')!;
+    expect(num(track, 'x')).toBeGreaterThan(right + 20);
+    expect(num(track, 'y')).toBeGreaterThan(plot.top);
+    expect(num(track, 'y') + num(track, 'height')).toBeLessThan(plot.top + plot.height);
+    const pred = el.querySelector('.prediction')!;
+    expect(pred.getAttribute('text-anchor')).toBe('middle');
+    expect(num(pred, 'x')).toBeGreaterThan(right);
+    expect(num(pred, 'y')).toBeLessThan(plot.top + plot.height);
+    expect(num(el.querySelector('.vote-label.kaldi')!, 'x')).toBeGreaterThan(right);
+  });
+
+  it('ders, wide stage: unscaled view keeps the scaled frame and fills it with independent axes', () => {
+    const { el, player, scene } = setup(undefined, 'ders', DERS);
+    player.goto(10); // toplam, scaled
+    const a = hitRect(el);
+    player.goto(11); // toplam, unscaled
+    const b = hitRect(el);
+    // same frame size (only the y tick labels' width moves it sideways)
+    expect([b.top, b.width, b.height]).toEqual([a.top, a.width, a.height]);
+    expect(scene.visibleDomain()).toEqual(featureSpace('toplam', false).domain);
+    expect(num(el.querySelector('g.vote rect.track')!, 'x')).toBeGreaterThan(b.left + b.width);
+  });
+
+  it('lab and narrow stages keep the vote row under a full-width plot', () => {
+    for (const [mode, size] of [['lab', [756, 585]], ['ders', [700, 540]]] as const) {
+      const { el, player, scene } = setup(undefined, mode, [size[0], size[1]]);
+      player.goto(4);
+      const plot = hitRect(el);
+      expect(plot.left + plot.width).toBeGreaterThan(size[0] - 40);
+      const track = el.querySelector('g.vote rect.track')!;
+      expect(num(track, 'y')).toBeGreaterThan(plot.top + plot.height);
+      scene.destroy();
+    }
+  });
+
+  it('query diamond: half-diagonal 1.6 point radii, 2.5 px stroke', () => {
+    const { el, player } = setup(undefined, 'ders', DERS);
+    player.goto(1);
+    const q = el.querySelector('rect.query')!;
+    const ptR = Number(el.querySelector('circle.pt')!.getAttribute('r'));
+    const half = (num(q, 'width') * Math.SQRT2) / 2;
+    expect(half).toBeCloseTo(1.6 * ptR, 0);
+    expect(q.getAttribute('stroke-width')).toBe('2.5');
+  });
+
+  it('rank badges sit on the side of their point away from the query', () => {
+    for (const step of [3, 7, 8, 9, 10]) {
+      const { el, player, scene } = setup(undefined, 'ders', DERS);
+      player.goto(step);
+      const [qx, qy] = translate(el.querySelector('g.q')!);
+      const ranks = all(el, 'g.rank');
+      expect(ranks.length).toBe(player.state.params.k);
+      const nbs = deriveKnnView(step, player.state.params).neighbors;
+      for (const g of ranks) {
+        const r = Number(g.textContent) - 1;
+        const [px, py] = translate(el.querySelector(`.pt[data-i="${nbs[r].index}"]`)!);
+        const [bx, by] = translate(g);
+        expect(Math.hypot(bx - qx, by - qy)).toBeGreaterThan(Math.hypot(px - qx, py - qy));
+        if (r === 0) {
+          // the nearest badge clears the query diamond (half-diagonal 1.6 r)
+          const badgeR = Number(g.querySelector('circle')!.getAttribute('r'));
+          expect(Math.hypot(bx - qx, by - qy) - badgeR).toBeGreaterThan(1.6 * 9 - 2);
+        }
+      }
+      scene.destroy();
+    }
+  });
+
+  it('visibleDomain is null before the first draw and covers the data domain after', () => {
+    const el = document.createElement('div');
+    document.body.append(el);
+    const player = new StepPlayer(knnScenario);
+    const scene = mountKnnScene(el, player, 'lab', { durationScale: 0 });
+    cleanup.push(() => { scene.destroy(); player.destroy(); });
+    expect(scene.visibleDomain()).toBeNull();
+    scene.resize(1000, 600);
+    const v = scene.visibleDomain()!;
+    const d = featureSpace('aylik', true).domain;
+    expect(v.x[0]).toBeLessThanOrEqual(d.x[0]);
+    expect(v.x[1]).toBeGreaterThanOrEqual(d.x[1]);
+    expect(v.y[0]).toBeLessThanOrEqual(d.y[0]);
+    expect(v.y[1]).toBeGreaterThanOrEqual(d.y[1]);
   });
 });
