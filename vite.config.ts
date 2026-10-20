@@ -1,13 +1,17 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// ESM config: no __dirname
+const root = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   base: './',
   build: {
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        knn: resolve(__dirname, 'knn/index.html'),
+        main: resolve(root, 'index.html'),
+        knn: resolve(root, 'knn/index.html'),
       },
     },
   },
