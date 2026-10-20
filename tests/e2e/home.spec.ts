@@ -8,3 +8,13 @@ test('home lists 20 concepts and the k-NN card opens the k-NN page', async ({ pa
   await expect(page.locator('.step-count')).toHaveText('Adım 1 / 12');
   await expect(page.locator('svg.plot circle.pt').first()).toBeAttached();
 });
+
+test('both pages link a favicon that loads', async ({ page, request }) => {
+  for (const path of ['/', '/knn/']) {
+    await page.goto(path);
+    const href = await page.locator('link[rel="icon"]').evaluate((l: HTMLLinkElement) => l.href);
+    const res = await request.get(href);
+    expect(res.status(), `${path} → ${href}`).toBe(200);
+    expect(res.headers()['content-type']).toContain('svg');
+  }
+});
