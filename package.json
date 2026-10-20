@@ -8,7 +8,7 @@
     "yeni-kavram": "node scripts/yeni-kavram.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run --exclude \"**/*.perf.test.ts\" && vitest run --no-file-parallelism .perf.test.ts",
     "test:e2e": "playwright test --project=islevsel && playwright test --project=performans --workers=1",
     "check": "npm test && npm run test:e2e",
     "prepare": "git config core.hooksPath .githooks"
