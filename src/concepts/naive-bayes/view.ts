@@ -41,7 +41,8 @@ const model: GaussModel = fitGaussian(
 const ORIGINAL_ORDER = ['bedava', 'kazandınız', 'toplantı'];
 const SORT_STEP = 8;
 
-const pct = (x: number): string => `%${formatNumber(x * 100, 1)}`;
+/** Percent with one decimal: "%8,3". */
+export const pct = (x: number): string => `%${formatNumber(x * 100, 1)}`;
 const f2 = (x: number): string => formatNumber(x, 2);
 /** Slider value without trailing zeros: 0,01 / 0,9 / 0,1. */
 const plain = (x: number): string => formatNumber(x, 3).replace(/,?0+$/, '');

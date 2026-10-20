@@ -1,0 +1,91 @@
+/* Naive Bayes concept styles. Loaded after core/theme.css. */
+
+/* ---------- scene (scene.ts, scene-icons.ts, scene-bar.ts) ---------- */
+/* Text sizes come only from the --fs-* tokens; no svg has a viewBox.
+   Red line: strip, legend and chip text is never smaller than --fs-body. */
+.nb-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.nb-main {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.nb-main > div {
+  position: absolute;
+  inset: 0;
+}
+.nb-main canvas,
+.nb-main svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+
+/* the calculation strip: one .line per line, wrapping between terms */
+.nb-scene .formula {
+  flex: none;
+  margin: 0 16px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 14px;
+  border-left: 4px solid var(--navy);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+/* part 1 always keeps room for its two-line strip, so the table never resizes */
+.nb-scene[data-part="1"] .formula {
+  min-height: calc(2 * 1.35em + 12px);
+}
+.nb-scene .formula .line {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.3em; /* the space between trimmed terms */
+}
+.nb-scene .formula .term {
+  white-space: nowrap;
+}
+
+/* 1.000-person legend */
+.nb-scene .icon-count {
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+}
+.nb-scene .icon-count .n {
+  font-weight: 700;
+}
+
+/* probability bar, chips and trail */
+.nb-scene .chip-text,
+.nb-scene .chip-arrow {
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+.nb-scene .chip.now .chip-text {
+  font-weight: 700;
+}
+.nb-scene .bar-class {
+  font-size: var(--fs-body);
+  font-weight: 700;
+}
+.nb-scene .bar-pct,
+.nb-scene .trail-label {
+  font-variant-numeric: tabular-nums;
+}
+.nb-scene .trail-label {
+  font-size: var(--fs-body);
+  font-weight: 700;
+}
+.nb-scene .tick {
+  font-variant-numeric: tabular-nums;
+}
