@@ -51,4 +51,13 @@ describe('home page', () => {
     ]);
     expect(sec5.querySelectorAll('svg[aria-hidden="true"]').length).toBe(3);
   });
+
+  it('renders subtitle, author and intro sentence', () => {
+    const root = render();
+    expect(root.querySelector('.subtitle')?.textContent).toBe('Kavram Animasyonları');
+    expect(root.querySelector('.author')?.textContent).toBe('Prof. Dr. İsmail KIRBAŞ');
+    expect(root.querySelector('.intro')?.textContent).toBe(
+      'Kitaptaki temel kavramları adım adım ilerleyen, parametreleriyle oynanabilen animasyonlarla keşfedin. Derste anlatım için Ders modunu, kendi başınıza çalışmak için Laboratuvar modunu kullanın.',
+    );
+  });
 });

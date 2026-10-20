@@ -45,7 +45,6 @@ function card(c: ConceptEntry): HTMLElement {
     root = a;
   } else {
     root = el('article', 'card yakinda');
-    root.setAttribute('aria-disabled', 'true');
   }
   const top = el('div', 'card-top');
   top.append(el('span', 'badge', `Bölüm ${c.chapter}`));
