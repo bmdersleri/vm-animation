@@ -50,8 +50,9 @@ export interface TreeView {
 const trainSamples = toSamples(train);
 const testSamples = toSamples(test);
 const AXIS_NAMES = ['Sözleşme', 'Şikâyet'] as const;
-const BOOK_ROOT: Counts = [40, 60];
-const BOOK_KIDS: readonly [Counts, Counts] = [[35, 15], [5, 45]];
+/** Book example in codebase order: index 0 = kaldı, index 1 = ayrıldı. */
+const BOOK_ROOT: Counts = [60, 40];
+const BOOK_KIDS: readonly [Counts, Counts] = [[15, 35], [45, 5]];
 
 function partOf(index: number): TreePart {
   return index <= 5 ? 1 : index <= 10 ? 2 : 3;
@@ -129,8 +130,8 @@ export function deriveTreeView(index: number, p: TreeParams): TreeView {
 
   if (part === 3) {
     const c = card('Kitabın örneği', [
-      { label: 'Birinci dal', counts: BOOK_KIDS[0] },
-      { label: 'İkinci dal', counts: BOOK_KIDS[1] },
+      { label: 'Kısa sözleşme', counts: BOOK_KIDS[0] },
+      { label: 'Uzun sözleşme', counts: BOOK_KIDS[1] },
     ], BOOK_ROOT, k, true);
     return { ...base, root: BOOK_ROOT, cards: [c], strip: formulaText(BOOK_KIDS, k) };
   }

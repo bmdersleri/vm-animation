@@ -114,10 +114,10 @@ describe('deriveTreeView', () => {
   it('book step: one card, 0.480 → 0.300', () => {
     const v = deriveTreeView(11, p());
     expect(v.part).toBe(3);
-    expect(v.root).toEqual([40, 60]);
+    expect(v.root).toEqual([60, 40]);
     expect(v.cards).toHaveLength(1);
     const c = v.cards[0];
-    expect(c.branches.map((b) => b.counts)).toEqual([[35, 15], [5, 45]]);
+    expect(c.branches.map((b) => b.counts)).toEqual([[15, 35], [45, 5]]);
     expect(c.filled && c.win).toBe(true);
     expect(c.impurity).toBeCloseTo(0.3, 12);
     expect(c.decrease).toBeCloseTo(0.18, 12);
