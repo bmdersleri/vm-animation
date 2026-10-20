@@ -4,7 +4,7 @@ import { demo } from '../../src/concepts/knn/data';
 import { kNearest, vote } from '../../src/concepts/knn/knn';
 import { featureSpace } from '../../src/concepts/knn/space';
 import { computeRegions, type RegionGrid } from '../../src/concepts/knn/regions';
-import { knnScenario, knnShortcuts, type KnnParams } from '../../src/concepts/knn/scenario';
+import { knnScenario, knnShortcuts, switchDataset, type KnnParams } from '../../src/concepts/knn/scenario';
 
 function predict(p: KnnParams): { winner: number; ids: number[] } {
   const s = featureSpace(p.dataset, p.scaled);
@@ -115,8 +115,10 @@ describe('knnShortcuts', () => {
     expect(pl.state.params.k).toBe(7);
     for (let i = 0; i < 20; i++) run("k'yi artır");
     expect(pl.state.params.k).toBe(15);
+    expect(pl.state.params.k % 2).toBe(1);
     for (let i = 0; i < 20; i++) run("k'yi azalt");
     expect(pl.state.params.k).toBe(1);
+    expect(pl.state.params.k % 2).toBe(1);
   });
 
   it('toggles metric, scaling, regions and dataset', () => {
@@ -130,5 +132,18 @@ describe('knnShortcuts', () => {
     run('Veri setini değiştir');
     expect(pl.state.params.dataset).toBe('toplam');
     expect(pl.state.params.query).toEqual(demo.defaultQuery.toplam);
+  });
+});
+
+describe('switchDataset', () => {
+  it('resets query to the dataset default with a single emission', () => {
+    const pl = new StepPlayer<KnnParams>(knnScenario);
+    pl.goto(4);
+    const fn = vi.fn();
+    pl.subscribe(fn);
+    switchDataset(pl, 'toplam');
+    expect(pl.state.params.dataset).toBe('toplam');
+    expect(pl.state.params.query).toEqual(demo.defaultQuery.toplam);
+    expect(fn).toHaveBeenCalledTimes(1);
   });
 });

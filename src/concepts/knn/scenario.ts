@@ -1,5 +1,4 @@
-import type { Scenario } from '../../core/player';
-import type { StepPlayer } from '../../core/player';
+import type { Scenario, StepPlayer } from '../../core/player';
 import type { Shortcut } from '../../core/keyboard';
 import { demo, type DatasetId, type RawPoint } from './data';
 import type { Metric, Weighting } from './knn';
@@ -105,6 +104,11 @@ export const knnScenario: Scenario<KnnParams> = {
   ],
 };
 
+/** Switch dataset and reset the query atomically (single emission). */
+export function switchDataset(p: StepPlayer<KnnParams>, d: DatasetId): void {
+  p.setParams({ dataset: d, query: demo.defaultQuery[d] });
+}
+
 /** Teacher shortcuts: manual overrides on top of the current step. */
 export function knnShortcuts(player: StepPlayer<KnnParams>): Shortcut[] {
   const p = (): KnnParams => player.state.params;
@@ -124,11 +128,7 @@ export function knnShortcuts(player: StepPlayer<KnnParams>): Shortcut[] {
     },
     {
       keys: ['d', 'D'], label: 'Veri setini değiştir',
-      run: () => {
-        const next: DatasetId = p().dataset === 'aylik' ? 'toplam' : 'aylik';
-        player.setParam('dataset', next);
-        player.setParam('query', demo.defaultQuery[next]);
-      },
+      run: () => switchDataset(player, p().dataset === 'aylik' ? 'toplam' : 'aylik'),
     },
     {
       keys: ['b', 'B'], label: 'Karar bölgelerini göster / gizle',

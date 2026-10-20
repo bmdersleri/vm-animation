@@ -164,4 +164,28 @@ describe('StepPlayer', () => {
     expect(fn).not.toHaveBeenCalled();
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  it('setParams emits exactly once with both keys applied', () => {
+    const p = new StepPlayer(base());
+    const fn = vi.fn();
+    p.subscribe(fn);
+    p.setParams({ k: 9, m: 'q' });
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toHaveBeenCalledWith(expect.objectContaining({ params: { k: 9, m: 'q' } }), 'param');
+  });
+
+  it('setParams overrides behave like setParam (a later step owning the key clears it)', () => {
+    const p = new StepPlayer(base());
+    p.setParams({ k: 9, m: 'q' });
+    p.goto(1);
+    expect(p.state.params).toEqual({ k: 1, m: 'q' });
+  });
+
+  it('setParams on the swept key cancels the sweep', () => {
+    const p = new StepPlayer(sweepScenario());
+    p.goto(1);
+    p.setParams({ k: 9, m: 'q' });
+    vi.advanceTimersByTime(1000);
+    expect(p.state.params).toEqual({ k: 9, m: 'q' });
+  });
 });

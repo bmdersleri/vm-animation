@@ -70,10 +70,15 @@ export class StepPlayer<P extends object> {
   last(): void { this.goto(this.scenario.steps.length - 1); }
 
   setParam<K extends keyof P>(key: K, value: P[K]): void {
-    if (this.sweepValue?.key === key || this.scenario.steps[this.index].sweep?.key === key) {
-      this.cancelSweep();
-    }
-    this.overrides[key] = value;
+    this.setParams({ [key]: value } as unknown as Partial<P>);
+  }
+
+  /** Batch manual override: one atomic change, one 'param' emission. */
+  setParams(patch: Partial<P>): void {
+    const keys = Object.keys(patch) as (keyof P)[];
+    const swept = this.sweepValue?.key ?? this.scenario.steps[this.index].sweep?.key;
+    if (swept !== undefined && keys.includes(swept)) this.cancelSweep();
+    Object.assign(this.overrides, patch);
     this.emit('param');
   }
 
