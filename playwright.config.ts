@@ -2,15 +2,19 @@ import { defineConfig } from '@playwright/test';
 
 /**
  * End-to-end checks in system Chrome against the production build served by
- * `vite preview` (port 4173; the dev server on 5180 is left alone). Tests run
- * one at a time so the performance budgets are not measured under contention.
+ * `vite preview` (port 4173; the dev server on 5180 is left alone). Functional
+ * specs run in parallel; the performance specs (`*.perf.spec.ts`) run in their
+ * own project, one at a time, so budgets are not measured under contention.
  */
 export default defineConfig({
   testDir: 'tests/e2e',
-  testMatch: '**/*.spec.ts',
-  fullyParallel: false,
-  workers: 1,
+  workers: '50%',
   timeout: 60_000,
+  expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.01 } },
+  projects: [
+    { name: 'islevsel', testIgnore: '**/*.perf.spec.ts', fullyParallel: true },
+    { name: 'performans', testMatch: '**/*.perf.spec.ts' },
+  ],
   reporter: [['list']],
   use: {
     baseURL: 'http://localhost:4173',

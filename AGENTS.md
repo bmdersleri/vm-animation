@@ -55,7 +55,7 @@ baseline:
 - Windows 11 with Git Bash; use POSIX shell syntax.
 - Files are written with LF line endings (`.gitattributes` sets `eol=lf`).
 - Node 24 runs `.ts` scripts directly, but absolute imports must be `file:///C:/…` URLs.
-- Playwright uses the system Chrome (`channel: 'chrome'`) with one worker, because the e2e suite measures performance budgets.
+- Playwright uses the system Chrome (`channel: 'chrome'`); functional e2e runs in parallel, the performance project (`*.perf.spec.ts`) with one worker.
 - Do not run the gate while other heavy work runs; the `computeRegions` timing unit test has failed once under load.
 
 ## Global Constraints
@@ -79,6 +79,6 @@ baseline:
   - Windows 11 with Git Bash; use POSIX shell syntax.
   - Files are written with LF line endings (`.gitattributes` sets `eol=lf`).
   - Node 24 runs `.ts` scripts directly, but absolute imports must be `file:///C:/…` URLs.
-  - Playwright uses the system Chrome (`channel: 'chrome'`) with one worker, because the e2e suite measures performance budgets.
+  - Playwright uses the system Chrome (`channel: 'chrome'`); functional e2e runs in parallel, the performance project (`*.perf.spec.ts`) with one worker.
   - Do not run the gate while other heavy work runs; the `computeRegions` timing unit test has failed once under load.
 - **Doc language:** specs and plans are written in Turkish; agent files (`AGENTS.md`, `CLAUDE.md`, ledgers, dispatches) are English.

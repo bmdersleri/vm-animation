@@ -9,7 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=islevsel && playwright test --project=performans --workers=1",
     "check": "npm test && npm run test:e2e",
     "prepare": "git config core.hooksPath .githooks"
   },
