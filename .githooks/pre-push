@@ -1,0 +1,14 @@
+#!/bin/sh
+# Actions only builds and deploys Pages, so the test gate runs here before
+# anything reaches main (feature branches push without it).
+# Skip once with: git push --no-verify
+while read -r local_ref local_sha remote_ref _; do
+  [ "$remote_ref" = "refs/heads/main" ] || continue
+  # the gate checks the working tree, so it must be the commit being pushed
+  if [ "$local_sha" != "$(git rev-parse HEAD)" ] || ! git diff --quiet HEAD; then
+    echo "pre-push: check out $local_ref with a clean tree, then push again" >&2
+    exit 1
+  fi
+  exec npm run check
+done
+exit 0

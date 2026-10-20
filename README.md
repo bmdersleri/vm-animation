@@ -10,7 +10,7 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - k-NN: https://bmdersleri.github.io/vm-animation/knn/
 - Ders modu: https://bmdersleri.github.io/vm-animation/knn/?mod=ders
 
-Site, GitHub Pages etkinleştirildiğinde (Settings > Pages > Source: GitHub Actions) `main` dalına her push ile yayına girer. GitHub Actions yalnızca derleyip yayınlar; testler yerelde çalışır, bu yüzden `main`'e push etmeden önce `npm run check` çalıştırın.
+Site, GitHub Pages etkinleştirildiğinde (Settings > Pages > Source: GitHub Actions) `main` dalına her push ile yayına girer. GitHub Actions yalnızca derleyip yayınlar; testler yerelde çalışır. `npm ci` bir push öncesi kancası (`.githooks/pre-push`) kurar: `main`'e her push'tan önce `npm run check` kendiliğinden çalışır ve geçmezse push durur.
 
 ## Ders modu
 
