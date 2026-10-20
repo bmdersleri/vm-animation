@@ -201,6 +201,80 @@ describe('mountTreeScene', () => {
   });
 });
 
+describe('lab threshold handles', () => {
+  const S = toSamples(train);
+  /** First point with the lowest impurity (the per-feature best threshold). */
+  const best = (f: 0 | 1): number => sweep(S, f, 'gini')
+    .reduce((m, q) => (q.impurity < m.impurity - 1e-12 ? q : m)).threshold;
+  const Ev = (window.PointerEvent ?? MouseEvent) as typeof MouseEvent;
+
+  it('both handles exist only in Lab at indices 6-8 and sit at the per-feature best thresholds', () => {
+    const { el, player } = setup('lab', [1000, 600]);
+    const handles = () => [all(el, 'line.handle.x').length, all(el, 'line.handle.y').length];
+    player.goto(5);
+    expect(handles()).toEqual([0, 0]);
+    for (const i of [6, 8]) {
+      player.goto(i);
+      expect(handles(), `index ${i}`).toEqual([1, 1]);
+      const hit = el.querySelector('rect.hit')!;
+      const [L, T, W, H] = ['x', 'y', 'width', 'height'].map((a) => num(hit, a));
+      const hx = el.querySelector('line.handle.x')!;
+      const hy = el.querySelector('line.handle.y')!;
+      expect(num(hx, 'x1')).toBe(num(hx, 'x2'));
+      expect(num(hx, 'x1')).toBeCloseTo(L + (W * (best(0) - DOMAIN.x[0])) / (DOMAIN.x[1] - DOMAIN.x[0]), 0);
+      expect(num(hy, 'y1')).toBe(num(hy, 'y2'));
+      expect(num(hy, 'y1')).toBeCloseTo(T + (H * (DOMAIN.y[1] - best(1))) / (DOMAIN.y[1] - DOMAIN.y[0]), 0);
+    }
+    player.goto(7); // the scan line is moving: no handles
+    expect(player.state.params.scan).toBeGreaterThanOrEqual(0);
+    expect(handles()).toEqual([0, 0]);
+    player.goto(9);
+    expect(handles()).toEqual([0, 0]);
+
+    // a user split moves the handle of its own feature only
+    player.goto(6);
+    player.setParams({ userSplit: { feature: 0, threshold: 30 }, scan: -1 });
+    const x30 = num(el.querySelector('line.scan')!, 'x1');
+    expect(num(el.querySelector('line.handle.x')!, 'x1')).toBe(x30);
+    expect(all(el, 'line.handle.y')).toHaveLength(1);
+  });
+
+  it('no handles in Ders', () => {
+    const { el, player } = setup('ders');
+    for (const i of [6, 7, 8]) {
+      player.goto(i);
+      expect(all(el, 'line.handle'), `index ${i}`).toHaveLength(0);
+    }
+  });
+
+  it('near reports the feature of the handle under the pointer', () => {
+    const { el, player, scene } = setup('lab', [1000, 600]);
+    player.goto(6); // depth 0: only the handles can be grabbed
+    const got: (0 | 1 | null)[] = [];
+    scene.onPointer((_at, kind, near) => { if (kind === 'down') got.push(near); });
+    const svg = el.querySelector('svg.plot')!;
+    const hit = el.querySelector('rect.hit')!;
+    const hx = num(el.querySelector('line.handle.x')!, 'x1');
+    const hy = num(el.querySelector('line.handle.y')!, 'y1');
+    const down = (x: number, y: number): void => {
+      svg.dispatchEvent(new Ev('pointerdown', { clientX: x, clientY: y, bubbles: true }));
+      svg.dispatchEvent(new Ev('pointerup', { clientX: x, clientY: y, bubbles: true }));
+    };
+    const midY = num(hit, 'y') + num(hit, 'height') * 0.9; // far from the complaint handle
+    const midX = num(hit, 'x') + num(hit, 'width') * 0.8; // far from the contract handle
+    down(hx + 8, midY);
+    down(midX, hy - 8);
+    down(midX, midY);
+    expect(got).toEqual([0, 1, null]);
+
+    // the active (dragged) line wins over a handle within reach
+    player.setParams({ userSplit: { feature: 1, threshold: 2.6 }, scan: -1 });
+    const uy = num(el.querySelector('line.scan')!, 'y1');
+    down(hx + 4, uy);
+    expect(got[3]).toBe(1);
+  });
+});
+
 describe('regionFill', () => {
   // plot rect 600×300 px at (50, 20); 100 × 60 cells of 0,6 months × 0,1 complaints
   const sc = fitViewport({ x: [DOMAIN.x[0], DOMAIN.x[1]], y: [DOMAIN.y[0], DOMAIN.y[1]] },

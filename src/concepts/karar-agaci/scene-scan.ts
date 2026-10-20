@@ -1,7 +1,7 @@
 import { select, type Selection } from 'd3-selection';
 import 'd3-transition';
 import { scaleLinear, type ScaleLinear } from 'd3-scale';
-import { tr } from '../../core/plot/transition';
+import { tr, type AnySel } from '../../core/plot/transition';
 import { formatNumber, tickFormat } from '../../core/plot/format';
 import { FRAME, GRID, NAVY, WHITE, r1 } from '../../core/plot/marks';
 import type { Rect, Scales } from '../../core/plot/viewport';
@@ -52,9 +52,27 @@ export interface LinesModel {
   faintChosen: boolean;
   /** Splits of the deeper internal nodes, clipped to their node's box. */
   splits: { id: string; feature: 0 | 1; threshold: number; box: TreeNode['box'] }[];
+  /** Lab root-split handles, one per axis (empty outside Lab steps 7-9 or while scanning). */
+  handles: Threshold[];
 }
 
-export function linesModel(v: TreeView, p: TreeParams): LinesModel {
+/** Indices of the steps whose root threshold can be dragged in Lab (dagilim, tarama, esik). */
+export const DRAG_STEPS = [6, 7, 8] as const;
+
+const bests = new Map<Criterion, [number, number]>();
+/** Each feature's best root threshold: the first lowest point of its sweep. */
+export function bestThresholds(k: Criterion): [number, number] {
+  let b = bests.get(k);
+  if (!b) {
+    const low = (f: 0 | 1): number => sweep(trainSamples, f, k)
+      .reduce((m, q) => (q.impurity < m.impurity - 1e-12 ? q : m)).threshold;
+    b = [low(0), low(1)];
+    bests.set(k, b);
+  }
+  return b;
+}
+
+export function linesModel(v: TreeView, p: TreeParams, index: number, lab: boolean): LinesModel {
   const user = p.userSplit;
   const root = v.tree?.split ?? null;
   const splits: LinesModel['splits'] = [];
@@ -67,12 +85,19 @@ export function linesModel(v: TreeView, p: TreeParams): LinesModel {
     };
     walk(v.tree, 'r');
   }
-  const chosen: Split | null = user ? v.chosen : root;
+  // with a Lab line, the tree's own threshold stays as a faint line once the tree has a root
+  const chosen: Split | null = user ? (p.depth >= 1 ? v.chosen : null) : root;
+  const handles: Threshold[] = [];
+  if (lab && (DRAG_STEPS as readonly number[]).includes(index) && p.scan < 0) {
+    const b = bestThresholds(v.criterion);
+    for (const f of [0, 1] as const) handles.push({ feature: f, threshold: user?.feature === f ? user.threshold : b[f] });
+  }
   return {
     scan: user ? { feature: user.feature, threshold: user.threshold } : v.scanLine,
     chosen: chosen ? { feature: chosen.feature, threshold: chosen.threshold } : null,
     faintChosen: user !== null,
     splits,
+    handles,
   };
 }
 
@@ -88,9 +113,35 @@ function ends(t: Threshold, box: TreeNode['box'], sc: Scales): [number, number, 
 
 const FULL: TreeNode['box'] = { x: [DOMAIN.x[0], DOMAIN.x[1]], y: [DOMAIN.y[0], DOMAIN.y[1]] };
 
+/**
+ * `g` holds the drawn lines (no pointer events). `gHit` holds one wide,
+ * transparent stroke per handle: it only sets the resize cursor; grabbing is
+ * decided by distance in the scene (`near`).
+ */
 export function drawLines(
-  g: Selection<SVGGElement, unknown, null, undefined>, m: LinesModel, sc: Scales, ms: number,
+  g: Selection<SVGGElement, unknown, null, undefined>,
+  gHit: Selection<SVGGElement, unknown, null, undefined>,
+  m: LinesModel, sc: Scales, ms: number,
 ): void {
+  // handles first: quieter than the active line drawn over them
+  const axis = (d: Threshold): string => (d.feature === 0 ? 'x' : 'y');
+  const place = (s: AnySel): void => {
+    s.each(function (d: Threshold) {
+      const [x1, y1, x2, y2] = ends(d, FULL, sc);
+      select(this).attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2);
+    });
+  };
+  const handles = g.selectAll<SVGLineElement, Threshold>('line.handle').data(m.handles, axis).join(
+    (enter) => enter.insert('line', ':first-child').attr('class', (d) => `handle ${axis(d)}`)
+      .attr('stroke', NAVY).attr('stroke-width', 2).attr('stroke-opacity', 0.45).attr('stroke-dasharray', '8 5'),
+  );
+  place(handles);
+  const hits = gHit.selectAll<SVGLineElement, Threshold>('line.handle-hit').data(m.handles, axis).join(
+    (enter) => enter.append('line').attr('class', (d) => `handle-hit ${axis(d)}`)
+      .attr('stroke', 'transparent').attr('stroke-width', 24).attr('pointer-events', 'stroke'),
+  );
+  place(hits);
+
   const one = (cls: string, t: Threshold | null, width: number, dash: string | null, opacity: number): void => {
     // keyed by axis: switching from the contract to the complaint axis swaps the line
     const [x1, y1, x2, y2] = t ? ends(t, FULL, sc) : [0, 0, 0, 0];

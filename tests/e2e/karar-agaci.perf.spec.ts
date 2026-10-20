@@ -12,21 +12,18 @@ const READY = 'svg.tree-plot circle.pt, .card';
 
 test('threshold drag stays smooth', async ({ page }, info) => {
   await open(page, PAGE, 'lab', READY);
-  await gotoStep(page, 6, 12, 1000); // Lab adım 7
-  // the tree needs a root split for a root line to exist
-  await page.locator('input[data-param=depth]').fill('1');
-  await expect(page.locator('svg.tree-plot line.chosen')).toBeAttached();
-  await page.waitForTimeout(1200);
+  await gotoStep(page, 6, 12, 1000); // Lab adım 7: both root handles shown
+  await expect(page.locator('svg.tree-plot line.handle.x')).toBeAttached();
 
-  const ln = await page.locator('svg.tree-plot line.chosen').first().evaluate((e) => {
+  const ln = await page.locator('svg.tree-plot line.handle.x').first().evaluate((e) => {
     const b = e.getBoundingClientRect();
-    return { vertical: e.getAttribute('x1') === e.getAttribute('x2'), x: b.left + b.width / 2, y: b.top + b.height / 2 };
+    return { vertical: e.getAttribute('x1') === e.getAttribute('x2'), x: b.left + b.width / 2 };
   });
+  expect(ln.vertical).toBe(true);
   const plot = (await page.locator('svg.tree-plot rect.hit').boundingBox())!;
-  const start = { x: ln.x, y: ln.y };
-  const end = ln.vertical
-    ? { x: ln.x + plot.width * 0.3, y: ln.y }
-    : { x: ln.x, y: ln.y + plot.height * 0.3 };
+  // a quarter down the plot, away from the complaint handle (it crosses mid-height)
+  const start = { x: ln.x, y: plot.y + plot.height * 0.25 };
+  const end = { x: ln.x + plot.width * 0.3, y: start.y };
 
   // rAF timestamps plus the page-side times of pointer down / up
   await page.evaluate(() => {
@@ -69,8 +66,7 @@ test('threshold drag stays smooth', async ({ page }, info) => {
   // the dragged line followed the pointer
   const moved = await page.locator('svg.tree-plot line.scan').first().boundingBox();
   expect(moved).not.toBeNull();
-  if (ln.vertical) expect(Math.abs(moved!.x + moved!.width / 2 - end.x)).toBeLessThanOrEqual(2);
-  else expect(Math.abs(moved!.y + moved!.height / 2 - end.y)).toBeLessThanOrEqual(2);
+  expect(Math.abs(moved!.x + moved!.width / 2 - end.x)).toBeLessThanOrEqual(2);
   const p = p95(during);
   const d = `frames=${during.length} p95=${round(p)} ms max=${round(Math.max(...during))} ms`;
   info.annotations.push({ type: 'drag', description: d });

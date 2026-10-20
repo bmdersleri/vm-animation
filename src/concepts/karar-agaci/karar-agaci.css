@@ -161,6 +161,13 @@
   user-select: none;
   -webkit-user-select: none;
 }
+/* Lab root-threshold handles: a wide transparent stroke carries the cursor */
+.tree-plot .handle-hit.x {
+  cursor: ew-resize;
+}
+.tree-plot .handle-hit.y {
+  cursor: ns-resize;
+}
 .tree-scene .tick text {
   font-variant-numeric: tabular-nums;
 }

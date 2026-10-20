@@ -197,6 +197,7 @@ export function mountTreeScene(
   const axes = new AxesLayer(gAxes);
   const hit = svg.append('rect').attr('class', 'hit').attr('fill', 'transparent').attr('pointer-events', 'all');
   const gLines = svg.append('g').attr('class', 'lines').attr('pointer-events', 'none');
+  const gHandles = svg.append('g').attr('class', 'handle-hits');
   const gPts = svg.append('g').attr('class', 'points').attr('pointer-events', 'none');
   // class key above the plot; "○ test" joins it while the test customers show
   const legend = svg.append('text').attr('class', 'legend').attr('text-anchor', 'end');
@@ -274,8 +275,8 @@ export function mountTreeScene(
     keys[2].attr('display', v.showTest ? null : 'none');
 
     drawRegions(v, sc, plot, ms);
-    lines = linesModel(v, p);
-    drawLines(gLines, lines, sc, ms);
+    lines = linesModel(v, p, index, mode === 'lab');
+    drawLines(gLines, gHandles, lines, sc, ms);
     drawPoints(v, sc, L, ms);
     curve.update(curveModel(v, p), v.criterion, L.curve, sc.x, ms);
 
@@ -370,12 +371,16 @@ export function mountTreeScene(
     const py = ev.clientY - box.top;
     const { plot } = layout;
     const inside = px >= plot.left && px <= plot.left + plot.width && py >= plot.top && py <= plot.top + plot.height;
-    let near: 0 | 1 | null = null;
+    const sc = scales;
+    const dist = (t: { feature: 0 | 1; threshold: number }): number =>
+      (t.feature === 0 ? Math.abs(px - sc.x(t.threshold)) : Math.abs(py - sc.y(t.threshold)));
+    // the active line (scan or Lab line) wins when within reach; else the nearest handle / tree line
+    let near: 0 | 1 | null = lines?.scan && dist(lines.scan) <= GRAB_PX ? lines.scan.feature : null;
     let best = GRAB_PX;
-    for (const t of [lines?.scan, lines?.chosen]) {
+    for (const t of near === null ? [lines?.chosen, ...(lines?.handles ?? [])] : []) {
       if (!t) continue;
-      const d = t.feature === 0 ? Math.abs(px - scales.x(t.threshold)) : Math.abs(py - scales.y(t.threshold));
-      if (d <= best) {
+      const d = dist(t);
+      if (d <= GRAB_PX && (near === null || d < best)) { // ties keep the earlier line
         best = d;
         near = t.feature;
       }

@@ -126,37 +126,31 @@ test('ders: unlimited depth keeps tree text readable', async ({ page }) => {
   for (const fs of await fontSizes(page, '.node text')) expect(fs).toBeGreaterThanOrEqual(18);
 });
 
-/** The two x/y ends (px) of a threshold line, and its orientation. */
-async function lineBox(page: Page, cls: 'chosen' | 'scan') {
-  return page.locator(`svg.tree-plot line.${cls}`).first().evaluate((e) => {
+/** Centre and orientation of a threshold line. */
+async function lineBox(page: Page, sel: string) {
+  return page.locator(`svg.tree-plot ${sel}`).first().evaluate((e) => {
     const b = e.getBoundingClientRect();
     const vertical = e.getAttribute('x1') === e.getAttribute('x2');
-    return { vertical, x: b.left + b.width / 2, y: b.top + b.height / 2, l: b.left, r: b.right, t: b.top, b: b.bottom };
+    return { vertical, x: b.left + b.width / 2, y: b.top + b.height / 2 };
   });
 }
 
-/** Root-line position the Lab drag grabs: Lab adım 7 with the depth slider at 1. */
-async function openLabWithRootLine(page: Page): Promise<void> {
+test('lab threshold drag changes leaf counts', async ({ page }) => {
+  // Lab adım 7: depth 0, both root handles are shown; grab the contract one
   await open(page, PAGE, 'lab', READY);
   await gotoStep(page, 6, STEPS, 1000);
-  await page.locator('input[data-param=depth]').fill('1');
-  await expect(page.locator('svg.tree-plot line.chosen')).toBeAttached();
-  await page.waitForTimeout(1200);
-}
-
-test('lab threshold drag changes leaf counts', async ({ page }) => {
-  await openLabWithRootLine(page);
+  await expect(page.locator('svg.tree-plot line.handle.x')).toBeAttached();
+  await expect(page.locator('svg.tree-plot line.handle.y')).toBeAttached();
   const leaves = () => page.locator('.tree-col .node.leaf').allTextContents();
   const before = await leaves();
-  expect(before.length).toBeGreaterThanOrEqual(2);
+  expect(before.length).toBeGreaterThanOrEqual(1);
 
-  const ln = await lineBox(page, 'chosen');
+  const ln = await lineBox(page, 'line.handle.x');
+  expect(ln.vertical).toBe(true);
   const plot = (await page.locator('svg.tree-plot rect.hit').boundingBox())!;
-  const from = { x: ln.x, y: ln.y };
-  // move the line a third of the plot across its axis (the root threshold sits mid-range)
-  const to = ln.vertical
-    ? { x: ln.x + plot.width * 0.3, y: ln.y }
-    : { x: ln.x, y: ln.y + plot.height * 0.3 };
+  // press a quarter down the plot, away from the complaint handle (it crosses mid-height)
+  const from = { x: ln.x, y: plot.y + plot.height * 0.25 };
+  const to = { x: ln.x + plot.width * 0.3, y: from.y };
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 5 });
@@ -167,9 +161,9 @@ test('lab threshold drag changes leaf counts', async ({ page }) => {
   const after = await leaves();
   expect(after.join('|'), 'leaf counts follow the dragged line').not.toBe(before.join('|'));
   // the dragged (user) line moved to where the pointer was released
-  const moved = await lineBox(page, 'scan');
-  if (ln.vertical) expect(Math.abs(moved.x - to.x)).toBeLessThanOrEqual(2);
-  else expect(Math.abs(moved.y - to.y)).toBeLessThanOrEqual(2);
+  const moved = await lineBox(page, 'line.scan');
+  expect(moved.vertical).toBe(true);
+  expect(Math.abs(moved.x - to.x)).toBeLessThanOrEqual(2);
 });
 
 test('screenshots: ders and lab key steps', async ({ page }) => {
