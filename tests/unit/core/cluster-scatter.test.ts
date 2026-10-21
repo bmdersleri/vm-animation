@@ -182,6 +182,69 @@ describe('ClusterScatterLayer', () => {
     after.forEach((a, i) => expect(a).not.toBe(before[i]));
   });
 
+  // Label boxes from the written attributes, with the layer's estimate (jsdom has no text metrics; font 12 px).
+  const FS = 12;
+  type Box = { l: number; t: number; r: number; b: number };
+  const textBox = (t: Element, ox = 0, oy = 0): Box => {
+    const w = (t.textContent ?? '').length * 0.68 * FS;
+    const x = Number(t.getAttribute('x')) + ox;
+    const y = Number(t.getAttribute('y')) + oy;
+    const a = t.getAttribute('text-anchor') ?? 'start';
+    const l = a === 'end' ? x - w : a === 'middle' ? x - w / 2 : x;
+    return { l, t: y - 0.92 * FS, r: l + w, b: y + 0.25 * FS };
+  };
+  const hit = (p: Box, q: Box): boolean => Math.min(p.r, q.r) > Math.max(p.l, q.l) && Math.min(p.b, q.b) > Math.max(p.t, q.t);
+  const centreLabelBoxes = (svg: Element): Box[] => [...svg.querySelectorAll('g.cs-center')].map((g) => {
+    const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(g.getAttribute('transform')!)!;
+    return textBox(g.querySelector('text.cs-center-label')!, Number(m[1]), Number(m[2]));
+  });
+  const plusBoxes = (svg: Element): Box[] => [...svg.querySelectorAll('g.cs-center')].map((g) => {
+    const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(g.getAttribute('transform')!)!;
+    const x = Number(m[1]);
+    const y = Number(m[2]);
+    return { l: x - 7, t: y - 7, r: x + 7, b: y + 7 };
+  });
+
+  it('centre labels of two centres 0,1 apart do not touch each other or the other plus', () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ centers: [[0, 0], [0.1, 0]] }), false);
+    const [a, b] = centreLabelBoxes(svg);
+    const [pa, pb] = plusBoxes(svg);
+    expect(hit(a, b)).toBe(false);
+    expect(hit(a, pb)).toBe(false);
+    expect(hit(b, pa)).toBe(false);
+    // three crowded centres, as in the bad start
+    layer.update(spec({ centers: [[0, 0], [0.25, 0.1], [0.5, -0.05]] }), false);
+    const boxes = centreLabelBoxes(svg);
+    const plus = plusBoxes(svg);
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        if (i !== j) expect(hit(boxes[i], plus[j]), `M${i + 1} label on M${j + 1} plus`).toBe(false);
+        if (i < j) expect(hit(boxes[i], boxes[j]), `M${i + 1} x M${j + 1}`).toBe(false);
+      }
+    }
+  });
+
+  it('the selected-point label avoids a nearby centre and its label', () => {
+    const { svg, layer } = setup();
+    // point 1 sits at (1,1); the centre is just up and to its right, where the ring label would go
+    layer.update(spec({ centers: [[1.3, 1.25]], selected: 1 }), false);
+    const ring = svg.querySelector('text.cs-ring-label')!;
+    expect(ring.textContent).toBe('Nokta 2');
+    const rb = textBox(ring);
+    expect(hit(rb, centreLabelBoxes(svg)[0])).toBe(false);
+    expect(hit(rb, plusBoxes(svg)[0])).toBe(false);
+  });
+
+  it('a lone centre keeps its label up and to the right', () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ centers: [[0, 0]] }), false);
+    const t = svg.querySelector('text.cs-center-label')!;
+    expect(Number(t.getAttribute('x'))).toBeGreaterThan(0);
+    expect(Number(t.getAttribute('y'))).toBeLessThan(0);
+    expect(t.getAttribute('text-anchor') ?? 'start').toBe('start');
+  });
+
   it('lines with a bad point index, or without centres, are dropped', () => {
     const { svg, layer } = setup();
     layer.update(spec({ centers: [[0, 0]], lines: [{ point: 99, nearest: 0 }, { point: -1, nearest: 0 }, { point: 1, nearest: 0 }] }), false);

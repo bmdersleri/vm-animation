@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { gotoStep, open, outsideStage, overlaps, pageOverflow, stepCount } from './helpers';
+import { gotoStep, labelCollisions, open, outsideStage, overlaps, pageOverflow, stepCount } from './helpers';
 
 const PAGE = '/k-secimi/';
 const READY = 'svg.ks-plot circle.cs-point';
@@ -26,6 +26,7 @@ test('screenshots: ders key steps stay inside the stage', async ({ page }) => {
     // step 4 sweeps k = 4..10 and stays on 10
     if (step === 4) { await expect(page.locator('.ks-k')).toHaveAttribute('data-k', '10', { timeout: 10_000 }); await page.waitForTimeout(1200); }
     expect(await outsideStage(page, '.ks-plot text, .stage p, .stage li')).toEqual([]);
+    expect(await labelCollisions(page, 'svg.ks-plot'), `step ${step}`).toEqual([]);
     expect(await overlaps(page, '.ks-chart-title, .kc-tick-x, .ks-panel')).toEqual([]);
     expect(await chartOverflow(page)).toEqual([]);
     const o = await pageOverflow(page);
@@ -47,7 +48,17 @@ test('lab: k slider 2 to 4 and point click', async ({ page }) => {
   await page.locator('svg.ks-plot circle.cs-point').nth(20).click({ force: true });
   await expect(page.locator('input[data-param="point"]')).toHaveValue('21');
   await page.waitForTimeout(800);
+  expect(await labelCollisions(page, 'svg.ks-plot')).toEqual([]);
   expect(await overlaps(page, '.ks-chart-title, .kc-tick-x, .ks-panel')).toEqual([]);
   expect(await chartOverflow(page)).toEqual([]);
   await expect(page).toHaveScreenshot('k-secimi-lab-k4-point.png');
+});
+
+test('lab: a point next to a centre keeps its label off the centre label', async ({ page }) => {
+  await open(page, PAGE, 'lab', READY);
+  await gotoStep(page, 5, STEPS);
+  await page.locator('input[data-param="point"]').fill('50');
+  await expect(page.locator('.cs-ring[data-kind="selected"]')).toHaveAttribute('data-i', '49');
+  await expect(page.locator('.cs-ring-label').filter({ hasText: 'Nokta 50' })).toHaveCount(1);
+  expect(await labelCollisions(page, 'svg.ks-plot')).toEqual([]);
 });
