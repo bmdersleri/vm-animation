@@ -189,9 +189,9 @@ Kontrol değerleri (testlerde sabit; kitabın çıktısıyla aynı):
 
 1. **Sekiz sütun.** Sekiz satır; her satırda sütun adı ve 400 müşterinin o sütundaki değerleri yatay bir şeritte (satırın kendi ölçeğinde). Churn eden turuncu ▲, etmeyen lacivert ●. Şerit: "400 müşteri, 8 sütun, churn %42,25". Terim: öznitelik (feature).
 2. **Varyans eşiği.** Her satırın sağında varyansı yazar. `sabitDeger`'in şeridi tek noktaya çöker (hepsi 1); satır griye döner, adı üstü çizilir, "elendi". Şerit: `VarianceThreshold(threshold=0.01)` → 7 sütun kalır. Mesaj: hedefe hiç bakmadan, en ucuz eleme. Terim: filtre yöntemi (filter method).
-3. **F-skoru.** Şeritler çubuklara dönüşür: her sütunun churn ile ilişkisinin F-skoru, büyükten küçüğe sıralanır. Şerit: destek 158,44 · kıdem 94,66 · … Terim: ANOVA F-istatistiği.
+3. **F-skoru.** Şeritler çubuklara dönüşür: her sütunun churn ile ilişkisinin F-skoru, büyükten küçüğe sıralanır. Şerit: destek 158,44 · kıdem 94,66 · … Terim: ANOVA F-istatistiği (ANOVA F-statistic).
 4. **İlk dört.** En büyük dört çubuk dolu kalır, diğerleri griye döner. Şerit: `SelectKBest(f_classif, k=4)` → hizmetSayisi, musteriKidemAy, destekTaleplerinSayisi, odemeGecikmesi. Terim: `SelectKBest`.
-5. **Neden kıdem yüksek, gürültü düşük?** İki satır büyür: `musteriKidemAy` ve `gurultuluOznitelik` şeritleri churn'e göre iki alt şeride ayrılır; kıdemde iki grup belirgin ayrışır (churn edenler 12'nin altında), gürültüde üst üste biner. Mesaj: filtre her sütunu tek başına değerlendirir, sütunlar arası etkileşimi görmez. Terim: tek değişkenli değerlendirme (univariate).
+5. **Neden kıdem yüksek, gürültü düşük?** İki satır büyür: `musteriKidemAy` ve `gurultuluOznitelik` şeritleri churn'e göre iki alt şeride ayrılır; kıdemde iki grup belirgin ayrışır (12 ayın altındaki her müşteri churn eder; churn etmeyenlerin alt şeridi orada boştur), gürültüde üst üste biner. Mesaj: filtre her sütunu tek başına değerlendirir, sütunlar arası etkileşimi görmez. Terim: tek değişkenli değerlendirme (univariate).
 
 **Bölüm 2 — Sarmalayıcı: modele sor**
 
@@ -210,7 +210,7 @@ Adım başlıklarının ve metinlerin son hâli builder'ın işidir. Akış ve h
 | Varyans eşiği (adım 2) | 0 / 0,01 / 1 / 10 | 0,01 |
 | k (adım 3–5) | 1–7, kaydırıcı | 4 |
 | Seçilecek sütun sayısı (adım 6–10) | 1–7, kaydırıcı | 4 |
-| Ölçekleme (adım 6–10) | Yok / StandardScaler | Adıma bağlı (9–10: StandardScaler; 10'da kesişim kitabın ölçeksiz RFE'siyle) |
+| Ölçekleme (adım 6–10) | Yok / StandardScaler | Adıma bağlı (6–8: yok; 9: StandardScaler; 10: yok, kesişim kitabın ölçeksiz RFE'siyle) |
 
 RFE tek tek eler; `n_features_to_select`'in her değeri için seçim, betiğin kaydettiği tam eleme sırasından okunur (ölçeksiz ve ölçekli iki sıra). Betik, her değer için sklearn'ün `RFE` sonucunun bu sırayla aynı olduğunu doğrular.
 
