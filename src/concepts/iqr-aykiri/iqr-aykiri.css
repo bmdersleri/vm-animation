@@ -222,7 +222,7 @@
 
 /* ---------- Lab: compact params card that fits the side column at 720 px ---------- */
 /* Groups that do not apply to the current step are hidden, not greyed (controls.ts sets data-off). */
-[data-mode="lab"] .iqr-params .ctl[data-off="true"] { display: none; }
+[data-mode="lab"] .iqr-params .ctl[data-off] { display: none; }
 [data-mode="lab"] .iqr-params { gap: 4px; }
 [data-mode="lab"] .iqr-params fieldset.ctl { gap: 0 14px; }
 [data-mode="lab"] .iqr-params fieldset.ctl legend { width: auto; }

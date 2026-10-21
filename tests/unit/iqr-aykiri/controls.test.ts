@@ -72,7 +72,7 @@ describe('mountIqrParams', () => {
 describe('mountIqrParams hide-by-step rule', () => {
   const offGroups = (host: HTMLElement): string[] =>
     [...host.querySelectorAll<HTMLElement>('fieldset.ctl')]
-      .filter((f) => f.dataset.off === 'true').map((f) => f.querySelector('legend')!.textContent!);
+      .filter((f) => f.hasAttribute('data-off')).map((f) => f.querySelector('legend')!.textContent!);
 
   it('marks Doldurma off in steps 6-11 and IQR katsayısı / Müdahale off in steps 1-5', () => {
     const { player, host } = make();
@@ -90,9 +90,9 @@ describe('mountIqrParams hide-by-step rule', () => {
       player.goto(i);
       for (const f of host.querySelectorAll<HTMLElement>('fieldset.ctl')) {
         const dis = [...f.querySelectorAll<HTMLInputElement>('input')].every((r) => r.disabled);
-        expect(f.dataset.off === 'true', `step ${i + 1} ${f.textContent}`).toBe(dis);
+        expect(f.hasAttribute('data-off'), `step ${i + 1} ${f.textContent}`).toBe(dis);
       }
-      expect(host.querySelector<HTMLElement>('.ctl.range')!.dataset.off).toBeUndefined();
+      expect(host.querySelector<HTMLElement>('.ctl.range')!.hasAttribute('data-off')).toBe(false);
       expect(host.querySelector<HTMLInputElement>('input[type=range]')!.disabled).toBe(false);
     }
   });

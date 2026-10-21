@@ -189,8 +189,11 @@ test('lab: the params card shows only the current controls and fits without scro
   }
 });
 
-/** Max allowed empty height (px) between the cards row and the top of the number-line text / marks in Lab. */
-const LAB_BAND_MAX = 200;
+/**
+ * Max allowed empty height (px) between the cards row and the top of the number-line text / marks in Lab.
+ * Measured: old 211-290, new <= 169 (dots-only steps 1 and 6); 120 is not reachable without shrinking the plot below its label layout.
+ */
+const LAB_BAND_MAX = 180;
 
 test('lab: no large empty band between the cards and the number line', async ({ page }, info) => {
   await open(page, PAGE, 'lab', READY);

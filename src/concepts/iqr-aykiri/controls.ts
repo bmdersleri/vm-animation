@@ -80,10 +80,7 @@ export function mountIqrParams(host: HTMLElement, p: StepPlayer<IqrParams>): voi
       }
       // Lab hides a group that does not apply to this step (CSS); Ders keeps showing it greyed
       const fs = fieldsetOf.get(g.key)!;
-      if (fs.dataset.off !== String(off)) {
-        if (off) fs.dataset.off = 'true';
-        else delete fs.dataset.off;
-      }
+      fs.toggleAttribute('data-off', off);
     });
   };
   sync(p.state.index, p.state.params);

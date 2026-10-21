@@ -270,8 +270,11 @@ test('lab: the params card shows only the current controls and fits without scro
   }
 });
 
-/** Max allowed empty height (px) between the split content and the formula strip in Lab. */
-const LAB_BAND_MAX = 170;
+/**
+ * Max allowed empty height (px) between the split content and the formula strip in Lab.
+ * Measured: old 221, new 148 (the block is centred, so ~the same space sits above it); 120 would need a stretched plot.
+ */
+const LAB_BAND_MAX = 160;
 
 test('lab: no large empty band under the split plot', async ({ page }, info) => {
   await open(page, PAGE, 'lab', READY);

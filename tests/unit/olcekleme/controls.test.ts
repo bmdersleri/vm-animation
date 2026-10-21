@@ -38,7 +38,7 @@ describe('mountOlcParams hide-by-step rule', () => {
     expect(groups).toHaveLength(3);
     for (let i = 0; i < 13; i++) {
       player.goto(i);
-      const off = groups.map((g) => g.dataset.off === 'true');
+      const off = groups.map((g) => g.hasAttribute('data-off'));
       expect(off, `step ${i + 1}`).toEqual([
         !SCATTER_STEPS.includes(i), !SCATTER_STEPS.includes(i), !FIT_STEPS.includes(i),
       ]);

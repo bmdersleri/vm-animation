@@ -12,9 +12,9 @@ import type { OlcView } from './view';
 const TN = 'olc-split';
 const SVGNS = 'http://www.w3.org/2000/svg';
 const FLOW_TEXT = ['train_test_split', 'fit (yalnızca eğitim)', 'transform (eğitim ve test)'];
-/** Height reserved under the plot for the flow boxes (Ders / Lab). */
 /** Tallest split plot in Lab (px); taller stages centre it instead of stretching the gaps. */
 const LAB_PLOT_MAX_H = 340;
+/** Height reserved under the plot for the flow boxes (Ders / Lab). */
 const FLOW_H: Record<Mode, number> = { ders: 110, lab: 64 };
 
 type G = Selection<SVGGElement, unknown, null, undefined>;
