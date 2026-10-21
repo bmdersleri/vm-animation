@@ -22,6 +22,7 @@ export default defineConfig({
         'roc-esik': resolve(root, 'roc-esik/index.html'),
         'capraz-dogrulama': resolve(root, 'capraz-dogrulama/index.html'),
         'k-means': resolve(root, 'k-means/index.html'),
+        'k-secimi': resolve(root, 'k-secimi/index.html'),
       },
     },
   },
