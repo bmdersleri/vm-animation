@@ -15,3 +15,14 @@ export function tickFormat(ticks: number[]): (v: number) => string {
   const dec = step > 0 ? Math.max(0, Math.min(6, -Math.floor(Math.log10(step) + 1e-9))) : 0;
   return (v) => formatNumber(v, dec);
 }
+
+/** formatNumber(v, decimals); while v ≠ 0 would still read as zero, decimals grow up to `max`. */
+export function formatNonZero(v: number, decimals = 2, max = 6): string {
+  let d = decimals;
+  let s = formatNumber(v, d);
+  while (v !== 0 && d < max && !/[1-9]/.test(s)) {
+    d += 1;
+    s = formatNumber(v, d);
+  }
+  return s;
+}
