@@ -45,6 +45,12 @@ const LABEL_FALLBACK_PX = 12;
 const AMBIGUITY_SLACK = 3;
 const overlap = (p: Box, q: Box): number =>
   Math.max(0, Math.min(p.r, q.r) - Math.max(p.l, q.l)) * Math.max(0, Math.min(p.b, q.b) - Math.max(p.t, q.t));
+type Key = [number, number, number];
+/** Lexicographic a < b: the first differing entry decides. */
+const less = (a: Key, b: Key): boolean => {
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i];
+  return false;
+};
 /** Text box of a label written at (x, y) with the given anchor (y is the baseline). */
 function labelBox(x: number, y: number, chars: number, anchor: Anchor, fs: number): Box {
   const w = chars * CHAR_EM * fs;
@@ -213,6 +219,15 @@ export class ClusterScatterLayer {
     this.placeLabels(spec, centers, csAll, rgAll, go, px, py);
   }
 
+  /** The rendered label font size, cached until the next resize; no label yet gives the uncached fallback. */
+  private readLabelFont(csAll: Sel<Pt>, rgAll: Sel<Ring>): number {
+    const first = csAll.select<SVGTextElement>('text').node() ?? rgAll.select<SVGTextElement>('text').node();
+    if (!first) return LABEL_FALLBACK_PX;
+    const read = typeof getComputedStyle === 'function' ? parseFloat(getComputedStyle(first).fontSize) : NaN;
+    this.fsCache = Number.isFinite(read) && read > 0 ? read : LABEL_FALLBACK_PX;
+    return this.fsCache;
+  }
+
   /**
    * Greedy label placement at the target positions: each centre label (in index order), then the
    * selected-point label, takes the first offset whose box covers no centre's plus, no label placed
@@ -222,14 +237,7 @@ export class ClusterScatterLayer {
     spec: ClusterScatterSpec, centers: readonly Pt[], csAll: Sel<Pt>, rgAll: Sel<Ring>,
     go: <S extends AnySel>(sel: S) => S, px: (p: Pt) => number, py: (p: Pt) => number,
   ): void {
-    let fs = this.fsCache;
-    if (fs === null) {
-      const first = csAll.select<SVGTextElement>('text').node() ?? rgAll.select<SVGTextElement>('text').node();
-      if (first) {
-        const read = typeof getComputedStyle === 'function' ? parseFloat(getComputedStyle(first).fontSize) : NaN;
-        fs = this.fsCache = Number.isFinite(read) && read > 0 ? read : LABEL_FALLBACK_PX;
-      } else fs = LABEL_FALLBACK_PX;
-    }
+    const fs = this.fsCache ?? this.readLabelFont(csAll, rgAll);
     const half = ARM + 2;
     const taken: Box[] = centers.map((c) => ({ l: px(c) - half, t: py(c) - half, r: px(c) + half, b: py(c) + half }));
     const m = 6;
@@ -247,15 +255,13 @@ export class ClusterScatterLayer {
     // Order: collision-free and unambiguous, collision-free but ambiguous, then the least overlap.
     const choose = (x: number, y: number, chars: number, cands: Offset[], own = -1): Offset => {
       let best = cands[0];
-      let bestKey: [number, number, number] = [Infinity, Infinity, Infinity];
+      let bestKey: Key = [Infinity, Infinity, Infinity];
       let bestBox: Box | null = null;
       for (const o of cands) {
         const box = labelBox(x + o.dx, y + o.dy, chars, o.anchor, fs);
         const hits = taken.reduce((sum, t) => sum + overlap(box, t), 0) + outside(box);
-        const key: [number, number, number] = [hits > 0 ? 1 : 0, ambiguous(box, own) ? 1 : 0, hits];
-        if (key[0] < bestKey[0] || (key[0] === bestKey[0] && (key[1] < bestKey[1] || (key[1] === bestKey[1] && key[2] < bestKey[2])))) {
-          best = o; bestKey = key; bestBox = box;
-        }
+        const key: Key = [hits > 0 ? 1 : 0, ambiguous(box, own) ? 1 : 0, hits];
+        if (less(key, bestKey)) { best = o; bestKey = key; bestBox = box; }
         if (key[0] === 0 && key[1] === 0) break;
       }
       if (bestBox) taken.push(bestBox);
