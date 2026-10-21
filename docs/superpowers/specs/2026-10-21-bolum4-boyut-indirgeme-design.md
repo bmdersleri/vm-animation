@@ -112,7 +112,7 @@ Kitabın 005 örneği: `default_rng(11)`, iki küme × 150 nokta, 10 boyut, öl�
 - PCA 2B: açıklanan varyans oranları **%82,1** ve **%2,5**.
 - t-SNE: `TSNE(n_components=2, perplexity=30, random_state=42, init="pca")`, kitapla aynı. Betik `perplexity` 5 ve 50 için de gömme kaydeder.
 - Yeni müşteri: 10 boyutta 4,0. Ölçekleyici ve PCA eğitim verisiyle `fit` edilmiş hâlleriyle `transform` eder; nokta PCA panelinde ikinci kümenin içine düşer, diğer 300 nokta yerinden oynamaz.
-- t-SNE yeni müşteriyle birlikte 301 nokta üzerinde yeniden `fit_transform` edilir. Kontrol: ilk noktanın koordinatı (28,3; 1,2) → (−27,7; −1,6); ilk 300 noktanın ortalama yer değiştirmesi ≈ 47,5 birim (harita aynalanır). Betik "ortalama yer değiştirme, gömmenin genişliğinin %25'inden büyük" koşulunu doğrular; tutmazsa hata verir.
+- t-SNE yeni müşteriyle birlikte 301 nokta üzerinde yeniden `fit_transform` edilir. Kontrol: ilk noktanın koordinatı yeni müşterisiz gömmede (28,3; 1,2); yeni müşteriyle ilk 300 noktanın ortalama yer değiştirmesi gömmenin genişliğinin yaklaşık %56'sı (≈ 34,4 birim; harita değişir). Betik "ortalama yer değiştirme, gömmenin genişliğinin %25'inden büyük" koşulunu doğrular; tutmazsa hata verir.
 
 ### Adımlar (Ders) — 13 adım
 
@@ -135,7 +135,7 @@ Kitabın 005 örneği: `default_rng(11)`, iki küme × 150 nokta, 10 boyut, öl�
 **Bölüm 3 — PCA sıkıştırır, t-SNE gösterir**
 
 11. **Yan yana.** İki panel: solda PCA 2B, sağda t-SNE 2B (kitabın 005 verisi, Şekil 4.2). Churn eden turuncu ▲, etmeyen lacivert ●. Şerit: "PCA: PC1 %82,1 · t-SNE: perplexity = 30". Mesaj: t-SNE kümeleri daha net ayırır ama eksenlerinin sayısal anlamı yoktur. Terim: t-SNE.
-12. **Yeni müşteri.** Camgöbeği ◆ yeni müşteri, PCA panelinde öğrenilmiş bileşenlerle `transform` edilip ikinci kümeye yerleşir; diğer noktalar yerinden oynamaz. t-SNE panelinde ise `transform` yoktur: 301 nokta yeniden `fit_transform` edilir, harita aynalanır ve noktalar animasyonla yeni yerlerine geçer. Şerit: "`tsne.transform(yeni)` → AttributeError; yeniden çalıştırınca harita değişti". Terim: `transform`.
+12. **Yeni müşteri.** Camgöbeği ◆ yeni müşteri, PCA panelinde öğrenilmiş bileşenlerle `transform` edilip ikinci kümeye yerleşir; diğer noktalar yerinden oynamaz. t-SNE panelinde ise `transform` yoktur: 301 nokta yeniden `fit_transform` edilir, harita değişir ve noktalar animasyonla yeni yerlerine geçer. Şerit: "`tsne.transform(yeni)` → AttributeError; yeniden çalıştırınca harita değişti". Terim: `transform`.
 13. **Kural.** Üç kutu: "PCA sıkıştırır" (`fit` eğitimde, `transform` her yerde) · "özellik seçimi eler" (`ozellik-secimi` sayfasına bağlantı) · "t-SNE yalnızca gösterir" (model girdisi değil). Kitabın Sınav Notu cümlesi. Terim: model girdisi (model input).
 
 Adım başlıklarının ve metinlerin son hâli builder'ın işidir. Akış ve her adımın göstermesi gereken an bağlayıcıdır. Her adıma Ders'te görünen bir `term` verilir.
@@ -277,6 +277,6 @@ Hoca kontrol etsin diye hepsi burada:
 - **PCA sahnesi 003'ün 2. ve 9. sütunu:** kitabın kendi verisinden, görünür bir PC2 veren çift. Ölçeklenmiş iki sütunda PC1 her zaman 45°'dedir; bu bir kusur değil, anlatıda "korelasyon pozitifse PC1 köşegendir" diye söylenir.
 - **Ölçek tuzağı ×1000 ile:** kitabın Hata 1'i aynı veride tek değişkenle. Kitap bu hatayı yalnızca sözle anlatıyor.
 - **PCA ve seçim "test kümesine fit" hataları animasyonsuz:** bu verilerde görünür fark yok (ölçüldü). Kural metinde ve son adımlarda.
-- **t-SNE yeni müşterisi 10 boyutta 4,0:** harita aynalanıyor (ölçüldü). Betik, etkinin görünür kaldığını her çalıştırmada doğrular.
+- **t-SNE yeni müşterisi 10 boyutta 4,0:** harita değişiyor (ölçüldü: ortalama yer değiştirme genişliğin ≈ %56'sı). Betik, etkinin görünür kaldığını her çalıştırmada doğrular.
 - **Renk:** yeni müşteri camgöbeği ◆ (Bölüm 3'teki turuncu ◆ değil), çünkü bu sayfalarda turuncu ▲ "churn eden" demek.
 - **Kitaptaki 51 / 53 tutarsızlığı:** sayfa kodun gerçek çıktısını (53) yazar.
