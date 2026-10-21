@@ -1,6 +1,6 @@
 # VM Animasyon
 
-Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme** ile **Özellik Seçimi (filtre ve sarmalayıcı)**.
+Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme**, **Özellik Seçimi (filtre ve sarmalayıcı)**, **Karmaşıklık Matrisi ve Metrikler**, **ROC, PR ve Karar Eşiği** ile **Çapraz Doğrulama ve Veri Sızıntısı**.
 
 İçerik, "Modern Veri Madenciliğine Giriş" kitabına (Prof. Dr. İsmail KIRBAŞ) dayanır.
 
@@ -15,6 +15,9 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - Ölçekleme: https://bmdersleri.github.io/vm-animation/olcekleme/
 - PCA ve t-SNE: https://bmdersleri.github.io/vm-animation/pca/
 - Özellik seçimi: https://bmdersleri.github.io/vm-animation/ozellik-secimi/
+- Karmaşıklık matrisi: https://bmdersleri.github.io/vm-animation/karmasiklik-matrisi/
+- ROC ve karar eşiği: https://bmdersleri.github.io/vm-animation/roc-esik/
+- Çapraz doğrulama: https://bmdersleri.github.io/vm-animation/capraz-dogrulama/
 
 Site, GitHub Pages etkinleştirildiğinde (Settings > Pages > Source: GitHub Actions) `main` dalına her push ile yayına girer. GitHub Actions yalnızca derleyip yayınlar; testler yerelde çalışır. `npm ci` bir push öncesi kancası (`.githooks/pre-push`) kurar: `main`'e her push'tan önce `npm run check` kendiliğinden çalışır ve geçmezse push durur.
 
@@ -75,6 +78,7 @@ python scripts/make_tree_data.py
 python scripts/make_nb_data.py
 python scripts/make_onisleme_data.py
 python scripts/make_boyut_data.py
+python scripts/make_degerlendirme_data.py
 ```
 
 - `make_knn_data.py`: Telco churn CSV'sinden k-NN örneğini ve scikit-learn referans değerlerini üretir.
@@ -82,6 +86,7 @@ python scripts/make_boyut_data.py
 - `make_nb_data.py`: Naive Bayes sayfasının spam sayımlarını ve Gauss eğitim kümesini (`src/concepts/naive-bayes/data/nb_data.json`) ve `tests/fixtures/naive-bayes_sklearn.json` referanslarını üretir; CSV gerekmez.
 - `make_onisleme_data.py`: IQR ve ölçekleme sayfalarının verisini üretir (kitabın 002, 003, 004 ve 006 örnekleri): `src/concepts/iqr-aykiri/data/iqr_data.json`, `src/concepts/olcekleme/data/olcekleme_data.json` ve `tests/fixtures/onisleme_sklearn.json` referansları; CSV gerekmez.
 - `make_boyut_data.py`: PCA ve özellik seçimi sayfalarının verisini üretir (kitabın 002, 003, 004 ve 005 örnekleri): `src/concepts/pca/data/pca_data.json`, `src/concepts/ozellik-secimi/data/secim_data.json` ve `tests/fixtures/boyut_sklearn.json` referansları; t-SNE altı kez koşar; CSV gerekmez.
+- `make_degerlendirme_data.py`: Bölüm 6 sayfalarının (karmaşıklık matrisi, ROC/PR ve çapraz doğrulama) ortak verisini (`src/concepts/degerlendirme/data/degerlendirme.json`) ve `tests/fixtures/degerlendirme_sklearn.json` referanslarını üretir; Python, NumPy ve scikit-learn sürümleri dosyaya yazılır; ikinci çalıştırma fark üretmez; CSV gerekmez.
 
 ## Yeni kavram ekleme
 
