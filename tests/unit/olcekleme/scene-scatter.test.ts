@@ -7,6 +7,26 @@ import { CUSTOMERS } from '../../../src/concepts/olcekleme/data';
 import { Z_FIT } from '../../../src/concepts/olcekleme/space';
 import type { Mode } from '../../../src/core/mode';
 
+// jsdom has no SVGGraphicsElement.transform.baseVal, which d3-interpolate needs to tween the axes' transform attribute
+if (!('transform' in SVGGElement.prototype)) {
+  Object.defineProperty(SVGGElement.prototype, 'transform', {
+    configurable: true,
+    get(this: SVGGElement) {
+      const attr = this.getAttribute('transform') ?? '';
+      return {
+        baseVal: {
+          consolidate: () => {
+            const t = /translate\(\s*(-?[\d.e+-]+)\s*(?:,|\s)\s*(-?[\d.e+-]+)/.exec(attr);
+            const r = /rotate\(\s*(-?[\d.e+-]+)/.exec(attr);
+            const rad = r ? (Number(r[1]) * Math.PI) / 180 : 0;
+            return { matrix: { a: Math.cos(rad), b: Math.sin(rad), c: -Math.sin(rad), d: Math.cos(rad), e: t ? Number(t[1]) : 0, f: t ? Number(t[2]) : 0 } };
+          },
+        },
+      };
+    },
+  });
+}
+
 const view = (i: number, over: Partial<OlcParams> = {}): OlcView =>
   deriveOlcView(i, { ...olceklemeScenario.defaults, ...olceklemeScenario.steps[i].params, ...over });
 let layers: ScatterLayer[] = [];
