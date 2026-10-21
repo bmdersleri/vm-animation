@@ -1,18 +1,14 @@
-import { select } from 'd3-selection';
 import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
 import type { Mode } from '../../core/mode';
 import type { SceneHandle } from '../../core/shell';
-import { AxesLayer } from '../../core/plot/axes';
-import { ClusterScatterLayer, type ClusterScatterSpec } from '../../core/plot/cluster-scatter';
+import type { ClusterScatterSpec } from '../../core/plot/cluster-scatter';
 import { CLUSTER } from '../../core/plot/marks';
-import { fitEqualAspect, type Domain, type Rect } from '../../core/plot/viewport';
 import { kmeansData } from '../kmeans/data';
+import { ClusterPlotFrame } from '../kmeans/plot-frame';
 import { frameCount, type KMeansParams } from './scenario';
 import { deriveView, inertiaText, type KMeansView } from './view';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const DOMAIN: Domain = { x: [-2.1, 2.7], y: [-1.8, 2.0] };
-const FONT_FALLBACK: Record<Mode, { tick: number; axis: number }> = { ders: { tick: 18, axis: 19 }, lab: { tick: 13, axis: 14 } };
 const STEP_ATA = 2;
 const STEP_KOTU = 6;
 const STEP_NINIT = 7;
@@ -47,54 +43,12 @@ export function mountKMeansScene(host: HTMLElement, player: StepPlayer<KMeansPar
   root.append(plotHost, panel);
   host.append(root);
 
-  const svg = select(svgEl);
-  const gAxes = svg.append('g').attr('class', 'axes');
-  const axes = new AxesLayer(gAxes as never);
-  const gPlot = svg.append('g').attr('class', 'km-marks');
-  const layer = new ClusterScatterLayer(gPlot.node() as SVGGElement, DOMAIN);
-  const probe = svg.append('text').attr('class', 'km-probe').attr('visibility', 'hidden').attr('aria-hidden', 'true');
+  const frame = new ClusterPlotFrame(svgEl, plotHost, 'km', 0.62);
+  const layer = frame.layer;
 
   let size: { w: number; h: number } | null = null;
   let rendered = false;
   let destroyed = false;
-  let lastPlot = '';
-
-  const fonts = (): { tick: number; axis: number } => {
-    const fb = FONT_FALLBACK[mode];
-    const px = parseFloat(getComputedStyle(probe.node() as Element).fontSize);
-    const axisPx = parseFloat(getComputedStyle(svgEl).getPropertyValue('--fs-axis'));
-    const tick = Number.isFinite(px) && px > 0 ? px : fb.tick;
-    return { tick, axis: Number.isFinite(axisPx) && axisPx > 0 ? axisPx : fb.axis };
-  };
-
-  /** Lays the axes and the scatter out in the plot host; returns the animation-free redraw. */
-  function layout(): void {
-    const r = plotHost.getBoundingClientRect();
-    const w = r.width > 0 ? Math.floor(r.width) : Math.max(200, Math.floor((size?.w ?? 900) * 0.62));
-    const h = r.height > 0 ? Math.floor(r.height) : (size?.h ?? 600);
-    svgEl.setAttribute('width', String(w));
-    svgEl.setAttribute('height', String(h));
-    const { tick, axis } = fonts();
-    const mL = Math.ceil(tick * 2.6 + 8 + axis * 1.4);
-    const mB = Math.ceil(tick * 1.5 + 8 + axis * 1.5);
-    const avail: Rect = { left: mL, top: 8, width: Math.max(40, w - mL - 10), height: Math.max(40, h - 8 - mB) };
-    const key = `${mode} ${w} ${h} ${tick} ${axis}`;
-    if (key === lastPlot) return;
-    lastPlot = key;
-    const sc = fitEqualAspect(DOMAIN, avail);
-    const plot: Rect = {
-      left: sc.x(DOMAIN.x[0]), top: sc.y(DOMAIN.y[1]),
-      width: sc.x(DOMAIN.x[1]) - sc.x(DOMAIN.x[0]), height: sc.y(DOMAIN.y[0]) - sc.y(DOMAIN.y[1]),
-    };
-    const bottom = plot.top + plot.height;
-    axes.draw(sc, plot, {
-      xTickCount: 6, yTickCount: 6,
-      xTickY: bottom + tick * 1.15, yTickX: plot.left - 8,
-      xTitle: { x: plot.left + plot.width / 2, y: bottom + tick * 1.15 + axis * 1.45, text: 'sepal length (ölçeklenmiş)' },
-      yTitle: { x: plot.left - 8 - tick * 2.6 - axis * 0.3, y: plot.top + plot.height / 2, lines: ['petal length (ölçeklenmiş)'] },
-    }, 0, 'km');
-    layer.resize(avail);
-  }
 
   function specFor(v: KMeansView, index: number, p: KMeansParams): ClusterScatterSpec {
     const points = kmeansData.points;
@@ -198,7 +152,7 @@ export function mountKMeansScene(host: HTMLElement, player: StepPlayer<KMeansPar
 
   function render(s: PlayerState<KMeansParams>, animate: boolean): void {
     if (destroyed) return;
-    layout();
+    frame.layout(mode, size);
     const v = deriveView(s.params);
     layer.update(specFor(v, s.index, s.params), animate);
     drawPanel(v, s.index, s.params);
@@ -211,19 +165,19 @@ export function mountKMeansScene(host: HTMLElement, player: StepPlayer<KMeansPar
   return {
     resize(w: number, h: number): void {
       size = { w, h };
-      lastPlot = '';
+      frame.invalidate();
       render(player.state, false);
     },
     setMode(m: Mode): void {
       mode = m;
       root.dataset.mode = m;
-      lastPlot = '';
+      frame.invalidate();
       render(player.state, false);
     },
     destroy(): void {
       destroyed = true;
       unsubscribe();
-      layer.destroy();
+      frame.destroy();
       root.remove();
     },
   };

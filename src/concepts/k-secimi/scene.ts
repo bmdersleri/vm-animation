@@ -2,12 +2,11 @@ import { select } from 'd3-selection';
 import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
 import type { Mode } from '../../core/mode';
 import type { SceneHandle } from '../../core/shell';
-import { AxesLayer } from '../../core/plot/axes';
-import { ClusterScatterLayer, type ClusterScatterSpec } from '../../core/plot/cluster-scatter';
+import type { ClusterScatterSpec } from '../../core/plot/cluster-scatter';
 import { CLUSTER } from '../../core/plot/marks';
-import { fitEqualAspect, type Domain, type Rect } from '../../core/plot/viewport';
 import { kmeansData } from '../kmeans/data';
 import { drops } from '../kmeans/geometry';
+import { ClusterPlotFrame } from '../kmeans/plot-frame';
 import { KLineChart } from './charts';
 import { ELBOW_K, type KSecimiParams } from './scenario';
 import {
@@ -15,8 +14,6 @@ import {
 } from './view';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const DOMAIN: Domain = { x: [-2.1, 2.7], y: [-1.8, 2.0] };
-const FONT_FALLBACK: Record<Mode, { tick: number; axis: number }> = { ders: { tick: 18, axis: 19 }, lab: { tick: 13, axis: 14 } };
 const STEP_CHANGED = 2;
 const STEP_ELBOW = 4;
 const STEP_CURVE = 6;
@@ -91,10 +88,8 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
   root.append(plotHost, side);
   host.append(root);
 
-  const svg = select(svgEl);
-  const axes = new AxesLayer(svg.append('g').attr('class', 'axes') as never);
-  const layer = new ClusterScatterLayer(svg.append('g').attr('class', 'ks-marks').node() as SVGGElement, DOMAIN);
-  const probe = svg.append('text').attr('class', 'ks-probe').attr('visibility', 'hidden').attr('aria-hidden', 'true');
+  const frame = new ClusterPlotFrame(svgEl, plotHost, 'ks', 0.55);
+  const layer = frame.layer;
 
   const ks = kmeansData.ks.map((r) => r.k);
   const elChart = new KLineChart(select(elCard.svg).append('g').node() as SVGGElement, {
@@ -108,48 +103,14 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
   let size: { w: number; h: number } | null = null;
   let rendered = false;
   let destroyed = false;
-  let lastPlot = '';
   let lastCharts = '';
   /** Points that changed number on the last slider move; shown for FLASH_MS. */
   let flash: number[] | null = null;
   let flashTimer: ReturnType<typeof setTimeout> | null = null;
   let shownK: number | null = null;
 
-  const fonts = (): { tick: number; axis: number } => {
-    const fb = FONT_FALLBACK[mode];
-    const px = parseFloat(getComputedStyle(probe.node() as Element).fontSize);
-    const axisPx = parseFloat(getComputedStyle(svgEl).getPropertyValue('--fs-axis'));
-    return { tick: Number.isFinite(px) && px > 0 ? px : fb.tick, axis: Number.isFinite(axisPx) && axisPx > 0 ? axisPx : fb.axis };
-  };
-
   function layout(): void {
-    const { tick, axis } = fonts();
-    // scatter
-    const r = plotHost.getBoundingClientRect();
-    const w = r.width > 0 ? Math.floor(r.width) : Math.max(200, Math.floor((size?.w ?? 900) * 0.55));
-    const h = r.height > 0 ? Math.floor(r.height) : (size?.h ?? 600);
-    svgEl.setAttribute('width', String(w));
-    svgEl.setAttribute('height', String(h));
-    const mL = Math.ceil(tick * 2.6 + 8 + axis * 1.4);
-    const mB = Math.ceil(tick * 1.5 + 8 + axis * 1.5);
-    const avail: Rect = { left: mL, top: 8, width: Math.max(40, w - mL - 10), height: Math.max(40, h - 8 - mB) };
-    const key = `${mode} ${w} ${h} ${tick} ${axis}`;
-    if (key !== lastPlot) {
-      lastPlot = key;
-      const sc = fitEqualAspect(DOMAIN, avail);
-      const plot: Rect = {
-        left: sc.x(DOMAIN.x[0]), top: sc.y(DOMAIN.y[1]),
-        width: sc.x(DOMAIN.x[1]) - sc.x(DOMAIN.x[0]), height: sc.y(DOMAIN.y[0]) - sc.y(DOMAIN.y[1]),
-      };
-      const bottom = plot.top + plot.height;
-      axes.draw(sc, plot, {
-        xTickCount: 6, yTickCount: 6,
-        xTickY: bottom + tick * 1.15, yTickX: plot.left - 8,
-        xTitle: { x: plot.left + plot.width / 2, y: bottom + tick * 1.15 + axis * 1.45, text: 'sepal length (ölçeklenmiş)' },
-        yTitle: { x: plot.left - 8 - tick * 2.6 - axis * 0.3, y: plot.top + plot.height / 2, lines: ['petal length (ölçeklenmiş)'] },
-      }, 0, 'ks');
-      layer.resize(avail);
-    }
+    const { tick } = frame.layout(mode, size);
     // charts
     const boxes = [elCard, silCard].map((c) => {
       const cr = c.host.getBoundingClientRect();
@@ -347,14 +308,14 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
   return {
     resize(w: number, h: number): void {
       size = { w, h };
-      lastPlot = '';
+      frame.invalidate();
       lastCharts = '';
       render(player.state, false);
     },
     setMode(m: Mode): void {
       mode = m;
       root.dataset.mode = m;
-      lastPlot = '';
+      frame.invalidate();
       lastCharts = '';
       render(player.state, false);
     },
@@ -362,7 +323,7 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
       destroyed = true;
       clearFlash();
       unsubscribe();
-      layer.destroy();
+      frame.destroy();
       elChart.destroy();
       silChart.destroy();
       root.remove();
