@@ -1,0 +1,393 @@
+{
+ "versions": {
+  "sklearn": "1.9.0",
+  "numpy": "2.5.2"
+ },
+ "pca": {
+  "pair": {
+   "r": 0.8243428984837741,
+   "cov": [
+    [
+     1.0020040080160322,
+     0.8259948882602949
+    ],
+    [
+     0.8259948882602949,
+     1.0020040080160322
+    ]
+   ],
+   "var0": 1.0020040080160322,
+   "lambda": [
+    1.8279988962763274,
+    0.17600911975573758
+   ],
+   "components": [
+    [
+     0.7071067811865475,
+     0.7071067811865475
+    ],
+    [
+     0.7071067811865475,
+     -0.7071067811865475
+    ]
+   ],
+   "evr": [
+    0.9121714492418871,
+    0.08782855075811302
+   ],
+   "x1000": {
+    "lambda": [
+     1002004.6889192709,
+     0.32110076949348365
+    ],
+    "components": [
+     [
+      0.0008243428825639894,
+      0.9999996602293482
+     ],
+     [
+      0.9999996602293482,
+      -0.0008243428825639894
+     ]
+    ],
+    "evr": [
+     0.9999996795417525,
+     3.204582474962491e-07
+    ]
+   }
+  },
+  "evr12": [
+   0.4407599779261332,
+   0.3099073251329782,
+   0.18752595261649846,
+   0.020168350408016924,
+   0.012246831559986446,
+   0.005943523010461399,
+   0.00538788678743089,
+   0.004927041814375907,
+   0.004213287850402705,
+   0.003627307263916179,
+   0.0029459335679475813,
+   0.002346582061852117
+  ],
+  "cum12": [
+   0.4407599779261332,
+   0.7506673030591113,
+   0.9381932556756098,
+   0.9583616060836267,
+   0.9706084376436132,
+   0.9765519606540746,
+   0.9819398474415054,
+   0.9868668892558813,
+   0.991080177106284,
+   0.9947074843702002,
+   0.9976534179381478,
+   0.9999999999999999
+  ],
+  "kByThreshold": {
+   "50": 2,
+   "51": 2,
+   "52": 2,
+   "53": 2,
+   "54": 2,
+   "55": 2,
+   "56": 2,
+   "57": 2,
+   "58": 2,
+   "59": 2,
+   "60": 2,
+   "61": 2,
+   "62": 2,
+   "63": 2,
+   "64": 2,
+   "65": 2,
+   "66": 2,
+   "67": 2,
+   "68": 2,
+   "69": 2,
+   "70": 2,
+   "71": 2,
+   "72": 2,
+   "73": 2,
+   "74": 2,
+   "75": 2,
+   "76": 3,
+   "77": 3,
+   "78": 3,
+   "79": 3,
+   "80": 3,
+   "81": 3,
+   "82": 3,
+   "83": 3,
+   "84": 3,
+   "85": 3,
+   "86": 3,
+   "87": 3,
+   "88": 3,
+   "89": 3,
+   "90": 3,
+   "91": 3,
+   "92": 3,
+   "93": 3,
+   "94": 4,
+   "95": 4,
+   "96": 5,
+   "97": 5,
+   "98": 7,
+   "99": 9
+  },
+  "componentsShape": [
+   12,
+   12
+  ],
+  "ex002": {
+   "before": 60,
+   "after": 53
+  },
+  "t005": {
+   "evr": [
+    0.8206248251074334,
+    0.025229564883053307
+   ],
+   "newPca": [
+    2.7807476257768977,
+    -0.015983836369741364
+   ],
+   "firstP30": [
+    28.293827056884766,
+    1.2231699228286743
+   ],
+   "firstP30New": [
+    -0.9943164587020874,
+    -25.94574546813965
+   ],
+   "meanDisplacement": 34.426334381103516,
+   "width": 61.41155242919922
+  }
+ },
+ "secim": {
+  "churnCount": 169,
+  "churnRate": 0.4225,
+  "variance": [
+   406.36637394118065,
+   629688.3390786373,
+   5.22359375,
+   302.89444375,
+   0.0,
+   0.840838924199303,
+   8.923243750000001,
+   1.9467750000000004
+  ],
+  "std0": [
+   20.158531046214172,
+   793.5290411060186,
+   2.285518267264561,
+   17.403862897357012,
+   0.0,
+   0.9169726954491627,
+   2.9871798991691145,
+   1.3952687913086856
+  ],
+  "vtSupport": {
+   "0": [
+    "aylikUcret",
+    "toplamUcret",
+    "hizmetSayisi",
+    "musteriKidemAy",
+    "gurultuluOznitelik",
+    "destekTaleplerinSayisi",
+    "odemeGecikmesi"
+   ],
+   "0.01": [
+    "aylikUcret",
+    "toplamUcret",
+    "hizmetSayisi",
+    "musteriKidemAy",
+    "gurultuluOznitelik",
+    "destekTaleplerinSayisi",
+    "odemeGecikmesi"
+   ],
+   "1": [
+    "aylikUcret",
+    "toplamUcret",
+    "hizmetSayisi",
+    "musteriKidemAy",
+    "destekTaleplerinSayisi",
+    "odemeGecikmesi"
+   ],
+   "10": [
+    "aylikUcret",
+    "toplamUcret",
+    "musteriKidemAy"
+   ]
+  },
+  "f": [
+   0.571752622707589,
+   0.7315567785256066,
+   2.8628684094360315,
+   94.65852454300096,
+   null,
+   0.040976965134994436,
+   158.44428346650622,
+   1.622301538135953
+  ],
+  "kbest": {
+   "1": [
+    "destekTaleplerinSayisi"
+   ],
+   "2": [
+    "musteriKidemAy",
+    "destekTaleplerinSayisi"
+   ],
+   "3": [
+    "hizmetSayisi",
+    "musteriKidemAy",
+    "destekTaleplerinSayisi"
+   ],
+   "4": [
+    "hizmetSayisi",
+    "musteriKidemAy",
+    "destekTaleplerinSayisi",
+    "odemeGecikmesi"
+   ],
+   "5": [
+    "toplamUcret",
+    "hizmetSayisi",
+    "musteriKidemAy",
+    "destekTaleplerinSayisi",
+    "odemeGecikmesi"
+   ],
+   "6": [
+    "aylikUcret",
+    "toplamUcret",
+    "hizmetSayisi",
+    "musteriKidemAy",
+    "destekTaleplerinSayisi",
+    "odemeGecikmesi"
+   ],
+   "7": [
+    "aylikUcret",
+    "toplamUcret",
+    "hizmetSayisi",
+    "musteriKidemAy",
+    "gurultuluOznitelik",
+    "destekTaleplerinSayisi",
+    "odemeGecikmesi"
+   ]
+  },
+  "rfe": {
+   "yok": {
+    "support": {
+     "1": [
+      "destekTaleplerinSayisi"
+     ],
+     "2": [
+      "gurultuluOznitelik",
+      "destekTaleplerinSayisi"
+     ],
+     "3": [
+      "musteriKidemAy",
+      "gurultuluOznitelik",
+      "destekTaleplerinSayisi"
+     ],
+     "4": [
+      "musteriKidemAy",
+      "gurultuluOznitelik",
+      "destekTaleplerinSayisi",
+      "odemeGecikmesi"
+     ],
+     "5": [
+      "hizmetSayisi",
+      "musteriKidemAy",
+      "gurultuluOznitelik",
+      "destekTaleplerinSayisi",
+      "odemeGecikmesi"
+     ],
+     "6": [
+      "aylikUcret",
+      "hizmetSayisi",
+      "musteriKidemAy",
+      "gurultuluOznitelik",
+      "destekTaleplerinSayisi",
+      "odemeGecikmesi"
+     ],
+     "7": [
+      "aylikUcret",
+      "hizmetSayisi",
+      "musteriKidemAy",
+      "sabitDeger",
+      "gurultuluOznitelik",
+      "destekTaleplerinSayisi",
+      "odemeGecikmesi"
+     ]
+    },
+    "ranking4": [
+     3,
+     5,
+     2,
+     1,
+     4,
+     1,
+     1,
+     1
+    ]
+   },
+   "standard": {
+    "support": {
+     "1": [
+      "destekTaleplerinSayisi"
+     ],
+     "2": [
+      "musteriKidemAy",
+      "destekTaleplerinSayisi"
+     ],
+     "3": [
+      "musteriKidemAy",
+      "gurultuluOznitelik",
+      "destekTaleplerinSayisi"
+     ],
+     "4": [
+      "hizmetSayisi",
+      "musteriKidemAy",
+      "gurultuluOznitelik",
+      "destekTaleplerinSayisi"
+     ],
+     "5": [
+      "hizmetSayisi",
+      "musteriKidemAy",
+      "gurultuluOznitelik",
+      "destekTaleplerinSayisi",
+      "odemeGecikmesi"
+     ],
+     "6": [
+      "aylikUcret",
+      "hizmetSayisi",
+      "musteriKidemAy",
+      "gurultuluOznitelik",
+      "destekTaleplerinSayisi",
+      "odemeGecikmesi"
+     ],
+     "7": [
+      "aylikUcret",
+      "toplamUcret",
+      "hizmetSayisi",
+      "musteriKidemAy",
+      "gurultuluOznitelik",
+      "destekTaleplerinSayisi",
+      "odemeGecikmesi"
+     ]
+    },
+    "ranking4": [
+     3,
+     4,
+     1,
+     1,
+     5,
+     1,
+     1,
+     2
+    ]
+   }
+  }
+ }
+}
