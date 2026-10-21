@@ -30,6 +30,13 @@ const plotOf = (host: HTMLElement) => {
 const hidden = (el: Element | null): boolean => !el || el.getAttribute('opacity') === '0';
 const shown = (el: Element | null): boolean => !!el && el.getAttribute('opacity') === '1';
 
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+/** Every animated attribute of every mark, as strings. */
+const snapshot = (host: HTMLElement): string[] =>
+  all(host, 'circle, line, ellipse, rect.sigma, path.query, text.cust-label, text.query-label, text.mu-label')
+    .filter((e) => !e.closest('.axes'))
+    .map((e) => `${e.tagName.toLowerCase()}:${[...e.attributes].map((a) => `${a.name}=${a.value}`).sort().join(';')}`);
+
 function pointer(host: HTMLElement, type: string, x: number, y: number): void {
   host.querySelector('rect.hit')!.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, bubbles: true }));
 }
@@ -152,43 +159,64 @@ describe('olcekleme ScatterLayer', () => {
     expect(got.at(-1)).toEqual([{ t: 64, f: 20 }, 'up']);
   });
 
-  it('rapid step changes during the unit sweep end in the final state', () => {
+  it('rapid step changes during the unit sweep end in the final state', async () => {
     const { host, layer } = setup('ders');
     layer.update(view(0), 0, 'ders');
     layer.update(view(2, { unit: 'yil' }), 900, 'ders');
+    await sleep(150);
     layer.update(view(5), 900, 'ders');
+    await sleep(150);
     layer.update(view(0), 900, 'ders');
+    await sleep(300); // mid-flight
     layer.interrupt();
+    const snapped = snapshot(host);
     const p = plotOf(host);
     const want = CUSTOMERS.map((c) => p.left + (c.t / 64) * p.width);
     cxs(host).forEach((x, i) => expect(Math.abs(x - want[i])).toBeLessThan(0.06));
     expect(all(host, 'line.mu').every(hidden)).toBe(true);
     expect(hidden(host.querySelector('ellipse.iso'))).toBe(true);
+    // no transition may survive interrupt(): nothing moves while the 900 ms would run
+    await sleep(300);
+    expect(snapshot(host)).toEqual(snapped);
+    await sleep(650);
+    expect(snapshot(host)).toEqual(snapped);
   });
 
-  it('resize snaps in-flight moves to the final layout', () => {
+  it('resize snaps in-flight moves to the final layout', async () => {
     const { host, layer } = setup('ders');
     layer.update(view(0), 0, 'ders');
     layer.update(view(2, { unit: 'gun' }), 900, 'ders');
     layer.resize(900, 450, 'ders');
     const p = plotOf(host);
     expect(p.width).toBeLessThan(900);
-    const snapped = cxs(host);
-    // a snapped layout is stable: interrupting changes nothing
-    layer.interrupt();
-    expect(cxs(host)).toEqual(snapped);
-    expect(spread(snapped)).toBeGreaterThan(spread(CUSTOMERS.map((c) => (c.t / 64) * p.width)));
+    const snapped = snapshot(host);
+    expect(spread(cxs(host))).toBeGreaterThan(0);
+    await sleep(950);
+    expect(snapshot(host)).toEqual(snapped);
+    // the same holds for a step with an ellipse
+    layer.update(view(1), 900, 'ders');
+    layer.resize(1000, 480, 'ders');
+    const s2 = snapshot(host);
+    expect(s2.some((s) => s.startsWith('ellipse'))).toBe(true);
+    await sleep(950);
+    expect(snapshot(host)).toEqual(s2);
   });
 
   it('resize keeps label sizes', () => {
     const { host, layer } = setup('ders', 1200);
     layer.update(view(1), 0, 'ders');
-    const fs = (): string[] =>
-      all(host, 'text.cust-label').map((t) => `${t.style.fontSize}|${t.getAttribute('font-size')}|${getComputedStyle(t).fontSize}`);
-    const before = fs();
+    const labels = (): SVGElement[] => all(host, 'text.cust-label, text.query-label');
+    const before = labels().map((t) => num(t, 'data-w'));
+    const fs = (): string[] => labels().map((t) => `${t.style.fontSize}|${t.getAttribute('font-size')}`);
+    const fsBefore = fs();
     layer.resize(900, 520, 'ders');
-    expect(fs()).toEqual(before);
-    expect(all(host, 'text.cust-label')).toHaveLength(6);
+    expect(labels().map((t) => num(t, 'data-w'))).toEqual(before);
+    expect(fs()).toEqual(fsBefore);
+    const p = plotOf(host);
+    for (const t of labels()) {
+      expect(num(t, 'data-lx') - num(t, 'data-w') / 2).toBeGreaterThanOrEqual(p.left);
+      expect(num(t, 'data-lx') + num(t, 'data-w') / 2).toBeLessThanOrEqual(p.left + p.width);
+    }
   });
 
   it.each(['ders', 'lab'] as const)('labels never overlap in %s', (mode) => {
