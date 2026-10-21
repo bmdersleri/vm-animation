@@ -13,7 +13,7 @@ describe('home page', () => {
   it('one card per concept', () => {
     const root = render();
     expect(root.querySelectorAll('.card').length).toBe(concepts.length);
-    expect(concepts.length).toBe(20);
+    expect(concepts.length).toBe(21);
   });
 
   it('only hazir cards are links: iqr-aykiri/, olcekleme/, karar-agaci/, knn/ and naive-bayes/', () => {
@@ -26,8 +26,8 @@ describe('home page', () => {
     expect(ders?.getAttribute('href')).toBe('knn/?mod=ders');
     expect(ders?.textContent).toBe('Ders modunda aç');
     const soon = root.querySelectorAll('.card.yakinda');
-    expect(soon.length).toBe(15);
-    expect(concepts.length - links.length).toBe(15);
+    expect(soon.length).toBe(16);
+    expect(concepts.length - links.length).toBe(16);
     soon.forEach((c) => {
       expect(c.tagName).not.toBe('A');
       expect(c.textContent).toContain('Yakında');
@@ -51,6 +51,11 @@ describe('home page', () => {
       'Naive Bayes',
     ]);
     expect(sec5.querySelectorAll('svg[aria-hidden="true"]').length).toBe(3);
+    const sec4 = [...root.querySelectorAll('section')][2];
+    expect([...sec4.querySelectorAll('h3')].map((h) => h.textContent)).toEqual([
+      'PCA ve t-SNE ile boyut indirgeme',
+      'Özellik seçimi: filtre ve sarmalayıcı',
+    ]);
     const sec3 = [...root.querySelectorAll('section')][1];
     expect([...sec3.querySelectorAll('h3')].map((h) => h.textContent)).toEqual([
       'Eksik veri ve IQR ile aykırı değer',
