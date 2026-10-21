@@ -16,6 +16,18 @@ export function tickFormat(ticks: number[]): (v: number) => string {
   return (v) => formatNumber(v, dec);
 }
 
+/** "%91,2": ratio × 100 with `decimals`; while 0 < ratio < 1 would read "%0,0…" or "%100,0…", decimals grow up to `max`. */
+export function formatPercent(ratio: number, decimals = 1, max = 6): string {
+  let d = decimals;
+  let s = formatNumber(ratio * 100, d);
+  const inside = ratio > 0 && ratio < 1;
+  while (inside && d < max && (!/[1-9]/.test(s) || /^100(,0*)?$/.test(s))) {
+    d += 1;
+    s = formatNumber(ratio * 100, d);
+  }
+  return `%${s}`;
+}
+
 /** formatNumber(v, decimals); while v ≠ 0 would still read as zero, decimals grow up to `max`. */
 export function formatNonZero(v: number, decimals = 2, max = 6): string {
   let d = decimals;

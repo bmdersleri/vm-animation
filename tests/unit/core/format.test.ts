@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatNonZero, formatNumber, tickFormat } from '../../../src/core/plot/format';
+import { formatNonZero, formatNumber, formatPercent, tickFormat } from '../../../src/core/plot/format';
 
 describe('formatNumber', () => {
   it('uses a decimal comma', () => expect(formatNumber(0.3429, 3)).toBe('0,343'));
@@ -16,4 +16,16 @@ describe('formatNonZero', () => {
   it('keeps true zero', () => expect(formatNonZero(0, 2)).toBe('0,00'));
   it('uses U+2212 minus', () => expect(formatNonZero(-0.0001, 2)).toBe('−0,0001'));
   it('leaves ordinary values alone', () => expect(formatNonZero(68.76667, 2)).toBe('68,77'));
+});
+
+describe('formatPercent', () => {
+  it('formats ratios', () => {
+    expect(formatPercent(0.91217145)).toBe('%91,2');
+    expect(formatPercent(0.9999996795)).toBe('%99,99997');
+    expect(formatPercent(3.2046e-7)).toBe('%0,00003');
+    expect(formatPercent(1)).toBe('%100,0');
+    expect(formatPercent(0)).toBe('%0,0');
+    expect(formatPercent(0.4225, 2)).toBe('%42,25');
+    expect(formatPercent(0.3099)).toBe('%31,0');
+  });
 });
