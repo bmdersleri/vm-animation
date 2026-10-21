@@ -99,6 +99,21 @@ describe('kmeans data', () => {
     expect(runs.some((r) => Number(r.inertia.toFixed(1)) === 44.2)).toBe(true);
   });
 
+  it('assignments keep a safe margin from ties', () => {
+    let min = Infinity;
+    for (const run of runs) {
+      let prev: readonly Pt[] = run.start;
+      for (const turn of run.turns) {
+        for (const p of points) {
+          const d = prev.map((c) => sqDist(p, c)).sort((a, b) => a - b);
+          min = Math.min(min, d[1] - d[0]);
+        }
+        prev = turn.centers;
+      }
+    }
+    expect(min).toBeGreaterThanOrEqual(1e-5);
+  });
+
   it('n_init best equals the book call', () => {
     expect(nInit).toHaveLength(10);
     const min = Math.min(...nInit.map((e) => e.inertia));

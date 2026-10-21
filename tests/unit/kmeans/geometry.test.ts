@@ -19,6 +19,7 @@ describe('kmeans geometry', () => {
   it('drops are the inertia decreases for k=2..10', () => {
     const d = drops(kmeansData.ks);
     expect(d).toHaveLength(9);
-    expect(d.slice(0, 4).map((v) => Number(v.toFixed(2)))).toEqual([215.28, 41.69, 14.54, 6.09]);
+    [215.28, 41.69, 14.55, 6.09].forEach((want, i) => expect(d[i]).toBeCloseTo(want, 2));
+    expect(d[2]).toBe(kmeansData.ks[2].inertia - kmeansData.ks[3].inertia);
   });
 });

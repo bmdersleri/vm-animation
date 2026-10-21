@@ -22,7 +22,8 @@ Page 1 (loop): 12 recorded Lloyd runs for k=3.
     runs[2..11]:  alternate k-means++ (even slot) / random (odd slot); each
                   method counts up from the seed after its last used seed
                   (good seed + 1, bad seed + 1). Seeds that leave a cluster
-                  empty, or whose stored 6-decimal numbers would flip a near-tie label, are
+                  empty, or whose stored numbers leave any assignment with a squared-distance gap
+                  below 1e-5 (best vs second-best centre, any point, any turn), are
                   skipped (same skip applies to the good/bad searches). Ten slots are filled; if no run ends at
                   inertia ~44.2 the generator exits.
 nInit: KMeans(3, init="k-means++", n_init=1, random_state=s), s=0..9.
@@ -59,6 +60,7 @@ FIXTURE_PATH = "tests/fixtures/kmeans_sklearn.json"
 SEED = 42
 K = 3
 BEST = 43.03
+MIN_GAP = 1e-5  # min squared-distance gap, best vs second-best centre, every point/turn
 
 
 class EmptyCluster(Exception):
@@ -179,7 +181,10 @@ def stable_when_rounded(points, start, turns):
     pr = np.round(points, 6)
     prev = np.round(np.asarray(start), 6)
     for t in turns:
+        d = np.sort(sq_to(pr, prev), axis=1)
         if not np.array_equal(np.argmin(sq_to(pr, prev), axis=1), t["labels"]):
+            return False
+        if (d[:, 1] - d[:, 0]).min() < MIN_GAP:
             return False
         prev = np.round(t["centers"], 6)
     return True

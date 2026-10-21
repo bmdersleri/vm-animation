@@ -21,13 +21,9 @@ export function inertiaOf(points: readonly Pt[], labels: readonly number[], cent
   return points.reduce((sum, p, i) => sum + sqDist(p, centers[labels[i]]), 0);
 }
 
-/**
- * Inertia drop from k-1 to k, for k=2..10, taken between the inertias as shown
- * (2 decimals) so the displayed drops add up to the displayed values.
- */
+/** Raw inertia drop from k-1 to k, for k=2..10. */
 export function drops(ks: readonly KResult[]): number[] {
-  const cents = (v: number) => Math.round(v * 100);
   const out: number[] = [];
-  for (let i = 1; i < ks.length; i++) out.push((cents(ks[i - 1].inertia) - cents(ks[i].inertia)) / 100);
+  for (let i = 1; i < ks.length; i++) out.push(ks[i - 1].inertia - ks[i].inertia);
   return out;
 }
