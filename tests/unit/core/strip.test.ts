@@ -9,6 +9,7 @@ describe('renderStrip', () => {
     const lines = p.querySelectorAll('span.line');
     expect(lines.length).toBe(2);
     expect([...lines[0].querySelectorAll('span.term')].map((t) => t.textContent)).toEqual(['a', '= 1', '· b', '= 2']);
+    expect([...lines].map((l) => l.textContent)).toEqual(['a = 1 · b = 2', 'c → d']);
     const first = p.firstElementChild;
     renderStrip(p, 'a = 1 · b = 2\nc → d');
     expect(p.firstElementChild).toBe(first);
