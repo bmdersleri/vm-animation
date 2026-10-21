@@ -37,13 +37,13 @@ export class KLineChart {
     this.draw();
   }
 
-  select(k: number): void { this.selected = k; this.draw(); }
-  mark(k: number, kind: 'elbow' | 'peak'): void {
-    if (!this.marks.some((m) => m.k === k && m.kind === kind)) this.marks.push({ k, kind });
+  /** Sets reveal, selected k and marks together and draws once. */
+  set(state: { reveal: number; selected: number | null; marks: readonly { k: number; kind: MarkKind }[] }): void {
+    this.reveal = state.reveal;
+    this.selected = state.selected;
+    this.marks = state.marks.map((m) => ({ ...m }));
     this.draw();
   }
-  clearMarks(): void { this.marks = []; this.draw(); }
-  revealUpTo(k: number): void { this.reveal = k; this.draw(); }
   resize(rect: Rect, fontPx = this.fontPx): void { this.rect = rect; this.fontPx = fontPx; this.draw(); }
   destroy(): void { this.root.remove(); }
 

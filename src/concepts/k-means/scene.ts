@@ -5,13 +5,14 @@ import type { ClusterScatterSpec } from '../../core/plot/cluster-scatter';
 import { CLUSTER } from '../../core/plot/marks';
 import { kmeansData } from '../kmeans/data';
 import { ClusterPlotFrame } from '../kmeans/plot-frame';
-import { frameCount, type KMeansParams } from './scenario';
+import { stepIndex } from '../kmeans/steps';
+import { frameCount, kMeansScenario, type KMeansParams } from './scenario';
 import { deriveView, inertiaText, type KMeansView } from './view';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const STEP_ATA = 2;
-const STEP_KOTU = 6;
-const STEP_NINIT = 7;
+const STEP_ATA = stepIndex(kMeansScenario, 'ata');
+const STEP_KOTU = stepIndex(kMeansScenario, 'kotu');
+const STEP_NINIT = stepIndex(kMeansScenario, 'ninit');
 const PHASE_TEXT = { baslangic: 'başlangıç', ata: 'ata', tasi: 'taşı' } as const;
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, text?: string): HTMLElementTagNameMap[K] {

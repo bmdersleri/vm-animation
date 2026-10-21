@@ -7,21 +7,22 @@ import { CLUSTER } from '../../core/plot/marks';
 import { kmeansData } from '../kmeans/data';
 import { drops } from '../kmeans/geometry';
 import { ClusterPlotFrame } from '../kmeans/plot-frame';
+import { stepIndex } from '../kmeans/steps';
 import { KLineChart } from './charts';
-import { ELBOW_K, type KSecimiParams } from './scenario';
+import { ELBOW_K, kSecimiScenario, type KSecimiParams } from './scenario';
 import {
   changedBetween, changedFrom, clampK, deriveKView, dropText, inertiaText, peakK, pointStats, pointText, silhouetteText, type KView,
 } from './view';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const STEP_CHANGED = 2;
-const STEP_ELBOW = 4;
-const STEP_CURVE = 6;
-const STEP_COMPARE = 7;
-/** Silhouette steps (0-based 5..8): clicking a point picks it. */
-const STEP_PICK_FIRST = 5;
+const STEP_CHANGED = stepIndex(kSecimiScenario, 'k3');
+const STEP_ELBOW = stepIndex(kSecimiScenario, 'dirsek');
+const STEP_CURVE = stepIndex(kSecimiScenario, 'egri');
+const STEP_COMPARE = stepIndex(kSecimiScenario, 'k3-k4');
+/** Silhouette steps (from the first silhouette step on): clicking a point picks it. */
+const STEP_PICK_FIRST = stepIndex(kSecimiScenario, 'silhouette');
 const FLASH_MS = 1000;
-const STEP_DECISION = 8;
+const STEP_DECISION = stepIndex(kSecimiScenario, 'karar');
 const KMAX = kmeansData.ks.length;
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, text?: string): HTMLElementTagNameMap[K] {
@@ -91,11 +92,16 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
   const layer = frame.layer;
 
   const ks = kmeansData.ks.map((r) => r.k);
+  const inertias = kmeansData.ks.map((r) => r.inertia);
+  const sils = kmeansData.ks.map((r) => r.silhouette).filter((v): v is number => v !== null);
   const elChart = new KLineChart(select(elCard.svg).append('g').node() as SVGGElement, {
-    ks, values: kmeansData.ks.map((r) => r.inertia), label: 'Dirsek grafiği: k ve inertia', yDomain: [0, 330],
+    // 0 .. 10 % above the largest inertia, rounded up to a multiple of 10 (300 -> 330).
+    ks, values: inertias, label: 'Dirsek grafiği: k ve inertia', yDomain: [0, Math.ceil((Math.max(...inertias) * 11) / 100) * 10],
   });
   const silChart = new KLineChart(select(silCard.svg).append('g').node() as SVGGElement, {
-    ks, values: kmeansData.ks.map((r) => r.silhouette), label: 'Silhouette grafiği: k ve ortalama silhouette', yDomain: [0.4, 0.7],
+    // Smallest / largest silhouette rounded out to 0.1 (0.4355 .. 0.6324 -> 0.4 .. 0.7).
+    ks, values: kmeansData.ks.map((r) => r.silhouette), label: 'Silhouette grafiği: k ve ortalama silhouette',
+    yDomain: [Math.floor(Math.min(...sils) * 10) / 10, Math.ceil(Math.max(...sils) * 10) / 10],
   });
   const peak = peakK();
 
@@ -140,15 +146,9 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
 
   function updateCharts(v: KView, index: number): void {
     // The elbow curve grows with k until the elbow step; the silhouette curve until the curve step ends.
-    elChart.revealUpTo(index < STEP_ELBOW ? v.k : KMAX);
     const silReveal = index < STEP_COMPARE && !(index === STEP_CURVE && v.k >= KMAX) ? v.k : KMAX;
-    silChart.revealUpTo(silReveal);
-    elChart.select(v.k);
-    silChart.select(v.k);
-    elChart.clearMarks();
-    silChart.clearMarks();
-    if (index >= STEP_ELBOW) elChart.mark(ELBOW_K, 'elbow');
-    if (index >= STEP_CURVE && silReveal >= KMAX) silChart.mark(peak, 'peak');
+    elChart.set({ reveal: index < STEP_ELBOW ? v.k : KMAX, selected: v.k, marks: index >= STEP_ELBOW ? [{ k: ELBOW_K, kind: 'elbow' }] : [] });
+    silChart.set({ reveal: silReveal, selected: v.k, marks: index >= STEP_CURVE && silReveal >= KMAX ? [{ k: peak, kind: 'peak' }] : [] });
   }
 
   function kHeader(v: KView): HTMLElement {
