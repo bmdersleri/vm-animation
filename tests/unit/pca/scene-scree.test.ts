@@ -133,4 +133,33 @@ describe('pca ScreeLayer', () => {
     expect(q(svg, 'path.cum-line').getAttribute('d')!.match(/[ML]/g)).toHaveLength(12);
     expect(Number(q(svg, 'circle.cum-pt').getAttribute('opacity'))).toBe(1);
   });
+
+  it('keeps the rotated y title inside the layout rect (glyphs reach about 1.1 em left of the baseline)', () => {
+    const { svg, layer } = setup();
+    layer.update(scree(8), 0);
+    const m = /translate\(([-\d.]+),/.exec(q(svg, 'text.scree-title.y').getAttribute('transform')!)!;
+    expect(Number(m[1])).toBeGreaterThanOrEqual(16 * 1.1 + RECT.left);
+  });
+
+  it('the threshold label sits under its dashed line, right-aligned, whatever the bar labels do', () => {
+    const { svg, layer } = setup();
+    for (const t of [50, 90, 99]) {
+      layer.update(scree(9, { threshold: t }), 0);
+      const line = q(svg, 'line.threshold');
+      const lab = q(svg, 'text.threshold-label');
+      expect(num(lab, 'y')).toBeGreaterThan(num(line, 'y1'));
+      expect(num(lab, 'y') - num(line, 'y1')).toBeLessThan(40);
+      expect(num(lab, 'x')).toBeCloseTo(num(line, 'x2'), 0);
+    }
+  });
+
+  it('step 10: the bar 1 label is lifted above the cumulative marker that sits on the bar top', () => {
+    const { svg, layer } = setup();
+    layer.update(scree(9), 0);
+    const bar = q(svg, 'rect.bar');
+    const dot = q(svg, 'circle.cum-pt');
+    expect(num(dot, 'cy')).toBeCloseTo(num(bar, 'y'), 0);
+    // label baseline above the marker's top edge, no lower than that
+    expect(num(q(svg, 'text.bar-label'), 'y')).toBeLessThanOrEqual(num(dot, 'cy') - num(dot, 'r') - 12);
+  });
 });

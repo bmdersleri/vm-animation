@@ -18,6 +18,8 @@ const NAMES = ['pca-scree', 'pca-scree-line'];
 const Y_TICKS = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
 /** Distance in px between a bar top and its label baseline. */
 const LABEL_LIFT = 12;
+/** Radius of the cumulative-curve markers. */
+const CUM_R = 6;
 
 type G = Selection<SVGGElement, unknown, null, undefined>;
 type El<T extends Element> = Selection<T, unknown, null, undefined>;
@@ -150,7 +152,7 @@ export class ScreeLayer {
     ys.select('line').attr('x1', plot.left).attr('x2', right);
     ys.select<SVGTextElement>('text').attr('x', r1(plot.left - gap)).text(pct);
     this.xTitle.attr('x', r1(plot.left + plot.width / 2)).attr('y', r1(bottom + 2 * gap + fonts.tick * 0.9 + fonts.axis * 1.1));
-    this.yTitle.attr('transform', `translate(${r1(rect.left + fonts.axis * 0.8)},${r1(plot.top + plot.height / 2)}) rotate(-90)`);
+    this.yTitle.attr('transform', `translate(${r1(rect.left + fonts.axis * 1.15)},${r1(plot.top + plot.height / 2)}) rotate(-90)`);
 
     // ---- bars grow from the baseline when the page first appears
     const k = v.k ?? 0;
@@ -177,7 +179,7 @@ export class ScreeLayer {
       this.line.attr('d', polyline(pts, 1));
     }
     const dots = this.ptsG.selectAll<SVGCircleElement, [number, number]>('circle.cum-pt').data(pts).join('circle')
-      .attr('class', 'cum-pt').attr('cx', (d) => r1(d[0])).attr('cy', (d) => r1(d[1])).attr('r', 6)
+      .attr('class', 'cum-pt').attr('cx', (d) => r1(d[0])).attr('cy', (d) => r1(d[1])).attr('r', CUM_R)
       .attr('opacity', drawIn ? 0 : 1);
     if (drawIn) tr(dots, 'pca-scree-line', LINE_MS * this.ds, () => LINE_DELAY_MS * this.ds).attr('opacity', 1);
     const th = v.threshold;
@@ -191,19 +193,24 @@ export class ScreeLayer {
       .text((d) => v.labels[d]);
     const items: { el: El<SVGTextElement>; x: number; y: number; cls: string; end: boolean }[] = [];
     lab.each((d, i, nodes) => {
-      items.push({ el: select(nodes[i]) as unknown as El<SVGTextElement>, x: cx(d), y: sy(v.evr[d]) - LABEL_LIFT, cls: 'bar-label', end: false });
+      // the cumulative curve starts on top of bar 1: lift its label clear of that marker
+      const clear = cum !== null && d === 0 ? CUM_R + 2 : 0;
+      items.push({ el: select(nodes[i]) as unknown as El<SVGTextElement>, x: cx(d), y: sy(v.evr[d]) - LABEL_LIFT - clear, cls: 'bar-label', end: false });
     });
     const hasCum = cum !== null && k > 0;
     this.cumLabel.text(v.cumLabel ?? '').attr('display', hasCum ? null : 'none');
     this.thLabel.text(th?.label ?? '').attr('display', th ? null : 'none');
     if (hasCum) items.push({ el: this.cumLabel, x: cx(k - 1) - gap * 1.5, y: sy(cum[k - 1]) - gap, cls: 'cum-label', end: true });
-    if (th) items.push({ el: this.thLabel, x: right, y: ty - gap, cls: 'threshold-label', end: true });
     const boxes = items.map((it) => {
       const w = this.measure.width(it.el.text(), it.cls, fonts.tick);
       return { x: it.end ? it.x - w / 2 : it.x, w };
     });
     const rows = staggerRows(boxes, 8);
     items.forEach((it, i) => { it.el.attr('x', r1(it.x)).attr('y', r1(it.y - rows[i] * lh)); });
+    // The threshold label sits under its dashed line at the right edge, clear of the cumulative curve
+    // (which is above every threshold there) and of the bar labels (at the foot of the plot); it is
+    // not staggered against labels in another band.
+    this.thLabel.attr('x', r1(right)).attr('y', r1(ty + gap + fonts.tick * 0.9));
     lab.attr('opacity', growMs > 0 ? 0 : 1);
     tr(lab, 'pca-scree', growMs).attr('opacity', 1);
   }

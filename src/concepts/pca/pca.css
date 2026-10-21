@@ -156,6 +156,8 @@
 .pca-scene .rule-box {
   flex: 1 1 0;
   min-width: 0;
+  /* equal tall boxes: no large empty band above and below them in Lab */
+  min-height: 62%;
   padding: 14px 18px;
   border: 2px solid var(--navy);
   border-radius: 10px;
