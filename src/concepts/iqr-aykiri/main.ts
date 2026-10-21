@@ -1,9 +1,9 @@
 import '../../core/theme.css';
 import './iqr-aykiri.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
-import { iqrAykiriScenario, type IqrAykiriParams } from './scenario';
+import { iqrAykiriScenario, type IqrParams } from './scenario';
 
-const iqrAykiriPage: ConceptPage<IqrAykiriParams> = {
+const iqrAykiriPage: ConceptPage<IqrParams> = {
   title: 'Eksik veri ve IQR ile aykırı değer',
   chapter: 'Bölüm ? · …',
   scenario: iqrAykiriScenario,
