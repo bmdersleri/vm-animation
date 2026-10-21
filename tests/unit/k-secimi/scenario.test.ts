@@ -32,6 +32,21 @@ describe('k-secimi scenario', () => {
     expect(steps[6].params ?? {}).not.toHaveProperty('k');
   });
 
+  it('going back from a silhouette step clears the point', () => {
+    const player = new StepPlayer(kSecimiScenario);
+    for (const from of [5, 6, 7, 8]) {
+      player.goto(from);
+      player.setParam('point', 49);
+      for (const back of [0, 1, 2, 3, 4]) {
+        player.goto(from);
+        player.setParam('point', 49);
+        player.goto(back);
+        expect(player.state.params.point, `step ${from + 1} → ${back + 1}`).toBeNull();
+      }
+    }
+    player.destroy();
+  });
+
   it('a player on step 4 starts at k=4 and one on step 7 at k=2', () => {
     const player = new StepPlayer(kSecimiScenario);
     player.goto(3);
