@@ -3,14 +3,15 @@ import './k-means.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
 import { kMeansScenario, type KMeansParams } from './scenario';
 import { mountKMeansScene } from './scene';
+import { mountKMeansExtra, mountKMeansParams } from './controls';
 
 export const kMeansPage: ConceptPage<KMeansParams> = {
   title: 'K-Means döngüsü',
   chapter: 'Bölüm 7 · Kümeleme Analizi',
   scenario: kMeansScenario,
   mountScene: mountKMeansScene,
-  // Lab controls arrive with Task 4.
-  mountParams: () => {},
+  mountExplainExtra: mountKMeansExtra,
+  mountParams: mountKMeansParams,
 };
 
 const app = document.querySelector<HTMLElement>('#app');

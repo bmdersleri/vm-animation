@@ -196,3 +196,23 @@
     grid-template-rows: minmax(0, 1fr) auto;
   }
 }
+
+/* Lab controls (controls.ts). Hidden groups use the hidden attribute. */
+.km-params { display: grid; gap: 8px; font-size: var(--fs-tick); }
+.km-params [hidden], .km-extra[hidden] { display: none; }
+.km-run-info { margin: 0; color: var(--muted); }
+.km-turn { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.km-step-btns { display: inline-flex; gap: 6px; }
+.km-params button { font: inherit; padding: 4px 10px; cursor: pointer; }
+.km-params button:disabled { opacity: 0.45; cursor: not-allowed; }
+.km-frame-out { flex-basis: 100%; color: var(--muted); font-variant-numeric: tabular-nums; }
+.km-pick { display: grid; gap: 4px; }
+.km-pick label { font-weight: 600; }
+.km-pick select { font: inherit; max-width: 100%; }
+.km-params :focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.km-extra { display: grid; gap: 6px; font-size: var(--fs-tick); }
+.km-coords { list-style: none; margin: 0; padding: 0; font-variant-numeric: tabular-nums; }
+.km-turns { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.km-turns caption { text-align: left; font-weight: 700; padding-bottom: 2px; }
+.km-turns th, .km-turns td { text-align: right; padding: 1px 6px; border-bottom: 1px solid var(--line); }
+.km-turns tr[data-current] { background: var(--navy-soft); font-weight: 700; }
