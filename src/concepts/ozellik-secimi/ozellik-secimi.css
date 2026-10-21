@@ -35,3 +35,69 @@
 .secim-rows .row.eliminated rect.bar { fill: #e3e9f0; stroke: var(--grey); }
 .secim-rows .row.eliminated path.dots { fill: var(--grey); fill-opacity: 0.5; }
 .secim-rows .row.hidden { pointer-events: none; }
+
+/* ozellik-secimi scene: plot above, calculation strip below (same strip as .pca-scene) */
+.secim-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.secim-scene .secim-plot-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.secim-plot-host svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+.secim-scene .formula {
+  flex: none;
+  margin: 0 16px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 14px;
+  border-left: 4px solid var(--navy);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  min-height: calc(2 * 1.35em + 12px);
+}
+.secim-scene .formula .line { display: block; }
+.secim-scene .formula .term { white-space: nowrap; }
+
+/* intersection page: three columns centred in the plot area (also in Lab, no empty band) */
+.secim-scene .intersect {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: stretch;
+  justify-content: center;
+  padding: 0 16px;
+  font-size: var(--fs-body);
+}
+.secim-scene .intersect[hidden] { display: none; }
+.secim-scene .sel-columns { display: flex; gap: 20px; align-items: stretch; }
+.secim-scene .sel-columns section {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 12px 18px;
+  border: 2px solid var(--navy);
+  border-radius: 10px;
+  background: #fff;
+}
+.secim-scene .sel-columns section.sel-both { background: var(--navy); color: #fff; }
+.secim-scene .sel-columns h3 { margin: 0 0 8px; font-size: var(--fs-body); font-weight: 700; }
+.secim-scene .sel-columns ul { margin: 0; padding: 0; list-style: none; font-size: var(--fs-body); line-height: 1.5; }
+.secim-scene .sel-columns li { overflow-wrap: anywhere; }
+.secim-scene .intersect p.rule { margin: 0; font-size: var(--fs-body); font-weight: 700; line-height: 1.4; text-align: center; }
