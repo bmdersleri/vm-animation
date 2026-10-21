@@ -38,6 +38,7 @@ export function mountIqrParams(host: HTMLElement, p: StepPlayer<IqrParams>): voi
   const range = el('div', { class: 'ctl range' }, el('label', { for: slider.id }, 'Uç değer (TL)'), slider, out);
 
   const radios = new Map<RadioKey, HTMLInputElement[]>();
+  const fieldsetOf = new Map<RadioKey, HTMLFieldSetElement>();
   const fieldsets = GROUPS.map((g) => {
     const inputs = g.options.map(([value], i) =>
       el('input', { type: 'radio', name: g.key, id: `${id}-${g.key}-${i}`, value }));
@@ -52,6 +53,7 @@ export function mountIqrParams(host: HTMLElement, p: StepPlayer<IqrParams>): voi
     });
     const fs = el('fieldset', { class: 'ctl choice', 'data-part': String(g.part) },
       el('legend', { class: 'ctl-label' }, g.label), ...labels);
+    fieldsetOf.set(g.key, fs);
     return fs;
   });
 
@@ -75,6 +77,12 @@ export function mountIqrParams(host: HTMLElement, p: StepPlayer<IqrParams>): voi
         const on = r.value === cur;
         if (r.checked !== on) r.checked = on;
         if (r.disabled !== off) r.disabled = off;
+      }
+      // Lab hides a group that does not apply to this step (CSS); Ders keeps showing it greyed
+      const fs = fieldsetOf.get(g.key)!;
+      if (fs.dataset.off !== String(off)) {
+        if (off) fs.dataset.off = 'true';
+        else delete fs.dataset.off;
       }
     });
   };

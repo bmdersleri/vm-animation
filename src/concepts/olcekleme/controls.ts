@@ -28,6 +28,7 @@ const GROUPS: readonly { key: RadioKey; label: string; steps: readonly number[];
 export function mountOlcParams(host: HTMLElement, p: StepPlayer<OlcParams>): void {
   const id = `olcp${++uid}`;
   const radios = new Map<RadioKey, HTMLInputElement[]>();
+  const fieldsetOf = new Map<RadioKey, HTMLFieldSetElement>();
   const fieldsets = GROUPS.map((g) => {
     const inputs = g.options.map(([value], i) =>
       el('input', { type: 'radio', name: g.key, id: `${id}-${g.key}-${i}`, value }));
@@ -38,7 +39,9 @@ export function mountOlcParams(host: HTMLElement, p: StepPlayer<OlcParams>): voi
         if (r.checked) p.setParam(g.key, r.value as never);
       });
     });
-    return el('fieldset', { class: 'ctl choice' }, el('legend', { class: 'ctl-label' }, g.label), ...labels);
+    const fs = el('fieldset', { class: 'ctl choice' }, el('legend', { class: 'ctl-label' }, g.label), ...labels);
+    fieldsetOf.set(g.key, fs);
+    return fs;
   });
   host.append(el('div', { class: 'knn-params olc-params' }, ...fieldsets));
 
@@ -50,6 +53,12 @@ export function mountOlcParams(host: HTMLElement, p: StepPlayer<OlcParams>): voi
         const on = r.value === cur;
         if (r.checked !== on) r.checked = on;
         if (r.disabled !== off) r.disabled = off;
+      }
+      // Lab hides a group that does not apply to this step (CSS); Ders keeps showing it greyed
+      const fs = fieldsetOf.get(g.key)!;
+      if (fs.dataset.off !== String(off)) {
+        if (off) fs.dataset.off = 'true';
+        else delete fs.dataset.off;
       }
     }
   };
