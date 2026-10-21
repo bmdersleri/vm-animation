@@ -88,3 +88,29 @@ test('ders panel and narrow lab keep the scene readable', async ({ page }) => {
   });
   expect(outside).toEqual([]);
 });
+
+for (const mode of ['ders', 'lab'] as const) {
+  test(`${mode} 390 px: customer marks never overlap; count-only cells when they do not fit`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/karmasiklik-matrisi/?mod=${mode}`);
+    for (let step = 0; step < 8; step++) {
+      await page.locator('.step-dot').nth(step).click();
+      await expect(page.locator('.matrix-scene')).toHaveAttribute('data-step', String(step));
+      const state = await page.evaluate(() => {
+        const marks = [...document.querySelectorAll<SVGGElement>('.matrix-customer')].map(n => { const r = n.querySelector('.prediction-ring')!.getBoundingClientRect(); return { cell: n.dataset.outcome, x: r.left + r.width / 2, y: r.top + r.height / 2, d: r.width }; });
+        let close = 0;
+        for (let i = 0; i < marks.length; i++) for (let j = i + 1; j < marks.length; j++) {
+          const a = marks[i], b = marks[j];
+          if (Math.hypot(a.x - b.x, a.y - b.y) < Math.min(a.d, b.d) - 0.5) close++;
+        }
+        const counts = [...document.querySelectorAll('[data-cell] .matrix-count')].map(n => n.textContent);
+        return { aggregate: document.querySelector<HTMLElement>('.matrix-scene')!.dataset.aggregate, marks: marks.length, close, counts, note: document.querySelector('.matrix-note')!.textContent };
+      });
+      expect(state.close, `${mode} step ${step + 1}: overlapping marks`).toBe(0);
+      if (state.aggregate === 'true') { expect(state.marks).toBe(0); expect(state.note).toContain('tam sayım'); }
+      if (step >= 1) expect(state.counts.every(c => /^\d+$/.test(c ?? ''))).toBe(true);
+      if (step === 2 || step === 6) await page.screenshot({ path: `${SHOTS}/matrix-${mode}-narrow-${step + 1}.png`, fullPage: true });
+    }
+  });
+}

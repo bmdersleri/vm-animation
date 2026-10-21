@@ -11,6 +11,13 @@ const LABELS: Record<Cell, string> = { tn: 'TN · Doğru kaldı', fp: 'FP · Ger
 const HIGHLIGHTS: Cell[][] = [[], [], ['tn', 'tp'], ['fp', 'tp'], ['fn', 'tp'], ['fp', 'fn', 'tp'], ['fn'], ['fp', 'fn']];
 const METRICS = ['accuracy', 'precision', 'recall', 'f1'] as const;
 const NAMES = ['Accuracy', 'Precision', 'Recall', 'F1'];
+/** Customer marks: 14 px rings, 15 px apart in a row; rows at least one ring (14 px) apart. */
+const MARK_STEP = 15, RING = 14;
+/** The first row is 47 px below the cell top, the last at most 9 px above its bottom. */
+const ROW_SPAN = (ch: number): number => ch - 56;
+function cellGrid(cw: number, ch: number): { cols: number; rows: number } {
+  return { cols: Math.max(1, Math.floor((cw - 30) / MARK_STEP)), rows: ROW_SPAN(ch) < 0 ? 0 : Math.floor(ROW_SPAN(ch) / RING) + 1 };
+}
 interface Customer { id: string; actual: 0 | 1; predicted: 0 | 1; cell: Cell; }
 function customers(source: Confusion, dummy: boolean): Customer[] {
   const result: Customer[] = [];
@@ -89,7 +96,6 @@ export function mountMatrixScene(host: HTMLElement, player: StepPlayer<MatrixPar
     const m = metrics(c);
     root.dataset.step = String(index);
     root.dataset.activeMetric = index >= 2 && index <= 5 ? METRICS[index - 2] : '';
-    root.dataset.aggregate = String(total > 100);
     cohort.textContent = index === 0
       ? `Gerçek: ${c.tn + c.fp} kaldı, ${c.fn + c.tp} ayrıldı. Tahmin: ${c.tn + c.fn} kalır, ${c.fp + c.tp} ayrılır.`
       : `${total} müşteri · ${p.model === 'dummy' ? 'Herkese kalır' : 'Kaynak model'} · Satır: gerçek / Sütun: tahmin`;
@@ -106,9 +112,7 @@ export function mountMatrixScene(host: HTMLElement, player: StepPlayer<MatrixPar
     costs.hidden = index !== 7;
     sourceCost.textContent = `Kaynak model: ${cCost(source, p)} = ${number(cost(source, p.fpCost, p.fnCost))}`;
     dummyCost.textContent = `Herkese kalır: ${cCost(dummy, p)} = ${number(cost(dummy, p.fpCost, p.fnCost))}`;
-    note.textContent = total === 0 ? 'Müşteri yok. Paydası sıfır olan oranlar tanımsızdır.'
-      : total > 100 ? `Toplu gösterim: ${total} müşteri; her hücrede tam sayım gösterilir.`
-      : index === 0 ? 'Her işaret bir müşteri. Turuncu elmas ayrılanı, turkuaz daire kalanı gösterir.'
+    const stepNote = index === 0 ? 'Her işaret bir müşteri. Turuncu elmas ayrılanı, turkuaz daire kalanı gösterir.'
       : index === 1 ? 'TN ve TP doğru; FP ve FN hata. Müşteri kimlikleri korunur.'
       : index === 3 ? 'Pozitif tahmin sütunu: teklif verdiklerimizin içindeki doğru tahminler.'
       : index === 4 ? 'Gerçek pozitif satırı: ayrılanların içindeki yakaladıklarımız.'
@@ -116,17 +120,32 @@ export function mountMatrixScene(host: HTMLElement, player: StepPlayer<MatrixPar
       : index === 6 ? `${dummy.fn} ayrılanın hiçbiri yakalanmıyor. Yüksek accuracy tek başına yeterli değil.`
       : index === 7 ? 'Maliyet = FP × birim maliyet + FN × birim maliyet. Tercih iş hedefine bağlıdır.'
       : 'Doğru hücreler: TN + TP. Payda bütün müşterilerdir.';
+    note.textContent = total === 0 ? 'Müşteri yok. Paydası sıfır olan oranlar tanımsızdır.'
+      : total > 100 ? `Toplu gösterim: ${total} müşteri; her hücrede tam sayım gösterilir.`
+      : stepNote;
     summary.textContent = `Gerçek satırlar, tahmin sütunlar: TN ${c.tn}, FP ${c.fp}, FN ${c.fn}, TP ${c.tp}. ${total} müşteri.`;
 
-    // Use measured pixels so SVG text retains the shared projector font sizes.
-    const w = plot.clientWidth || Math.max(280, width - 24);
-    const h = plot.clientHeight || Math.max(160, height - (index >= 6 ? 245 : index >= 2 ? 220 : 160));
-    plot.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    // Use measured pixels so SVG text retains the shared projector font sizes; measure after the footer text is set.
+    const measure = () => {
+      const w = plot.clientWidth || Math.max(280, width - 24);
+      const h = plot.clientHeight || Math.max(160, height - (index >= 6 ? 245 : index >= 2 ? 220 : 160));
+      const cw = (w - left - 12 - gap) / 2, ch = (h - top - 10 - gap) / 2;
+      const grid = cellGrid(cw, ch);
+      // One mark per customer only while every cell holds its marks without overlap; otherwise counts only.
+      return { w, h, cw, ch, grid, aggregate: total > 100 || (index > 0 && KEYS.some(key => c[key] > grid.cols * grid.rows)) };
+    };
     const left = mode === 'ders' ? 132 : 104;
     const top = mode === 'ders' ? 64 : 54;
     const gap = 10;
-    const cw = (w - left - 12 - gap) / 2;
-    const ch = (h - top - 10 - gap) / 2;
+    let layout = measure();
+    if (layout.aggregate && total > 0 && total <= 100) {
+      note.textContent = `Dar görünüm: işaretler sığmadığı için her hücrede tam sayım gösterilir. ${stepNote}`;
+      layout = { ...measure(), aggregate: true };
+    }
+    const { w, h, cw, ch, grid, aggregate } = layout;
+    root.dataset.aggregate = String(aggregate);
+    plot.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
     matrix.style.visibility = axes.style.visibility = index === 0 ? 'hidden' : 'visible';
     const positions = new Map<Cell, { x: number; y: number }>();
     KEYS.forEach((key, i) => {
@@ -144,7 +163,7 @@ export function mountMatrixScene(host: HTMLElement, player: StepPlayer<MatrixPar
     ax(0, left + cw + gap / 2, 21); ax(1, left + cw / 2, top - 11); ax(2, left + cw * 1.5 + gap, top - 11);
     ax(3, 4, top - 11); ax(4, 4, top + ch / 2); ax(5, 4, top + ch * 1.5 + gap);
 
-    const list = total <= 100 ? customers(source, p.model === 'dummy') : [];
+    const list = aggregate ? [] : customers(source, p.model === 'dummy');
     const keep = new Set(list.map(s => s.id));
     for (const [id, node] of markNodes) if (!keep.has(id)) { node.remove(); markNodes.delete(id); }
     const assigned: Record<Cell, number> = { tn: 0, fp: 0, fn: 0, tp: 0 };
@@ -167,10 +186,9 @@ export function mountMatrixScene(host: HTMLElement, player: StepPlayer<MatrixPar
       } else {
         const at = positions.get(customer.cell)!;
         const n = assigned[customer.cell]++;
-        const cols = Math.max(1, Math.floor((cw - 30) / 15));
-        const rows = Math.ceil(c[customer.cell] / cols);
-        x = at.x + 15 + (n % cols) * 15;
-        y = at.y + 47 + Math.floor(n / cols) * Math.min(16, Math.max(4, (ch - 65) / Math.max(1, rows - 1)));
+        const rows = Math.ceil(c[customer.cell] / grid.cols);
+        x = at.x + 15 + (n % grid.cols) * MARK_STEP;
+        y = at.y + 47 + Math.floor(n / grid.cols) * Math.min(16, ROW_SPAN(ch) / Math.max(1, rows - 1));
       }
       node.setAttribute('transform', `translate(${x},${y})`);
       node.style.transform = `translate(${x}px, ${y}px)`;

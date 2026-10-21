@@ -131,4 +131,22 @@ describe('matrix lesson', () => {
     expect(host.children).toHaveLength(0);
     expect(params.children).toHaveLength(0);
   });
+  it('keeps cell marks at least one ring apart, or shows count-only cells when they do not fit', () => {
+    const { host, player, scene } = setup();
+    const marks = () => [...host.querySelectorAll<SVGGElement>('.matrix-customer')].map(n => {
+      const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(n.getAttribute('transform')!)!; return { cell: n.dataset.outcome, x: +m[1], y: +m[2] }; });
+    const closest = () => { let d = Infinity; const list = marks();
+      for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) if (list[i].cell === list[j].cell) d = Math.min(d, Math.hypot(list[i].x - list[j].x, list[i].y - list[j].y));
+      return d; };
+    player.goto(1);
+    expect(host.querySelector<HTMLElement>('.matrix-scene')?.dataset.aggregate).toBe('false');
+    expect(marks()).toHaveLength(100); expect(closest()).toBeGreaterThanOrEqual(14);
+    scene.resize(374, 560);
+    expect(host.querySelector<HTMLElement>('.matrix-scene')?.dataset.aggregate).toBe('true');
+    expect(marks()).toHaveLength(0);
+    expect([...host.querySelectorAll('[data-cell] .matrix-count')].map(n => n.textContent)).toEqual(['80', '10', '4', '6']);
+    expect(host.querySelector('.matrix-note')?.textContent).toContain('her hücrede tam sayım');
+    scene.resize(1100, 540);
+    expect(marks()).toHaveLength(100); expect(closest()).toBeGreaterThanOrEqual(14);
+  });
 });
