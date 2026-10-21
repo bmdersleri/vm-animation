@@ -55,6 +55,13 @@ describe('k-means scenario', () => {
     expect(kMeansScenario.steps[0].text).toContain(`k = ${good.start.length}`);
   });
 
+  it('step 3 says the lines are on the assignment frame and names this assignment, not turn 1', () => {
+    const ata = kMeansScenario.steps.find((s) => s.id === 'ata')!.text;
+    expect(ata).toContain('Atama karesinde');
+    expect(ata).toContain('Atamanın küme boyları');
+    expect(ata).not.toMatch(/Tur 1/);
+  });
+
   it('a player on step 5 starts the sweep at frame 3', () => {
     const player = new StepPlayer(kMeansScenario);
     player.goto(4);
