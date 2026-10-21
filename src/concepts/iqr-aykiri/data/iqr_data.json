@@ -1,0 +1,36 @@
+{
+ "fill": {
+  "values": [
+   29.85,
+   56.95,
+   null,
+   42.3,
+   38.5,
+   null,
+   200.0,
+   45.0
+  ],
+  "extremeIndex": 6
+ },
+ "iqr": {
+  "values": [
+   29.85,
+   56.95,
+   42.3,
+   38.5,
+   45.0,
+   60.2,
+   51.1,
+   480.0
+  ],
+  "extremeIndex": 7
+ },
+ "mode": {
+  "values": [
+   "Aylık",
+   "Aylık",
+   null,
+   "Bir Yıllık"
+  ]
+ }
+}
