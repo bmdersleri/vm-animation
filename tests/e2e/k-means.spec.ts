@@ -15,6 +15,8 @@ test('screenshots: ders key steps stay inside the stage', async ({ page }) => {
   for (const step of [3, 6, 7, 8]) {
     await open(page, PAGE, 'ders', READY);
     await gotoStep(page, step - 1, STEPS);
+    // step 7 sweeps 11 frames; the shot is its end: the stuck inertia beside the good run
+    if (step === 7) { await expect(page.locator('[data-compare]')).toBeVisible({ timeout: 15_000 }); await page.waitForTimeout(600); }
     expect(await outsideStage(page, '.km-plot text, .stage p, .stage li')).toEqual([]);
     expect(await labelCollisions(page, 'svg.km-plot'), `step ${step}`).toEqual([]);
     const o = await pageOverflow(page);
