@@ -1,9 +1,9 @@
 import '../../core/theme.css';
 import './ozellik-secimi.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
-import { ozellikSecimiScenario, type OzellikSecimiParams } from './scenario';
+import { ozellikSecimiScenario, type SecimParams } from './scenario';
 
-const ozellikSecimiPage: ConceptPage<OzellikSecimiParams> = {
+const ozellikSecimiPage: ConceptPage<SecimParams> = {
   title: 'Özellik seçimi: filtre ve sarmalayıcı',
   chapter: 'Bölüm ? · …',
   scenario: ozellikSecimiScenario,
