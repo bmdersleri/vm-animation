@@ -30,3 +30,29 @@
 .pca-scatter text.dir2-label { fill: #0b7473; }
 .pca-scatter .tick,
 .pca-scatter .tick text { font-variant-numeric: tabular-nums; }
+
+/* pca variance gauge and variance-by-angle curve. Text sizes come only from the --fs-* tokens. */
+.pca-gauge .gauge-track { fill: #e3e9f0; stroke: none; }
+.pca-gauge .gauge-bar { fill: var(--orange); stroke: none; }
+.pca-gauge text.gauge-label {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  fill: #a85a00;
+  font-variant-numeric: tabular-nums;
+}
+.pca-gauge path.var-curve { stroke-width: 3; stroke-linejoin: round; }
+.pca-gauge circle.var-marker { fill: var(--orange); stroke: #fff; stroke-width: 2.5; }
+.pca-gauge text.var-peak,
+.pca-gauge text.var-marker-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.pca-gauge text.var-peak { fill: var(--navy); }
+.pca-gauge text.var-marker-label { fill: #a85a00; }
+.pca-gauge .tick,
+.pca-gauge .tick text { font-variant-numeric: tabular-nums; }
