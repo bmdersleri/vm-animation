@@ -11,6 +11,12 @@ export interface Scenario<P> {
   defaults: P;
   steps: Step<P>[];
 }
+/** Index of the step with this id; throws when the scenario has no such step (so a scene's module-level constant fails at load). */
+export function stepIndex<P>(scenario: Scenario<P>, id: string): number {
+  const i = scenario.steps.findIndex((s) => s.id === id);
+  if (i < 0) throw new Error(`scenario has no step "${id}"`);
+  return i;
+}
 export type ChangeCause = 'step' | 'param' | 'sweep';
 export interface PlayerState<P> {
   index: number;

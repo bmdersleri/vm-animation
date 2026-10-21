@@ -1,11 +1,10 @@
-import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
+import { stepIndex, type ChangeCause, type PlayerState, type StepPlayer } from '../../core/player';
 import type { Mode } from '../../core/mode';
 import type { SceneHandle } from '../../core/shell';
 import type { ClusterScatterSpec } from '../../core/plot/cluster-scatter';
 import { CLUSTER } from '../../core/plot/marks';
 import { kmeansData } from '../kmeans/data';
 import { ClusterPlotFrame } from '../kmeans/plot-frame';
-import { stepIndex } from '../kmeans/steps';
 import { frameCount, kMeansScenario, type KMeansParams } from './scenario';
 import { deriveView, inertiaText, type KMeansView } from './view';
 

@@ -1,5 +1,5 @@
 import { select } from 'd3-selection';
-import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
+import { stepIndex, type ChangeCause, type PlayerState, type StepPlayer } from '../../core/player';
 import type { Mode } from '../../core/mode';
 import type { SceneHandle } from '../../core/shell';
 import type { ClusterScatterSpec } from '../../core/plot/cluster-scatter';
@@ -7,7 +7,6 @@ import { CLUSTER } from '../../core/plot/marks';
 import { kmeansData } from '../kmeans/data';
 import { drops } from '../kmeans/geometry';
 import { ClusterPlotFrame } from '../kmeans/plot-frame';
-import { stepIndex } from '../kmeans/steps';
 import { KLineChart } from './charts';
 import { ELBOW_K, kSecimiScenario, type KSecimiParams } from './scenario';
 import {
