@@ -9,12 +9,14 @@ test('home lists 21 concepts and the k-NN card opens the k-NN page', async ({ pa
   await expect(page.locator('svg.plot circle.pt').first()).toBeAttached();
 });
 
-test('the chapter 3 and chapter 5 cards open their pages', async ({ page }) => {
+test('the chapter 3, 4 and 5 cards open their pages', async ({ page }) => {
   const pages = [
     { href: 'karar-agaci/', steps: 12, scene: '.cards-layer .card' },
     { href: 'naive-bayes/', steps: 13, scene: 'canvas.icons[data-cell-px]' },
     { href: 'iqr-aykiri/', steps: 11, scene: 'svg.iqr-plot circle.pt' },
     { href: 'olcekleme/', steps: 13, scene: 'svg.scale-plot circle.pt.cust' },
+    { href: 'pca/', steps: 13, scene: 'svg.pca-plot path.pts' },
+    { href: 'ozellik-secimi/', steps: 10, scene: 'svg.secim-plot g.row path.dots' },
   ];
   for (const p of pages) {
     await page.goto('/');
