@@ -45,6 +45,44 @@ export function std0(xs: readonly number[]): number {
   return Math.sqrt(s / xs.length);
 }
 
+/** Variance; ddof 0 is the population variance (VarianceThreshold), ddof 1 the sample variance. */
+export function variance(xs: readonly number[], ddof = 0): number {
+  const m = mean(xs);
+  let s = 0;
+  for (const x of xs) s += (x - m) ** 2;
+  return s / (xs.length - ddof);
+}
+
+export interface Cov2 {
+  xx: number;
+  xy: number;
+  yy: number;
+}
+
+/** Covariance matrix entries of two equally long series (numpy.cov: ddof 1). */
+export function covariance2(xs: readonly number[], ys: readonly number[], ddof = 1): Cov2 {
+  const mx = mean(xs);
+  const my = mean(ys);
+  let xx = 0;
+  let xy = 0;
+  let yy = 0;
+  for (let i = 0; i < xs.length; i++) {
+    const dx = xs[i] - mx;
+    const dy = ys[i] - my;
+    xx += dx * dx;
+    xy += dx * dy;
+    yy += dy * dy;
+  }
+  const d = xs.length - ddof;
+  return { xx: xx / d, xy: xy / d, yy: yy / d };
+}
+
+/** Pearson correlation coefficient. */
+export function pearson(xs: readonly number[], ys: readonly number[]): number {
+  const c = covariance2(xs, ys, 0);
+  return c.xy / Math.sqrt(c.xx * c.yy);
+}
+
 export function zscores(xs: readonly number[]): number[] {
   const m = mean(xs);
   const sd = std0(xs);

@@ -1,0 +1,173 @@
+/* ozellik-secimi rows: name, 400-customer strip or bar, value. Text sizes come only from the --fs-* tokens. */
+.secim-plot {
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: var(--font);
+}
+.secim-rows { --red: #b42318; --grey: #8795a8; }
+.secim-rows text { font-variant-numeric: tabular-nums; }
+.secim-rows text.col-name { font-size: var(--fs-body); font-weight: 600; fill: var(--navy); }
+.secim-rows text.row-value,
+.secim-rows text.zero-note,
+.secim-rows text.elim-label,
+.secim-rows text.sub-label,
+.secim-rows text.cut-label,
+.secim-rows text.legend-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+}
+.secim-rows text.row-value { fill: var(--navy); }
+.secim-rows text.zero-note,
+.secim-rows text.elim-label { fill: #5b6b80; }
+.secim-rows text.sub-label { fill: var(--navy); }
+.secim-rows text.cut-label { fill: var(--red); }
+.secim-rows text.legend-label.c0 { fill: var(--navy); }
+.secim-rows text.legend-label.c1 { fill: #a85a00; }
+.secim-rows path.dots.c0 { fill: var(--navy); fill-opacity: 0.55; stroke: none; }
+.secim-rows path.dots.c1 { fill: var(--orange); fill-opacity: 0.8; stroke: none; }
+.secim-rows rect.bar { fill: var(--navy-soft); stroke: var(--navy); stroke-width: 1; }
+.secim-rows line.cut { stroke: var(--red); stroke-width: 3; stroke-dasharray: 10 6; }
+.secim-rows rect.hl { display: none; stroke: var(--orange); stroke-width: 4; rx: 8; }
+.secim-rows .row.highlight rect.hl { display: block; }
+.secim-rows .row.selected rect.bar { fill: var(--navy); }
+.secim-rows .row.eliminated text.col-name { fill: #5b6b80; text-decoration: line-through; }
+.secim-rows .row.eliminated text.row-value { fill: #5b6b80; }
+.secim-rows .row.eliminated rect.bar { fill: #e3e9f0; stroke: var(--grey); }
+.secim-rows .row.eliminated path.dots { fill: var(--grey); fill-opacity: 0.5; }
+.secim-rows .row { transition: visibility 0s; }
+/* a hidden row leaves the rendering (and the label-overlap check) once its fade-out is over */
+.secim-rows .row.hidden { pointer-events: none; visibility: hidden; transition: visibility 0s linear 0.4s; }
+
+/* ozellik-secimi scene: plot above, calculation strip below (same strip as .pca-scene) */
+.secim-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.secim-scene .secim-plot-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.secim-plot-host svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+.secim-scene .formula {
+  flex: none;
+  margin: 0 16px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 14px;
+  border-left: 4px solid var(--navy);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  min-height: calc(2 * 1.35em + 12px);
+}
+.secim-scene .formula .line { display: block; }
+.secim-scene .formula .term { white-space: nowrap; }
+
+/* intersection page: three columns centred in the plot area (also in Lab, no empty band) */
+.secim-scene .intersect {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: stretch;
+  justify-content: center;
+  padding: 0 16px;
+  font-size: var(--fs-body);
+}
+.secim-scene .intersect[hidden] { display: none; }
+.secim-scene .sel-columns { display: flex; gap: 20px; align-items: stretch; }
+.secim-scene .sel-columns section {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 12px 18px;
+  border: 2px solid var(--navy);
+  border-radius: 10px;
+  background: #fff;
+}
+.secim-scene .sel-columns section.sel-both { background: var(--navy); color: #fff; }
+.secim-scene .sel-columns h3 { margin: 0 0 8px; font-size: var(--fs-body); font-weight: 700; }
+.secim-scene .sel-columns ul { margin: 0; padding: 0; list-style: none; font-size: var(--fs-body); line-height: 1.5; }
+.secim-scene .sel-columns li { overflow-wrap: anywhere; }
+.secim-scene .intersect p.rule { margin: 0; font-size: var(--fs-body); font-weight: 700; line-height: 1.4; text-align: center; }
+
+/* ---------- parameters panel (Ders) ---------- */
+.secim-params { display: grid; gap: 8px; }
+.secim-params fieldset.ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.secim-params fieldset.ctl legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  font-weight: 600;
+}
+.secim-params .opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--ctl);
+  font-weight: 400;
+}
+.secim-params input[type="radio"] {
+  width: 1.25em;
+  height: 1.25em;
+  margin: 0;
+  accent-color: var(--navy);
+}
+.secim-params .ctl.range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 8px;
+}
+.secim-params .ctl.range label { grid-column: 1 / -1; font-weight: 600; }
+.secim-params input[type="range"] { width: 100%; min-height: var(--ctl); margin: 0; accent-color: var(--navy); }
+.secim-params .k-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---------- Lab notes ---------- */
+.secim-extra p { margin: 0 0 8px; }
+.secim-extra table.methods { width: 100%; margin: 0 0 8px; border-collapse: collapse; }
+.secim-extra table.methods th,
+.secim-extra table.methods td { padding: 3px 6px; border: 1px solid var(--navy-soft); text-align: left; vertical-align: top; }
+.secim-extra table.methods th { background: var(--bg); color: var(--navy); }
+
+/* ---------- Lab: compact params card that fits the side column at 720 px ---------- */
+/* Groups that do not apply to the current step are hidden, not greyed (controls.ts sets data-off). */
+[data-mode="lab"] .secim-params .ctl[data-off] { display: none; }
+[data-mode="lab"] .secim-params { gap: 4px; }
+[data-mode="lab"] .secim-params fieldset.ctl { gap: 0 14px; }
+[data-mode="lab"] .secim-params fieldset.ctl legend { width: auto; }
+[data-mode="lab"] .secim-params .opt { min-height: 30px; }
+[data-mode="lab"] .secim-params input[type="range"] { min-height: 30px; }
+[data-mode="lab"] .side .params { flex: none; padding: 8px 14px; }
+/* a tall explain card scrolls inside itself so the params card stays fully visible below it */
+[data-mode="lab"] .side .explain { flex: 0 1 auto; min-height: 0; overflow: auto; }
+
+/* Lab: the intersection page uses the title size so the three lists fill the plot area (no empty band) */
+[data-mode="lab"] .secim-scene .intersect { gap: 24px; }
+[data-mode="lab"] .secim-scene .sel-columns h3,
+[data-mode="lab"] .secim-scene .sel-columns ul,
+[data-mode="lab"] .secim-scene .intersect p.rule { font-size: var(--fs-title); }
+[data-mode="lab"] .secim-scene .sel-columns section { padding: 18px 22px; }
+[data-mode="lab"] .secim-scene .sel-columns ul { line-height: 2.2; }

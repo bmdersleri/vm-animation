@@ -16,6 +16,8 @@ export default defineConfig({
         'naive-bayes': resolve(root, 'naive-bayes/index.html'),
         'iqr-aykiri': resolve(root, 'iqr-aykiri/index.html'),
         'olcekleme': resolve(root, 'olcekleme/index.html'),
+        'pca': resolve(root, 'pca/index.html'),
+        'ozellik-secimi': resolve(root, 'ozellik-secimi/index.html'),
         'karmasiklik-matrisi': resolve(root, 'karmasiklik-matrisi/index.html'),
         'roc-esik': resolve(root, 'roc-esik/index.html'),
         'capraz-dogrulama': resolve(root, 'capraz-dogrulama/index.html'),

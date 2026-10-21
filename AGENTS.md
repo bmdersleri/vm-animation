@@ -9,6 +9,26 @@ This repository follows the `dev-methodology` skill: spec → plan →
 subagent-driven development. Specs live in `docs/superpowers/specs/`, plans in
 `docs/superpowers/plans/`. Spec and plan content language: Turkish.
 
+### Chapter pace (teacher's decision, 2026-10-21)
+
+Chapter production was too slow; these rules override the skill defaults for
+new chapters:
+
+- **6–8 tasks per chapter, not 20.** One task covers a whole layer of a page
+  (math + scenario + view; scene; controls + Lab; e2e + README). The plan names
+  interfaces, exact values and test names; it does not script every line, and
+  the step → DOM → test table lists only the spec's key moments.
+- **Shared scene parts.** Before writing a scene layer, check `src/core/plot/`
+  for one that fits (axes, number line, bars, gauge, panels, formula strip). A
+  layer that a second page needs moves to `src/core/plot/` instead of being
+  copied.
+- **Task review only where risk is.** Tasks with math, data or scene
+  integration get a task reviewer; the rest go straight to the final
+  whole-branch review, which also triages the deferred minors.
+- **Lean e2e.** Functional e2e and screenshot baselines cover the key steps
+  only (Ders and Lab); the performance specs run once at the chapter's end,
+  not inside every task.
+
 ## Safety Boundaries
 
 - Off-limits:

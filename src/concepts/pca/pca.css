@@ -1,0 +1,238 @@
+/* pca scatter scene text and marks. Text sizes come only from the --fs-* tokens; the SVG has no viewBox. */
+.pca-plot {
+  touch-action: none; /* dragging the handle must not scroll the page */
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: var(--font);
+}
+.pca-scatter .hit { cursor: default; }
+[data-mode="lab"] .pca-scatter .hit { cursor: crosshair; }
+.pca-scatter path.pts { fill: var(--navy); fill-opacity: 0.55; stroke: none; }
+.pca-scatter path.proj-lines { fill: none; stroke: var(--orange); stroke-width: 1; stroke-opacity: 0.45; }
+.pca-scatter path.proj-pts { fill: var(--orange); fill-opacity: 0.85; stroke: none; }
+.pca-scatter path.drop-lines { fill: none; stroke: var(--navy); stroke-width: 1; stroke-opacity: 0.6; }
+.pca-scatter line.dir { stroke: #a85a00; stroke-width: 3.5; stroke-linecap: round; }
+.pca-scatter line.dir2 { stroke: #0b7473; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 10 6; }
+.pca-scatter .center-cross path { fill: none; stroke: var(--navy); stroke-width: 2.5; }
+.pca-scatter circle.handle { fill: var(--orange); fill-opacity: 0.9; stroke: #fff; stroke-width: 3; }
+.pca-scatter text.dir-label,
+.pca-scatter text.dir2-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  /* white halo keeps labels readable over dots and lines */
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.pca-scatter text.dir-label { fill: #a85a00; }
+.pca-scatter text.dir2-label { fill: #0b7473; }
+.pca-scatter .tick,
+.pca-scatter .tick text { font-variant-numeric: tabular-nums; }
+
+/* pca variance gauge and variance-by-angle curve. Text sizes come only from the --fs-* tokens. */
+.pca-gauge .gauge-track { fill: #e3e9f0; stroke: none; }
+.pca-gauge .gauge-bar { fill: var(--orange); stroke: none; }
+.pca-gauge text.gauge-label {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  fill: #a85a00;
+  font-variant-numeric: tabular-nums;
+}
+.pca-gauge path.var-curve { stroke-width: 3; stroke-linejoin: round; }
+.pca-gauge circle.var-marker { fill: var(--orange); stroke: #fff; stroke-width: 2.5; }
+.pca-gauge text.var-peak,
+.pca-gauge text.var-marker-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.pca-gauge text.var-peak { fill: var(--navy); }
+.pca-gauge text.var-marker-label { fill: #a85a00; }
+.pca-gauge .tick,
+.pca-gauge .tick text { font-variant-numeric: tabular-nums; }
+
+/* pca explained-variance bars and cumulative curve. --red is the threshold colour (AA on white). */
+.scree { --red: #b42318; }
+.scree rect.bar { fill: var(--navy-soft); stroke: var(--navy); stroke-width: 1; }
+.scree rect.bar.kept { fill: var(--navy); }
+.scree path.cum-line { stroke-width: 3; stroke-linejoin: round; }
+.scree circle.cum-pt { fill: var(--navy); stroke: #fff; stroke-width: 2; }
+.scree line.threshold { stroke: var(--red); stroke-width: 3; }
+.scree text.bar-label,
+.scree text.cum-label,
+.scree text.threshold-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.scree text.bar-label,
+.scree text.cum-label { fill: var(--navy); }
+.scree text.threshold-label { fill: var(--red); }
+.scree .tick,
+.scree .tick text { font-variant-numeric: tabular-nums; }
+
+/* pca scene: plot above, calculation strip below (same strip as .olc-scene) */
+.pca-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.pca-scene .pca-plot-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pca-plot-host svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+.pca-scene .formula {
+  flex: none;
+  margin: 0 16px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 14px;
+  border-left: 4px solid var(--navy);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  min-height: calc(2 * 1.35em + 12px);
+}
+.pca-scene .formula .line { display: block; }
+.pca-scene .formula .term { white-space: nowrap; }
+
+/* pca PCA / t-SNE panels and the rule boxes */
+.pca-panels path.pts.c0 { fill: var(--navy); fill-opacity: 0.55; stroke: none; }
+.pca-panels path.pts.c1 { fill: var(--orange); fill-opacity: 0.8; stroke: none; }
+.pca-panels path.newcust { fill: #0ea5a4; stroke: var(--navy); stroke-width: 3; stroke-linejoin: round; }
+.pca-panels text.panel-title,
+.pca-panels text.legend-label,
+.pca-panels text.newcust-label {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pca-panels text.panel-title { font-size: var(--fs-axis); fill: var(--navy); }
+.pca-panels text.legend-label,
+.pca-panels text.newcust-label { font-size: var(--fs-tick); }
+.pca-panels text.legend-label.c0 { fill: var(--navy); }
+.pca-panels text.legend-label.c1 { fill: #a85a00; }
+.pca-panels text.newcust-label {
+  fill: #0b7473;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.pca-panels .tick,
+.pca-panels .tick text { font-variant-numeric: tabular-nums; }
+
+.pca-scene .rule {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+}
+.pca-scene .rule-box {
+  flex: 1 1 0;
+  min-width: 0;
+  /* equal tall boxes: no large empty band above and below them in Lab */
+  min-height: 62%;
+  padding: 14px 18px;
+  border: 2px solid var(--navy);
+  border-radius: 10px;
+  background: #fff;
+  font-size: var(--fs-body);
+  line-height: 1.4;
+}
+.pca-scene .rule-box p { margin: 6px 0 0; }
+.pca-scene .rule-title { display: block; font-size: var(--fs-body); }
+.pca-scene .rule-box code { font-family: inherit; font-weight: 700; }
+.pca-scene .rule-box a { color: var(--navy); font-weight: 700; }
+
+/* ---------- parameter panel (controls.ts): radio groups as one compact row ---------- */
+.pca-params { display: grid; gap: 8px; }
+.pca-params fieldset.ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.pca-params fieldset.ctl legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  font-weight: 600;
+}
+.pca-params .opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--ctl);
+  font-weight: 400;
+}
+.pca-params input[type="radio"] {
+  width: 1.25em;
+  height: 1.25em;
+  margin: 0;
+  accent-color: var(--navy);
+}
+.pca-params .ctl.range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 8px;
+}
+.pca-params .ctl.range label { grid-column: 1 / -1; font-weight: 600; }
+.pca-params input[type="range"] { width: 100%; min-height: var(--ctl); margin: 0; accent-color: var(--navy); }
+.pca-params .k-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+.pca-params button.find-pc1 {
+  min-height: var(--ctl);
+  padding: 0 16px;
+  border: 2px solid var(--navy);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--navy);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pca-params button.find-pc1:disabled { opacity: 0.5; cursor: default; }
+.pca-extra p { margin: 0 0 8px; }
+
+/* ---------- Lab: compact params card that fits the side column at 720 px ---------- */
+/* Groups that do not apply to the current step are hidden, not greyed (controls.ts sets data-off). */
+[data-mode="lab"] .pca-params .ctl[data-off] { display: none; }
+[data-mode="lab"] .pca-params { gap: 4px; }
+[data-mode="lab"] .pca-params fieldset.ctl { gap: 0 14px; }
+[data-mode="lab"] .pca-params fieldset.ctl legend { width: auto; }
+[data-mode="lab"] .pca-params .opt { min-height: 30px; }
+[data-mode="lab"] .pca-params input[type="range"] { min-height: 30px; }
+[data-mode="lab"] .pca-params button.find-pc1 { min-height: 30px; }
+[data-mode="lab"] .side .params { flex: none; padding: 8px 14px; }
+/* a tall explain card scrolls inside itself so the params card stays fully visible below it */
+[data-mode="lab"] .side .explain { flex: 0 1 auto; min-height: 0; overflow: auto; }

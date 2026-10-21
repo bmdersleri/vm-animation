@@ -38,7 +38,8 @@ export const concepts: ConceptEntry[] = [
     href: 'iqr-aykiri/',
   },
   { id: 'olcekleme', chapter: 3, chapterTitle: CH[3], title: 'Ölçekleme ve veri sızıntısı', status: 'hazir', href: 'olcekleme/' },
-  soon('pca', 4, 'PCA'),
+  { id: 'pca', chapter: 4, chapterTitle: CH[4], title: 'PCA ve t-SNE ile boyut indirgeme', status: 'hazir', href: 'pca/' },
+  { id: 'ozellik-secimi', chapter: 4, chapterTitle: CH[4], title: 'Özellik seçimi: filtre ve sarmalayıcı', status: 'hazir', href: 'ozellik-secimi/' },
   {
     id: 'karar-agaci',
     chapter: 5,

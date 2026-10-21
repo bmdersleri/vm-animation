@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../fixtures/onisleme_sklearn.json';
-import { clip, mean, median, quantile, quantileStep, std0, zscores } from '../../../src/core/stats';
+import { clip, covariance2, mean, median, pearson, quantile, quantileStep, std0, variance, zscores } from '../../../src/core/stats';
+import boyut from '../../fixtures/boyut_sklearn.json';
+import { PAIR } from '../../../src/concepts/pca/data';
+import { VALUES } from '../../../src/concepts/ozellik-secimi/data';
 
 const iqr = fixture.iqr;
 const raw = [...iqr.sorted].reverse(); // unsorted input on purpose
@@ -51,5 +54,28 @@ describe('summary stats', () => {
     const x = [3, 1, 2];
     quantile(x, 0.5); median(x); quantileStep(x, 0.5); zscores(x); clip(x, 1, 2);
     expect(x).toEqual([3, 1, 2]);
+  });
+});
+
+const rel = (a: number, b: number) => (b === 0 ? Math.abs(a) : Math.abs(a - b) / Math.abs(b));
+
+describe('variance / covariance / pearson', () => {
+  it('variance ddof 0 matches VarianceThreshold', () => {
+    VALUES.forEach((col, c) => {
+      const want = boyut.secim.variance[c];
+      if (want === 0) expect(variance(col)).toBe(0);
+      else expect(rel(variance(col), want)).toBeLessThan(1e-9);
+    });
+  });
+  it('variance ddof 1', () => expect(variance([1, 2, 3, 4], 1)).toBe(5 / 3));
+  it('covariance2 and pearson match numpy on the PCA pair', () => {
+    const xs = PAIR.map((p) => p[0]);
+    const ys = PAIR.map((p) => p[1]);
+    const c = covariance2(xs, ys);
+    const cov = boyut.pca.pair.cov;
+    expect(rel(c.xx, cov[0][0])).toBeLessThan(1e-9);
+    expect(rel(c.xy, cov[0][1])).toBeLessThan(1e-9);
+    expect(rel(c.yy, cov[1][1])).toBeLessThan(1e-9);
+    expect(rel(pearson(xs, ys), boyut.pca.pair.r)).toBeLessThan(1e-9);
   });
 });
