@@ -1,6 +1,6 @@
 # VM Animasyon
 
-Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı** ve **Naive Bayes**.
+Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**.
 
 İçerik, "Modern Veri Madenciliğine Giriş" kitabına (Prof. Dr. İsmail KIRBAŞ) dayanır.
 
@@ -11,6 +11,8 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - Ders modu: https://bmdersleri.github.io/vm-animation/knn/?mod=ders
 - Karar ağacı: https://bmdersleri.github.io/vm-animation/karar-agaci/
 - Naive Bayes: https://bmdersleri.github.io/vm-animation/naive-bayes/
+- IQR ve aykırı değer: https://bmdersleri.github.io/vm-animation/iqr-aykiri/
+- Ölçekleme: https://bmdersleri.github.io/vm-animation/olcekleme/
 
 Site, GitHub Pages etkinleştirildiğinde (Settings > Pages > Source: GitHub Actions) `main` dalına her push ile yayına girer. GitHub Actions yalnızca derleyip yayınlar; testler yerelde çalışır. `npm ci` bir push öncesi kancası (`.githooks/pre-push`) kurar: `main`'e her push'tan önce `npm run check` kendiliğinden çalışır ve geçmezse push durur.
 
@@ -39,6 +41,12 @@ Herhangi bir kavram sayfasına `?mod=ders` eklemek, sınıfta projeksiyon için 
 | L | Naive Bayes: Laplace α (0 / 1) |
 | B | Naive Bayes: karar bölgelerini göster / gizle |
 | + / - | Naive Bayes: öncülü artır / azalt |
+| D | IQR: doldurma stratejisi (yok / ortalama / medyan) |
+| K | IQR: katsayı 1,5 / 3,0 |
+| C | IQR: müdahale yok / sil / kırp |
+| U | Ölçekleme: birim ay / yıl / gün |
+| S | Ölçekleme: StandardScaler aç / kapat |
+| T | Ölçekleme: fit kapsamı (yalnız eğitim / tüm veri) |
 
 ## Yerel geliştirme
 
@@ -58,11 +66,13 @@ pip install -r scripts/requirements.txt
 python scripts/make_knn_data.py <csv yolu>
 python scripts/make_tree_data.py
 python scripts/make_nb_data.py
+python scripts/make_onisleme_data.py
 ```
 
 - `make_knn_data.py`: Telco churn CSV'sinden k-NN örneğini ve scikit-learn referans değerlerini üretir.
 - `make_tree_data.py`: karar ağacı sayfasının churn örneğini (`src/concepts/karar-agaci/data/churn_tree.json`) ve `tests/fixtures/karar-agaci_sklearn.json` referanslarını üretir; CSV gerekmez.
 - `make_nb_data.py`: Naive Bayes sayfasının spam sayımlarını ve Gauss eğitim kümesini (`src/concepts/naive-bayes/data/nb_data.json`) ve `tests/fixtures/naive-bayes_sklearn.json` referanslarını üretir; CSV gerekmez.
+- `make_onisleme_data.py`: IQR ve ölçekleme sayfalarının verisini üretir (kitabın 002, 003, 004 ve 006 örnekleri): `src/concepts/iqr-aykiri/data/iqr_data.json`, `src/concepts/olcekleme/data/olcekleme_data.json` ve `tests/fixtures/onisleme_sklearn.json` referansları; CSV gerekmez.
 
 ## Yeni kavram ekleme
 
