@@ -4,6 +4,7 @@ import { StepPlayer } from '../../../src/core/player';
 import { cvScenario } from '../../../src/concepts/capraz-dogrulama/scenario';
 import { mountCvScene } from '../../../src/concepts/capraz-dogrulama/scene';
 import { mountCvParams } from '../../../src/concepts/capraz-dogrulama/controls';
+import { sampleBoard } from '../../../src/concepts/capraz-dogrulama/samples';
 import { cText } from '../../../src/concepts/capraz-dogrulama/view';
 import { evaluationData } from '../../../src/concepts/degerlendirme/data';
 
@@ -39,13 +40,62 @@ describe('cross validation lesson',()=>{
     }
     scene.destroy();player.destroy();
   });
-  it('reveals each completed sweep score and assigns each sample to validation once',()=>{
+  it('reveals a sweep fold score only when its turn completes; earlier folds stay shown',()=>{
     vi.useFakeTimers();const {player,host,scene}=setup();player.goto(3);
-    expect(host.querySelectorAll('[data-score][data-revealed="true"]')).toHaveLength(1);
-    vi.advanceTimersByTime(2400);expect(host.querySelectorAll('[data-score][data-revealed="true"]')).toHaveLength(3);
+    const revealed=()=>[...host.querySelectorAll('[data-score][data-revealed="true"]')].map(g=>g.getAttribute('data-score'));
+    const f1=()=>host.querySelector('[data-fold-f1]')!;
+    expect(revealed()).toEqual([]);
+    expect(f1().getAttribute('data-revealed')).toBe('false');expect(f1().hasAttribute('data-value')).toBe(false);expect(f1().textContent).toBe('bekliyor');
+    expect(host.querySelector('[data-active-fold]')?.textContent).not.toMatch(/TP \d/);
+    vi.advanceTimersByTime(1200);expect(revealed()).toEqual(['0']);
+    expect(host.querySelector('[data-active-fold]')?.getAttribute('data-active-fold')).toBe('1');expect(f1().getAttribute('data-revealed')).toBe('false');
+    vi.advanceTimersByTime(1200);expect(revealed()).toEqual(['0','1']);
     expect(host.querySelector('[data-active-fold]')?.getAttribute('data-active-fold')).toBe('2');
-    player.goto(4);for(const s of development){const chip=host.querySelector(`[data-sample="${s.id}"]`)!;expect(chip.getAttribute('data-validation-count')).toBe('1');expect(chip.textContent).toContain('K');}
+    vi.advanceTimersByTime(2*1200);expect(revealed()).toEqual(['0','1','2','3']);
+    expect(host.querySelector('[data-active-fold]')?.getAttribute('data-active-fold')).toBe('4');expect(f1().getAttribute('data-revealed')).toBe('false');
+    vi.advanceTimersByTime(1199);expect(f1().getAttribute('data-revealed')).toBe('false');
+    vi.advanceTimersByTime(1);const run=data.runs.find(r=>r.k===5&&r.method==='stratified'&&r.c===1)!;
+    // Sweep closed: fold resets to the default, no turn is running, its score is open.
+    expect(f1().getAttribute('data-value')).toBe(String(run.folds[0].f1));expect(f1().getAttribute('data-revealed')).toBe('true');
     scene.destroy();player.destroy();
+  });
+  it('opens the chosen fold score immediately on a manual fold change (no running turn)',()=>{
+    vi.useFakeTimers();const {player,host,scene}=setup();player.goto(3);player.setParam('fold',2);
+    expect(host.querySelector('[data-fold-f1]')?.getAttribute('data-revealed')).toBe('true');
+    expect(host.querySelector('[data-score="2"]')?.getAttribute('data-revealed')).toBe('true');
+    scene.destroy();player.destroy();
+  });
+  it('reduced motion: the sweep turn score is open immediately',()=>{
+    vi.useFakeTimers();vi.stubGlobal('matchMedia',(q:string)=>({matches:q.includes('reduce'),media:q}));
+    const {player,host,scene}=setup();player.goto(3);
+    expect(host.querySelector('[data-fold-f1]')?.getAttribute('data-revealed')).toBe('true');
+    scene.destroy();player.destroy();vi.unstubAllGlobals();
+  });
+  it('derives validation membership from the real folds: disjoint, covering, per-sample count 1',()=>{
+    const {player,host,scene}=setup();player.goto(4);
+    for(const run of data.runs){
+      player.setParams({k:run.k,method:run.method,c:run.c,fold:0});
+      const ids=run.folds.map(f=>f.validationIds);
+      expect(ids.flat().length).toBe(development.length);
+      expect(new Set(ids.flat())).toEqual(new Set(development.map(s=>s.id)));
+      let total=0;
+      for(const s of development){const chip=host.querySelector(`[data-sample="${s.id}"]`)!;
+        const fi=run.folds.findIndex(f=>f.validationIds.includes(s.id));
+        expect(chip.getAttribute('data-fold')).toBe(String(fi));expect(chip.textContent).toContain(`K${fi+1}`);
+        expect(chip.getAttribute('data-validation-count')).toBe('1');total+=Number(chip.getAttribute('data-validation-count'));}
+      expect(total).toBe(development.length);
+      run.folds.forEach((f,i)=>expect([...host.querySelectorAll(`[data-sample][data-fold="${i}"]`)].map(c=>c.getAttribute('data-sample')).sort()).toEqual([...f.validationIds].sort()));
+    }
+    scene.destroy();player.destroy();
+  });
+  it('a broken fold split (sample in two folds or in none) is not reported as count 1',()=>{
+    const run=structuredClone(data.runs.find(r=>r.k===5&&r.method==='stratified'&&r.c===1)!) as unknown as {folds:{validationIds:string[]}[]};
+    type Run=Parameters<ReturnType<typeof sampleBoard>['update']>[0];
+    const dup=run.folds[0].validationIds[0];run.folds[1].validationIds.push(dup);
+    const lost=run.folds[2].validationIds.pop()!;
+    const {board,update}=sampleBoard();update(run as unknown as Run,0,4);
+    expect(board.querySelector(`[data-sample="${dup}"]`)!.getAttribute('data-validation-count')).toBe('2');
+    expect(board.querySelector(`[data-sample="${lost}"]`)!.getAttribute('data-validation-count')).toBe('0');
   });
   it('shows mean and population std rather than a confidence interval; compares actual positive fold counts',()=>{
     const {player,host,scene}=setup();player.goto(5);const run=data.runs.find(r=>r.k===5&&r.method==='stratified'&&r.c===1)!;

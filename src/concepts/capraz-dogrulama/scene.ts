@@ -1,7 +1,7 @@
 import type { StepPlayer } from '../../core/player';
 import type { Mode } from '../../core/mode';
 import type { SceneHandle } from '../../core/shell';
-import type { CvParams } from './scenario';
+import { cvScenario, type CvParams } from './scenario';
 import { html } from '../degerlendirme/ui';
 import { cvData, development, foldIndex, negativeTotal, positiveTotal, runFor, testSamples } from './view';
 import { sampleBoard } from './samples';
@@ -29,6 +29,21 @@ export function mountCvScene(host:HTMLElement,player:StepPlayer<CvParams>,mode:M
     'Doğrulama yalnız eğitimde öğrenilen dönüşümü kullanır. Sızıntı skoru her zaman artırmaz.',
     'Keşif kontrollerinden bağımsız sabit protokol. Test yalnız seçilmiş yapılandırmanın son raporudur.',
   ];
+  // Step 4: the running sweep turn completes after one interval; manual changes and reduced motion open it at once.
+  const reduce=():boolean=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let turnDone=true;let turnTimer:ReturnType<typeof setTimeout>|null=null;
+  const clearTurn=():void=>{if(turnTimer!==null)clearTimeout(turnTimer);turnTimer=null;};
+  const lastTurn=cvScenario.steps[3].sweep!.values.length-1;let prevFold=-1;
+  const onChange=(s:{index:number;params:CvParams},cause?:string):void=>{
+    clearTurn();const fold=foldIndex(s.params);
+    // The sweep's closing emission resets fold to the default: the last turn has completed, no new turn starts.
+    const sweepEnded=cause==='sweep'&&prevFold===lastTurn&&fold<prevFold;prevFold=s.index===3?fold:-1;
+    if(s.index===3&&(cause==='step'||cause==='sweep')&&!sweepEnded&&!reduce()){
+      turnDone=false;
+      turnTimer=setTimeout(()=>{turnTimer=null;turnDone=true;render();},cvScenario.steps[3].sweep!.intervalMs);
+    }else turnDone=true;
+    render();
+  };
   const render=():void=>{
     const {params,index}=player.state;const final=index===9;
     const p=final?{k:5 as const,method:'stratified' as const,fold:0,c:cvData.selection.c}:params;
@@ -43,10 +58,10 @@ export function mountCvScene(host:HTMLElement,player:StepPlayer<CvParams>,mode:M
     board.hidden=index===5;aside.replaceChildren();
     if(index===5){aside.append(scorePanel(run,active,index),foldCard(run,active,index));}
     else if(index===6||index===7){aside.append(classPanel(run),foldCard(run,active,index));}
-    else{aside.append(foldCard(run,active,index));if(index===3)aside.append(scorePanel(run,active,index));}
+    else{aside.append(foldCard(run,active,index,turnDone));if(index===3)aside.append(scorePanel(run,active,index,turnDone));}
     if(index===1)aside.replaceChildren(html('div',{class:'cv-partition-note'},html('h2',{},`${run.k} ayrı doğrulama bloğu`),html('p',{},'Her K etiketi bir katı gösterir. Kimlik sırası değişmez; görev sırayla değişir.'),html('p',{},'Her turda 1 kat doğrulama; kalan K−1 kat eğitim.')));
     special.replaceChildren(...(index===8?[pipelinePanel(run,active)]:final?[finalPanel()]:[]));
   };
-  render();const unsubscribe=player.subscribe(render);
-  return {resize(){},setMode(next){root.dataset.mode=next;},destroy(){unsubscribe();root.remove();}};
+  render();const unsubscribe=player.subscribe(onChange);
+  return {resize(){},setMode(next){root.dataset.mode=next;},destroy(){clearTurn();unsubscribe();root.remove();}};
 }

@@ -3,8 +3,11 @@ import type { CvRun } from '../degerlendirme/data';
 import { metrics } from '../degerlendirme/metrics';
 import { cvData, cText, numberText, vectorText, positiveCount, positiveTotal, negativeTotal } from './view';
 
-const value=(label:string,n:number,attribute:string)=>html('p',{},label,html('strong',{[attribute]:'','data-value':String(n)},numberText(n)));
-export function foldCard(run:CvRun,index:number,step:number):HTMLElement{
+const value=(label:string,n:number,attribute:string)=>html('p',{},label,html('strong',{[attribute]:'','data-value':String(n),...(attribute==='data-fold-f1'?{'data-revealed':'true'}:{})},numberText(n)));
+/** Step 4 sweep: the running turn's score stays masked until the turn completes. */
+const maskedScore=(step:number,done:boolean)=>step===3&&!done;
+export function foldCard(run:CvRun,index:number,step:number,done=true):HTMLElement{
+  const masked=maskedScore(step,done);
   const fold=run.folds[index],m=metrics(fold.confusion);
   const fit=html('div',{class:'cv-fit'},...(['mean','scale'] as const).map(key=>html('p',{},key==='mean'?'Ortalama μ ':'Ölçek σ ',html('strong',{'data-fit':key,'data-values':JSON.stringify(fold[key])},vectorText(fold[key])))));
   fit.hidden=step<2||step===4||step===5||step===6||step===7;
@@ -13,19 +16,19 @@ export function foldCard(run:CvRun,index:number,step:number):HTMLElement{
   return html('aside',{class:'cv-fold-card','data-active-fold':String(index)},html('h2',{},`Tur ${index+1} · yeni fit`),
     html('p',{},html('strong',{'data-train-count':''},String(fold.trainIds.length)),' eğitim · ',html('strong',{'data-train-positive':''},String(positiveCount(fold.trainIds))),' pozitif'),
     html('p',{},`${fold.validationIds.length} doğrulama · `,html('strong',{'data-validation-positive':''},String(positiveCount(fold.validationIds))),' pozitif'),
-    fit,value('Doğrulama F1 ',fold.f1,'data-fold-f1'),
-    html('p',{class:'cv-confusion'},`TP ${fold.confusion.tp} · FP ${fold.confusion.fp} · FN ${fold.confusion.fn} · TN ${fold.confusion.tn}`),zero,
+    fit,masked?html('p',{},'Doğrulama F1 ',html('strong',{'data-fold-f1':'','data-revealed':'false'},'bekliyor')):value('Doğrulama F1 ',fold.f1,'data-fold-f1'),
+    html('p',{class:'cv-confusion'},masked?'Tur bitince: TP · FP · FN · TN':`TP ${fold.confusion.tp} · FP ${fold.confusion.fp} · FN ${fold.confusion.fn} · TN ${fold.confusion.tn}`),zero,
     html('p',{class:'cv-fit-source'},'Fit kaynağı: yalnız bu turun eğitim kimlikleri. Doğrulamada yalnız transform + predict.'));
 }
 
-export function scorePanel(run:CvRun,active:number,step:number):HTMLElement{
+export function scorePanel(run:CvRun,active:number,step:number,done=true):HTMLElement{
   const H=step===3?95:160;
   const plot=svg('svg',{class:'cv-score-plot',viewBox:`0 0 460 ${H+90}`,role:'img','aria-label':`Kat F1 skorları: ${run.folds.map((f,i)=>`K${i+1} ${numberText(f.f1)}`).join(', ')}. Ortalama ${numberText(run.meanF1)}, popülasyon standart sapması ${numberText(run.stdF1)}.`});
   const y=(n:number)=>H+45-H*n;
   for(const n of [0,.5,1]){plot.append(svg('line',{x1:'40',x2:'445',y1:String(y(n)),y2:String(y(n)),class:'cv-gridline'}),svg('text',{x:'32',y:String(y(n)+5),'text-anchor':'end',class:'cv-tick'},String(n).replace('.',',')));}
   if(step===5){plot.append(svg('rect',{x:'40',y:String(y(Math.min(1,run.meanF1+run.stdF1))),width:'405',height:String(H*(Math.min(1,run.meanF1+run.stdF1)-Math.max(0,run.meanF1-run.stdF1))),class:'cv-std-band'}),svg('line',{x1:'40',x2:'445',y1:String(y(run.meanF1)),y2:String(y(run.meanF1)),class:'cv-mean-line'}));}
   run.folds.forEach((fold,i)=>{
-    const revealed=step!==3||i<=active;const x=60+i*(365/run.k);
+    const revealed=step!==3||i<active||(i===active&&done);const x=60+i*(365/run.k);
     const g=svg('g',{'data-score':String(i),'data-revealed':String(revealed),'data-value':String(fold.f1)});
     g.append(svg('rect',{x:String(x),y:String(y(revealed?fold.f1:0)),width:String(Math.min(48,250/run.k)),height:String(Math.max(2,H*(revealed?fold.f1:0))),class:i===active?'cv-bar cv-bar-active':'cv-bar'}),svg('text',{x:String(x+24),y:String(H+80),'text-anchor':'middle',class:'cv-tick'},`K${i+1}`),svg('text',{x:String(x+24),y:String(y(revealed?fold.f1:0)-10),'text-anchor':'middle',class:'cv-tick'},revealed?numberText(fold.f1):'bekliyor'));
     plot.append(g);

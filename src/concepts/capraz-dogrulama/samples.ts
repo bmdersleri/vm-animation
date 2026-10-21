@@ -12,7 +12,7 @@ export function sampleBoard(){
     chips.forEach((chip,i)=>{
       const s=development[i];const member=run.folds.findIndex(f=>f.validationIds.includes(s.id));
       const validation=run.folds[active].validationIds.includes(s.id);const prediction=run.folds[active].predictions.find(p=>p.id===s.id);
-      chip.dataset.role=step===1?'partition':validation?'validation':'train';chip.dataset.fold=String(member);chip.dataset.validationCount='1';
+      chip.dataset.role=step===1?'partition':validation?'validation':'train';chip.dataset.fold=String(member);chip.dataset.validationCount=String(run.folds.filter(f=>f.validationIds.includes(s.id)).length);
       chip.dataset.predicted=prediction?String(prediction.predicted):'';
       chip.querySelector('.cv-membership')!.textContent=step===1||step===4?`K${member+1}`:'';
       chip.setAttribute('aria-label',`${s.id}; gerçek ${s.actual===1?'ayrıldı':'kaldı'}; doğrulama katı ${member+1}; ${validation?'doğrulama':'eğitim'}`);
