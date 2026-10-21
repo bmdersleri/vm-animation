@@ -20,8 +20,8 @@ type G = Selection<SVGGElement, unknown, null, undefined>;
 
 /**
  * A small k -> value line chart: points, a highlighted selected k, a progressive
- * reveal (revealUpTo) and kind-labelled marks (elbow / peak). No transitions:
- * every call redraws the final state, so reduced motion needs no special case.
+ * reveal (set({ reveal })) and kind-labelled marks (elbow / peak). No transitions:
+ * every set() redraws the final state, so reduced motion needs no special case.
  */
 export class KLineChart {
   private readonly root: G;
@@ -44,7 +44,8 @@ export class KLineChart {
     this.marks = state.marks.map((m) => ({ ...m }));
     this.draw();
   }
-  resize(rect: Rect, fontPx = this.fontPx): void { this.rect = rect; this.fontPx = fontPx; this.draw(); }
+  /** Stores the box and font size only; the next set() draws, so a render draws each chart once. */
+  resize(rect: Rect, fontPx = this.fontPx): void { this.rect = rect; this.fontPx = fontPx; }
   destroy(): void { this.root.remove(); }
 
   private draw(): void {
