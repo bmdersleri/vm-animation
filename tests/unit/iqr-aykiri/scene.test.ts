@@ -232,6 +232,52 @@ describe('iqr-aykiri scene', () => {
     expect(el.querySelector('[data-cross]')).toBeNull();
   });
 
+  it('rapid change during the mean glide leaves one mean mark at the final spot', async () => {
+    const { el, player } = setup(1);
+    await frame(50);
+    player.goto(1);
+    await frame(40);
+    player.goto(3);
+    await frame(60);
+    const means = all(el, 'g.mark.mean');
+    expect(means).toHaveLength(1);
+    expect(Number(/translate\(([-\d.]+)px/.exec(means[0].style.transform)![1])).toBeCloseTo(Number(means[0].dataset.x), 1);
+    expect(el.querySelector('.leaving')).toBeNull();
+    expect(el.querySelector('[data-cross]')).toBeNull();
+    expect(el.querySelector('path.pt.outlier')).toBeNull();
+  });
+
+  it('rapid change from the outlier step leaves no ▲', async () => {
+    const { el, player } = setup(1);
+    await frame(50);
+    player.goto(8);
+    await frame(60);
+    expect(el.querySelector('path.pt.outlier')).not.toBeNull();
+    player.goto(4);
+    await frame(80);
+    // the old ▲ may still be fading out, but only as a leaving node
+    expect(el.querySelector('path.pt.outlier:not(.leaving)')).toBeNull();
+    await frame(450);
+    expect(el.querySelector('path.pt.outlier')).toBeNull();
+    expect(el.querySelector('.leaving')).toBeNull();
+  });
+
+  it('sil through the player fades the dot even as a live change', async () => {
+    const { el, player } = setup(1);
+    await frame(50);
+    player.goto(10);
+    await frame(400);
+    const n = all(el, '.pt').length;
+    player.setParams({ action: 'sil' });
+    await frame(40);
+    const dying = all(el, '.pt.deleted');
+    expect(dying).toHaveLength(1);
+    expect(all(el, '.pt')).toHaveLength(n);
+    await frame(450);
+    expect(all(el, '.pt')).toHaveLength(n - 1);
+    expect(el.querySelector('.pt.deleted')).toBeNull();
+  });
+
   it('labels never overlap', () => {
     const { el, player } = setup();
     for (let i = 0; i < iqrAykiriScenario.steps.length; i++) {

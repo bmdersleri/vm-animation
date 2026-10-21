@@ -13,6 +13,8 @@ const TN = 'iqr-line';
 export const CROSS_MS = 250;
 /** Mean slide from the axis start, before `durationScale`. */
 export const SLIDE_MS = 900;
+/** Fade of a deleted dot, before `durationScale`; applies to live changes too. */
+export const DELETE_MS = 300;
 const SVGNS = 'http://www.w3.org/2000/svg';
 const TITLE = 'Aylık fatura (TL)';
 /** Gap in px between two labels of one row (spec: staggerRows pad). */
@@ -294,7 +296,7 @@ export class LineLayer {
       if (!slideFrom) return;
       const g = select(this as SVGGElement);
       g.style('transform', `translate(${r1(startX)}px, 0px)`).attr('opacity', 1);
-      tr(g, TN, Math.min(ms * 2, SLIDE_MS * 1), undefined).style('transform', `translate(${r1(d.x)}px, 0px)`);
+      tr(g, TN, Math.min(ms * 2, SLIDE_MS * this.ds), undefined).style('transform', `translate(${r1(d.x)}px, 0px)`);
     });
     fade(mk.enter.filter((d: MarkD) => !(slideFrom && d.kind === 'mean')), dur(0.4));
     mk.enter.filter((d: MarkD) => slideFrom && d.kind === 'mean').attr('opacity', 1);
@@ -348,7 +350,9 @@ export class LineLayer {
     const s = this.gPts.selectAll<SVGElement, PtD>('.pt').filter(notLeaving).data(pd, (d) => d.sk);
     const exit = s.exit<PtD>();
     exit.classed('leaving', true).classed('deleted', (_d, i, n) => !pd.some((p) => p.pt.key === (n[i] as SVGElement).dataset.key));
-    tr(exit as AnySel, TN, dur(0.7)).attr('opacity', 0).remove();
+    // a deleted dot (Sil) fades even on live changes; a shape swap follows the step duration
+    tr(exit.filter('.deleted') as AnySel, TN, Math.round(DELETE_MS * this.ds)).attr('opacity', 0).remove();
+    tr(exit.filter(':not(.deleted)') as AnySel, TN, dur(0.7)).attr('opacity', 0).remove();
     const R = L.r;
     const enter = s.enter().append<SVGElement>((d) => {
       const el = this.svgEl.ownerDocument.createElementNS(SVGNS, d.pt.shape === 'normal' ? 'circle' : 'path') as SVGElement;
