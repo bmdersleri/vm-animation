@@ -74,14 +74,14 @@ export const dagilimScenario: Scenario<DagilimParams> = {
       title: 'Kuyruk',
       text: 'Sahne 003 serisine geçer: 28 saatlik öğrenci sağda tek başına durur. Uç değer (outlier) 60’a sürüklenince ortalama 13,6’ya, çarpıklık 3,06’ya çıkar; medyan 8,5 sabit kalır.',
       term: 'uç değer (outlier)',
-      params: { seri: '003', extreme: 28, bins: 5, log: false },
+      params: { seri: '003', extreme: 28, log: false },
     },
     {
       id: 'uc-sekil',
       title: 'Üç şekil',
       text: 'Sağ, simetrik ve sol seriler arasında geçilir; noktalar, histogram ve işaretler canlı değişir. Simetri (symmetry) ortalamayı medyanla buluşturur; çarpıklığın işareti kuyruğun yönünü, büyüklüğü uzunluğunu verir.',
       term: 'simetri (symmetry)',
-      params: { seri: '002' },
+      params: { seri: '002', log: false },
     },
     {
       id: 'kural',

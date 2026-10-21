@@ -105,7 +105,8 @@ describe('dagilimScenario', () => {
     press(p, 'S');
     press(p, 'K');
     press(p, 'L');
-    expect([p.state.params.seri, p.state.params.bins, p.state.params.log]).toEqual(['003', 5, false]);
+    // step 7 no longer owns `bins`: the 3 chosen on the bin-count step survives into the tail step
+    expect([p.state.params.seri, p.state.params.bins, p.state.params.log]).toEqual(['003', 3, false]);
 
     p.goto(8);
     const before = { ...p.state.params };

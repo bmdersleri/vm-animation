@@ -1,7 +1,7 @@
 import { formatNumber, formatNonZero } from '../../core/plot/format';
 import { histCounts, mean, median, skewness } from '../../core/stats';
 import { SERIES, type Seri } from './data';
-import { dagilimScenario, type DagilimParams } from './scenario';
+import { dagilimScenario, EXTREME_STEPS, type DagilimParams } from './scenario';
 
 export interface DagilimView {
   stepId: string;
@@ -20,8 +20,8 @@ export interface DagilimView {
   note: string;
 }
 
-/** The only step that drags series 003's last value. */
-const EXTREME_STEP = 6;
+/** The only step that drags series 003's last value (shared with the scenario's control guard). */
+const EXTREME_STEP = EXTREME_STEPS[0];
 /** Steps 3–8 print the mean and median marks. */
 const MARK_STEPS: readonly number[] = [2, 3, 4, 5, 6, 7];
 
@@ -35,11 +35,11 @@ function trim(x: number): string {
 /** Skewness text: an exact zero reads "0", every other value keeps two decimals. */
 const skewText = (x: number): string => (x === 0 ? '0' : f2(x));
 
-/** The step's values: series 003's last entry becomes `p.extreme`, then `log1p` if the transform is on. */
-function valuesOf(seri: Seri, p: DagilimParams, index: number): number[] {
+/** The step's values: series 003's last entry becomes `p.extreme`, then `log1p` when asked. */
+function valuesOf(seri: Seri, p: DagilimParams, index: number, log: boolean): number[] {
   const raw = SERIES[seri].values;
   const values = index === EXTREME_STEP && seri === '003' ? [...raw.slice(0, -1), p.extreme] : [...raw];
-  return p.log ? values.map((x) => Math.log1p(x)) : values;
+  return log ? values.map((x) => Math.log1p(x)) : values;
 }
 
 const NOTES: readonly string[] = [
@@ -61,7 +61,9 @@ export function deriveDagilimView(index: number, p: DagilimParams): DagilimView 
   const stepId = steps[i].id;
   // step 7 owns series 003: its outlier is the point of the step
   const seri: Seri = stepId === 'kuyruk' ? '003' : p.seri;
-  const values = valuesOf(seri, p, i);
+  // step 8 always draws raw series: a residual log from step 6 must not survive a step-dot jump
+  const logOn = p.log && stepId !== 'uc-sekil';
+  const values = valuesOf(seri, p, i, logOn);
   const { edges, counts } = histCounts(values, p.bins);
   const bins = counts.map((count, k) => ({ lo: edges[k], hi: edges[k + 1], count }));
   const mu = mean(values);
@@ -70,7 +72,7 @@ export function deriveDagilimView(index: number, p: DagilimParams): DagilimView 
   const sorted = [...values].sort((a, b) => a - b);
   const n = values.length;
   const countsText = counts.join(', ');
-  const skewOf = (s: Seri): number => skewness(valuesOf(s, p, -1));
+  const skewOf = (s: Seri): number => skewness(valuesOf(s, p, -1, false));
 
   let strip: string;
   switch (stepId) {
@@ -92,11 +94,13 @@ export function deriveDagilimView(index: number, p: DagilimParams): DagilimView 
     case 'kova':
       strip = `bins = ${p.bins} → ${countsText}`;
       break;
-    case 'log':
-      // the left-hand side is always the raw 002 summary, the right-hand side the current values
-      strip = `log1p: çarpıklık ${f2(skewness(SERIES['002'].values))} → ${skewText(sk)}; `
-        + `ortalama ${trim(mean(SERIES['002'].values))} → ${trim(mu)}`;
+    case 'log': {
+      // both sides describe the *same* series: the raw summary on the left, the log1p one on the right
+      const base = SERIES[seri];
+      strip = `log1p: çarpıklık ${skewText(base.skew)} → ${skewText(sk)}; `
+        + `ortalama ${trim(base.mean)} → ${trim(mu)}`;
       break;
+    }
     case 'kuyruk':
       strip = `uç değer ${formatNumber(p.extreme, 0)} → ortalama ${trim(mu)} · medyan ${trim(med)} `
         + `· çarpıklık ${f2(sk)}`;
@@ -107,13 +111,15 @@ export function deriveDagilimView(index: number, p: DagilimParams): DagilimView 
         + `· sol: ${skewText(skewOf('sol'))}`;
       break;
     }
+    case 'kural':
     default:
       strip = '|çarpıklık| < 0,5 ≈ simetrik · 0,5–1 orta · > 1 güçlü · çarpıklık varsa özet: medyan + IQR';
+      break;
   }
 
-  const tail: DagilimView['tail'] = stepId === 'carpiklik'
+  const tail: DagilimView['tail'] = stepId === 'carpiklik' || stepId === 'uc-sekil'
     ? (sk > 0 ? 'right' : sk < 0 ? 'left' : null)
-    : stepId === 'uc-sekil' ? (seri === 'sol' ? 'left' : seri === 'simetrik' ? null : 'right') : null;
+    : null;
 
   return {
     stepId,
@@ -126,7 +132,7 @@ export function deriveDagilimView(index: number, p: DagilimParams): DagilimView 
     showMean: MARK_STEPS.includes(i),
     showMedian: MARK_STEPS.includes(i),
     tail,
-    log: p.log,
+    log: logOn,
     thresholds: stepId === 'kural',
     strip,
     note: NOTES[i],

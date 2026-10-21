@@ -61,6 +61,11 @@ describe('dagilim view', () => {
     expect(v.log).toBe(true);
   });
 
+  it('adım 6 şeridin iki tarafı aynı seriden', () => {
+    const v = deriveDagilimView(5, p({ seri: '003', log: true }));
+    expect(v.strip).toBe('log1p: çarpıklık 2,54 → 1,50; ortalama 10,4 → 2,33');
+  });
+
   it('adım 7 uç değer 60: medyan sabit', () => {
     const v = deriveDagilimView(6, p({ seri: '003', extreme: 60 }));
     expect(v.seri).toBe('003');
@@ -88,6 +93,14 @@ describe('dagilim view', () => {
     expect(deriveDagilimView(7, p()).tail).toBe('right');
     expect(deriveDagilimView(7, p()).strip).toBe('sağ: 0,90 · simetrik: 0 · sol: −1,06');
     expect(deriveDagilimView(7, p({ seri: '003' })).strip).toBe('sağ: 2,54 · simetrik: 0 · sol: −1,06');
+  });
+
+  it('adım 8 artık log taşımaz: ham seriler ve işaret çarpıklıktan', () => {
+    const v = deriveDagilimView(7, p({ log: true }));
+    expect(v.log).toBe(false);
+    expect(v.values).toEqual(SERIES['002'].values);
+    expect(v.strip).toBe('sağ: 0,90 · simetrik: 0 · sol: −1,06');
+    expect(deriveDagilimView(7, p({ log: true, seri: 'sol' })).tail).toBe('left');
   });
 
   it('adım 9 eşikler ve dayanıklı özet', () => {
