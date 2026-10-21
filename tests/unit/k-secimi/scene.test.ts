@@ -150,6 +150,10 @@ describe('k-secimi scene', () => {
     player.goto(2);
     expect(text(host, '[data-drop-prev]')).toContain('41,7');
     expect(attr(host, '[data-drop-prev]', 'data-drop-prev')).toBe(String(kResult(2).inertia - kResult(3).inertia));
+    // No Turkish case suffix on a number (2'ye, 6'ya, 9'a…): the label needs none.
+    expect(host.querySelector('[data-drop-prev]')!.parentElement!.querySelector('.ks-label')!.textContent).toBe('Düşüş (k=2→3)');
+    player.goto(3);
+    expect(host.textContent).not.toMatch(/'e göre/);
     fin(scene, player);
   });
 

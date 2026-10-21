@@ -206,7 +206,7 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
     const rows = el('div', 'ks-rows');
     rows.append(row('Inertia', inertiaText(v.inertia), { 'data-inertia': String(v.inertia) }));
     if (v.dropFromPrev !== null) {
-      rows.append(row(`k=${v.k - 1}'e göre`, `−${dropText(v.dropFromPrev)}`, { 'data-drop-prev': String(v.dropFromPrev) }));
+      rows.append(row(`Düşüş (k=${v.k - 1}→${v.k})`, `−${dropText(v.dropFromPrev)}`, { 'data-drop-prev': String(v.dropFromPrev) }));
     }
     rows.append(row('Silhouette', silhouetteText(v.silhouette), { 'data-silhouette': String(v.silhouette) }));
     if (v.silhouette !== null) {
