@@ -16,18 +16,18 @@ describe('home page', () => {
     expect(concepts.length).toBe(21);
   });
 
-  it('only hazir cards are links: iqr-aykiri/, olcekleme/, pca/, karar-agaci/, knn/ and naive-bayes/', () => {
+  it('only hazir cards are links: iqr-aykiri/, olcekleme/, pca/, ozellik-secimi/, karar-agaci/, knn/ and naive-bayes/', () => {
     const root = render();
     const links = [...root.querySelectorAll<HTMLAnchorElement>('a.card')];
-    expect(links.length).toBe(6);
-    expect(links.map((l) => l.getAttribute('href'))).toEqual(['iqr-aykiri/', 'olcekleme/', 'pca/', 'karar-agaci/', 'knn/', 'naive-bayes/']);
-    expect(links[4].textContent).toContain('k-En Yakın Komşu (k-NN)');
+    expect(links.length).toBe(7);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['iqr-aykiri/', 'olcekleme/', 'pca/', 'ozellik-secimi/', 'karar-agaci/', 'knn/', 'naive-bayes/']);
+    expect(links[5].textContent).toContain('k-En Yakın Komşu (k-NN)');
     const ders = root.querySelector<HTMLAnchorElement>('a.card-ders[href="knn/?mod=ders"]');
     expect(ders?.getAttribute('href')).toBe('knn/?mod=ders');
     expect(ders?.textContent).toBe('Ders modunda aç');
     const soon = root.querySelectorAll('.card.yakinda');
-    expect(soon.length).toBe(15);
-    expect(concepts.length - links.length).toBe(15);
+    expect(soon.length).toBe(14);
+    expect(concepts.length - links.length).toBe(14);
     soon.forEach((c) => {
       expect(c.tagName).not.toBe('A');
       expect(c.textContent).toContain('Yakında');

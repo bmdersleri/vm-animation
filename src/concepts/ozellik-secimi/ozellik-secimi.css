@@ -101,3 +101,63 @@
 .secim-scene .sel-columns ul { margin: 0; padding: 0; list-style: none; font-size: var(--fs-body); line-height: 1.5; }
 .secim-scene .sel-columns li { overflow-wrap: anywhere; }
 .secim-scene .intersect p.rule { margin: 0; font-size: var(--fs-body); font-weight: 700; line-height: 1.4; text-align: center; }
+
+/* ---------- parameters panel (Ders) ---------- */
+.secim-params { display: grid; gap: 8px; }
+.secim-params fieldset.ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.secim-params fieldset.ctl legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  font-weight: 600;
+}
+.secim-params .opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--ctl);
+  font-weight: 400;
+}
+.secim-params input[type="radio"] {
+  width: 1.25em;
+  height: 1.25em;
+  margin: 0;
+  accent-color: var(--navy);
+}
+.secim-params .ctl.range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 8px;
+}
+.secim-params .ctl.range label { grid-column: 1 / -1; font-weight: 600; }
+.secim-params input[type="range"] { width: 100%; min-height: var(--ctl); margin: 0; accent-color: var(--navy); }
+.secim-params .k-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---------- Lab notes ---------- */
+.secim-extra p { margin: 0 0 8px; }
+.secim-extra table.methods { width: 100%; margin: 0 0 8px; border-collapse: collapse; }
+.secim-extra table.methods th,
+.secim-extra table.methods td { padding: 3px 6px; border: 1px solid var(--navy-soft); text-align: left; vertical-align: top; }
+.secim-extra table.methods th { background: var(--bg); color: var(--navy); }
+
+/* ---------- Lab: compact params card that fits the side column at 720 px ---------- */
+/* Groups that do not apply to the current step are hidden, not greyed (controls.ts sets data-off). */
+[data-mode="lab"] .secim-params .ctl[data-off] { display: none; }
+[data-mode="lab"] .secim-params { gap: 4px; }
+[data-mode="lab"] .secim-params fieldset.ctl { gap: 0 14px; }
+[data-mode="lab"] .secim-params fieldset.ctl legend { width: auto; }
+[data-mode="lab"] .secim-params .opt { min-height: 30px; }
+[data-mode="lab"] .secim-params input[type="range"] { min-height: 30px; }
+[data-mode="lab"] .side .params { flex: none; padding: 8px 14px; }
+/* a tall explain card scrolls inside itself so the params card stays fully visible below it */
+[data-mode="lab"] .side .explain { flex: 0 1 auto; min-height: 0; overflow: auto; }

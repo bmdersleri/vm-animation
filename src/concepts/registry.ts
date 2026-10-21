@@ -39,7 +39,7 @@ export const concepts: ConceptEntry[] = [
   },
   { id: 'olcekleme', chapter: 3, chapterTitle: CH[3], title: 'Ölçekleme ve veri sızıntısı', status: 'hazir', href: 'olcekleme/' },
   { id: 'pca', chapter: 4, chapterTitle: CH[4], title: 'PCA ve t-SNE ile boyut indirgeme', status: 'hazir', href: 'pca/' },
-  soon('ozellik-secimi', 4, 'Özellik seçimi: filtre ve sarmalayıcı'),
+  { id: 'ozellik-secimi', chapter: 4, chapterTitle: CH[4], title: 'Özellik seçimi: filtre ve sarmalayıcı', status: 'hazir', href: 'ozellik-secimi/' },
   {
     id: 'karar-agaci',
     chapter: 5,
