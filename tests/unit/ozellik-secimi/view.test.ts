@@ -50,7 +50,7 @@ describe('secim view', () => {
     );
     expect(V(8, { rounds: 2 }).strip.split('\n')[0]).toBe('StandardScaler + RFE: turlar yeniden oynuyor');
     expect(V(9).strip).toBe(
-      'SelectKBest ∩ RFE → musteriKidemAy · destekTaleplerinSayisi · odemeGecikmesi\nPCA sıkıştırır, özellik seçimi eler, t-SNE yalnızca gösterir.',
+      'SelectKBest ∩ RFE → musteriKidemAy · destekTaleplerinSayisi · odemeGecikmesi',
     );
   });
 

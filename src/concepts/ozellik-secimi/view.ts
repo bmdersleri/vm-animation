@@ -179,7 +179,7 @@ export function deriveSecimView(index: number, p: SecimParams): SecimView {
         return `${finished ? `${head} → ${join(rfeNames)}` : `${head}: turlar yeniden oynuyor`}\n${rounds()}`;
       }
       default:
-        return `SelectKBest ∩ RFE → ${join(intersect!.both)}\nPCA sıkıştırır, özellik seçimi eler, t-SNE yalnızca gösterir.`;
+        return `SelectKBest ∩ RFE → ${join(intersect!.both)}`;
     }
   }
 

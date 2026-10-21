@@ -214,9 +214,9 @@ export class RowsLayer {
 
     // ---- labels on the right and in the bar area
     const hasElim = rv.elimLabel !== null;
-    const valueY = hasElim && rv.value !== null ? cy - lh * 0.5 : cy;
+    const valueY = hasElim && rv.value !== null ? cy - lh * 0.6 : cy;
     el.value.text(rv.value ?? '').attr('x', r1(right)).attr('y', r1(valueY));
-    el.elim.text(rv.elimLabel ?? '').attr('x', r1(right)).attr('y', r1(rv.value !== null ? cy + lh * 0.55 : cy));
+    el.elim.text(rv.elimLabel ?? '').attr('x', r1(right)).attr('y', r1(rv.value !== null ? cy + lh * 0.6 : cy));
     el.zero.attr('display', rv.zeroNote ? null : 'none').attr('x', r1(stripL + 10)).attr('y', r1(cy));
 
     // ---- split view: sub-strip names and the 12-month cut

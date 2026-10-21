@@ -34,7 +34,9 @@
 .secim-rows .row.eliminated text.row-value { fill: #5b6b80; }
 .secim-rows .row.eliminated rect.bar { fill: #e3e9f0; stroke: var(--grey); }
 .secim-rows .row.eliminated path.dots { fill: var(--grey); fill-opacity: 0.5; }
-.secim-rows .row.hidden { pointer-events: none; }
+.secim-rows .row { transition: visibility 0s; }
+/* a hidden row leaves the rendering (and the label-overlap check) once its fade-out is over */
+.secim-rows .row.hidden { pointer-events: none; visibility: hidden; transition: visibility 0s linear 0.4s; }
 
 /* ozellik-secimi scene: plot above, calculation strip below (same strip as .pca-scene) */
 .secim-scene {
@@ -161,3 +163,11 @@
 [data-mode="lab"] .side .params { flex: none; padding: 8px 14px; }
 /* a tall explain card scrolls inside itself so the params card stays fully visible below it */
 [data-mode="lab"] .side .explain { flex: 0 1 auto; min-height: 0; overflow: auto; }
+
+/* Lab: the intersection page uses the title size so the three lists fill the plot area (no empty band) */
+[data-mode="lab"] .secim-scene .intersect { gap: 24px; }
+[data-mode="lab"] .secim-scene .sel-columns h3,
+[data-mode="lab"] .secim-scene .sel-columns ul,
+[data-mode="lab"] .secim-scene .intersect p.rule { font-size: var(--fs-title); }
+[data-mode="lab"] .secim-scene .sel-columns section { padding: 18px 22px; }
+[data-mode="lab"] .secim-scene .sel-columns ul { line-height: 2.2; }
