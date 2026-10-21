@@ -244,6 +244,11 @@ def scale_block() -> dict:
     z = sc.transform(C)
     qz = sc.transform(Q.reshape(1, -1))[0]
     expect("004 query z", qz, [-0.57, -0.31])
+    expect(
+        "004 scaled table",
+        z,
+        [[-1.06, -0.74], [0.40, -0.27], [-1.01, -0.53], [0.88, -0.59], [-0.75, 2.18], [1.54, -0.05]],
+    )
     by_unit = {}
     for name, u in UNITS.items():
         by_unit[name] = StandardScaler().fit_transform(with_unit(C, u))
@@ -269,6 +274,9 @@ def scale_block() -> dict:
         "robust": {"center": fl(rob.center_[0]), "scale": fl(rob.scale_[0])},
         "minmax": {"min": fl(mm.data_min_[0]), "max": fl(mm.data_max_[0])},
     }
+    expect("004 fatura Standard", fatura["StandardScaler"], [-0.74, -0.27, -0.53, -0.59, 2.18, -0.05])
+    expect("004 fatura MinMax", fatura["MinMaxScaler"], [0, 0.16, 0.07, 0.05, 1, 0.24])
+    expect("004 fatura Robust", fatura["RobustScaler"], [-0.72, 0.27, -0.27, -0.41, 5.50, 0.75])
     expect("004 robust", [fatura["robust"]["center"], fatura["robust"]["scale"]], [49.63, 27.36])
 
     drag = []
@@ -309,10 +317,7 @@ def split_block() -> dict:
     tz = fls(a.transform(xe))
     expect("006 train mu", a.mean_, 58.63)
     expect("006 train sigma", a.scale_, 19.26)
-    # The spec prints -1.05 for the third value because it divides by the rounded mu and sigma
-    # (20.13 / 19.26); the exact value is -1.0449, so allow one unit in the last printed digit.
-    if max(abs(x - y) for x, y in zip(tz, [-0.71, -1.33, -1.05])) > 0.006:
-        fail(f"006 test z (train): {tz}")
+    expect("006 test z (train)", tz, [-0.71, -1.33, -1.04])
     b = StandardScaler().fit(f.reshape(-1, 1))
     az = fls(b.transform(xe))
     expect("006 all mu", b.mean_, 52.69)
