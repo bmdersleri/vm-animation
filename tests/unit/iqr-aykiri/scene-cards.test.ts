@@ -151,4 +151,16 @@ describe('iqr-aykiri CardsLayer', () => {
     expect(keys).toHaveLength(8);
     expect(keys.every((k) => k.startsWith('2-'))).toBe(true);
   });
+
+  it('resize and interrupt mid-sort leave cells at their final positions', () => {
+    const { host, layer } = setup(1200);
+    layer.update(view(1), 0);
+    layer.update(view(2), 600);
+    layer.resize(900, 160, 'ders');
+    layer.interrupt();
+    for (const c of cells(host)) expect(c.style.transform).toBe(`translate(${x(c)}px, 0px)`);
+    layer.update(view(5), 600);
+    layer.interrupt();
+    for (const c of cells(host)) expect(c.style.transform).toBe(`translate(${x(c)}px, 0px)`);
+  });
 });

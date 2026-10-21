@@ -45,6 +45,7 @@ export class CardsLayer {
   }
 
   resize(w: number, _h: number, mode: Mode): void {
+    this.interrupt();
     this.w = w;
     this.root.dataset.mode = mode;
     if (this.view) this.layout(this.view, 0);
@@ -63,10 +64,13 @@ export class CardsLayer {
   interrupt(): void {
     select(this.root).selectAll('.cell').interrupt(T);
     select(this.marker).interrupt(T);
+    // snap to the final state so no half-moved cell is left behind
+    if (this.view) this.layout(this.view, 0);
   }
 
   destroy(): void {
-    this.interrupt();
+    select(this.root).selectAll('.cell').interrupt(T);
+    select(this.marker).interrupt(T);
     this.root.remove();
   }
 

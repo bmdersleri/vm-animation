@@ -40,8 +40,8 @@
   color: var(--muted);
 }
 .iqr-cards .cell.empty { border-style: dashed; background: transparent; color: var(--muted); font-weight: 400; }
-.iqr-cards .cell.filled { background: var(--teal); color: #fff; }
-.iqr-cards .cell.filled .cell-mark { color: #fff; }
+.iqr-cards .cell.filled { background: var(--teal); color: var(--navy); }
+.iqr-cards .cell.filled .cell-mark { color: var(--navy); }
 .iqr-cards .cell.mid,
 .iqr-cards .cell.pair { background: var(--navy-soft); border-width: 4px; }
 .iqr-cards .cell.outlier { border-color: var(--orange); border-width: 4px; }
