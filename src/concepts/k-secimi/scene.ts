@@ -303,10 +303,11 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
   function render(s: PlayerState<KSecimiParams>, animate: boolean): void {
     if (destroyed) return;
     const v = deriveKView(clampK(s.params.k));
+    // Panel first: the chart rows share the column with it, so they are measured against the new panel.
+    drawPanel(v, s.index, s.params);
     layout();
     layer.update(specFor(v, s.index, s.params), animate);
     updateCharts(v, s.index);
-    drawPanel(v, s.index, s.params);
     rendered = true;
   }
 
