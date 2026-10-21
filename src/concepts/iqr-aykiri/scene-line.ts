@@ -131,8 +131,9 @@ export class LineLayer {
     const below = 22 + tick * 0.8 + 8 + f.axis + 8;
     const axisY = Math.round(h - below);
     let levels = 3;
-    let rowCap = 3;
-    const armBand = rowH + 6;
+    let rowCap = 5;
+    // arm labels own one row right above the arms; the shared value-label rows start one full row above it
+    const armBand = rowH + 16;
     const need = (): number => rowCap * rowH + 6 + armBand + levels * levelH + 6;
     while (need() > axisY && (levels > 2 || rowCap > 1)) {
       if (rowCap > 2) rowCap--;
@@ -236,7 +237,7 @@ export class LineLayer {
       for (const d of ad) {
         const wd_ = this.measure.width(v.arms.label, 'arm-label', L.tick);
         const mid = (sc(d.a) + sc(d.b)) / 2;
-        armLabels.push({ k: d.k, text: v.arms.label, w: wd_, cx: clamp(mid, 8 + wd_ / 2, L.w - 8 - wd_ / 2), ly: L.armY - 7 });
+        armLabels.push({ k: d.k, text: v.arms.label, w: wd_, cx: clamp(mid, 8 + wd_ / 2, L.w - 8 - wd_ / 2), ly: L.armY - 8 });
       }
     }
     this.labels(this.gArmLabels, 'arm-label', armLabels, ms, fade, dur(0.4), sync);

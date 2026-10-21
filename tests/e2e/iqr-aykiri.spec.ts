@@ -85,13 +85,31 @@ test('ders: no page scroll and nothing offscreen', async ({ page }) => {
   }
 });
 
-test('ders: value labels never overlap', async ({ page }) => {
-  await open(page, PAGE, 'ders', READY);
-  for (let step = 0; step < STEPS; step++) {
-    if (step > 0) await gotoStep(page, step, STEPS, 1200);
-    expect(await overlaps(page, '.mark-label, .pt-label, .arm-label, .zband-label'), `step ${step + 1}`).toEqual([]);
-  }
-});
+for (const mode of ['ders', 'lab'] as const) {
+  test(`${mode}: value labels never overlap`, async ({ page }) => {
+    await open(page, PAGE, mode, READY);
+    for (let step = 0; step < STEPS; step++) {
+      if (step > 0) await gotoStep(page, step, STEPS, 1200);
+      expect(await overlaps(page, '.mark-label, .pt-label, .arm-label, .zband-label'), `step ${step + 1}`).toEqual([]);
+      // no label box touches an arm line either
+      const onArm = await page.evaluate(() => {
+        const out: string[] = [];
+        const arms = [...document.querySelectorAll('line.arm')].map((a) => a.getBoundingClientRect());
+        for (const t of document.querySelectorAll('.mark-label, .pt-label, .arm-label, .zband-label')) {
+          const r = t.getBoundingClientRect();
+          if (r.width === 0 || getComputedStyle(t).opacity === '0') continue;
+          for (const a of arms) {
+            if (Math.min(r.right, a.right) - Math.max(r.left, a.left) > 0.5 && Math.min(r.bottom, a.bottom + 1) - Math.max(r.top, a.top - 1) > 0.5) {
+              out.push(`${t.getAttribute('class')} "${t.textContent}"`);
+            }
+          }
+        }
+        return out;
+      });
+      expect(onArm, `step ${step + 1} label on an arm line`).toEqual([]);
+    }
+  });
+}
 
 test('ders: the open params panel covers no part of the scene', async ({ page }) => {
   await open(page, PAGE, 'ders', READY);
