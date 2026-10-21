@@ -15,3 +15,11 @@ export function trianglePath(r: number): string {
   const R = a / Math.sqrt(3);
   return `M0,${r1(-R)}L${r1(a / 2)},${r1(R / 2)}L${r1(-a / 2)},${r1(R / 2)}Z`;
 }
+
+/** Cluster colours (Chapter 7): centre i and its members share CLUSTER[i % 10]. */
+export const CLUSTER: readonly string[] = [
+  '#1F6FB2', '#E07B00', '#2A9D58', '#8E44AD', '#B8860B',
+  '#17A2B8', '#D63384', '#6C757D', '#5C3D2E', '#7CB342',
+];
+export const UNASSIGNED = '#9AA5B1';
+export const NEGATIVE = '#C0392B';
