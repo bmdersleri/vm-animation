@@ -44,6 +44,7 @@ export class ScatterLayer {
   private readonly measure: TextMeasure;
   private readonly hit: Selection<SVGRectElement, unknown, null, undefined>;
   private readonly clipRect: Selection<SVGRectElement, unknown, null, undefined>;
+  private readonly gDrag: G;
   private readonly gBands: G;
   private readonly gMu: G;
   private readonly gIso: G;
@@ -73,6 +74,7 @@ export class ScatterLayer {
     this.axes = new AxesLayer(svg.append('g').attr('class', 'axes'));
     this.hit = svg.append('rect').attr('class', 'hit').attr('fill', 'transparent').attr('pointer-events', 'all');
     const clipped = svg.append('g').attr('class', 'clipped').attr('clip-path', `url(#${clipId})`).attr('pointer-events', 'none');
+    this.gDrag = clipped.append('g').attr('class', 'drag');
     this.gBands = clipped.append('g').attr('class', 'bands');
     this.gMu = clipped.append('g').attr('class', 'mus');
     this.gIso = clipped.append('g').attr('class', 'isos');
@@ -204,7 +206,7 @@ export class ScatterLayer {
 
     // the month box fills the plot; other units / spaces keep the same px per unit ratio
     const r0 = (plot.width / 64) / (plot.height / 190);
-    const sc = fitAspect(s.box, plot, s.aspect === 'ay-orani' ? r0 : 1);
+    const sc = fitAspect(s.frame, plot, s.aspect === 'ay-orani' ? r0 : 1, s.anchor);
     this.scales = sc;
     const px = (x: number): number => sc.x(x);
     const py = (y: number): number => sc.y(y);
@@ -217,13 +219,23 @@ export class ScatterLayer {
     this.hit.attr('x', plot.left).attr('y', plot.top).attr('width', plot.width).attr('height', plot.height);
 
     const xTickY = bottom + gap + L.fonts.tick * 0.9;
+    // raw tenure and bills are never negative: the raw space shows no tick below 0 (step 4's shared frame has room left
+    // of and below 0 for the centred cloud of step 5)
+    const ticks = (scale: Scales['x'], n: number): number[] =>
+      (s.space === 'ham' ? scale.ticks(n).filter((v) => v >= 0) : scale.ticks(n));
+    const xTickCount = Math.max(2, Math.round(plot.width / (L.fonts.tick * 6)));
+    const yTickCount = Math.max(2, Math.round(plot.height / (L.fonts.tick * 3.2)));
+    // ticks are matched by value alone (AxesLayer applies its key function, dataKey included, to old and new ticks
+    // alike): the z ticks stay put through the step-7 unit sweep, and steps 4 → 5 keep their ticks while the cloud
+    // moves onto the 0 ticks
     this.axes.draw(sc, plot, {
-      xTickCount: Math.max(2, Math.round(plot.width / (L.fonts.tick * 6))),
-      yTickCount: Math.max(2, Math.round(plot.height / (L.fonts.tick * 3.2))),
+      xTickCount, yTickCount,
+      xTicks: ticks(sc.x, xTickCount),
+      yTicks: ticks(sc.y, yTickCount),
       xTickY, yTickX: plot.left - gap,
       xTitle: { x: plot.left + plot.width / 2, y: xTickY + L.fonts.tick * 0.3 + gap + L.fonts.axis * 0.95, text: s.axisTitles.x },
       yTitle: { x: L.pad + L.fonts.axis * 0.95, y: plot.top + plot.height / 2, lines: [s.axisTitles.y] },
-    }, ms, `${s.space}:${s.unit}`);
+    }, ms, 'olc');
 
     const qShown = s.queryShown || this.mode === 'lab';
     const qx = px(s.query.x);
@@ -246,6 +258,17 @@ export class ScatterLayer {
       all.attr('data-shown', (d: D) => (shown(d) ? '1' : '0'));
       return all;
     };
+
+    // ---- the drag limit (Lab): a faint dashed outline wherever it is not the plot frame itself
+    const bx0 = px(s.box.x[0]);
+    const bx1 = px(s.box.x[1]);
+    const by0 = py(s.box.y[1]);
+    const by1 = py(s.box.y[0]);
+    const dragShown = this.mode === 'lab'
+      && (Math.abs(bx0 - plot.left) > 1 || Math.abs(bx1 - right) > 1 || Math.abs(by0 - plot.top) > 1 || Math.abs(by1 - bottom) > 1);
+    upsert(this.gDrag, 'rect.drag-box', [0], () => 'd', 'rect', 'drag-box', (t) => {
+      t.attr('x', r1(bx0)).attr('y', r1(by0)).attr('width', r1(bx1 - bx0)).attr('height', r1(by1 - by0));
+    }, () => dragShown);
 
     // ---- ±σ bands and μ lines
     const mu = s.mu;
@@ -396,7 +419,12 @@ export class ScatterLayer {
         .attr('x2', (d: (typeof leaders)[number]) => r1(d.x2)).attr('y2', (d: (typeof leaders)[number]) => r1(d.y2));
     };
     placeLd(lenter);
-    placeLd(tr(ls as AnySel, TN, ms));
+    const lmove = tr(ls as AnySel, TN, ms);
+    placeLd(lmove);
+    lmove.attr('opacity', 1);
+    // a new leader is placed at its final spot: it fades in while its dot is still on the way there
+    lenter.attr('opacity', ms > 0 ? 0 : 1);
+    tr(lenter as AnySel, TN, ms).attr('opacity', 1);
     lenter.merge(ls as never).attr('data-id', (d: (typeof leaders)[number]) => d.k);
   }
 }

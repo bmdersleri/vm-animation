@@ -1,5 +1,5 @@
 import { formatNonZero, formatNumber } from '../../core/plot/format';
-import type { Domain } from '../../core/plot/viewport';
+import type { AspectAnchor, Domain } from '../../core/plot/viewport';
 import { CUSTOMERS, RAW, SPLIT } from './data';
 import { fitMinMax, fitRobust, fitStandard, transform } from './scalers';
 import type { Fit, OlcParams } from './scenario';
@@ -17,8 +17,16 @@ export interface ScatterView {
   space: Space;
   /** ham/kaydir: px ratio of the RAW month box; z: 1. */
   aspect: 'ay-orani' | 'esit';
-  /** The RAW box in this space (axes and drag limit). */
+  /** The RAW box in this space: the drag limit (drawn faintly in Lab where it is not the plot frame). */
   box: Domain;
+  /**
+   * The domain the plot is fitted to. ham: the RAW box, widened from its
+   * minimum (no negative tenure or bill on the axes). Steps 4 and 5 share one
+   * frame holding both the raw and the centred cloud, so x − μ is a visible
+   * move. z: the z box, widened from its centre.
+   */
+  frame: Domain;
+  anchor: AspectAnchor;
   customers: CustView[];
   query: { x: number; y: number; label: string };
   /** Ders: index >= 1; the Lab scene always shows the query. */
@@ -86,9 +94,12 @@ function muLabels(unit: Unit): [string, string] {
   ];
 }
 
-interface Geo { pt: (c: { t: number; f: number }) => Pt2; box: Domain; ds: number[]; qp: Pt2 }
+interface Geo { pt: (c: { t: number; f: number }) => Pt2; box: Domain; frame: Domain; anchor: AspectAnchor; ds: number[]; qp: Pt2 }
 
-function geometry(p: OlcParams, space: Space): Geo {
+/** Steps 4 and 5 (μ and x − μ): one shared frame, so the centring is a translation on screen. */
+const SHARED_FRAME_STEPS: readonly number[] = [3, 4];
+
+function geometry(index: number, p: OlcParams, space: Space): Geo {
   const k = UNIT_FACTOR[p.unit];
   let pt: (c: { t: number; f: number }) => Pt2;
   let box: Domain;
@@ -107,18 +118,31 @@ function geometry(p: OlcParams, space: Space): Geo {
     };
     box = { x: [BOX.x[0] * k - dx, BOX.x[1] * k - dx], y: [BOX.y[0] - dy, BOX.y[1] - dy] };
   }
-  return { pt, box, ds: distances(p.query, space === 'z' ? 'z' : p.unit), qp: pt(p.query) };
+  let frame = box;
+  let anchor: AspectAnchor = space === 'ham' ? 'min' : 'centre';
+  if (space !== 'z' && SHARED_FRAME_STEPS.includes(index)) {
+    // raw box ∪ centred box, widened from its minimum like the raw views
+    const mx = Z_FIT.t.center * k;
+    const my = Z_FIT.f.center;
+    frame = {
+      x: [BOX.x[0] * k - mx, BOX.x[1] * k],
+      y: [BOX.y[0] - my, BOX.y[1]],
+    };
+    anchor = 'min';
+  }
+  return { pt, box, frame, anchor, ds: distances(p.query, space === 'z' ? 'z' : p.unit), qp: pt(p.query) };
 }
 
+/** z: z values; ham: raw values; kaydir: the shifted values x − μ (the frame the axes show). */
 function queryLabel(p: OlcParams, space: Space, qp: Pt2): string {
   if (space === 'z') return `Yeni (${f2(qp[0])}; ${f2(qp[1])})`;
-  const [x, y] = rawPoint(p.query, p.unit);
+  const [x, y] = space === 'kaydir' ? qp : rawPoint(p.query, p.unit);
   return `Yeni (${num(x)} ${UNIT_NAME[p.unit]}; ${num(y)} TL)`;
 }
 
 function deriveScatter(index: number, p: OlcParams): ScatterView {
   const space = spaceOf(p);
-  const g = geometry(p, space);
+  const g = geometry(index, p, space);
   const best = nearest(g.ds);
   const k = UNIT_FACTOR[p.unit];
   let mu: ScatterView['mu'] = null;
@@ -140,6 +164,8 @@ function deriveScatter(index: number, p: OlcParams): ScatterView {
     space,
     aspect: space === 'z' ? 'esit' : 'ay-orani',
     box: g.box,
+    frame: g.frame,
+    anchor: g.anchor,
     customers: CUSTOMERS.map((c, i) => {
       const [x, y] = g.pt(c);
       return { id: c.id, x, y, d: g.ds[i], nearest: i === best };

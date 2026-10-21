@@ -14,6 +14,8 @@
 .scale-plot .iso { fill: var(--orange); fill-opacity: 0.08; stroke: #a85a00; stroke-width: 3; stroke-dasharray: 10 6; }
 .scale-plot .mu { stroke: #0b7473; stroke-width: 3; }
 .scale-plot .sigma { fill: var(--teal); fill-opacity: 0.14; stroke: none; }
+/* Lab drag limit where it is not the plot frame: faint, dashed, no text */
+.scale-plot .drag-box { fill: none; stroke: var(--navy); stroke-opacity: 0.35; stroke-width: 1.5; stroke-dasharray: 5 5; }
 .scale-plot .cust-label,
 .scale-plot .query-label,
 .scale-plot .mu-label {

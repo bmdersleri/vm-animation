@@ -48,6 +48,16 @@ const plotOf = (host: HTMLElement) => {
   return { left: num(h, 'x'), top: num(h, 'y'), width: num(h, 'width'), height: num(h, 'height') };
 };
 const hidden = (el: Element | null): boolean => !el || el.getAttribute('opacity') === '0';
+/** Value text and px position of every tick of one axis. */
+const ticksOf = (host: HTMLElement, a: 'x' | 'y'): { text: string; at: number; el: SVGElement }[] =>
+  all(host, `.axes g.axis.${a} g.tick`).map((g) => {
+    const m = /translate\(([^,]+),([^)]+)\)/.exec(g.getAttribute('transform') ?? '')!;
+    return { text: g.querySelector('text')!.textContent!, at: Number(a === 'x' ? m[1] : m[2]), el: g };
+  });
+const custAt = (host: HTMLElement, id: string): { x: number; y: number } => {
+  const c = host.querySelector(`circle.pt.cust[data-id="${id}"]`)!;
+  return { x: num(c, 'cx'), y: num(c, 'cy') };
+};
 const shown = (el: Element | null): boolean => !!el && el.getAttribute('opacity') === '1';
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
@@ -103,16 +113,148 @@ describe('olcekleme ScatterLayer', () => {
     expect(all(host, 'rect.sigma').every(shown)).toBe(true);
     expect(all(host, 'text.mu-label').map((t) => t.textContent)).toEqual(['μ = 25, σ = 22,73', 'μ = 72,95, σ = 58,29']);
     const p = plotOf(host);
-    expect(num(host.querySelector('rect.sigma.x')!, 'width')).toBeCloseTo((p.width * 2 * Z_FIT.t.scale) / 64, 0);
+    // the shared step 4/5 frame runs from −25 to 64 months
+    expect(num(host.querySelector('rect.sigma.x')!, 'width')).toBeCloseTo((p.width * 2 * Z_FIT.t.scale) / (64 + Z_FIT.t.center), 0);
   });
 
-  it('step 5: shifted mu lines sit at the origin; the label keeps the raw mean', () => {
+  it('steps 4 and 5 share one frame: x − μ moves the cloud by μ and the μ lines onto the 0 ticks', () => {
+    const { host, layer } = setup('ders');
+    layer.update(view(3), 0, 'ders');
+    const p = plotOf(host);
+    const before = CUSTOMERS.map((c) => custAt(host, c.id));
+    const muX4 = num(host.querySelector('line.mu.x')!, 'x1');
+    const muY4 = num(host.querySelector('line.mu.y')!, 'y1');
+    const q4 = num(host.querySelector('path.query')!, 'data-x');
+    const ticks4 = ticksOf(host, 'x').map((t) => `${t.text}@${t.at}`);
+    layer.update(view(4), 0, 'ders');
+    const after = CUSTOMERS.map((c) => custAt(host, c.id));
+    const muX5 = num(host.querySelector('line.mu.x')!, 'x1');
+    const muY5 = num(host.querySelector('line.mu.y')!, 'y1');
+    // the frame is -25…64 months: one month is width/89 px, and the shift is μ = 25 months to the left
+    const ux = p.width / (64 + Z_FIT.t.center);
+    expect(muX4 - muX5).toBeCloseTo(Z_FIT.t.center * ux, 0);
+    expect(muY5).toBeGreaterThan(muY4 + 20);
+    before.forEach((b, i) => {
+      expect(b.x - after[i].x, CUSTOMERS[i].id).toBeCloseTo(muX4 - muX5, 0);
+      expect(after[i].y - b.y, CUSTOMERS[i].id).toBeCloseTo(muY5 - muY4, 0);
+    });
+    expect(q4 - num(host.querySelector('path.query')!, 'data-x')).toBeCloseTo(muX4 - muX5, 0);
+    // the μ lines sit on the 0 ticks; the positive ticks did not move, negative ones joined them
+    const zeroX = ticksOf(host, 'x').find((t) => t.text === '0')!;
+    const zeroY = ticksOf(host, 'y').find((t) => t.text === '0')!;
+    expect(Math.abs(zeroX.at - muX5)).toBeLessThan(0.15);
+    expect(Math.abs(zeroY.at - muY5)).toBeLessThan(0.15);
+    const ticks5 = ticksOf(host, 'x').map((t) => `${t.text}@${t.at}`);
+    for (const t of ticks4) expect(ticks5).toContain(t);
+    expect(ticks5.some((t) => t.startsWith('−'))).toBe(true);
+    expect(all(host, 'text.mu-label')[0].textContent).toBe('μ = 25, σ = 22,73');
+  });
+
+  it('steps 4 → 5 animate: mid-move the dots, the ◆ and the μ line are between their two places', async () => {
+    const { host, layer } = setup('ders');
+    const at = () => ({
+      m1: custAt(host, 'M1').x,
+      mu: num(host.querySelector('line.mu.x')!, 'x1'),
+      iso: num(host.querySelector('ellipse.iso')!, 'cx'),
+    });
+    layer.update(view(4), 0, 'ders');
+    const end = at();
+    layer.update(view(3), 0, 'ders');
+    const start = at();
+    expect(start.m1 - end.m1).toBeGreaterThan(50);
+    const oldLeaders = new Set(all(host, 'line.leader'));
+    layer.update(view(4), 900, 'ders');
+    // a leader that is new in step 5 waits at its final spot invisibly instead of jumping ahead of its dot
+    const fresh = all(host, 'line.leader').filter((l) => !oldLeaders.has(l));
+    expect(fresh.length).toBeGreaterThan(0);
+    for (const l of fresh) expect(l.getAttribute('opacity')).toBe('0');
+    await sleep(350);
+    const mid = at();
+    for (const k of ['m1', 'mu', 'iso'] as const) {
+      expect(mid[k], k).toBeLessThan(start[k] - 1);
+      expect(mid[k], k).toBeGreaterThan(end[k] + 1);
+    }
+    layer.interrupt();
+    const snapped = at();
+    for (const k of ['m1', 'mu', 'iso'] as const) expect(Math.abs(snapped[k] - end[k]), k).toBeLessThan(0.06);
+    expect(all(host, 'line.leader').every((l) => l.getAttribute('opacity') === '1')).toBe(true);
+  });
+
+  it('step 5: the query label shows the shifted values x − μ', () => {
     const { host, layer } = setup('ders');
     layer.update(view(4), 0, 'ders');
+    expect(host.querySelector('text.query-label')!.textContent).toBe('Yeni (−13 ay; −17,95 TL)');
+  });
+
+  it('raw space never shows a negative tick: step 3 in every unit, step 4 left of the cloud', () => {
+    const { host, layer } = setup('ders');
+    const check = (v: OlcView, tag: string): void => {
+      layer.update(v, 0, 'ders');
+      const ts = [...ticksOf(host, 'x'), ...ticksOf(host, 'y')].map((t) => t.text);
+      expect(ts.length, tag).toBeGreaterThan(4);
+      for (const t of ts) expect(t.startsWith('−') || t.startsWith('-'), `${tag}: ${t}`).toBe(false);
+    };
+    for (const unit of ['ay', 'yil', 'gun'] as const) check(view(2, { unit }), `step 3 ${unit}`);
+    check(view(3), 'step 4');
+    check(view(3, { unit: 'gun' }), 'step 4 gun');
+    // yıl: 0…64 years, the cloud squeezed to the left; gün: 20 TL at the bottom, bills along it
+    layer.update(view(2, { unit: 'yil' }), 0, 'ders');
     const p = plotOf(host);
-    // box x runs from -25 to 39 after centring, so 0 sits 25/64 of the way in
-    expect(num(host.querySelector('line.mu.x')!, 'x1')).toBeCloseTo(p.left + (p.width * Z_FIT.t.center) / 64, 0);
-    expect(all(host, 'text.mu-label')[0].textContent).toBe('μ = 25, σ = 22,73');
+    const xs = ticksOf(host, 'x');
+    expect(xs[0].text).toBe('0');
+    expect(xs[0].at).toBeCloseTo(p.left, 0);
+    expect(Math.max(...cxs(host))).toBeLessThan(p.left + p.width * 0.1);
+    layer.update(view(2, { unit: 'gun' }), 0, 'ders');
+    const cys = all(host, 'circle.pt.cust').map((c) => num(c, 'cy'));
+    expect(Math.min(...cys)).toBeGreaterThan(p.top + p.height * 0.9);
+  });
+
+  it('z ticks are keyed by z only: the step-7 unit sweep keeps the same tick nodes', () => {
+    const { host, layer } = setup('ders');
+    layer.update(view(6, { unit: 'ay' }), 0, 'ders');
+    const before = ticksOf(host, 'x').map((t) => t.el);
+    const texts = ticksOf(host, 'x').map((t) => t.text);
+    for (const unit of ['yil', 'gun'] as const) {
+      layer.update(view(6, { unit }), 900, 'ders');
+      const now = ticksOf(host, 'x');
+      // no tick fades out and back in: the same nodes, nothing entering or leaving
+      expect(now.map((t) => t.el)).toEqual(before);
+      expect(now.map((t) => t.text)).toEqual(texts);
+      expect(now.every((t) => t.el.getAttribute('opacity') === '1')).toBe(true);
+    }
+    layer.interrupt();
+  });
+
+  it('Lab draws the drag limit where it is not the plot frame; the pointer stops on it', () => {
+    const { host, layer } = setup('lab');
+    const box = (): SVGElement => host.querySelector('rect.drag-box')!;
+    layer.update(view(1), 0, 'lab');
+    expect(hidden(box())).toBe(true); // months: the drag limit is the plot frame
+    const got: Parameters<QueryPointer>[0][] = [];
+    layer.onPointer((q) => got.push(q));
+    const cases: [number, Partial<OlcParams>][] = [
+      [2, { unit: 'yil' }], [2, { unit: 'gun' }], [3, {}], [4, {}], [5, {}], [6, { unit: 'gun' }], [8, {}],
+    ];
+    for (const [i, over] of cases) {
+      const tag = `step ${i + 1} ${JSON.stringify(over)}`;
+      layer.update(view(i, over), 0, 'lab');
+      const b = box();
+      expect(shown(b), tag).toBe(true);
+      // the corners of the drag box are the raw limits: top-right is (64 months, 210 TL), bottom-left (0, 20)
+      const r = { x: num(b, 'x'), y: num(b, 'y'), w: num(b, 'width'), h: num(b, 'height') };
+      pointer(host, 'pointermove', r.x + r.w + 400, r.y - 400);
+      expect(got.at(-1), tag).toEqual({ t: 64, f: 210 });
+      pointer(host, 'pointermove', r.x - 400, r.y + r.h + 400);
+      expect(got.at(-1), tag).toEqual({ t: 0, f: 20 });
+      layer.update(view(i, { ...over, query: { t: 64, f: 210 } }), 0, 'lab');
+      const q = host.querySelector('path.query')!;
+      expect(Math.abs(num(q, 'data-x') - (r.x + r.w)), tag).toBeLessThan(0.2);
+      expect(Math.abs(num(q, 'data-y') - r.y), tag).toBeLessThan(0.2);
+    }
+    // Ders has no drag: no drag box
+    const d = setup('ders');
+    d.layer.update(view(2, { unit: 'yil' }), 0, 'ders');
+    expect(hidden(d.host.querySelector('rect.drag-box'))).toBe(true);
   });
 
   it('unit sweep squeezes years and opens days', () => {
@@ -154,12 +296,12 @@ describe('olcekleme ScatterLayer', () => {
     const { host, layer } = setup('ders');
     const got: [Parameters<QueryPointer>[0], Parameters<QueryPointer>[1]][] = [];
     layer.onPointer((q, k) => got.push([q, k]));
-    // year space: the domain is centred; one year spans the px one month spans in the month view
+    // year space: the domain starts at 0 years on the left edge; one year spans the px one month spans in the month view
     layer.update(view(2, { unit: 'yil' }), 0, 'ders');
     let p = plotOf(host);
-    pointer(host, 'pointermove', p.left + p.width / 2 + 0.01 * p.width, p.top + p.height / 2);
+    pointer(host, 'pointermove', p.left + 0.01 * p.width, p.top + p.height / 2);
     expect(got.at(-1)![1]).toBe('move');
-    expect(got.at(-1)![0].t).toBeCloseTo(32 + 0.01 * 768, 6);
+    expect(got.at(-1)![0].t).toBeCloseTo(0.01 * 768, 6);
     expect(got.at(-1)![0].f).toBeCloseTo(115, 6);
     // z space (index 8): equal aspect around the centre of the z box
     const v8 = view(8);

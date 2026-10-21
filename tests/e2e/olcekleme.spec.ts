@@ -222,6 +222,31 @@ test('lab drag stops at the axis bounds', async ({ page }) => {
   expect(c.x).toBeLessThanOrEqual(f.x + f.width + 1);
   expect(c.y).toBeGreaterThanOrEqual(f.y - 1);
   expect(c.y).toBeLessThanOrEqual(f.y + f.height + 1);
+  // months: the drag limit is the plot frame, so no extra outline
+  await expect(page.locator('svg.scale-plot rect.drag-box')).toHaveAttribute('opacity', '0');
+
+  // z (step 9): the plot runs wider than the data box; the ◆ stops at the visible dashed drag box
+  await gotoStep(page, 8, STEPS, 1200);
+  const box = page.locator('svg.scale-plot rect.drag-box');
+  await expect(box).toHaveAttribute('opacity', '1');
+  const b = (await box.boundingBox())!;
+  const plotZ = (await page.locator('svg.scale-plot rect.hit').boundingBox())!;
+  expect(b.x + b.width).toBeLessThan(plotZ.x + plotZ.width - 20);
+  const s2 = await centre(diamond);
+  const far2 = { x: plotZ.x + plotZ.width + 150, y: plotZ.y - 150 };
+  await page.mouse.move(s2.x, s2.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) {
+    await page.mouse.move(s2.x + ((far2.x - s2.x) * i) / 10, s2.y + ((far2.y - s2.y) * i) / 10);
+    await page.waitForTimeout(20);
+  }
+  await page.mouse.up();
+  await page.waitForTimeout(1000);
+  const c2 = await centre(diamond);
+  const b2 = (await box.boundingBox())!;
+  // top-right corner of the drag box: 64 months, 210 TL
+  expect(Math.abs(c2.x - (b2.x + b2.width))).toBeLessThanOrEqual(2);
+  expect(Math.abs(c2.y - b2.y)).toBeLessThanOrEqual(2);
 });
 
 test('lab table highlights the nearest row and shows z when scaled', async ({ page }) => {

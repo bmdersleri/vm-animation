@@ -110,6 +110,41 @@ describe('olcekleme view', () => {
     expect(z.aspect).toBe('esit');
   });
 
+  it('plot frames: raw views widen from the box minimum, steps 4 and 5 share one frame, z keeps the centre', () => {
+    for (const i of [0, 1, 2]) {
+      const s = V(i).scatter!;
+      expect(s.frame).toEqual(s.box);
+      expect(s.anchor).toBe('min');
+    }
+    const s4 = V(3).scatter!;
+    const s5 = V(4).scatter!;
+    expect(s4.frame).toEqual(s5.frame);
+    expect(s4.anchor).toBe('min');
+    expect(s5.anchor).toBe('min');
+    near(s5.frame.x[0], -25);
+    near(s5.frame.x[1], 64);
+    near(s5.frame.y[0], 20 - 72.95);
+    near(s5.frame.y[1], 210);
+    // the raw box (step 4) and the centred box (step 5) both lie inside it
+    for (const b of [s4.box, s5.box]) {
+      expect(b.x[0]).toBeGreaterThanOrEqual(s5.frame.x[0] - 1e-9);
+      expect(b.x[1]).toBeLessThanOrEqual(s5.frame.x[1] + 1e-9);
+      expect(b.y[0]).toBeGreaterThanOrEqual(s5.frame.y[0] - 1e-9);
+      expect(b.y[1]).toBeLessThanOrEqual(s5.frame.y[1] + 1e-9);
+    }
+    near(V(4, { unit: 'gun' }).scatter!.frame.x[0], -750);
+    const z = V(5).scatter!;
+    expect(z.frame).toEqual(z.box);
+    expect(z.anchor).toBe('centre');
+  });
+
+  it('step 5: the query label shows x − μ', () => {
+    expect(V(4).scatter!.query.label).toBe('Yeni (−13 ay; −17,95 TL)');
+    expect(V(4, { query: { t: 25, f: 72.95 } }).scatter!.query.label).toBe('Yeni (0 ay; 0 TL)');
+    expect(V(4, { query: { t: 25.004, f: 80 } }).scatter!.query.label).toBe('Yeni (0,004 ay; 7,05 TL)');
+    expect(V(3).scatter!.query.label).toBe('Yeni (12 ay; 55 TL)');
+  });
+
   it('step 7: z positions and M3 at every unit', () => {
     const pos = (u: 'ay' | 'yil' | 'gun') => V(6, { unit: u }).scatter!.customers.map((c) => [c.x, c.y, c.d]);
     const a = pos('ay');
