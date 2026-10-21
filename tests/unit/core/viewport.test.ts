@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fitEqualAspect, fitViewport } from '../../../src/core/plot/viewport';
+import { fitAspect, fitEqualAspect, fitViewport } from '../../../src/core/plot/viewport';
 
 const domain = { x: [0, 10] as [number, number], y: [0, 100] as [number, number] };
 const rect = { left: 20, top: 10, width: 500, height: 300 };
@@ -49,5 +49,44 @@ describe('fitViewport', () => {
     // domain grows outward only: the data domain is still fully inside
     expect(b.x.domain()[0]).toBeLessThanOrEqual(0);
     expect(b.x.domain()[1]).toBeGreaterThanOrEqual(10);
+  });
+});
+
+describe('fitAspect', () => {
+  it('ratio 1 equals the equal-aspect viewport', () => {
+    const a = fitAspect(domain, rect, 1);
+    const b = fitViewport(domain, rect, true);
+    for (const i of [0, 1]) {
+      expect(a.x.domain()[i]).toBeCloseTo(b.x.domain()[i], 9);
+      expect(a.y.domain()[i]).toBeCloseTo(b.y.domain()[i], 9);
+    }
+    expect(a.x.range()).toEqual(b.x.range());
+    expect(a.y.range()).toEqual(b.y.range());
+  });
+
+  it('keeps the px ratio', () => {
+    const { x, y } = fitAspect(domain, rect, 3);
+    expect((x(1) - x(0)) / (y(0) - y(1))).toBeCloseTo(3, 9);
+  });
+
+  it('contains the domain', () => {
+    for (const ratio of [0.2, 1, 3, 10]) {
+      const { x, y } = fitAspect(domain, rect, ratio);
+      expect(x.domain()[0]).toBeLessThanOrEqual(1e-9);
+      expect(x.domain()[1]).toBeGreaterThanOrEqual(10 - 1e-9);
+      expect(y.domain()[0]).toBeLessThanOrEqual(1e-9);
+      expect(y.domain()[1]).toBeGreaterThanOrEqual(100 - 1e-9);
+      expect(x.range()).toEqual([rect.left, rect.left + rect.width]);
+    }
+  });
+
+  it('month ratio fills the rect', () => {
+    const r = { left: 10, top: 5, width: 640, height: 380 };
+    const d = { x: [0, 64] as [number, number], y: [20, 210] as [number, number] };
+    const { x, y } = fitAspect(d, r, r.width / 64 / (r.height / 190));
+    expect(x.domain()[0]).toBeCloseTo(0, 9);
+    expect(x.domain()[1]).toBeCloseTo(64, 9);
+    expect(y.domain()[0]).toBeCloseTo(20, 9);
+    expect(y.domain()[1]).toBeCloseTo(210, 9);
   });
 });

@@ -45,3 +45,25 @@ export function fitViewport(domain: Domain, rect: Rect, equalAspect: boolean): S
     y: scaleLinear().domain([fit.y.invert(bottom), fit.y.invert(rect.top)]).range([bottom, rect.top]),
   };
 }
+
+/**
+ * Scales whose range is exactly `rect`; px per x unit = ratio × px per y unit.
+ * The axis with slack has its domain widened outward from the centre so axes
+ * and grids span the whole rect. ratio 1 equals fitViewport(domain, rect, true).
+ */
+export function fitAspect(domain: Domain, rect: Rect, ratio: number): Scales {
+  const dx = domain.x[1] - domain.x[0] || 1;
+  const dy = domain.y[1] - domain.y[0] || 1;
+  const sy = Math.min(rect.width / (ratio * dx), rect.height / dy);
+  const sx = ratio * sy;
+  const hx = rect.width / sx / 2;
+  const hy = rect.height / sy / 2;
+  const cx = (domain.x[0] + domain.x[1]) / 2;
+  const cy = (domain.y[0] + domain.y[1]) / 2;
+  const right = rect.left + rect.width;
+  const bottom = rect.top + rect.height;
+  return {
+    x: scaleLinear().domain([cx - hx, cx + hx]).range([rect.left, right]),
+    y: scaleLinear().domain([cy - hy, cy + hy]).range([bottom, rect.top]),
+  };
+}
