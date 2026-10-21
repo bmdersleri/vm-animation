@@ -14,6 +14,8 @@ export default defineConfig({
         knn: resolve(root, 'knn/index.html'),
         'karar-agaci': resolve(root, 'karar-agaci/index.html'),
         'naive-bayes': resolve(root, 'naive-bayes/index.html'),
+        'iqr-aykiri': resolve(root, 'iqr-aykiri/index.html'),
+        'olcekleme': resolve(root, 'olcekleme/index.html'),
       },
     },
   },
