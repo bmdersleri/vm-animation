@@ -86,3 +86,15 @@ test('screenshots: lab new start and loop play', async ({ page }) => {
   await page.waitForTimeout(600);
   await expect(page).toHaveScreenshot('k-means-lab-play.png');
 });
+
+test('narrow layout: the panel stays below the scatter', async ({ page }) => {
+  for (const [width, mode] of [[800, 'lab'], [600, 'ders']] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await open(page, PAGE, mode, READY);
+    await gotoStep(page, 3, STEPS, 1500);
+    const plot = await page.locator('svg.km-plot').evaluate((e) => e.getBoundingClientRect().bottom);
+    const panel = await page.locator('.km-panel').evaluate((e) => e.getBoundingClientRect().top);
+    expect(plot, `${width} ${mode}`).toBeLessThanOrEqual(panel + 1);
+    expect(await labelCollisions(page, 'svg.km-plot'), `${width} ${mode}`).toEqual([]);
+  }
+});

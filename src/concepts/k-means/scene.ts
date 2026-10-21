@@ -152,10 +152,11 @@ export function mountKMeansScene(host: HTMLElement, player: StepPlayer<KMeansPar
 
   function render(s: PlayerState<KMeansParams>, animate: boolean): void {
     if (destroyed) return;
-    frame.layout(mode, size);
     const v = deriveView(s.params);
-    layer.update(specFor(v, s.index, s.params), animate);
+    // The panel first: in the narrow single-column layout its height decides the plot host's.
     drawPanel(v, s.index, s.params);
+    frame.layout(mode, size);
+    layer.update(specFor(v, s.index, s.params), animate);
     rendered = true;
   }
 
