@@ -13,6 +13,15 @@ const chartOverflow = (page: Page): Promise<string[]> => page.evaluate(() => [..
   return sh > hh + 1 ? [`${svg.getAttribute('class')} ${Math.round(sh)} > ${Math.round(hh)}`] : [];
 }));
 
+/** Axis titles of the scatter that reach outside its SVG box. */
+const titlesOutside = (page: Page): Promise<string[]> => page.evaluate(() => {
+  const s = document.querySelector('svg.ks-plot')!.getBoundingClientRect();
+  return [...document.querySelectorAll('svg.ks-plot .axis-title')].flatMap((t) => {
+    const r = t.getBoundingClientRect();
+    return r.left < s.left - 1 || r.right > s.right + 1 || r.top < s.top - 1 || r.bottom > s.bottom + 1 ? [String(t.textContent)] : [];
+  });
+});
+
 test('k-secimi: page opens', async ({ page }) => {
   await page.goto(PAGE);
   await expect(page.locator('h1.title')).toHaveText('k sayısının seçimi');
@@ -78,9 +87,11 @@ test('lab: panel sits under the scatter and its labels stay on one line', async 
       const lh = parseFloat(getComputedStyle(l).lineHeight) || parseFloat(getComputedStyle(l).fontSize) * 1.2;
       return { text: l.textContent, ratio: r.height / lh };
     });
-    return { gap: panel.top - host.bottom, plotW: plot.width, labels };
+    const side = document.querySelector('.ks-side')!.getBoundingClientRect();
+    return { gap: panel.top - host.bottom, panelRight: panel.right, sideLeft: side.left, plotW: plot.width, labels };
   });
   expect(m.gap).toBeGreaterThanOrEqual(-1);
+  expect(m.panelRight).toBeLessThanOrEqual(m.sideLeft + 1);
   expect(m.plotW).toBeGreaterThanOrEqual(430);
   expect(m.labels.length).toBeGreaterThan(0);
   for (const l of m.labels) expect(l.ratio, String(l.text)).toBeLessThanOrEqual(1.6);
@@ -92,4 +103,23 @@ test('ders: step 8 compare rows line up', async ({ page }) => {
   const tops = await page.evaluate(() => [3, 4].map((k) => [...document.querySelectorAll(`[data-compare-k="${k}"] .ks-row`)].slice(0, 3).map((r) => r.getBoundingClientRect().top)));
   expect(tops[0]).toHaveLength(3);
   for (let i = 0; i < 3; i++) expect(Math.abs(tops[0][i] - tops[1][i])).toBeLessThanOrEqual(3);
+});
+
+test('narrow layout: the scatter keeps its height, labels and axis titles', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 900 });
+  for (const mode of ['ders', 'lab'] as const) {
+    await open(page, PAGE, mode, READY);
+    await gotoStep(page, 5, STEPS, 2500);
+    const h = await page.locator('svg.ks-plot').evaluate((e) => e.getBoundingClientRect().height);
+    expect(h, mode).toBeGreaterThanOrEqual(200);
+    expect(await labelCollisions(page, 'svg.ks-plot'), mode).toEqual([]);
+    expect(await titlesOutside(page), mode).toEqual([]);
+    expect(await chartOverflow(page), mode).toEqual([]);
+  }
+  // 600 px Ders: the shortest scatter; the y title splits onto two lines instead of being clipped
+  await page.setViewportSize({ width: 600, height: 900 });
+  await open(page, PAGE, 'ders', READY);
+  await gotoStep(page, 5, STEPS, 2500);
+  expect(await labelCollisions(page, 'svg.ks-plot')).toEqual([]);
+  expect(await titlesOutside(page)).toEqual([]);
 });

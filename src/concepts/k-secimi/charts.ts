@@ -70,7 +70,10 @@ export class KLineChart {
     // frame, y gridlines and tick labels
     g.append('rect').attr('class', 'kc-frame').attr('x', x0).attr('y', y0).attr('width', w).attr('height', h)
       .attr('fill', 'none').attr('stroke', FRAME);
-    const yt = sy.ticks(3).filter((t) => t >= yDomain[0] && t <= yDomain[1]);
+    const inDomain = (t: number): boolean => t >= yDomain[0] && t <= yDomain[1];
+    let yt = sy.ticks(3).filter(inDomain);
+    // A short chart (the narrow single-column layout) keeps fewer ticks than ones closer than 1.1 fonts.
+    if (yt.length > 1 && sy(yt[0]) - sy(yt[1]) < f * 1.1) yt = sy.ticks(2).filter(inDomain);
     const fy = tickFormat(yt);
     for (const t of yt) {
       g.append('line').attr('class', 'kc-grid').attr('x1', x0).attr('x2', x0 + w).attr('y1', r1(sy(t))).attr('y2', r1(sy(t))).attr('stroke', GRID);

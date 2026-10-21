@@ -161,7 +161,8 @@
     grid-template-rows: minmax(0, 1fr) auto auto;
     grid-template-areas: "plot" "side" "panel";
   }
-  .ks-side { grid-template-rows: minmax(130px, 1fr) minmax(130px, 1fr); }
+  /* The two charts sit side by side, so the single column keeps its height for the scatter. */
+  .ks-side { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(130px, 1fr); }
 }
 
 /* Lab controls */

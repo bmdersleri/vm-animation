@@ -47,4 +47,18 @@ describe('ClusterPlotFrame', () => {
     expect(tick().getAttribute('x')).toBe(x);
     expect(PLOT_DOMAIN).toEqual({ x: [-2.1, 2.7], y: [-1.8, 2.0] });
   });
+
+  it('a short plot gets whole-unit-or-sparser ticks and a two-line y title; a tall one keeps both', () => {
+    const { svg, frame } = setup('ks', 0.55);
+    const ticks = (axis: 'x' | 'y') => [...svg.querySelectorAll(`.axis.${axis} .tick text`)].map((t) => t.textContent);
+    const title = () => [...svg.querySelectorAll('.axis-title.y tspan')].map((t) => t.textContent);
+    frame.layout('ders', { w: 1000, h: 600 });
+    expect(ticks('y')).toHaveLength(8);
+    expect(title()).toEqual(['petal length (ölçeklenmiş)']);
+    frame.invalidate();
+    frame.layout('ders', { w: 1000, h: 160 });
+    expect(ticks('x')).toEqual(['−2', '0', '2']);
+    expect(ticks('y')).toEqual(['0', '2']);
+    expect(title()).toEqual(['petal length', '(ölçeklenmiş)']);
+  });
 });

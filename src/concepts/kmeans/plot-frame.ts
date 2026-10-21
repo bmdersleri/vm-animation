@@ -6,6 +6,12 @@ import { fitEqualAspect, type Domain, type Rect } from '../../core/plot/viewport
 
 /** Scaled sepal length × petal length, with room for every centre and label. */
 export const PLOT_DOMAIN: Domain = { x: [-2.1, 2.7], y: [-1.8, 2.0] };
+const X_TITLE = 'sepal length (ölçeklenmiş)';
+const Y_TITLE = 'petal length (ölçeklenmiş)';
+/** The y title on two lines, for a plot too short to hold it on one. */
+const Y_TITLE_LINES = ['petal length', '(ölçeklenmiş)'];
+/** Rough rendered length of a title: 0.5 em per character (Chrome measures about 0.45). */
+const titleLen = (text: string, px: number): number => text.length * px * 0.5;
 const FONT_FALLBACK: Record<Mode, { tick: number; axis: number }> = { ders: { tick: 18, axis: 19 }, lab: { tick: 13, axis: 14 } };
 
 export interface PlotFonts { tick: number; axis: number }
@@ -66,11 +72,21 @@ export class ClusterPlotFrame {
       width: sc.x(PLOT_DOMAIN.x[1]) - sc.x(PLOT_DOMAIN.x[0]), height: sc.y(PLOT_DOMAIN.y[0]) - sc.y(PLOT_DOMAIN.y[1]),
     };
     const bottom = plot.top + plot.height;
+    // A short plot (the narrow single-column layout) gets sparser ticks once they would sit closer
+    // than 1.6 tick fonts, and a y title that stays inside the SVG: on two lines when one line is taller
+    // than the SVG (and the second line has room on the left), and moved off the plot centre if needed.
+    const unit = plot.height / (PLOT_DOMAIN.y[1] - PLOT_DOMAIN.y[0]);
+    const gap = tick * 1.6;
+    const titleX = plot.left - 8 - tick * 2.6 - axis * 0.3;
+    const split = titleLen(Y_TITLE, axis) > h - 4 && titleX - axis * 2 >= 0;
+    const lines = split ? Y_TITLE_LINES : [Y_TITLE];
+    const half = Math.max(...lines.map((l) => titleLen(l, axis))) / 2 + 2;
+    const titleY = Math.min(Math.max(plot.top + plot.height / 2, half), h - half);
     this.axes.draw(sc, plot, {
-      xTickCount: 6, yTickCount: 6,
+      xTickCount: unit >= gap ? 6 : 2, yTickCount: unit / 2 >= gap ? 6 : unit >= gap ? 4 : 2,
       xTickY: bottom + tick * 1.15, yTickX: plot.left - 8,
-      xTitle: { x: plot.left + plot.width / 2, y: bottom + tick * 1.15 + axis * 1.45, text: 'sepal length (ölçeklenmiş)' },
-      yTitle: { x: plot.left - 8 - tick * 2.6 - axis * 0.3, y: plot.top + plot.height / 2, lines: ['petal length (ölçeklenmiş)'] },
+      xTitle: { x: plot.left + plot.width / 2, y: bottom + tick * 1.15 + axis * 1.45, text: X_TITLE },
+      yTitle: { x: split ? titleX - axis * 0.6 : titleX, y: titleY, lines },
     }, 0, this.prefix);
     this.layer.resize(avail);
     return f;
