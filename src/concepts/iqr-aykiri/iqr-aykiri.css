@@ -1,0 +1,87 @@
+/* Bill cards (scene-cards.ts): eight absolutely placed cells, ranks below,
+   position marker below the ranks. Cell and rank text never drop below the theme sizes. */
+.iqr-cards {
+  position: relative;
+  height: calc(var(--fs-body) * 6.6);
+  margin-top: calc(var(--fs-tick) * 2.4);
+  margin-bottom: calc(var(--fs-tick) * 1.6);
+}
+.iqr-cards .cell {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: calc(var(--fs-body) * 3.4);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 2px solid var(--navy);
+  border-radius: 8px;
+  color: var(--navy);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transition: opacity 0.3s;
+}
+.iqr-cards .cell-value { font-size: var(--fs-body); line-height: 1.15; }
+.iqr-cards .cell-mark { color: var(--navy); font-size: var(--fs-body); line-height: 1; }
+.iqr-cards .rank {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  text-align: center;
+  font-size: var(--fs-tick);
+  font-weight: 600;
+  color: var(--muted);
+}
+.iqr-cards .cell.empty { border-style: dashed; background: transparent; color: var(--muted); font-weight: 400; }
+.iqr-cards .cell.filled { background: var(--teal); color: #fff; }
+.iqr-cards .cell.filled .cell-mark { color: #fff; }
+.iqr-cards .cell.mid,
+.iqr-cards .cell.pair { background: var(--navy-soft); border-width: 4px; }
+.iqr-cards .cell.outlier { border-color: var(--orange); border-width: 4px; }
+.iqr-cards .cell-flag {
+  position: absolute;
+  bottom: calc(100% + 2px);
+  color: #8a4b00;
+  font-size: var(--fs-tick);
+  font-weight: 700;
+}
+.iqr-cards .cell.clipped { border-color: var(--teal); border-width: 4px; }
+.iqr-cards .cell.deleted { opacity: 0.25; text-decoration: line-through; }
+.iqr-cards .pos-mark {
+  position: absolute;
+  left: 0;
+  top: calc(var(--fs-body) * 3.4 + var(--fs-tick) * 1.8);
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.iqr-cards .pos-mark::before {
+  content: "▲";
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateX(-50%);
+  color: var(--orange);
+  font-size: var(--fs-body);
+  line-height: 1;
+}
+.iqr-cards .pos-label {
+  position: absolute;
+  left: 0;
+  top: calc(var(--fs-body) * 1.2);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: var(--fs-tick);
+  font-weight: 600;
+  color: var(--navy);
+}
+@media (prefers-reduced-motion: reduce) {
+  .iqr-cards .cell { transition: none; }
+}
