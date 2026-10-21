@@ -3,7 +3,7 @@ import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
 import { renderStrip } from '../../core/plot/strip';
 import type { Rect } from '../../core/plot/viewport';
-import type { PcaParams } from './scenario';
+import { THETA_SWEEP, type PcaParams } from './scenario';
 import { derivePcaView, type PcaKind } from './view';
 import { ScatterLayer, type ThetaPointer } from './scene-scatter';
 import { GaugeLayer } from './scene-gauge';
@@ -25,6 +25,8 @@ const SIDE_GAP = 40;
 const SQUARE_SHARE = 0.52;
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
+/** Index of step 3, whose sweep draws the variance curve. */
+const SWEEP_STEP = 2;
 
 /**
  * `pca` scene: one `svg.pca-plot` with the scatter + gauge (part 1), the
@@ -68,6 +70,8 @@ export function mountPcaScene(
   let pending: { s: PlayerState<PcaParams>; cause: ChangeCause } | null = null;
   let rafId: number | null = null;
   let lastStrip = '';
+  let reached = 0;
+  let trackedIndex = player.state.index;
   /** Last rect each layer was laid out with; a layer redraws on layout, so unchanged rects are skipped. */
   const laidOut = new Map<string, string>();
   const lay = (name: string, rect: Rect, l: { layout(r: Rect, m: Mode): void }): void => {
@@ -111,7 +115,7 @@ export function mountPcaScene(
       gauge.interrupt();
       scree.interrupt();
       panels.interrupt();
-      const v = derivePcaView(state.index, state.params);
+      const v = derivePcaView(state.index, state.params, { reached: state.index === SWEEP_STEP ? reached : 0 });
       // slider and sweep ticks are instant; steps animate, and so does a perplexity change
       const live = cause === 'sweep' || (cause === 'param' && v.kind !== 'panels');
       const ms = ds > 0 && !instant && !live ? 1 : 0;
@@ -130,6 +134,17 @@ export function mountPcaScene(
     }
   }
 
+  /**
+   * Largest θ the step 3 curve has been drawn to in this visit of the step, so a
+   * drag after the sweep does not cut the curve short. Every notification counts
+   * (renders are coalesced); a new visit, or the sweep restarting at 0°, starts over.
+   */
+  function track(s: PlayerState<PcaParams>, cause: ChangeCause): void {
+    if (s.index !== SWEEP_STEP || s.index !== trackedIndex || (cause === 'sweep' && s.params.theta === THETA_SWEEP[0])) reached = 0;
+    trackedIndex = s.index;
+    if (s.index === SWEEP_STEP) reached = Math.max(reached, Math.min(180, Math.max(0, s.params.theta)));
+  }
+
   function flush(): void {
     rafId = null;
     const p = pending;
@@ -143,6 +158,7 @@ export function mountPcaScene(
     else clearTimeout(id);
   };
   const unsubscribe = player.subscribe((s, cause) => {
+    track(s, cause);
     const merged = pending && causeRank[pending.cause] > causeRank[cause] ? pending.cause : cause;
     pending = { s, cause: merged };
     if (ds === 0) flush();

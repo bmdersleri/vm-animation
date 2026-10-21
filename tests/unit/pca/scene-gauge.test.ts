@@ -95,6 +95,35 @@ describe('pca GaugeLayer', () => {
     expect(bar).toBeGreaterThan(0);
   });
 
+  it('a step change of θ moves the marker and the gauge with the line (900 ms), not ahead of it', async () => {
+    const { svg, layer } = setup(0.1);
+    layer.update(side(3, { theta: 0 }), 0);
+    const cx0 = Number(q(svg, 'circle.var-marker').getAttribute('cx'));
+    const h0 = Number(q(svg, 'rect.gauge-bar').getAttribute('height'));
+    layer.update(side(3), 1);
+    // the final state is in the attributes, but the drawn marker is still near 0°
+    expect(q(svg, 'circle.var-marker').getAttribute('data-theta')).toBe('45');
+    expect(Number(q(svg, 'circle.var-marker').getAttribute('cx'))).toBeCloseTo(cx0, 0);
+    expect(Number(q(svg, 'rect.gauge-bar').getAttribute('height'))).toBeCloseTo(h0, 0);
+    await new Promise((r) => setTimeout(r, 200));
+    const fresh = setup();
+    fresh.layer.update(side(3), 0);
+    expect(q(svg, 'circle.var-marker').getAttribute('cx')).toBe(q(fresh.svg, 'circle.var-marker').getAttribute('cx'));
+    expect(q(svg, 'text.var-marker-label').textContent).toBe('45°');
+    expect(q(svg, 'text.gauge-label').textContent).toBe('varyans 1,83');
+  });
+
+  it('an interrupted θ glide snaps to the final marker', () => {
+    const { svg, layer } = setup(1);
+    layer.update(side(3, { theta: 0 }), 0);
+    layer.update(side(3), 1);
+    layer.interrupt();
+    const fresh = setup();
+    fresh.layer.update(side(3), 0);
+    expect(q(svg, 'circle.var-marker').getAttribute('cx')).toBe(q(fresh.svg, 'circle.var-marker').getAttribute('cx'));
+    expect(q(svg, 'rect.gauge-bar').getAttribute('height')).toBe(q(fresh.svg, 'rect.gauge-bar').getAttribute('height'));
+  });
+
   it('hidden when side is null', () => {
     const { svg, layer } = setup();
     layer.update(side(1), 0);

@@ -153,6 +153,33 @@ describe('pca ScreeLayer', () => {
     }
   });
 
+  it('step 10: the cumulative curve from point 1 to point 2 does not cross the bar 1 label, in Ders and Lab', () => {
+    for (const mode of ['ders', 'lab'] as const) {
+      for (const width of [1200, 700]) {
+        const { svg, layer } = setup();
+        layer.layout({ left: 0, top: 0, width, height: 520 }, mode);
+        for (const t of [50, 90, 99]) {
+          layer.update(scree(9, { threshold: t }), 0);
+          const el = q(svg, 'text.bar-label');
+          // jsdom: the font size and the 0,62 em per character estimate that TextMeasure uses
+          const fs = parseFloat(getComputedStyle(el).fontSize) || (mode === 'ders' ? 18 : 13);
+          const w = el.textContent!.length * fs * 0.62;
+          const x = num(el, 'x');
+          const a = el.getAttribute('text-anchor');
+          const l = a === 'end' ? x - w : a === 'middle' ? x - w / 2 : x;
+          const box = { l, r: l + w, b: num(el, 'y') + fs * 0.25 };
+          const [p0, p1] = all(svg, 'circle.cum-pt').map((c) => [num(c, 'cx'), num(c, 'cy')]);
+          // y grows downwards and the curve rises to the right: its highest point under the label is at the right end
+          const at = (xx: number): number => p0[1] + ((p1[1] - p0[1]) * (xx - p0[0])) / (p1[0] - p0[0]);
+          const xb = Math.min(box.r, p1[0]);
+          const name = `${mode} ${width} threshold ${t}`;
+          if (xb >= p0[0]) expect(at(xb), name).toBeGreaterThan(box.b);
+          expect(box.l, `${name} inside the plot`).toBeGreaterThanOrEqual(num(q(svg, 'rect.scree-frame'), 'x'));
+        }
+      }
+    }
+  });
+
   it('step 10: the bar 1 label is lifted above the cumulative marker that sits on the bar top', () => {
     const { svg, layer } = setup();
     layer.update(scree(9), 0);

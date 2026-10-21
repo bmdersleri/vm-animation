@@ -1,7 +1,7 @@
 import type { Scenario, StepPlayer } from '../../core/player';
 import type { Shortcut } from '../../core/keyboard';
 import type { Perplexity } from './data';
-import { pairFit, type Birim } from './pca2';
+import { normDeg, pairFit, type Birim } from './pca2';
 
 export interface PcaParams {
   /** Projection direction in degrees, 0-180. */
@@ -55,8 +55,8 @@ export const pcaScenario: Scenario<PcaParams> = {
     {
       id: 'pc1',
       title: 'PC1',
-      text: 'Bu bulut hangi yönde en çok yayılmış? 45° civarında: izdüşüm varyansı en büyük, λ1 = 1,83. Bu yön birinci temel bileşen (principal component), PC1. Korelasyon pozitifse PC1 köşegen boyunca uzanır.',
-      term: 'temel bileşen (principal component)',
+      text: 'Bu bulut hangi yönde en çok yayılmış? 45° civarında: izdüşüm varyansı en büyük, λ1 = 1,83. Bu yön birinci temel bileşen (principal component), PC1; yönünü veren birim vektöre özvektör (eigenvector) denir. Korelasyon pozitifse PC1 köşegen boyunca uzanır.',
+      term: 'temel bileşen (principal component) · özvektör (eigenvector)',
       params: { theta: 45, ...P },
     },
     {
@@ -125,7 +125,14 @@ export const pcaScenario: Scenario<PcaParams> = {
   ],
 };
 
-/** Eases theta to `to` over `ms`; stops on a step change or when the returned stopper is called. */
+const owner = new WeakMap<object, number>();
+
+/**
+ * Eases theta to `to` (degrees in [0, 180)) over `ms` along the shorter way round
+ * the 180°-periodic direction circle, writing whole degrees in [0, 180). Stops on a
+ * step change, when the returned stopper is called, or as soon as theta is no
+ * longer the value it last wrote (a drag, the slider or another animation took over).
+ */
 export function animateTheta(
   p: StepPlayer<PcaParams>,
   to: number,
@@ -134,19 +141,32 @@ export function animateTheta(
   const ms = opts.ms ?? 600;
   const raf = opts.raf ?? ((cb: FrameRequestCallback): number => requestAnimationFrame(cb));
   const now = opts.now ?? ((): number => performance.now());
-  const from = p.state.params.theta;
+  const from = normDeg(p.state.params.theta);
+  const target = normDeg(to);
+  // shortest signed turn in (−90, 90]
+  const ccw = (((target - from) % 180) + 180) % 180;
+  const turn = ccw > 90 ? ccw - 180 : ccw;
   const index = p.state.index;
-  if (Math.abs(to - from) < 0.5) {
-    p.setParam('theta', Math.round(to));
+  // the newest animation of a player owns theta: the button and Y need not share a stopper
+  const id = (owner.get(p) ?? 0) + 1;
+  owner.set(p, id);
+  if (Math.abs(turn) < 0.5) {
+    p.setParam('theta', Math.round(target) % 180);
     return () => {};
   }
   const t0 = now();
   let stopped = false;
+  let wrote: number | null = null;
   const frame = (): void => {
     if (stopped || p.state.index !== index) return;
+    if (owner.get(p) !== id || (wrote !== null && p.state.params.theta !== wrote)) {
+      stopped = true;
+      return;
+    }
     const t = Math.min(1, Math.max(0, (now() - t0) / ms));
     const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-    p.setParam('theta', t >= 1 ? Math.round(to) : Math.round(from + (to - from) * e));
+    wrote = Math.round(normDeg(t >= 1 ? target : from + turn * e)) % 180;
+    p.setParam('theta', wrote);
     if (t < 1) raf(frame);
   };
   frame();

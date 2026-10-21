@@ -78,12 +78,19 @@ function pointsFor(birim: Birim): readonly Pt[] {
 const fv = (v: number): string => (v >= 1000 ? formatNumber(v, 0) : formatNonZero(v, 2));
 const deg0 = (d: number): string => `${Math.round(d)}°`;
 
-export function derivePcaView(index: number, p: PcaParams): PcaView {
+/**
+ * `reached`: the largest θ the step 3 curve has already been drawn to in this
+ * visit of the step (the scene tracks it), so dragging back after the sweep does
+ * not cut the curve short.
+ */
+export function derivePcaView(index: number, p: PcaParams, opts: { reached?: number } = {}): PcaView {
   const birim = p.birim;
   const fit = pairFit(birim);
   const { l1, l2, v1, v2 } = fit.eig;
   const comp = (x: number): string => formatNonZero(x, birim === 1000 ? 4 : 3);
-  const theta = normDeg(p.theta);
+  // step 3 sweeps 0° → 180°: its labels read the un-normalised angle so the sweep ends on 180°, not 0°
+  const swept = Math.min(180, Math.max(0, p.theta));
+  const theta = index === 2 ? swept : normDeg(p.theta);
   const pc1 = fit.pc1Deg;
   const kind: PcaKind = index <= 7 ? 'scatter' : index <= 9 ? 'scree' : 'panels';
   const part: PcaPart = index <= 7 ? 1 : index <= 9 ? 2 : 3;
@@ -96,7 +103,7 @@ export function derivePcaView(index: number, p: PcaParams): PcaView {
     const onPc1 = Math.abs(theta - pc1) < 0.5;
     let dir: DirView | null = null;
     let dir2: DirView | null = null;
-    if (index === 1 || index === 2) dir = { deg: theta, label: `θ = ${deg0(theta)}` };
+    if (index === 1 || index === 2) dir = { deg: normDeg(p.theta), label: `θ = ${deg0(theta)}` };
     else if (index === 3 || index === 4) dir = { deg: theta, label: onPc1 ? 'PC1' : `θ = ${deg0(theta)}` };
     else if (index >= 5) dir = { deg: pc1, label: 'PC1' };
     if (index === 4) {
@@ -108,14 +115,15 @@ export function derivePcaView(index: number, p: PcaParams): PcaView {
     const hasSide = (index >= 1 && index <= 4) || index === 7;
     let side: SideView | null = null;
     if (hasSide && dir) {
-      const upTo = index === 1 ? null : index === 2 ? Math.min(180, Math.max(0, p.theta)) : 180;
+      const upTo = index === 1 ? null : index === 2 ? Math.min(180, Math.max(swept, opts.reached ?? 0)) : 180;
       const value = projVar(fit.cov, dir.deg);
       side = {
         gauge: { value, max: 1.1 * l1, label: `varyans ${fv(value)}` },
         curve: {
           values: varianceCurve(fit.cov),
           upTo,
-          marker: dir.deg,
+          // projVar(180) = projVar(0): at the end of the sweep the marker stays at the right end of the curve
+          marker: index === 2 ? swept : dir.deg,
           peak: upTo === 180 ? { deg: Math.round(pc1), label: `en büyük: θ = ${deg0(pc1)}` } : null,
         },
       };

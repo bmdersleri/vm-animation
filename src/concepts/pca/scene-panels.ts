@@ -200,7 +200,10 @@ export class PanelsLayer {
       [tsne, tsne.slice(0, N), withNew ? tsne[N] : null],
     ];
     const morphing = animate && prev !== null && prev.key !== v.embedKey;
-    const appear = animate && (prev === null || !prev.newCustomer || morphing);
+    // The PCA panel never changes with perplexity: its new customer fades in only when it first
+    // appears. The t-SNE one is re-placed by every new embedding, so it waits for the glide.
+    const firstNew = prev === null || !prev.newCustomer;
+    const appearOf = (pca: boolean): boolean => animate && (firstNew || (morphing && !pca));
     const newDelay = morphing ? MORPH_MS * this.ds : 0;
 
     this.panels.forEach((p, i) => {
@@ -255,6 +258,7 @@ export class PanelsLayer {
         label.attr('x', r1(Math.min(plot.left + plot.width - w / 2, Math.max(plot.left + w / 2, nx))))
           .attr('y', r1(above ? ny - half - gap : ny + half + gap + fonts.tick * 0.8));
       }
+      const appear = appearOf(pca);
       for (const s of [diamond, label]) {
         s.attr('opacity', appear ? 0 : 1);
         tr(s, 'pca-newcust', appear ? NEW_FADE_MS * this.ds : 0, () => newDelay).attr('opacity', 1);

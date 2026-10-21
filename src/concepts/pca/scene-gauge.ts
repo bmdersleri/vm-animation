@@ -13,6 +13,8 @@ import type { SideView } from './view';
 
 /** Duration before `durationScale` of the ×1 <-> ×1000 rescale. */
 const RESCALE_MS = 900;
+/** Same as the scatter's direction-line glide on a step change. */
+const THETA_MS = 900;
 const NAMES = ['pca-gauge', 'pca-gaxes'];
 const X_TICKS = [0, 45, 90, 135, 180];
 /** Share of the rect height taken by the gauge; the curve gets the rest. */
@@ -25,12 +27,22 @@ interface Lay { rect: Rect; fonts: { tick: number; axis: number }; gap: number }
 interface Plot { left: number; top: number; width: number; height: number }
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+/** Shortest way from angle a to b on the 180°-periodic direction circle (as the scatter's line). */
+const towards = (a: number, b: number): number => a + ((((b - a + 90) % 180) + 180) % 180 - 90);
+/** Angle on the curve's 0°–180° axis. */
+const wrap = (d: number): number => ((d % 180) + 180) % 180;
+/** Curve value at a fractional angle (linear between whole degrees). */
+function curveAt(values: readonly number[], deg: number): number {
+  const i = Math.min(values.length - 2, Math.max(0, Math.floor(deg)));
+  return lerp(values[i], values[i + 1], Math.min(1, Math.max(0, deg - i)));
+}
 
 /**
  * The right-hand side of the `pca` page: a vertical variance gauge (top 38 %) and
- * the projected-variance-by-angle curve (bottom 62 %). A change of θ is instant;
- * only the ×1 <-> ×1000 rescale animates (fixed duration × `ds`, `ms > 0` is just
- * the animate flag). Text sizes come from the CSS tokens only.
+ * the projected-variance-by-angle curve (bottom 62 %). A live change of θ (drag,
+ * slider, sweep) is instant; on a step change the marker and the gauge glide with
+ * the direction line, and the ×1 <-> ×1000 rescale animates (fixed durations × `ds`,
+ * `ms > 0` is just the animate flag). Text sizes come from the CSS tokens only.
  */
 export class GaugeLayer {
   private readonly root: G;
@@ -52,8 +64,8 @@ export class GaugeLayer {
   private view: SideView | null = null;
   private plot: Plot | null = null;
   private trackBox = { x: 0, y: 0, w: 0, h: 0 };
-  /** Animated scalars: the scale maximum and the gauge value now shown. */
-  private st = { max: 1, value: 0 };
+  /** Animated scalars: the scale maximum, the gauge value and the marker angle now shown. */
+  private st = { max: 1, value: 0, deg: 0 };
   private scaleKey = '';
 
   constructor(svgEl: SVGSVGElement, private readonly ds: number) {
@@ -182,20 +194,31 @@ export class GaugeLayer {
     this.gLabel.text(v.gauge.label);
     this.curve.attr('data-upto', v.curve.upTo ?? '');
     this.marker.attr('data-theta', v.curve.marker);
-    this.markerLabel.text(`${Math.round(v.curve.marker)}°`);
     this.peak.text(v.curve.peak?.label ?? '').attr('data-peak', v.curve.peak?.deg ?? '');
 
-    // ---- the scalars (max, value) tween on a rescale, else snap
+    // ---- the scalars (max, value, marker angle) tween on a rescale; on a step change of θ the marker
+    // and the gauge follow the direction line (same 900 ms glide, same shortest way round); else snap
     const from = { ...this.st };
     this.scaleKey = yKey;
+    const to = { max: maxNow, value: v.gauge.value, deg: v.curve.marker };
+    const turn = towards(from.deg, to.deg) - from.deg;
+    const glide = animate && !rescale && Math.abs(turn) > 1e-6;
     if (rescale) {
-      const to = { max: maxNow, value: v.gauge.value };
       this.root.transition('pca-gauge').duration(RESCALE_MS * this.ds).ease(easeCubicInOut).tween('scale', () => (t: number) => {
-        this.st = { max: lerp(from.max, to.max, t), value: lerp(from.value, to.value, t) };
+        this.st = t >= 1 ? { ...to } : {
+          max: lerp(from.max, to.max, t), value: lerp(from.value, to.value, t), deg: wrap(from.deg + turn * t),
+        };
+        this.paint();
+      });
+    } else if (glide) {
+      this.st = { ...from, max: maxNow };
+      this.root.transition('pca-gauge').duration(THETA_MS * this.ds).ease(easeCubicInOut).tween('theta', () => (t: number) => {
+        const deg = wrap(from.deg + turn * t);
+        this.st = t >= 1 ? { ...to } : { max: maxNow, value: curveAt(v.curve.values, deg), deg };
         this.paint();
       });
     } else {
-      this.st = { max: maxNow, value: v.gauge.value };
+      this.st = { ...to };
     }
     this.paint();
   }
@@ -208,7 +231,7 @@ export class GaugeLayer {
     if (!v || !L || !plot) return;
     const { fonts, gap } = L;
     const lh = fonts.tick * 1.2;
-    const { max, value } = this.st;
+    const { max, value, deg } = this.st;
 
     // gauge
     const tb = this.trackBox;
@@ -230,13 +253,15 @@ export class GaugeLayer {
     }
     this.curve.attr('d', d).attr('display', on ? null : 'none');
     this.marker.attr('display', on ? null : 'none').attr('r', 6)
-      .attr('cx', r1(sx(v.curve.marker))).attr('cy', r1(sy(value)));
+      .attr('cx', r1(sx(deg))).attr('cy', r1(sy(value)));
+    const markerText = `${Math.round(deg)}°`;
+    if (this.markerLabel.text() !== markerText) this.markerLabel.text(markerText);
 
     // labels above the points; the peak label and the marker label are separated by staggerRows
     const peak = v.curve.peak;
     const items: { el: El<SVGTextElement>; x: number; y: number; cls: string }[] = [];
     if (peak) items.push({ el: this.peak, x: sx(peak.deg), y: sy(v.curve.values[Math.round(peak.deg)]), cls: 'var-peak' });
-    if (on) items.push({ el: this.markerLabel, x: sx(v.curve.marker), y: sy(value), cls: 'var-marker-label' });
+    if (on) items.push({ el: this.markerLabel, x: sx(deg), y: sy(value), cls: 'var-marker-label' });
     const boxes = items.map((it) => ({ x: it.x, w: this.measure.width(it.el.text(), it.cls, fonts.tick) }));
     const rows = staggerRows(boxes, 8);
     items.forEach((it, i) => {

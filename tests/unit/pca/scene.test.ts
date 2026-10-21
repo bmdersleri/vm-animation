@@ -122,6 +122,35 @@ describe('pca scene', () => {
     expect(d(el, 'path.proj-lines')).not.toBe(first);
   });
 
+  it('step 3: after the sweep the curve stays whole while θ is dragged; a new visit starts it again', () => {
+    vi.useFakeTimers();
+    const { el, player } = setup();
+    player.goto(2);
+    vi.advanceTimersByTime(3200);
+    const curve = (): string => one(el, 'path.var-curve').getAttribute('data-upto')!;
+    expect(curve()).toBe('180');
+    expect(one(el, 'circle.var-marker').getAttribute('data-theta')).toBe('180');
+    expect(one(el, 'text.dir-label').textContent).toBe('θ = 180°');
+    player.setParam('theta', 100);
+    expect(curve()).toBe('180');
+    expect(one(el, 'circle.var-marker').getAttribute('data-theta')).toBe('100');
+    player.goto(3);
+    player.goto(2);
+    expect(curve()).toBe('0');
+  });
+
+  it('step 12: a perplexity change leaves the PCA panel’s new customer shown', async () => {
+    const { el, player } = setup(1);
+    player.goto(11);
+    await sleep(1500);
+    const pcaNew = (): Element => one(el, 'g.panel.pca path.newcust');
+    expect(Number(pcaNew().getAttribute('opacity'))).toBe(1);
+    player.setParam('perplexity', 5);
+    await sleep(60);
+    expect(Number(pcaNew().getAttribute('opacity')), 'PCA diamond during the t-SNE glide').toBe(1);
+    expect(Number(one(el, 'g.panel.tsne path.newcust').getAttribute('opacity')), 't-SNE diamond waits for the glide').toBeLessThan(1);
+  }, 8000);
+
   it('strip text equals view.strip', () => {
     const { el, player } = setup();
     for (let i = 0; i < pcaScenario.steps.length; i++) {

@@ -142,7 +142,35 @@ test('ders: step 3 sweep ends with the curve peak at 45°', async ({ page }) => 
   await step(page, 3, SWEEP_DONE_MS);
   await expect(page.locator('text.var-peak')).toHaveText('en büyük: θ = 45°');
   await expect(page.locator('.formula')).toContainText('en büyük varyans θ = 45°’de: 1,83');
+  // strip, line label and curve marker agree on the closing angle; the marker stays at the right end
+  await expect(page.locator('.formula')).toContainText('θ = 180°');
+  await expect(page.locator('text.dir-label')).toHaveText('θ = 180°');
+  await expect(page.locator('circle.var-marker')).toHaveAttribute('data-theta', '180');
+  await expect(page.locator('text.var-marker-label')).toHaveText('180°');
+  const frame = await box(page.locator('rect.var-frame'));
+  const marker = await box(page.locator('circle.var-marker'));
+  expect(marker.x + marker.width / 2).toBeGreaterThan(frame.x + frame.width - 4);
 });
+
+for (const mode of ['ders', 'lab'] as const) {
+  test(`${mode}: step 10 cumulative curve stays clear of the bar 1 label`, async ({ page }) => {
+    await open(page, PAGE, mode, READY);
+    await step(page, 10, 1800);
+    const r = await page.evaluate(() => {
+      const lab = document.querySelector('text.bar-label')!.getBoundingClientRect();
+      const [a, b] = [...document.querySelectorAll('circle.cum-pt')].map((c) => {
+        const q = c.getBoundingClientRect();
+        return { x: q.x + q.width / 2, y: q.y + q.height / 2 };
+      });
+      return { lab: { l: lab.left, r: lab.right, b: lab.bottom }, a, b };
+    });
+    // the segment from point 1 to point 2 rises to the right: its highest point under the label is at the label's right end
+    const xr = Math.min(r.lab.r, r.b.x);
+    expect(xr).toBeGreaterThan(r.a.x);
+    const yAt = r.a.y + ((r.b.y - r.a.y) * (xr - r.a.x)) / (r.b.x - r.a.x);
+    expect(yAt, JSON.stringify(r)).toBeGreaterThan(r.lab.b);
+  });
+}
 
 test('ders: step 4 shows PC1 at 45°', async ({ page }) => {
   await open(page, PAGE, 'ders', READY);

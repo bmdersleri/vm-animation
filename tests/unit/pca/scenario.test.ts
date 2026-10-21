@@ -72,6 +72,12 @@ describe('pcaScenario', () => {
     expect(n).toBeGreaterThanOrEqual(10);
   });
 
+  it('step 4 introduces the eigenvector (spec term list)', () => {
+    const s = pcaScenario.steps[3];
+    expect(s.text).toContain('özvektör (eigenvector)');
+    expect(s.term).toBe('temel bileşen (principal component) · özvektör (eigenvector)');
+  });
+
   it('every step has a term and owns its params', () => {
     pcaScenario.steps.forEach((s, i) => {
       expect(s.term, s.id).toBeTruthy();
@@ -161,6 +167,59 @@ describe('pcaScenario', () => {
     c.tick(300);
     c.tick(600);
     expect(spy.mock.calls.length).toBe(n);
+  });
+
+  it('animateTheta stops as soon as another source writes theta (drag, slider, a second trigger)', () => {
+    const p = make();
+    p.goto(1);
+    const c = fakeClock();
+    animateTheta(p, 45, { ms: 600, raf: c.raf, now: c.now });
+    c.tick(0);
+    c.tick(200);
+    p.setParam('theta', 120); // e.g. a pointer drag
+    c.tick(400);
+    c.tick(600);
+    expect(p.state.params.theta).toBe(120);
+
+    // the button starts one animation, Y another: the first gives way
+    p.goto(1);
+    const c2 = fakeClock();
+    animateTheta(p, 45, { ms: 600, raf: c2.raf, now: c2.now });
+    c2.tick(0);
+    c2.tick(100);
+    animateTheta(p, 150, { ms: 600, raf: c2.raf, now: c2.now });
+    for (const t of [200, 300, 400, 500, 600, 700, 800]) c2.tick(t);
+    expect(p.state.params.theta).toBe(150);
+  });
+
+  it('animateTheta takes the short way round the 180° direction circle', () => {
+    const p = make();
+    p.goto(2);
+    vi.advanceTimersByTime(3100);
+    expect(p.state.params.theta).toBe(180);
+    const seen: number[] = [];
+    const off = p.subscribe((s) => seen.push(s.params.theta));
+    const c = fakeClock();
+    animateTheta(p, 45, { ms: 600, raf: c.raf, now: c.now });
+    for (const t of [0, 100, 200, 300, 400, 500, 600]) c.tick(t);
+    off();
+    expect(seen[seen.length - 1]).toBe(45);
+    for (const t of seen) {
+      expect(t).toBeGreaterThanOrEqual(0);
+      expect(t).toBeLessThanOrEqual(45);
+    }
+
+    p.goto(1);
+    p.setParam('theta', 170);
+    const seen2: number[] = [];
+    p.subscribe((s) => seen2.push(s.params.theta));
+    const c2 = fakeClock();
+    animateTheta(p, 45, { ms: 600, raf: c2.raf, now: c2.now });
+    for (const t of [0, 100, 200, 300, 400, 500, 600]) c2.tick(t);
+    expect(seen2[seen2.length - 1]).toBe(45);
+    // 170 → 180 ≡ 0 → 45 (55°), never back through 90°
+    for (const t of seen2) expect(t <= 45 || t >= 170, String(t)).toBe(true);
+    for (const t of seen2) expect(t).toBeLessThan(180);
   });
 
   it('shortcuts act only in their steps', () => {

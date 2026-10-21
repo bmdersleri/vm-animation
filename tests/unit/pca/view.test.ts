@@ -77,6 +77,29 @@ describe('pca view', () => {
     expect(v.strip.split('\n')[1]).toBe('en büyük varyans θ = 45°’de: 1,83');
   });
 
+  it('step 3 at θ = 180: line label, curve marker and note all read 180°', () => {
+    const v = V(2, { theta: 180 });
+    const s = v.scatter!;
+    expect(s.dir!.label).toBe('θ = 180°');
+    expect(s.side!.curve.marker).toBe(180);
+    expect(s.side!.curve.upTo).toBe(180);
+    expect(s.side!.gauge.label).toBe('varyans 1,00');
+    expect(v.strip.startsWith('θ = 180°')).toBe(true);
+    expect(v.note.startsWith('θ = 180°')).toBe(true);
+    // the direction itself is still drawn mod 180
+    expect(s.dir!.deg).toBe(0);
+  });
+
+  it('step 3: a curve already drawn to 180° stays whole when θ is dragged back', () => {
+    const p = { ...base(2), theta: 100 };
+    expect(derivePcaView(2, p).scatter!.side!.curve.upTo).toBe(100);
+    const s = derivePcaView(2, p, { reached: 180 }).scatter!;
+    expect(s.side!.curve.upTo).toBe(180);
+    expect(s.side!.curve.marker).toBe(100);
+    expect(s.side!.curve.peak).toEqual({ deg: 45, label: 'en büyük: θ = 45°' });
+    expect(derivePcaView(2, p, { reached: 60 }).scatter!.side!.curve.upTo).toBe(100);
+  });
+
   it('step 4: PC1 at 45° and λ1 1,83', () => {
     const s = S(3);
     expect(s.dir).toEqual({ deg: 45, label: 'PC1' });

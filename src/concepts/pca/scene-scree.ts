@@ -193,9 +193,20 @@ export class ScreeLayer {
       .text((d) => v.labels[d]);
     const items: { el: El<SVGTextElement>; x: number; y: number; cls: string; end: boolean }[] = [];
     lab.each((d, i, nodes) => {
-      // the cumulative curve starts on top of bar 1: lift its label clear of that marker
-      const clear = cum !== null && d === 0 ? CUM_R + 2 : 0;
-      items.push({ el: select(nodes[i]) as unknown as El<SVGTextElement>, x: cx(d), y: sy(v.evr[d]) - LABEL_LIFT - clear, cls: 'bar-label', end: false });
+      let x = cx(d);
+      let y = sy(v.evr[d]) - LABEL_LIFT;
+      if (cum !== null && d === 0 && pts.length > 1) {
+        // The cumulative curve starts on top of bar 1 and leaves it rising to the right. The label
+        // slides left over the bar (staying inside the plot) and rises until its right end, descenders
+        // included, is clear of the segment to point 2; it never sits lower than just above the marker.
+        const w = this.measure.width(v.labels[0], 'bar-label', fonts.tick);
+        x = Math.max(plot.left + w / 2 + 2, cx(0) + CUM_R - w / 2);
+        const [[x0, y0], [x1, y1]] = pts;
+        const share = Math.min(1, Math.max(0, (x + w / 2 - x0) / (x1 - x0)));
+        const lineY = y0 + (y1 - y0) * share;
+        y = Math.min(y - CUM_R - 2, lineY - Math.max(gap, fonts.tick * 0.3) - 2);
+      }
+      items.push({ el: select(nodes[i]) as unknown as El<SVGTextElement>, x, y, cls: 'bar-label', end: false });
     });
     const hasCum = cum !== null && k > 0;
     this.cumLabel.text(v.cumLabel ?? '').attr('display', hasCum ? null : 'none');
