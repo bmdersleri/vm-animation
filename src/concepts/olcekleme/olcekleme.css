@@ -154,3 +154,17 @@
 .olc-extra .cust-table tr.nearest { background: var(--navy-soft); font-weight: 700; }
 .olc-extra .cust-table tr.query-row td { border-top: 2px solid var(--line); color: #a85a00; font-weight: 700; }
 .scale-plot .leader { stroke: var(--navy); stroke-width: 2; opacity: 0.8; }
+
+/* ---------- Lab: compact params card that fits the side column at 720 px ---------- */
+/* Groups that do not apply to the current step are hidden, not greyed (controls.ts sets data-off). */
+[data-mode="lab"] .olc-params .ctl[data-off="true"] { display: none; }
+[data-mode="lab"] .olc-params { gap: 4px; }
+[data-mode="lab"] .olc-params fieldset.ctl { gap: 0 14px; }
+[data-mode="lab"] .olc-params fieldset.ctl legend { width: auto; }
+[data-mode="lab"] .olc-params .opt { min-height: 30px; }
+[data-mode="lab"] .side .params { flex: none; padding: 8px 14px; }
+/* a tall explain card scrolls inside itself so the params card stays fully visible below it */
+[data-mode="lab"] .side .explain { flex: 0 1 auto; min-height: 0; overflow: auto; }
+
+/* Lab split steps: plot and flow boxes form one block centred in the free height */
+[data-mode="lab"] .olc-plot-host .split-wrap { display: flex; flex-direction: column; justify-content: center; }

@@ -219,3 +219,19 @@
 .iqr-params .ctl.range label { grid-column: 1 / -1; font-weight: 600; }
 .iqr-params input[type="range"] { width: 100%; min-height: var(--ctl); margin: 0; accent-color: var(--navy); }
 .iqr-params .k-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---------- Lab: compact params card that fits the side column at 720 px ---------- */
+/* Groups that do not apply to the current step are hidden, not greyed (controls.ts sets data-off). */
+[data-mode="lab"] .iqr-params .ctl[data-off="true"] { display: none; }
+[data-mode="lab"] .iqr-params { gap: 4px; }
+[data-mode="lab"] .iqr-params fieldset.ctl { gap: 0 14px; }
+[data-mode="lab"] .iqr-params fieldset.ctl legend { width: auto; }
+[data-mode="lab"] .iqr-params .opt { min-height: 30px; }
+[data-mode="lab"] .iqr-params input[type="range"] { min-height: 30px; }
+[data-mode="lab"] .side .params { flex: none; padding: 8px 14px; }
+/* a tall explain card scrolls inside itself so the params card stays fully visible below it */
+[data-mode="lab"] .side .explain { flex: 0 1 auto; min-height: 0; overflow: auto; }
+
+/* ---------- Lab: cards and number line form one compact block, centred above the strip ---------- */
+[data-mode="lab"] .iqr-scene .iqr-cards-host { margin-top: auto; }
+[data-mode="lab"] .iqr-scene .iqr-plot-host { flex: 0 1 270px; margin-bottom: auto; }

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { fontSizes, gotoStep, open, outsideStage, overlaps, pageOverflow, stepCount } from './helpers';
+import { fontSizes, gotoStep, open, outsideStage, overlaps, pageOverflow, paramsOutside, shownDisabledGroups, stepCount } from './helpers';
 
 /*
  * The teacher's two red lines for the iqr-aykiri page, checked in a real
@@ -178,6 +178,41 @@ test('lab: Sil drops the point and recomputes with n = 7', async ({ page }) => {
   await expect(page.locator('.formula')).toContainText('silince n = 7: Q1 = 40,40 · Q3 = 54,03 · sınırlar 19,96 / 74,46');
   await expect(page.locator('.pt.deleted')).toHaveCount(0);
   await expect(page.locator('.cell.deleted')).toHaveCount(1);
+});
+
+test('lab: the params card shows only the current controls and fits without scrolling', async ({ page }) => {
+  await open(page, PAGE, 'lab', READY);
+  for (let step = 0; step < STEPS; step++) {
+    if (step > 0) await gotoStep(page, step, STEPS, 300);
+    expect(await shownDisabledGroups(page), `step ${step + 1} disabled group shown`).toEqual([]);
+    expect(await paramsOutside(page), `step ${step + 1} control outside the side column`).toEqual([]);
+  }
+});
+
+/** Max allowed empty height (px) between the cards row and the top of the number-line text / marks in Lab. */
+const LAB_BAND_MAX = 200;
+
+test('lab: no large empty band between the cards and the number line', async ({ page }, info) => {
+  await open(page, PAGE, 'lab', READY);
+  await page.waitForTimeout(1800); // first step settles
+  const gaps: number[] = [];
+  for (let step = 0; step < STEPS; step++) {
+    if (step > 0) await gotoStep(page, step, STEPS, 1200);
+    const gap = await page.evaluate(() => {
+      const cards = document.querySelector('.iqr-cards')!.getBoundingClientRect();
+      let top = Infinity;
+      for (const el of document.querySelectorAll('.iqr-plot text, .iqr-plot .pt')) {
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0 || getComputedStyle(el).opacity === '0' || el.closest('.probe') || el.classList.contains('probe')) continue;
+        top = Math.min(top, r.top);
+      }
+      return top - cards.bottom;
+    });
+    gaps.push(Math.round(gap));
+    expect(gap, `step ${step + 1} gap`).toBeLessThanOrEqual(LAB_BAND_MAX);
+  }
+  info.annotations.push({ type: 'lab gaps px', description: JSON.stringify(gaps) });
+  console.log('iqr lab gaps px', JSON.stringify(gaps));
 });
 
 test('help lists D, K and C', async ({ page }) => {

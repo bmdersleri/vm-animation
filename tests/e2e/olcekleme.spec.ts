@@ -1,5 +1,5 @@
 import { test, expect, type Locator } from '@playwright/test';
-import { fontSizes, gotoStep, open, outsideStage, overlaps, pageOverflow, stepCount } from './helpers';
+import { fontSizes, gotoStep, open, outsideStage, overlaps, pageOverflow, paramsOutside, shownDisabledGroups, stepCount } from './helpers';
 
 /*
  * The teacher's two red lines for the olcekleme page, checked in a real
@@ -259,6 +259,41 @@ test('lab table highlights the nearest row and shows z when scaled', async ({ pa
   await expect(page.locator('th.z')).toHaveCount(2);
   await expect(page.locator('tr.nearest')).toContainText('M3');
   await expect(page.locator('text.query-label')).toHaveText('Yeni (−0,57; −0,31)');
+});
+
+test('lab: the params card shows only the current controls and fits without scrolling', async ({ page }) => {
+  await open(page, PAGE, 'lab', READY);
+  for (let step = 0; step < STEPS; step++) {
+    if (step > 0) await gotoStep(page, step, STEPS, step === 2 ? SWEEP_DONE_MS : 300);
+    expect(await shownDisabledGroups(page), `step ${step + 1} disabled group shown`).toEqual([]);
+    expect(await paramsOutside(page), `step ${step + 1} control outside the side column`).toEqual([]);
+  }
+});
+
+/** Max allowed empty height (px) between the split content and the formula strip in Lab. */
+const LAB_BAND_MAX = 170;
+
+test('lab: no large empty band under the split plot', async ({ page }, info) => {
+  await open(page, PAGE, 'lab', READY);
+  const gaps: Record<number, number> = {};
+  for (const step of [9, 10, 11, 12]) {
+    await gotoStep(page, step, STEPS, 1200);
+    const gap = await page.evaluate(() => {
+      const f = document.querySelector('.formula')!.getBoundingClientRect();
+      const visible = (e: Element) => { const r = e.getBoundingClientRect(); return r.height > 0 && getComputedStyle(e).display !== 'none'; };
+      const flow = document.querySelector('.split-wrap .flow');
+      if (flow && visible(flow)) return f.top - flow.getBoundingClientRect().bottom;
+      let bottom = 0;
+      for (const t of document.querySelectorAll('.split-plot .axis-title')) {
+        if (visible(t)) bottom = Math.max(bottom, t.getBoundingClientRect().bottom);
+      }
+      return f.top - bottom;
+    });
+    gaps[step + 1] = Math.round(gap);
+    expect(gap, `step ${step + 1} gap`).toBeLessThanOrEqual(LAB_BAND_MAX);
+  }
+  info.annotations.push({ type: 'lab gaps px', description: JSON.stringify(gaps) });
+  console.log('olc lab gaps px', JSON.stringify(gaps));
 });
 
 test('help lists U, S and T', async ({ page }) => {

@@ -88,3 +88,39 @@ export function overlaps(page: Page, selector: string): Promise<string[]> {
     return out;
   }, selector);
 }
+
+/**
+ * Lab params card: every visible enabled input/select must sit fully inside the
+ * viewport and inside the visible box of `.side` without scrolling; returns the offenders.
+ */
+export function paramsOutside(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const side = document.querySelector('.side')!.getBoundingClientRect();
+    const out: string[] = [];
+    for (const el of document.querySelectorAll<HTMLInputElement | HTMLSelectElement>('.params input, .params select')) {
+      if (el.disabled) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0 || el.closest('[hidden]')) continue;
+      const inView = r.left >= 0 && r.top >= 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight;
+      const inSide = r.left >= side.left - 0.5 && r.top >= side.top - 0.5 && r.right <= side.right + 0.5 && r.bottom <= side.bottom + 0.5;
+      if (!inView || !inSide) out.push(`${el.getAttribute('name') ?? el.getAttribute('data-param')}=${el.getAttribute('value') ?? ''} bottom ${Math.round(r.bottom)} (side ${Math.round(side.bottom)})`);
+    }
+    return out;
+  });
+}
+
+/** Lab params card: control groups (fieldsets / .ctl) whose controls are all disabled yet still displayed. */
+export function shownDisabledGroups(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const out: string[] = [];
+    for (const g of document.querySelectorAll<HTMLElement>('.params .ctl')) {
+      const ins = [...g.querySelectorAll<HTMLInputElement>('input, select')];
+      if (ins.length === 0 || !ins.every((i) => i.disabled)) continue;
+      const r = g.getBoundingClientRect();
+      if (getComputedStyle(g).display !== 'none' && r.height > 0 && !g.closest('[hidden]')) {
+        out.push(g.querySelector('legend, label')?.textContent ?? 'group');
+      }
+    }
+    return out;
+  });
+}

@@ -13,6 +13,8 @@ const TN = 'olc-split';
 const SVGNS = 'http://www.w3.org/2000/svg';
 const FLOW_TEXT = ['train_test_split', 'fit (yalnızca eğitim)', 'transform (eğitim ve test)'];
 /** Height reserved under the plot for the flow boxes (Ders / Lab). */
+/** Tallest split plot in Lab (px); taller stages centre it instead of stretching the gaps. */
+const LAB_PLOT_MAX_H = 340;
 const FLOW_H: Record<Mode, number> = { ders: 110, lab: 64 };
 
 type G = Selection<SVGGElement, unknown, null, undefined>;
@@ -130,7 +132,8 @@ export class SplitLayer {
     if (!s) return;
 
     const flowH = s.flow ? FLOW_H[this.mode] : 0;
-    const H = Math.max(120, L.h - flowH);
+    // Lab: the plot keeps a compact height; the wrapper centres plot and flow in the free space
+    const H = Math.max(120, Math.min(L.h - flowH, this.mode === 'lab' ? LAB_PLOT_MAX_H : Infinity));
     this.svgEl.setAttribute('width', String(L.w));
     this.svgEl.setAttribute('height', String(H));
     this.flowEl.style.height = `${flowH}px`;

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
-import { olceklemeScenario, type OlcParams } from '../../../src/concepts/olcekleme/scenario';
+import { FIT_STEPS, SCATTER_STEPS, olceklemeScenario, type OlcParams } from '../../../src/concepts/olcekleme/scenario';
 import { mountOlcParams } from '../../../src/concepts/olcekleme/controls';
 import { mountOlcExtra } from '../../../src/concepts/olcekleme/extra';
 import { createOlcPointer } from '../../../src/concepts/olcekleme/main';
@@ -29,6 +29,25 @@ const pick = (host: HTMLElement, name: string, value: string): void => {
   r.checked = true;
   r.dispatchEvent(new Event('change'));
 };
+
+describe('mountOlcParams hide-by-step rule', () => {
+  it('a group is marked off exactly when its radios are disabled (Birim/Ölçekleme: scatter steps, fit: split steps)', () => {
+    const { player, host } = make();
+    mountOlcParams(host, player);
+    const groups = [...host.querySelectorAll<HTMLElement>('fieldset.ctl')];
+    expect(groups).toHaveLength(3);
+    for (let i = 0; i < 13; i++) {
+      player.goto(i);
+      const off = groups.map((g) => g.dataset.off === 'true');
+      expect(off, `step ${i + 1}`).toEqual([
+        !SCATTER_STEPS.includes(i), !SCATTER_STEPS.includes(i), !FIT_STEPS.includes(i),
+      ]);
+      groups.forEach((g, k) => {
+        expect([...g.querySelectorAll<HTMLInputElement>('input')].every((r) => r.disabled)).toBe(off[k]);
+      });
+    }
+  });
+});
 
 describe('mountOlcParams', () => {
   it('radios follow the steps and disable outside them', () => {
