@@ -21,6 +21,7 @@ export default defineConfig({
         'karmasiklik-matrisi': resolve(root, 'karmasiklik-matrisi/index.html'),
         'roc-esik': resolve(root, 'roc-esik/index.html'),
         'capraz-dogrulama': resolve(root, 'capraz-dogrulama/index.html'),
+        'k-means': resolve(root, 'k-means/index.html'),
       },
     },
   },

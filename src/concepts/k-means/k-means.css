@@ -1,0 +1,198 @@
+/* k-means loop lesson. Text sizes come only from the --fs-* tokens; the SVG has no viewBox. */
+.km-scene {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(230px, 34%, 440px);
+  gap: var(--gap);
+  padding: 4px;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.km-plot-host {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+.km-plot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  font-family: var(--font);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.km-plot .tick text {
+  font-size: var(--fs-tick);
+  font-variant-numeric: tabular-nums;
+  fill: var(--muted);
+}
+.km-plot .axis-title {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+  fill: var(--navy);
+}
+.km-plot .km-probe {
+  font-size: var(--fs-tick);
+}
+.km-plot .cs-center-label,
+.km-plot .cs-ring-label {
+  font-size: var(--fs-tick);
+}
+
+.km-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--gap) * 0.6);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: calc(var(--gap) * 1.2);
+  font-size: var(--fs-tick);
+  line-height: 1.25;
+}
+.km-panel-title {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.km-phase {
+  color: #a85a00;
+}
+.km-note {
+  margin: 0;
+  color: var(--muted);
+}
+.km-stats {
+  display: grid;
+  gap: calc(var(--gap) * 0.5);
+}
+.km-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.km-stat-label,
+.km-sizes-label {
+  color: var(--muted);
+  margin: 0;
+}
+.km-stat-value {
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+}
+.km-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.km-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.km-size-n {
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+}
+.km-chip {
+  display: inline-block;
+  min-width: 2.2em;
+  text-align: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #fff;
+  font-weight: 700;
+  /* white on the lighter palette entries is thin; the navy outline keeps the label legible */
+  text-shadow: 0 0 2px var(--navy), 0 0 2px var(--navy);
+}
+.km-stop {
+  margin: 0;
+  padding: 6px 10px;
+  border-left: 4px solid var(--navy);
+  background: var(--navy-soft);
+  font-weight: 700;
+}
+.km-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.km-compare {
+  display: grid;
+  gap: 6px;
+}
+.km-compare-row,
+.km-ninit-row {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+}
+.km-compare-row {
+  grid-template-columns: auto minmax(30px, 1fr) auto;
+}
+.km-compare-bar,
+.km-ninit-bar {
+  display: block;
+  height: 0.7em;
+  width: var(--w);
+  border-radius: 3px;
+  background: var(--muted);
+}
+.km-compare-row.is-bad .km-compare-bar {
+  background: #c0392b;
+}
+.km-compare-row.is-good .km-compare-bar,
+.km-ninit-row.is-best .km-ninit-bar {
+  background: #2a9d58;
+}
+.km-compare-value,
+.km-ninit-value {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.km-ninit {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+}
+.km-ninit-row {
+  grid-template-columns: 7.6em minmax(20px, 1fr) 2.8em;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+.km-ninit-row.is-best {
+  background: var(--navy-soft);
+  font-weight: 700;
+}
+.km-code {
+  margin: 0;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: var(--fs-tick);
+  overflow-wrap: anywhere;
+  color: var(--navy);
+}
+
+@media (max-width: 900px) {
+  .km-scene {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+}
