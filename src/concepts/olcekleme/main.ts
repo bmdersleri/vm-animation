@@ -1,9 +1,9 @@
 import '../../core/theme.css';
 import './olcekleme.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
-import { olceklemeScenario, type OlceklemeParams } from './scenario';
+import { olceklemeScenario, type OlcParams } from './scenario';
 
-const olceklemePage: ConceptPage<OlceklemeParams> = {
+const olceklemePage: ConceptPage<OlcParams> = {
   title: 'Ölçekleme ve veri sızıntısı',
   chapter: 'Bölüm ? · …',
   scenario: olceklemeScenario,
