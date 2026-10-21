@@ -157,12 +157,12 @@ describe('k-secimi scene', () => {
     fin(scene, player);
   });
 
-  it('renders the cluster colours of the labels', () => {
-    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q }));
+  it('renders the cluster colours of the labels and the centres (reduced motion shows the final state)', () => {
     const { player, host, scene } = setup();
     player.goto(2);
     const labels = kResult(3).labels;
     for (const i of [0, 60, 120]) expect(host.querySelector(`circle.cs-point[data-i="${i}"]`)?.getAttribute('fill')).toBe(CLUSTER[labels[i]]);
+    expect(host.querySelectorAll('.cs-center')).toHaveLength(3);
     fin(scene, player);
   });
 
@@ -178,17 +178,6 @@ describe('k-secimi scene', () => {
     expect(host.innerHTML).toBe(before);
     player.destroy();
     expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it('reduced motion shows final state', () => {
-    vi.useFakeTimers();
-    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q }));
-    const { player, host, scene } = setup();
-    player.goto(2);
-    const labels = kResult(3).labels;
-    expect(host.querySelector('circle.cs-point[data-i="7"]')?.getAttribute('fill')).toBe(CLUSTER[labels[7]]);
-    expect(host.querySelectorAll('.cs-center')).toHaveLength(3);
-    fin(scene, player);
   });
 
   it('panel is a direct child of the scene, charts stay in the side column', () => {

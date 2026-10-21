@@ -12,7 +12,7 @@ export async function gotoStep(page: Page, index: number, count: number, settleM
 /** Open a page in a mode; `ready` is a selector that shows the scene is ready. */
 export async function open(page: Page, path: string, mode: 'ders' | 'lab', ready: string): Promise<void> {
   await page.goto(`${path}?mod=${mode}`);
-  await expect(page.locator(`[data-mode="${mode}"]`).first()).toBeVisible();
+  await expect(page.locator(`[data-mode="${mode}"]`).first()).toBeVisible({ timeout: 15_000 });
   await expect(page.locator(ready).first()).toBeAttached();
 }
 

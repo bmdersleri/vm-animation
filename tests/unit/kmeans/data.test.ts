@@ -89,7 +89,7 @@ describe('kmeans data', () => {
       expect(run.inertia).toBe(run.turns[run.turns.length - 1].inertia);
     }
     const [good, bad] = runs;
-    const range = kmeansData.meta as unknown as { turnRange: [number, number] };
+    const range = kmeansData.meta;
     expect(good.turns.length).toBeGreaterThanOrEqual(range.turnRange[0]);
     expect(good.turns.length).toBeLessThanOrEqual(range.turnRange[1]);
     expect(r2(good.inertia)).toBe(43.03);
@@ -147,6 +147,19 @@ describe('kmeans data', () => {
     }
     const k1 = kResult(1);
     expect([k1.s, k1.a, k1.b]).toEqual([null, null, null]);
+  });
+
+  it('a and b of the step-6 point match a direct recomputation', () => {
+    const { labels, a, b } = kResult(3);
+    const i = kmeansData.silhouettePoint;
+    const mean = (idx: number[]) => idx.reduce((s, j) => s + Math.sqrt(sqDist(points[i], points[j])), 0) / idx.length;
+    const members = (c: number) => points.map((_, j) => j).filter((j) => labels[j] === c && j !== i);
+    const own = labels[i];
+    const others = [0, 1, 2].filter((c) => c !== own).map((c) => mean(members(c)));
+    expect(i).toBe(119);
+    // The generated data stores a and b rounded to 6 decimals, so the tolerance is the rounding step.
+    expect(Math.abs(a![i] - mean(members(own)))).toBeLessThan(5e-7);
+    expect(Math.abs(b![i] - Math.min(...others))).toBeLessThan(5e-7);
   });
 
   it('chosen points follow the rules', () => {
