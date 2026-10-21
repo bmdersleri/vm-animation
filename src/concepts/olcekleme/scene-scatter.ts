@@ -3,7 +3,6 @@ import 'd3-transition';
 import type { Mode } from '../../core/mode';
 import { AxesLayer } from '../../core/plot/axes';
 import { r1 } from '../../core/plot/marks';
-import { staggerRows } from '../../core/plot/number-line';
 import { TextMeasure } from '../../core/plot/text-measure';
 import { tr, type AnySel } from '../../core/plot/transition';
 import { fitAspect, type Rect, type Scales } from '../../core/plot/viewport';
@@ -25,7 +24,7 @@ type G = Selection<SVGGElement, unknown, null, undefined>;
 interface Lay {
   w: number; h: number; plot: Rect; fonts: { tick: number; axis: number }; ptR: number; rowH: number; pad: number;
 }
-interface Item { k: string; text: string; cls: string; w: number; cx: number; ly: number; dir: 1 | -1; group: 'cust' | 'q' | 'mu' }
+interface Item { k: string; text: string; cls: string; w: number; cx: number; ly: number; group: 'cust' | 'q' | 'mu' }
 interface Axis { a: 'x' | 'y' }
 
 const clamp = (v: number, a: number, b: number): number => Math.min(b, Math.max(a, v));
@@ -49,6 +48,7 @@ export class ScatterLayer {
   private readonly gMu: G;
   private readonly gIso: G;
   private readonly gDist: G;
+  private readonly gLeaders: G;
   private readonly gCust: G;
   private readonly gQ: G;
   private readonly gMuLabels: G;
@@ -77,6 +77,7 @@ export class ScatterLayer {
     this.gMu = clipped.append('g').attr('class', 'mus');
     this.gIso = clipped.append('g').attr('class', 'isos');
     this.gDist = clipped.append('g').attr('class', 'dists');
+    this.gLeaders = svg.append('g').attr('class', 'leaders').attr('pointer-events', 'none');
     this.gCust = svg.append('g').attr('class', 'cust').attr('pointer-events', 'none');
     this.gQ = svg.append('g').attr('class', 'q').attr('pointer-events', 'none');
     this.gMuLabels = svg.append('g').attr('class', 'mu-labels').attr('pointer-events', 'none');
@@ -292,57 +293,86 @@ export class ScatterLayer {
     upsert(this.gQ, 'path.query', [0], () => 'q', 'path', 'query', (t) => { t.attr('d', diamond(qx, qy)); }, () => qShown)
       .attr('data-x', r1(qx)).attr('data-y', r1(qy));
 
-    // ---- labels: staggerRows picks the row, then a box check keeps them off marks and each other
+    // ---- labels: each one sits at the first free spot around ITS own dot; only a crowded dot gets a leader line
     const tickPx = L.fonts.tick;
     const textW = (t: string, cls: string): number => this.measure.width(t, cls, tickPx);
-    const items: Item[] = [];
+    const lh = tickPx * 1.2;
+    type Box = { l: number; r: number; t: number; b: number };
+    interface Dot { id: string; x: number; y: number; r: number }
+    const dots: Dot[] = s.customers.map((c) => ({ id: c.id, x: px(c.x), y: py(c.y), r: R }));
+    if (qShown) dots.push({ id: 'query', x: qx, y: qy, r: hh });
+    const placed: Box[] = dots.map((d) => ({ l: d.x - d.r, r: d.x + d.r, t: d.y - d.r, b: d.y + d.r }));
+    const boxAt = (w: number, cx: number, ly: number): Box => ({ l: cx - w / 2 - 2, r: cx + w / 2 + 2, t: ly - lh * 0.8, b: ly + lh * 0.3 });
+    const inside = (b: Box): boolean => b.l >= plot.left && b.r <= right && b.t >= plot.top && b.b <= bottom;
+    const clash = (a: Box): boolean => placed.some((p) => a.l < p.r && a.r > p.l && a.t < p.b && a.b > p.t);
+    const gapTo = (b: Box, x: number, y: number): number => Math.hypot(Math.max(b.l - x, 0, x - b.r), Math.max(b.t - y, 0, y - b.b));
+    const ownNearest = (padded: Box, own: Dot): boolean => {
+      const b = { l: padded.l + 2, r: padded.r - 2, t: padded.t, b: padded.b }; // the text itself, without the clearance pad
+      const d0 = gapTo(b, own.x, own.y);
+      return dots.every((o) => o === own || gapTo(b, o.x, o.y) > d0 + 1);
+    };
+    const out: Item[] = [];
+    const leaders: { k: string; x1: number; y1: number; x2: number; y2: number }[] = [];
+    const put = (it: Item, cx: number, ly: number, own: Dot | null, leader: boolean): void => {
+      const b = boxAt(it.w, cx, ly);
+      placed.push(b);
+      out.push({ ...it, cx, ly });
+      if (leader && own) {
+        leaders.push({ k: it.k, x1: clamp(own.x, b.l, b.r), y1: clamp(own.y, b.t, b.b), x2: own.x, y2: own.y });
+      }
+    };
+    // μ labels first: fixed spots, shifted only to clear the dots
+    const muItems: Item[] = [];
     if (mu) {
       const [lx, ly] = mu.labels;
       const wx = textW(lx, 'mu-label');
       const wy = textW(ly, 'mu-label');
-      items.push({
-        k: 'mu-x', text: lx, cls: 'mu-label x', w: wx, cx: px(mu.x) + 8 + wx / 2,
-        ly: plot.top + tickPx * 1.3, dir: 1, group: 'mu',
-      });
-      items.push({
-        k: 'mu-y', text: ly, cls: 'mu-label y', w: wy, cx: right - wy / 2 - 8,
-        ly: clamp(py(mu.y) - 8, plot.top + tickPx * 1.3, bottom - 6), dir: -1, group: 'mu',
-      });
+      muItems.push({ k: 'mu-x', text: lx, cls: 'mu-label x', w: wx, cx: px(mu.x) + 8 + wx / 2, ly: plot.top + tickPx * 1.3, group: 'mu' });
+      muItems.push({ k: 'mu-y', text: ly, cls: 'mu-label y', w: wy, cx: right - wy / 2 - 8, ly: clamp(py(mu.y) - 8, plot.top + tickPx * 1.3, bottom - 6), group: 'mu' });
     }
+    for (const it of muItems) {
+      const cx = clamp(it.cx, plot.left + it.w / 2 + 2, right - it.w / 2 - 2);
+      let ly = it.ly;
+      for (let r = 0; r < 10; r++) {
+        const cand = it.ly + (it.k === 'mu-y' ? -1 : 1) * r * L.rowH;
+        if (inside(boxAt(it.w, cx, cand)) && !clash(boxAt(it.w, cx, cand))) { ly = cand; break; }
+      }
+      put(it, cx, ly, null, false);
+    }
+    const labelOf = (it: Item, d: Dot): void => {
+      const w = it.w;
+      const spots = (g: number): [number, number][] => {
+        const e = g * 0.75;
+        return [
+          [d.x, d.y - g - lh * 0.3], [d.x + g + w / 2, d.y + lh * 0.25], [d.x - g - w / 2, d.y + lh * 0.25], [d.x, d.y + g + lh * 0.8],
+          [d.x + e + w / 2, d.y - e - lh * 0.3], [d.x - e - w / 2, d.y - e - lh * 0.3],
+          [d.x + e + w / 2, d.y + e + lh * 0.8], [d.x - e - w / 2, d.y + e + lh * 0.8],
+        ];
+      };
+      const g0 = d.r + 4;
+      for (const [cx, ly] of spots(g0)) {
+        const b = boxAt(w, cx, ly);
+        if (inside(b) && !clash(b) && ownNearest(b, d)) { put(it, cx, ly, d, false); return; }
+      }
+      for (const ring of [1, 2, 3, 4, 5, 6]) {
+        const wide: [number, number][] = [];
+        for (let k = -ring; k <= ring; k++) {
+          wide.push([d.x + g0 + ring * lh + w / 2, d.y + k * lh + lh * 0.25], [d.x - g0 - ring * lh - w / 2, d.y + k * lh + lh * 0.25]);
+        }
+        for (const [cx, ly] of [...spots(g0 + ring * lh), ...wide]) {
+          const b = boxAt(w, cx, ly);
+          if (inside(b) && !clash(b)) { put(it, cx, ly, d, true); return; }
+        }
+      }
+      const cx = clamp(d.x, plot.left + w / 2 + 2, right - w / 2 - 2);
+      put(it, cx, clamp(d.y - g0 - lh * 0.3, plot.top + lh * 0.8, bottom - lh * 0.3), d, true);
+    };
     if (qShown) {
-      items.push({
-        k: 'query', text: s.query.label, cls: 'query-label', w: textW(s.query.label, 'query-label'),
-        cx: qx, ly: qy - hh - 8, dir: -1, group: 'q',
-      });
+      labelOf({ k: 'query', text: s.query.label, cls: 'query-label', w: textW(s.query.label, 'query-label'), cx: qx, ly: qy, group: 'q' }, dots[dots.length - 1]);
     }
     for (const c of s.customers) {
-      items.push({ k: c.id, text: c.id, cls: 'cust-label', w: textW(c.id, 'cust-label'), cx: px(c.x), ly: py(c.y) - R - 6, dir: -1, group: 'cust' });
+      labelOf({ k: c.id, text: c.id, cls: 'cust-label', w: textW(c.id, 'cust-label'), cx: 0, ly: 0, group: 'cust' }, dots.find((d) => d.id === c.id)!);
     }
-    const PAD = 6;
-    const lh = tickPx * 1.2;
-    const rows0 = staggerRows(items.map((i) => ({ x: i.cx, w: i.w })), PAD);
-    type Box = { l: number; r: number; t: number; b: number };
-    const placed: Box[] = [];
-    for (const c of s.customers) placed.push({ l: px(c.x) - R, r: px(c.x) + R, t: py(c.y) - R, b: py(c.y) + R });
-    if (qShown) placed.push({ l: qx - hh, r: qx + hh, t: qy - hh, b: qy + hh });
-    const boxOf = (i: Item, ly: number, cx: number): Box =>
-      ({ l: cx - i.w / 2 - 2, r: cx + i.w / 2 + 2, t: ly - lh * 0.8, b: ly + lh * 0.3 });
-    const clash = (a: Box): boolean => placed.some((p) => a.l < p.r && a.r > p.l && a.t < p.b && a.b > p.t);
-    const out: Item[] = items.map((it, idx) => {
-      const cx = clamp(it.cx, plot.left + it.w / 2 + 2, right - it.w / 2 - 2);
-      let best: number | null = null;
-      for (const dir of [it.dir, -it.dir] as const) {
-        for (let r = dir === it.dir ? rows0[idx] : 0; r < 10 && best === null; r++) {
-          const ly = it.ly + dir * r * L.rowH;
-          if (ly - lh * 0.8 < plot.top || ly + lh * 0.3 > bottom) continue;
-          if (!clash(boxOf(it, ly, cx))) best = ly;
-        }
-        if (best !== null) break;
-      }
-      const ly = best ?? it.ly;
-      placed.push(boxOf(it, ly, cx));
-      return { ...it, cx, ly };
-    });
     const labelsIn = (g: G, group: Item['group'], sel: string): void => {
       const data = out.filter((o) => o.group === group);
       const s2 = g.selectAll<SVGTextElement, Item>(sel).data(data, (d) => d.k);
@@ -357,5 +387,16 @@ export class ScatterLayer {
     labelsIn(this.gCust, 'cust', 'text.cust-label');
     labelsIn(this.gQ, 'q', 'text.query-label');
     labelsIn(this.gMuLabels, 'mu', 'text.mu-label');
+    // leader lines (under the dots) for labels that could not sit beside their own dot
+    const ls = this.gLeaders.selectAll<SVGLineElement, (typeof leaders)[number]>('line.leader').data(leaders, (d) => d.k);
+    ls.exit().remove();
+    const lenter = ls.enter().append('line').attr('class', 'leader');
+    const placeLd = (t: AnySel): void => {
+      t.attr('x1', (d: (typeof leaders)[number]) => r1(d.x1)).attr('y1', (d: (typeof leaders)[number]) => r1(d.y1))
+        .attr('x2', (d: (typeof leaders)[number]) => r1(d.x2)).attr('y2', (d: (typeof leaders)[number]) => r1(d.y2));
+    };
+    placeLd(lenter);
+    placeLd(tr(ls as AnySel, TN, ms));
+    lenter.merge(ls as never).attr('data-id', (d: (typeof leaders)[number]) => d.k);
   }
 }

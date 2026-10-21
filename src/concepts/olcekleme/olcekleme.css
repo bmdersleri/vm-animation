@@ -151,3 +151,4 @@
 .olc-extra .cust-table th { border-bottom: 2px solid var(--line); }
 .olc-extra .cust-table tr.nearest { background: var(--navy-soft); font-weight: 700; }
 .olc-extra .cust-table tr.query-row td { border-top: 2px solid var(--line); color: #a85a00; font-weight: 700; }
+.scale-plot .leader { stroke: var(--navy); stroke-width: 2; opacity: 0.8; }
