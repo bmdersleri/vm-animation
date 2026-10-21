@@ -123,7 +123,6 @@ export const olceklemeScenario: Scenario<OlcParams> = {
   ],
 };
 
-
 /** Teacher shortcuts: each acts only in the steps where its control is visible. */
 export function olcShortcuts(player: StepPlayer<OlcParams>): Shortcut[] {
   const p = (): OlcParams => player.state.params;
