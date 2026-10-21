@@ -147,3 +147,15 @@
 @media (max-width: 900px) {
   .ks-scene { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
 }
+
+/* Lab controls */
+.ks-params { display: grid; gap: 8px; font-size: var(--fs-tick); }
+.ks-params [hidden] { display: none; }
+.ks-params .ctl { display: grid; gap: 4px; }
+.ks-params label { font-weight: 600; }
+.ks-params .range { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; }
+.ks-k-out { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 4em; }
+.ks-pick input { font: inherit; width: 7em; padding: 2px 6px; }
+.ks-pick-hint { color: var(--muted); }
+.ks-params :focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.ks-plot circle.cs-point { cursor: pointer; }

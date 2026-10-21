@@ -39,15 +39,19 @@ export function deriveKView(kIn: number): KView {
   };
 }
 
-/** Points whose cluster number differs from the previous k (labels are relabelled stably). */
-export function changedBetween(kIn: number): number[] {
-  const k = clampK(kIn);
-  if (k <= 1) return [];
-  const a = kResult(k - 1).labels;
-  const b = kResult(k).labels;
+/** Points whose cluster number differs between two ks (labels are relabelled stably). */
+export function changedFrom(fromK: number, toK: number): number[] {
+  const a = kResult(clampK(fromK)).labels;
+  const b = kResult(clampK(toK)).labels;
   const out: number[] = [];
   b.forEach((l, i) => { if (l !== a[i]) out.push(i); });
   return out;
+}
+
+/** Points whose cluster number differs from the previous k. */
+export function changedBetween(kIn: number): number[] {
+  const k = clampK(kIn);
+  return k <= 1 ? [] : changedFrom(k - 1, k);
 }
 
 export function pointStats(kIn: number, i: number): { a: number; b: number; s: number } | null {

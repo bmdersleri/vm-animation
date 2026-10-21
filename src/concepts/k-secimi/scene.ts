@@ -11,7 +11,7 @@ import { drops } from '../kmeans/geometry';
 import { KLineChart } from './charts';
 import { ELBOW_K, type KSecimiParams } from './scenario';
 import {
-  changedBetween, clampK, deriveKView, dropText, inertiaText, peakK, pointStats, pointText, silhouetteText, type KView,
+  changedBetween, changedFrom, clampK, deriveKView, dropText, inertiaText, peakK, pointStats, pointText, silhouetteText, type KView,
 } from './view';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -21,6 +21,9 @@ const STEP_CHANGED = 2;
 const STEP_ELBOW = 4;
 const STEP_CURVE = 6;
 const STEP_COMPARE = 7;
+/** Silhouette steps (0-based 5..8): clicking a point picks it. */
+const STEP_PICK_FIRST = 5;
+const FLASH_MS = 1000;
 const STEP_DECISION = 8;
 const KMAX = kmeansData.ks.length;
 
@@ -107,6 +110,10 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
   let destroyed = false;
   let lastPlot = '';
   let lastCharts = '';
+  /** Points that changed number on the last slider move; shown for FLASH_MS. */
+  let flash: number[] | null = null;
+  let flashTimer: ReturnType<typeof setTimeout> | null = null;
+  let shownK: number | null = null;
 
   const fonts = (): { tick: number; axis: number } => {
     const fb = FONT_FALLBACK[mode];
@@ -165,7 +172,7 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
       points: kmeansData.points,
       labels: v.result.labels,
       centers: v.result.centers,
-      changed: index === STEP_CHANGED ? changedBetween(v.k) : [],
+      changed: flash ?? (index === STEP_CHANGED ? changedBetween(v.k) : []),
       negative: v.negatives,
       selected: v.k >= 2 && p.point !== null ? p.point : null,
     };
@@ -303,8 +310,38 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
     rendered = true;
   }
 
-  const unsubscribe = player.subscribe((s: PlayerState<KSecimiParams>, cause: ChangeCause) => render(s, rendered && cause !== 'param'));
+  const clearFlash = (): void => {
+    if (flashTimer !== null) clearTimeout(flashTimer);
+    flashTimer = null;
+    flash = null;
+  };
+  const unsubscribe = player.subscribe((s: PlayerState<KSecimiParams>, cause: ChangeCause) => {
+    const k = clampK(s.params.k);
+    if (cause === 'param' && shownK !== null && k !== shownK) {
+      clearFlash();
+      flash = changedFrom(shownK, k);
+      flashTimer = setTimeout(() => {
+        flashTimer = null;
+        flash = null;
+        render(player.state, false);
+      }, FLASH_MS);
+    } else if (cause !== 'param') {
+      clearFlash();
+    }
+    shownK = k;
+    render(s, rendered && cause !== 'param');
+  });
+  shownK = clampK(player.state.params.k);
   render(player.state, false);
+
+  // Silhouette steps: a click on a point picks it (the Lab number input does the same).
+  svgEl.addEventListener('click', (e) => {
+    const t = (e.target as Element | null)?.closest('circle.cs-point');
+    const s = player.state;
+    if (!t || s.index < STEP_PICK_FIRST || clampK(s.params.k) < 2) return;
+    const i = Number(t.getAttribute('data-i'));
+    if (Number.isInteger(i)) player.setParam('point', i);
+  });
 
   return {
     resize(w: number, h: number): void {
@@ -322,6 +359,7 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
     },
     destroy(): void {
       destroyed = true;
+      clearFlash();
       unsubscribe();
       layer.destroy();
       elChart.destroy();
