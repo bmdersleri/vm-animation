@@ -115,4 +115,22 @@ describe('pca ScreeLayer', () => {
     await sleep(60);
     expect(num(q(svg, 'rect.bar'), 'height')).toBeGreaterThan(50);
   });
+
+  it('step 9 -> 10: the cumulative curve draws in after a delay, bars do not regrow', async () => {
+    const { svg, layer } = setup(1);
+    layer.update(scree(8), 0);
+    const h0 = num(q(svg, 'rect.bar'), 'height');
+    layer.update(scree(9), 100);
+    expect(num(q(svg, 'rect.bar'), 'height')).toBe(h0);
+    const pointsOf = (): number => (q(svg, 'path.cum-line').getAttribute('d') ?? '').match(/[ML]/g)?.length ?? 0;
+    expect(pointsOf()).toBeLessThanOrEqual(1);
+    expect(q(svg, 'circle.cum-pt').getAttribute('opacity')).toBe('0');
+    await sleep(600);
+    const mid = pointsOf();
+    expect(mid).toBeGreaterThan(1);
+    expect(mid).toBeLessThan(13);
+    await sleep(450);
+    expect(q(svg, 'path.cum-line').getAttribute('d')!.match(/[ML]/g)).toHaveLength(12);
+    expect(Number(q(svg, 'circle.cum-pt').getAttribute('opacity'))).toBe(1);
+  });
 });

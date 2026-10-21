@@ -166,7 +166,7 @@ export class ScreeLayer {
     // ---- cumulative curve (drawn in after the bars), points, threshold
     const cum = v.cum;
     const pts: [number, number][] = cum ? cum.map((c, i) => [cx(i), sy(c)]) : [];
-    const drawIn = growMs > 0 && cum !== null;
+    const drawIn = animate && cum !== null && (prev === null || prev.cum === null);
     this.line.attr('display', cum ? null : 'none');
     if (drawIn) {
       const paint = (frac: number): void => { this.line.attr('d', polyline(pts, frac)); };
