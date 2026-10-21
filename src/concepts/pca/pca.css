@@ -80,3 +80,90 @@
 .scree text.threshold-label { fill: var(--red); }
 .scree .tick,
 .scree .tick text { font-variant-numeric: tabular-nums; }
+
+/* pca scene: plot above, calculation strip below (same strip as .olc-scene) */
+.pca-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.pca-scene .pca-plot-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pca-plot-host svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+.pca-scene .formula {
+  flex: none;
+  margin: 0 16px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 14px;
+  border-left: 4px solid var(--navy);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  min-height: calc(2 * 1.35em + 12px);
+}
+.pca-scene .formula .line { display: block; }
+.pca-scene .formula .term { white-space: nowrap; }
+
+/* pca PCA / t-SNE panels and the rule boxes */
+.pca-panels path.pts.c0 { fill: var(--navy); fill-opacity: 0.55; stroke: none; }
+.pca-panels path.pts.c1 { fill: var(--orange); fill-opacity: 0.8; stroke: none; }
+.pca-panels path.newcust { fill: #0ea5a4; stroke: var(--navy); stroke-width: 3; stroke-linejoin: round; }
+.pca-panels text.panel-title,
+.pca-panels text.legend-label,
+.pca-panels text.newcust-label {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pca-panels text.panel-title { font-size: var(--fs-axis); fill: var(--navy); }
+.pca-panels text.legend-label,
+.pca-panels text.newcust-label { font-size: var(--fs-tick); }
+.pca-panels text.legend-label.c0 { fill: var(--navy); }
+.pca-panels text.legend-label.c1 { fill: #a85a00; }
+.pca-panels text.newcust-label {
+  fill: #0b7473;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.pca-panels .tick,
+.pca-panels .tick text { font-variant-numeric: tabular-nums; }
+
+.pca-scene .rule {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+}
+.pca-scene .rule-box {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 14px 18px;
+  border: 2px solid var(--navy);
+  border-radius: 10px;
+  background: #fff;
+  font-size: var(--fs-body);
+  line-height: 1.4;
+}
+.pca-scene .rule-box p { margin: 6px 0 0; }
+.pca-scene .rule-title { display: block; font-size: var(--fs-body); }
+.pca-scene .rule-box code { font-family: inherit; font-weight: 700; }
+.pca-scene .rule-box a { color: var(--navy); font-weight: 700; }
