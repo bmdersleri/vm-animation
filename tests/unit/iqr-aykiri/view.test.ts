@@ -77,10 +77,10 @@ describe('iqr-aykiri view', () => {
     expect(v.sorted).toBe(true);
     expect(v.ranks).toBe(true);
     const full = v.cells.filter((c) => !c.empty);
-    expect(full.map((c) => c.rank).sort()).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(full.map((c) => c.rank).sort((a, b) => (a as number) - (b as number))).toEqual([0, 1, 2, 3, 4, 5]);
     expect(v.cells.filter((c) => c.empty).every((c) => c.slot >= 6)).toBe(true);
     expect(v.cells.filter((c) => c.highlight).map((c) => c.text).sort()).toEqual(['42,30', '45,00']);
-    expect(v.points.filter((p) => p.highlight).map((p) => p.value).sort()).toEqual([42.3, 45]);
+    expect(v.points.filter((p) => p.highlight).map((p) => p.value).sort((a, b) => a - b)).toEqual([42.3, 45]);
     expect(mk(v, 'median')!.label).toBe('medyan 43,65');
   });
 
@@ -119,7 +119,7 @@ describe('iqr-aykiri view', () => {
     const v = V(6);
     near(v.posMark!.pos, 1.75);
     expect(v.posMark!.label).toBe('konum 0,25 · 7 = 1,75');
-    expect(v.cells.filter((c) => c.highlight).map((c) => c.rank).sort()).toEqual([1, 2]);
+    expect(v.cells.filter((c) => c.highlight).map((c) => c.rank).sort((a, b) => (a as number) - (b as number))).toEqual([1, 2]);
     expect(mk(v, 'q1')!.label).toBe('Q1 41,35');
     expect(mk(v, 'q3')).toBeUndefined();
     expect(v.box).toBeNull();
@@ -179,7 +179,7 @@ describe('iqr-aykiri view', () => {
     const d = v.cells.filter((c) => c.deleted);
     expect(d).toHaveLength(1);
     expect(d[0].rank).toBeNull();
-    expect(v.cells.filter((c) => !c.deleted).map((c) => c.rank).sort()).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(v.cells.filter((c) => !c.deleted).map((c) => c.rank).sort((a, b) => (a as number) - (b as number))).toEqual([0, 1, 2, 3, 4, 5, 6]);
     expect(v.points.filter((p) => p.deleted)).toHaveLength(1);
     near(mk(v, 'q1')!.value, 40.4);
   });
@@ -241,5 +241,18 @@ describe('iqr-aykiri view', () => {
         }
       }
     }
+  });
+
+  it('sil: the note quotes the recomputed n = 7 fence, not the old one', () => {
+    const v = V(8, { extreme: 480, action: 'sil' });
+    expect(v.note).toContain('74,46');
+    expect(v.note).not.toContain('82,38');
+    expect(mk(v, 'hi')!.label).toBe('üst 74,46');
+  });
+
+  it('a non-far outlier triangle is labelled with its value', () => {
+    const p = V(8, { extreme: 83 }).points.find((x) => x.shape === 'outlier')!;
+    expect(p.far).toBe(false);
+    expect(p.label).toBe('83,00 · aykırı');
   });
 });

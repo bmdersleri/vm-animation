@@ -287,7 +287,7 @@ function derivePart2(index: number, p: IqrParams, stepId: string): IqrView {
 
   const ext = raw[IQR.extremeIndex];
   const note = outl.has(IQR.extremeIndex)
-    ? `Uç değer ${f2(ext)} ${ext > orig.hi ? `üst sınırın (${f2(orig.hi)})` : `alt sınırın (${f2(orig.lo)})`} dışında: aykırı.`
+    ? `Uç değer ${f2(ext)} ${ext > tk.hi ? `üst sınırın (${f2(tk.hi)})` : `alt sınırın (${f2(tk.lo)})`} dışında: aykırı.`
     : `Uç değer ${f2(ext)} sınırların içinde: aykırı değil.`;
 
   return {
