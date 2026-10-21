@@ -80,6 +80,48 @@ describe('fitAspect', () => {
     }
   });
 
+  it('anchor defaults to the centre', () => {
+    const a = fitAspect(domain, rect, 3);
+    const b = fitAspect(domain, rect, 3, 'centre');
+    expect(a.x.domain()).toEqual(b.x.domain());
+    expect(a.y.domain()).toEqual(b.y.domain());
+    // the slack axis (x at ratio 3) grows by the same amount on both sides
+    expect(0 - a.x.domain()[0]).toBeGreaterThan(1);
+    expect(0 - a.x.domain()[0]).toBeCloseTo(a.x.domain()[1] - 10, 9);
+  });
+
+  it("anchor 'min' widens only upward: the minimum stays on the left / bottom edge", () => {
+    for (const ratio of [0.2, 1, 3, 10]) {
+      const c = fitAspect(domain, rect, ratio, 'centre');
+      const m = fitAspect(domain, rect, ratio, 'min');
+      expect(m.x.domain()[0]).toBeCloseTo(0, 9);
+      expect(m.y.domain()[0]).toBeCloseTo(0, 9);
+      expect(m.x(0)).toBeCloseTo(rect.left, 9);
+      expect(m.y(0)).toBeCloseTo(rect.top + rect.height, 9);
+      // same px per unit and the same extent as the centred fit, only shifted
+      expect(m.x.domain()[1] - m.x.domain()[0]).toBeCloseTo(c.x.domain()[1] - c.x.domain()[0], 9);
+      expect(m.y.domain()[1] - m.y.domain()[0]).toBeCloseTo(c.y.domain()[1] - c.y.domain()[0], 9);
+      expect(m.x.domain()[1]).toBeGreaterThanOrEqual(10 - 1e-9);
+      expect(m.y.domain()[1]).toBeGreaterThanOrEqual(100 - 1e-9);
+      expect(m.x.range()).toEqual([rect.left, rect.left + rect.width]);
+      expect(m.y.range()).toEqual([rect.top + rect.height, rect.top]);
+    }
+  });
+
+  it("anchor 'min' on the year and day boxes: 0…64 years, 20 TL at the bottom", () => {
+    const r = { left: 10, top: 5, width: 640, height: 380 };
+    const ratio = r.width / 64 / (r.height / 190);
+    const yil = fitAspect({ x: [0, 64 / 12], y: [20, 210] }, r, ratio, 'min');
+    expect(yil.x.domain()[0]).toBeCloseTo(0, 9);
+    expect(yil.x.domain()[1]).toBeCloseTo(64, 9);
+    expect(yil.y.domain()[0]).toBeCloseTo(20, 9);
+    expect(yil.y.domain()[1]).toBeCloseTo(210, 9);
+    const gun = fitAspect({ x: [0, 64 * 30], y: [20, 210] }, r, ratio, 'min');
+    expect(gun.x.domain()[1]).toBeCloseTo(64 * 30, 9);
+    expect(gun.y.domain()[0]).toBeCloseTo(20, 9);
+    expect(gun.y.domain()[1]).toBeCloseTo(20 + 190 * 30, 6);
+  });
+
   it('month ratio fills the rect', () => {
     const r = { left: 10, top: 5, width: 640, height: 380 };
     const d = { x: [0, 64] as [number, number], y: [20, 210] as [number, number] };

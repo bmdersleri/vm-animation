@@ -46,24 +46,30 @@ export function fitViewport(domain: Domain, rect: Rect, equalAspect: boolean): S
   };
 }
 
+/** Where fitAspect widens the slack axis from: both ends ('centre') or only the upper end ('min'). */
+export type AspectAnchor = 'centre' | 'min';
+
 /**
  * Scales whose range is exactly `rect`; px per x unit = ratio × px per y unit.
- * The axis with slack has its domain widened outward from the centre so axes
- * and grids span the whole rect. ratio 1 equals fitViewport(domain, rect, true).
+ * The axis with slack has its domain widened outward so axes and grids span
+ * the whole rect: from the centre by default, or upward from the domain
+ * minimum with anchor 'min' (the minimum stays on the left / bottom edge, so a
+ * domain that starts at 0 never shows negative ticks). ratio 1 with the
+ * centre anchor equals fitViewport(domain, rect, true).
  */
-export function fitAspect(domain: Domain, rect: Rect, ratio: number): Scales {
+export function fitAspect(domain: Domain, rect: Rect, ratio: number, anchor: AspectAnchor = 'centre'): Scales {
   const dx = domain.x[1] - domain.x[0] || 1;
   const dy = domain.y[1] - domain.y[0] || 1;
   const sy = Math.min(rect.width / (ratio * dx), rect.height / dy);
   const sx = ratio * sy;
-  const hx = rect.width / sx / 2;
-  const hy = rect.height / sy / 2;
-  const cx = (domain.x[0] + domain.x[1]) / 2;
-  const cy = (domain.y[0] + domain.y[1]) / 2;
+  const wx = rect.width / sx;
+  const wy = rect.height / sy;
+  const x0 = anchor === 'min' ? domain.x[0] : (domain.x[0] + domain.x[1]) / 2 - wx / 2;
+  const y0 = anchor === 'min' ? domain.y[0] : (domain.y[0] + domain.y[1]) / 2 - wy / 2;
   const right = rect.left + rect.width;
   const bottom = rect.top + rect.height;
   return {
-    x: scaleLinear().domain([cx - hx, cx + hx]).range([rect.left, right]),
-    y: scaleLinear().domain([cy - hy, cy + hy]).range([bottom, rect.top]),
+    x: scaleLinear().domain([x0, x0 + wx]).range([rect.left, right]),
+    y: scaleLinear().domain([y0, y0 + wy]).range([bottom, rect.top]),
   };
 }
