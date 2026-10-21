@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../fixtures/onisleme_sklearn.json';
-import { clip, covariance2, mean, median, pearson, quantile, quantileStep, std0, variance, zscores } from '../../../src/core/stats';
+import { clip, covariance2, histCounts, mean, median, pearson, quantile, quantileStep, skewness, std0, variance, zscores } from '../../../src/core/stats';
 import boyut from '../../fixtures/boyut_sklearn.json';
 import { PAIR } from '../../../src/concepts/pca/data';
 import { VALUES } from '../../../src/concepts/ozellik-secimi/data';
@@ -77,5 +77,34 @@ describe('variance / covariance / pearson', () => {
     expect(rel(c.xy, cov[0][1])).toBeLessThan(1e-9);
     expect(rel(c.yy, cov[1][1])).toBeLessThan(1e-9);
     expect(rel(pearson(xs, ys), boyut.pca.pair.r)).toBeLessThan(1e-9);
+  });
+});
+
+describe('skewness', () => {
+  const cases: [string, number[], number][] = [
+    ['002', [8, 10, 12, 12, 14, 15, 18, 20, 25, 30], 0.9010585],
+    ['003', [5, 6, 7, 8, 8, 9, 10, 11, 12, 28], 2.5395077],
+    ['simetrik', [10, 12, 14, 15, 16, 16, 17, 18, 20, 22], 0],
+    ['sol', [4, 8, 10, 12, 13, 14, 14, 15, 16, 17], -1.0607687],
+  ];
+  it.each(cases)('%s serisi pandas G1 verir', (_n, xs, want) => {
+    expect(skewness(xs)).toBeCloseTo(want, 6);
+  });
+  it('n < 3 ve sabit seride NaN', () => {
+    expect(skewness([1, 2])).toBeNaN();
+    expect(skewness([5, 5, 5, 5])).toBeNaN();
+  });
+});
+
+describe('histCounts', () => {
+  it('002 serisi 3 / 5 / 10 kova', () => {
+    const xs = [8, 10, 12, 12, 14, 15, 18, 20, 25, 30];
+    expect(histCounts(xs, 3).counts).toEqual([6, 2, 2]);
+    expect(histCounts(xs, 5).counts).toEqual([4, 2, 2, 1, 1]);
+    expect(histCounts(xs, 10).counts).toEqual([2, 2, 1, 1, 1, 1, 0, 1, 0, 1]);
+    expect(histCounts(xs, 5).edges).toEqual([8, 12.4, 16.8, 21.2, 25.6, 30]);
+  });
+  it('son kova sağdan kapalı', () => {
+    expect(histCounts([0, 1, 2, 3], 3).counts).toEqual([1, 1, 2]);
   });
 });

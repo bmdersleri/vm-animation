@@ -92,3 +92,31 @@ export function zscores(xs: readonly number[]): number[] {
 export function clip(xs: readonly number[], lo: number, hi: number): number[] {
   return xs.map((x) => Math.min(hi, Math.max(lo, x)));
 }
+
+/** pandas Series.skew(): G1, bias-corrected; NaN for n < 3 or a constant series. */
+export function skewness(xs: readonly number[]): number {
+  const n = xs.length;
+  if (n < 3) return NaN;
+  const m = mean(xs);
+  // pandas standardises with the sample standard deviation (ddof 1), not std0.
+  const s = Math.sqrt(variance(xs, 1));
+  if (s === 0) return NaN;
+  let sum = 0;
+  for (const x of xs) sum += ((x - m) / s) ** 3;
+  return (n / ((n - 1) * (n - 2))) * sum;
+}
+
+/** numpy.histogram: `bins` equal-width edges over [min, max]; last bin closed on the right. */
+export function histCounts(xs: readonly number[], bins: number): { edges: number[]; counts: number[] } {
+  const lo = Math.min(...xs);
+  const hi = Math.max(...xs);
+  const edges = Array.from({ length: bins + 1 }, (_, i) => lo + ((hi - lo) * i) / bins);
+  const counts = new Array(bins).fill(0) as number[];
+  for (const x of xs) {
+    let k = Math.floor(((x - lo) / (hi - lo)) * bins);
+    if (k >= bins) k = bins - 1;
+    if (k < 0) k = 0;
+    counts[k]++;
+  }
+  return { edges, counts };
+}
