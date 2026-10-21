@@ -1,0 +1,32 @@
+/* olcekleme scene text and marks. Text sizes come only from the --fs-* tokens; the SVG has no viewBox. */
+.scale-plot {
+  touch-action: none; /* dragging the query must not scroll the page */
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: var(--font);
+}
+[data-mode="lab"] .scale-plot .hit { cursor: crosshair; }
+.scale-plot .pt.cust { fill: var(--navy); stroke: #fff; stroke-width: 1.5; }
+.scale-plot .pt.cust.nearest { stroke: var(--orange); stroke-width: 3; }
+.scale-plot .query { fill: var(--orange); stroke: var(--navy); stroke-width: 3; stroke-linejoin: round; }
+.scale-plot .dist { stroke: var(--navy); stroke-width: 2; stroke-dasharray: 6 5; opacity: 0.55; }
+.scale-plot .dist.nearest { stroke: var(--orange); stroke-width: 4; stroke-dasharray: none; }
+.scale-plot .iso { fill: var(--orange); fill-opacity: 0.08; stroke: #a85a00; stroke-width: 3; stroke-dasharray: 10 6; }
+.scale-plot .mu { stroke: #0b7473; stroke-width: 3; }
+.scale-plot .sigma { fill: var(--teal); fill-opacity: 0.14; stroke: none; }
+.scale-plot .cust-label,
+.scale-plot .query-label,
+.scale-plot .mu-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  fill: var(--navy);
+  /* white halo keeps labels readable over lines, bands and dots */
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.scale-plot .mu-label { fill: #0b7473; }
+.scale-plot .tick,
+.scale-plot .tick text { font-variant-numeric: tabular-nums; }
