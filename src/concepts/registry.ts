@@ -37,7 +37,7 @@ export const concepts: ConceptEntry[] = [
     status: 'hazir',
     href: 'iqr-aykiri/',
   },
-  soon('olcekleme', 3, 'Ölçekleme'),
+  { id: 'olcekleme', chapter: 3, chapterTitle: CH[3], title: 'Ölçekleme ve veri sızıntısı', status: 'hazir', href: 'olcekleme/' },
   soon('pca', 4, 'PCA'),
   {
     id: 'karar-agaci',

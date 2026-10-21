@@ -132,3 +132,22 @@
 }
 .split-wrap .flow-box:nth-of-type(2) { background: var(--navy-soft); }
 .split-wrap .flow-arrow { font-size: var(--fs-title); font-weight: 700; color: var(--navy); }
+
+/* ---------- parameter panel (controls.ts) ---------- */
+.olc-params { display: grid; gap: 8px; }
+.olc-params fieldset.ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.olc-params fieldset.ctl legend { float: left; width: 100%; padding: 0; font-weight: 600; }
+.olc-params .opt { display: inline-flex; align-items: center; gap: 6px; min-height: var(--ctl); font-weight: 400; }
+.olc-params input[type="radio"] { width: 1.25em; height: 1.25em; margin: 0; accent-color: var(--navy); }
+
+/* ---------- Lab side panel (extra.ts) ---------- */
+.olc-extra p, .olc-extra ul { margin: 0 0 8px; }
+.olc-extra .book-errors { padding-left: 1.2em; }
+.olc-extra .book-errors li + li { margin-top: 6px; }
+.olc-extra .cust-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.olc-extra .cust-table th, .olc-extra .cust-table td { padding: 3px 6px; text-align: right; white-space: nowrap; }
+.olc-extra .cust-table th { white-space: normal; vertical-align: bottom; line-height: 1.2; }
+.olc-extra .cust-table th:first-child, .olc-extra .cust-table td:first-child { text-align: left; }
+.olc-extra .cust-table th { border-bottom: 2px solid var(--line); }
+.olc-extra .cust-table tr.nearest { background: var(--navy-soft); font-weight: 700; }
+.olc-extra .cust-table tr.query-row td { border-top: 2px solid var(--line); color: #a85a00; font-weight: 700; }
