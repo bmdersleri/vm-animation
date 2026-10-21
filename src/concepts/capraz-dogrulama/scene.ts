@@ -10,7 +10,10 @@ import { classPanel, finalPanel, foldCard, pipelinePanel, scorePanel } from './p
 export function mountCvScene(host:HTMLElement,player:StepPlayer<CvParams>,mode:Mode):SceneHandle{
   const heading=html('p',{class:'cv-run-heading'});
   const reserved=html('p',{class:'cv-reserved'});
-  const legend=html('div',{class:'cv-legend'},html('span',{},'● Kaldı · ■ Ayrıldı (gerçek sınıf)'),html('span',{class:'cv-role-train'},'Düz çerçeve: eğitim'),html('span',{class:'cv-role-validation'},'Kesikli çerçeve: doğrulama'));
+  // The positive class stays named on every step; only the role key is dropped once the board is gone.
+  const positiveKey=html('span',{class:'cv-positive-key','data-positive-key':''},html('strong',{},'■ Pozitif: Ayrılan müşteri (churn=1)'),' · ● Kalan (0) · iç şekil: gerçek sınıf');
+  const roles=[html('span',{class:'cv-role-train'},'Düz çerçeve: eğitim'),html('span',{class:'cv-role-validation'},'Kesikli çerçeve: doğrulama')];
+  const legend=html('div',{class:'cv-legend'},positiveKey,...roles);
   const {board,update}=sampleBoard();const content=html('div',{class:'cv-main'},board);const aside=html('div',{class:'cv-aside'});content.append(aside);
   const special=html('div',{class:'cv-special'});
   const note=html('p',{class:'cv-note'});
@@ -18,7 +21,7 @@ export function mountCvScene(host:HTMLElement,player:StepPlayer<CvParams>,mode:M
   const root=html('div',{class:'cv-scene','data-mode':mode},html('div',{class:'cv-scene-heading'},heading,reserved),legend,content,special,note,convention);
   host.append(root);
   const notes=[
-    'Bu tek turun F1 değeri diğer bölünmelerin sonucunu garanti etmez. Kimlikler: development-01…40; hücrede son iki rakam.',
+    `Bu tek turun F1 değeri diğer bölünmelerin sonucunu garanti etmez. Kimlikler: ${development[0].id}…${development[development.length-1].id.slice(-2)}; hücrede son iki rakam.`,
     'K etiketleri, müşterinin doğrulamada yer alacağı katı gösterir. Test, geliştirmeden ayrı tutulur.',
     'Kesikli hücreler doğrulamada; diğer hücreler eğitimde. İç şekil sınıfı, dış çerçeve rolü gösterir.',
     'Tur değişince doğrulama kimlikleri, yeni fit parametreleri ve skor birlikte değişir. Önceki model taşınmaz.',
@@ -33,12 +36,10 @@ export function mountCvScene(host:HTMLElement,player:StepPlayer<CvParams>,mode:M
   const reduce=():boolean=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
   let turnDone=true;let turnTimer:ReturnType<typeof setTimeout>|null=null;
   const clearTurn=():void=>{if(turnTimer!==null)clearTimeout(turnTimer);turnTimer=null;};
-  const lastTurn=cvScenario.steps[3].sweep!.values.length-1;let prevFold=-1;
-  const onChange=(s:{index:number;params:CvParams},cause?:string):void=>{
-    clearTurn();const fold=foldIndex(s.params);
-    // The sweep's closing emission resets fold to the default: the last turn has completed, no new turn starts.
-    const sweepEnded=cause==='sweep'&&prevFold===lastTurn&&fold<prevFold;prevFold=s.index===3?fold:-1;
-    if(s.index===3&&(cause==='step'||cause==='sweep')&&!sweepEnded&&!reduce()){
+  const onChange=(s:{index:number},cause?:string):void=>{
+    clearTurn();
+    // Every sweep emission starts a turn; the sweep ends on its last turn without a closing emission.
+    if(s.index===3&&(cause==='step'||cause==='sweep')&&!reduce()){
       turnDone=false;
       turnTimer=setTimeout(()=>{turnTimer=null;turnDone=true;render();},cvScenario.steps[3].sweep!.intervalMs);
     }else turnDone=true;
@@ -54,7 +55,7 @@ export function mountCvScene(host:HTMLElement,player:StepPlayer<CvParams>,mode:M
     if(final){reserved.textContent='Dış test: son rapor açıldı';reserved.removeAttribute('data-test-locked');}
     else{reserved.setAttribute('data-test-locked','');reserved.textContent=`🔒 Dış test · ${testSamples.length} müşteri · seçim bitene kadar kilitli`;}
     update(run,active,index);note.textContent=notes[index];
-    legend.hidden=index>=8;content.hidden=index>=8;special.hidden=index<8;
+    for(const role of roles)role.hidden=index>=8;content.hidden=index>=8;special.hidden=index<8;
     board.hidden=index===5;aside.replaceChildren();
     if(index===5){aside.append(scorePanel(run,active,index),foldCard(run,active,index));}
     else if(index===6||index===7){aside.append(classPanel(run),foldCard(run,active,index));}

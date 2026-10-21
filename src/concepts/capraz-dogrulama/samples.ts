@@ -7,7 +7,7 @@ export function sampleBoard(){
   const chips=development.map(sample=>html('div',{'class':'cv-sample','data-sample':sample.id,'data-actual':String(sample.actual),title:sample.id},html('span',{class:`cv-shape cv-class-${sample.actual}`,'aria-hidden':'true'}),html('span',{class:'cv-id'},sample.id.slice(-2)),html('span',{class:'cv-membership'})));
   const grid=html('div',{class:'cv-grid','aria-label':'Geliştirme müşterileri; kimlik sırası sabit'},...chips);
   const folds=html('div',{class:'cv-folds','aria-label':'Doğrulama katları'});
-  const board=html('section',{class:'cv-board'},html('h2',{},'Geliştirme · 40 müşteri'),grid,folds);
+  const board=html('section',{class:'cv-board'},html('h2',{},`Geliştirme · ${development.length} müşteri`),grid,folds);
   return {board,update(run:CvRun,active:number,step:number){
     chips.forEach((chip,i)=>{
       const s=development[i];const member=run.folds.findIndex(f=>f.validationIds.includes(s.id));

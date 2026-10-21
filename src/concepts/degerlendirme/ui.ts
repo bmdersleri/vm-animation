@@ -1,3 +1,5 @@
+/** Chapter-wide text for a value whose denominator is zero (spec: “— (tanımsız)”). */
+export const UNDEFINED_TEXT='— (tanımsız)';
 /** Small DOM constructors shared by the evaluation teaching scenes. */
 export function html<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string,string> = {}, ...children: (Node|string)[]): HTMLElementTagNameMap[K] {
   const node=document.createElement(tag);

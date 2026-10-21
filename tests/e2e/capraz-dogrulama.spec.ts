@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 const SHOTS='.superpowers/sdd/2026-10-21-bolum6-model-degerlendirme/screenshots';
+const terms=['doğrulama kümesi (validation set)','kat (fold) · K-Fold','doğrulama katı (validation fold)','her turda yeniden fit (refit)','K katlı çapraz doğrulama (K-fold cross-validation)','ortalama ve standart sapma (mean, std)','düz K-Fold (KFold)','katmanlı K-Fold (StratifiedKFold)','Pipeline · veri sızıntısı (data leakage)','model seçimi ve dış test (held-out test)'];
 for(const mode of ['ders','lab'] as const){
   test(`${mode}: ten visible moments, keyboard, reduced motion and no clipped content`,async({page})=>{
     await page.emulateMedia({reducedMotion:'reduce'});await page.goto(`/capraz-dogrulama/?mod=${mode}`);
@@ -9,12 +10,21 @@ for(const mode of ['ders','lab'] as const){
     await page.screenshot({path:`${SHOTS}/cv-${mode}-beginning.png`});
     for(let i=0;i<10;i++){
       await page.locator('.step-dot').nth(i).click();await expect(page.locator('.cv-scene')).toHaveAttribute('data-step',String(i));
+      await expect(page.locator('[data-positive-key]'),`step ${i+1}`).toBeVisible();await expect(page.locator('[data-positive-key]')).toContainText('Pozitif: Ayrılan müşteri (churn=1)');
+      if(mode==='ders')await expect(page.locator('.step-term')).toHaveText(terms[i]);
       if(i<9){await expect(page.locator('[data-test-locked]')).toBeVisible();await expect(page.locator('[data-test-outcome]')).toHaveCount(0);}
       if(i===1)await expect(page.locator('[data-fold-block]')).toHaveCount(5);
       if(i===2){await expect(page.locator('[data-sample][data-role="validation"]')).toHaveCount(8);await expect(page.locator('[data-fit="mean"]')).toBeVisible();}
       if(i===4)await expect(page.locator('.cv-membership').first()).toHaveText(/K[1-5]/);
       if(i===5){await expect(page.locator('[data-mean]')).toHaveText('0,688');await expect(page.locator('.cv-score-note')).toContainText('güven aralığı değildir');const r=await page.locator('.cv-score-plot').boundingBox();expect(r!.height).toBeGreaterThanOrEqual(180);}
-      if(i===6){await expect(page.locator('[data-recall]')).toContainText('tanımsız');await expect(page.locator('[data-recall-undefined]')).toHaveCount(3);}
+      if(i===6){await expect(page.locator('[data-recall]')).toContainText('— (tanımsız)');await expect(page.locator('[data-recall-undefined]')).toHaveCount(3);
+        // WCAG AA for the small flag text on its own track background.
+        const ratio=await page.locator('.cv-undefined-flag').first().evaluate(el=>{
+          const rgb=(c:string)=>c.match(/[\d.]+/g)!.slice(0,3).map(Number);
+          const lum=(c:number[])=>{const [r,g,b]=c.map(v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4;});return .2126*r+.7152*g+.0722*b;};
+          let bg=el as Element|null;while(bg&&getComputedStyle(bg).backgroundColor.replace(/\s/g,'').match(/rgba\(.*,0\)|transparent/))bg=bg.parentElement;
+          const a=lum(rgb(getComputedStyle(el).color)),b=lum(rgb(getComputedStyle(bg!).backgroundColor));return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);});
+        expect(ratio).toBeGreaterThanOrEqual(4.5);}
       if(i===7)await expect(page.locator('[data-positive-fold="0"]')).toHaveAttribute('data-count','3');
       if(i===8){await expect(page.locator('[data-pipeline="correct"]')).toBeVisible();await expect(page.locator('[data-pipeline="wrong"]')).toBeVisible();await page.screenshot({path:`${SHOTS}/cv-${mode}-pipeline.png`});}
       if(i===9){await expect(page.locator('[data-test-f1]')).toHaveText('0,571');await expect(page.locator('[data-test-outcome]')).toHaveCount(15);await page.screenshot({path:`${SHOTS}/cv-${mode}-final.png`});}

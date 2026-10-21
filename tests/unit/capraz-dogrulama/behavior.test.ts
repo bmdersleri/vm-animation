@@ -5,7 +5,7 @@ import { cvScenario } from '../../../src/concepts/capraz-dogrulama/scenario';
 import { mountCvScene } from '../../../src/concepts/capraz-dogrulama/scene';
 import { mountCvParams } from '../../../src/concepts/capraz-dogrulama/controls';
 import { sampleBoard } from '../../../src/concepts/capraz-dogrulama/samples';
-import { cText } from '../../../src/concepts/capraz-dogrulama/view';
+import { cText, numberText } from '../../../src/concepts/capraz-dogrulama/view';
 import { evaluationData } from '../../../src/concepts/degerlendirme/data';
 
 afterEach(()=>{ vi.useRealTimers(); document.body.replaceChildren(); });
@@ -55,8 +55,34 @@ describe('cross validation lesson',()=>{
     expect(host.querySelector('[data-active-fold]')?.getAttribute('data-active-fold')).toBe('4');expect(f1().getAttribute('data-revealed')).toBe('false');
     vi.advanceTimersByTime(1199);expect(f1().getAttribute('data-revealed')).toBe('false');
     vi.advanceTimersByTime(1);const run=data.runs.find(r=>r.k===5&&r.method==='stratified'&&r.c===1)!;
-    // Sweep closed: fold resets to the default, no turn is running, its score is open.
-    expect(f1().getAttribute('data-value')).toBe(String(run.folds[0].f1));expect(f1().getAttribute('data-revealed')).toBe('true');
+    expect(f1().getAttribute('data-value')).toBe(String(run.folds[4].f1));expect(f1().getAttribute('data-revealed')).toBe('true');
+    // Sweep ended: the last turn stays on screen and every finished turn keeps its score.
+    vi.advanceTimersByTime(6000);
+    expect(player.state.params.fold).toBe(4);
+    expect(host.querySelector('[data-active-fold]')?.getAttribute('data-active-fold')).toBe('4');
+    expect(revealed()).toEqual(['0','1','2','3','4']);
+    expect(f1().getAttribute('data-value')).toBe(String(run.folds[4].f1));
+    expect(host.querySelector('.cv-scores')?.textContent).not.toContain('bekliyor');
+    player.goto(4);expect(player.state.params.fold).toBe(0);
+    scene.destroy();player.destroy();
+  });
+  it('writes undefined values as "— (tanımsız)" like the other chapter pages',()=>{
+    expect(numberText(null)).toBe('— (tanımsız)');
+    const {player,host,scene}=setup();player.goto(6);player.setParams({method:'kfold',c:.1,fold:0});
+    expect(host.querySelector('[data-recall]')?.textContent).toContain('Recall: — (tanımsız)');
+    scene.destroy();player.destroy();
+  });
+  it('glosses every moment with a Turkish term and the English name where needed',()=>{
+    expect(cvScenario.steps.every(s=>typeof s.term==='string'&&s.term.length>0)).toBe(true);
+    const terms=cvScenario.steps.map(s=>s.term).join(' | ');
+    for(const name of ['validation','fold','K-Fold','StratifiedKFold','Pipeline','data leakage'])expect(terms).toContain(name);
+    expect(cvScenario.steps[8].term).toContain('veri sızıntısı (data leakage)');
+  });
+  it('names the positive class on every step, outside the legend that is hidden later',()=>{
+    const {player,host,scene}=setup();
+    for(let i=0;i<10;i++){player.goto(i);const key=host.querySelector<HTMLElement>('[data-positive-key]');
+      expect(key?.textContent,`step ${i+1}`).toContain('Pozitif: Ayrılan müşteri (churn=1)');
+      for(let el:HTMLElement|null=key!;el&&el!==host;el=el.parentElement)expect(el.hidden,`step ${i+1}`).toBe(false);}
     scene.destroy();player.destroy();
   });
   it('opens the chosen fold score immediately on a manual fold change (no running turn)',()=>{
