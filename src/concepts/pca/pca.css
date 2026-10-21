@@ -167,3 +167,70 @@
 .pca-scene .rule-title { display: block; font-size: var(--fs-body); }
 .pca-scene .rule-box code { font-family: inherit; font-weight: 700; }
 .pca-scene .rule-box a { color: var(--navy); font-weight: 700; }
+
+/* ---------- parameter panel (controls.ts): radio groups as one compact row ---------- */
+.pca-params { display: grid; gap: 8px; }
+.pca-params fieldset.ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.pca-params fieldset.ctl legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  font-weight: 600;
+}
+.pca-params .opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--ctl);
+  font-weight: 400;
+}
+.pca-params input[type="radio"] {
+  width: 1.25em;
+  height: 1.25em;
+  margin: 0;
+  accent-color: var(--navy);
+}
+.pca-params .ctl.range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 8px;
+}
+.pca-params .ctl.range label { grid-column: 1 / -1; font-weight: 600; }
+.pca-params input[type="range"] { width: 100%; min-height: var(--ctl); margin: 0; accent-color: var(--navy); }
+.pca-params .k-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+.pca-params button.find-pc1 {
+  min-height: var(--ctl);
+  padding: 0 16px;
+  border: 2px solid var(--navy);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--navy);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pca-params button.find-pc1:disabled { opacity: 0.5; cursor: default; }
+.pca-extra p { margin: 0 0 8px; }
+
+/* ---------- Lab: compact params card that fits the side column at 720 px ---------- */
+/* Groups that do not apply to the current step are hidden, not greyed (controls.ts sets data-off). */
+[data-mode="lab"] .pca-params .ctl[data-off] { display: none; }
+[data-mode="lab"] .pca-params { gap: 4px; }
+[data-mode="lab"] .pca-params fieldset.ctl { gap: 0 14px; }
+[data-mode="lab"] .pca-params fieldset.ctl legend { width: auto; }
+[data-mode="lab"] .pca-params .opt { min-height: 30px; }
+[data-mode="lab"] .pca-params input[type="range"] { min-height: 30px; }
+[data-mode="lab"] .pca-params button.find-pc1 { min-height: 30px; }
+[data-mode="lab"] .side .params { flex: none; padding: 8px 14px; }
+/* a tall explain card scrolls inside itself so the params card stays fully visible below it */
+[data-mode="lab"] .side .explain { flex: 0 1 auto; min-height: 0; overflow: auto; }
