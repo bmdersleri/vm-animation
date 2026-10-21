@@ -10,7 +10,6 @@ export interface KMeansParams {
   /** Step 8: which of the ten n_init starts is shown. */
   pick: number;
 }
-export type KmeansParams = KMeansParams;
 
 export const frameCount = (run: Run): number => 2 * run.turns.length + 1;
 
@@ -93,4 +92,3 @@ export const kMeansScenario: Scenario<KMeansParams> = {
     },
   ],
 };
-export const kmeansScenario = kMeansScenario;
