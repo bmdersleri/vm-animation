@@ -29,7 +29,14 @@ function soon(id: string, chapter: number, title: string): ConceptEntry {
 export const concepts: ConceptEntry[] = [
   soon('dagilim-carpiklik', 2, 'Dağılım ve çarpıklık'),
   soon('kutu-grafigi', 2, 'Kutu grafiği'),
-  soon('iqr-aykiri', 3, 'IQR ile aykırı değer'),
+  {
+    id: 'iqr-aykiri',
+    chapter: 3,
+    chapterTitle: CH[3],
+    title: 'Eksik veri ve IQR ile aykırı değer',
+    status: 'hazir',
+    href: 'iqr-aykiri/',
+  },
   soon('olcekleme', 3, 'Ölçekleme'),
   soon('pca', 4, 'PCA'),
   {

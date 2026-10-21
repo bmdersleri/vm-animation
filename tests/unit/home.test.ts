@@ -16,18 +16,18 @@ describe('home page', () => {
     expect(concepts.length).toBe(20);
   });
 
-  it('only hazir cards are links: karar-agaci/, knn/ and naive-bayes/', () => {
+  it('only hazir cards are links: iqr-aykiri/, karar-agaci/, knn/ and naive-bayes/', () => {
     const root = render();
     const links = [...root.querySelectorAll<HTMLAnchorElement>('a.card')];
-    expect(links.length).toBe(3);
-    expect(links.map((l) => l.getAttribute('href'))).toEqual(['karar-agaci/', 'knn/', 'naive-bayes/']);
-    expect(links[1].textContent).toContain('k-En Yakın Komşu (k-NN)');
+    expect(links.length).toBe(4);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['iqr-aykiri/', 'karar-agaci/', 'knn/', 'naive-bayes/']);
+    expect(links[2].textContent).toContain('k-En Yakın Komşu (k-NN)');
     const ders = root.querySelector<HTMLAnchorElement>('a.card-ders[href="knn/?mod=ders"]');
     expect(ders?.getAttribute('href')).toBe('knn/?mod=ders');
     expect(ders?.textContent).toBe('Ders modunda aç');
     const soon = root.querySelectorAll('.card.yakinda');
-    expect(soon.length).toBe(17);
-    expect(concepts.length - links.length).toBe(17);
+    expect(soon.length).toBe(16);
+    expect(concepts.length - links.length).toBe(16);
     soon.forEach((c) => {
       expect(c.tagName).not.toBe('A');
       expect(c.textContent).toContain('Yakında');
@@ -51,6 +51,11 @@ describe('home page', () => {
       'Naive Bayes',
     ]);
     expect(sec5.querySelectorAll('svg[aria-hidden="true"]').length).toBe(3);
+    const sec3 = [...root.querySelectorAll('section')][1];
+    expect([...sec3.querySelectorAll('h3')].map((h) => h.textContent)).toEqual([
+      'Eksik veri ve IQR ile aykırı değer',
+      'Ölçekleme',
+    ]);
   });
 
   it('renders subtitle, author and intro sentence', () => {

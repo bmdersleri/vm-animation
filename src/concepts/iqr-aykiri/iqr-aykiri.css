@@ -40,7 +40,7 @@
   color: var(--muted);
 }
 .iqr-cards .cell.empty { border-style: dashed; background: transparent; color: var(--muted); font-weight: 400; }
-.iqr-cards .cell.filled { background: var(--teal); color: var(--navy); }
+.iqr-cards .cell.filled { background: #cff3f2; border-color: var(--teal); color: var(--navy); }
 .iqr-cards .cell.filled .cell-mark { color: var(--navy); }
 .iqr-cards .cell.mid,
 .iqr-cards .cell.pair { background: var(--navy-soft); border-width: 4px; }
@@ -178,3 +178,44 @@
 .iqr-plot .zband-label { fill: #0b7473; }
 .iqr-plot .tick,
 .iqr-plot .tick text { font-variant-numeric: tabular-nums; }
+
+/* ---------- parameter panel (controls.ts): radio groups as one compact row ---------- */
+.iqr-params fieldset.ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.iqr-params fieldset.ctl legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  font-weight: 600;
+}
+.iqr-params .opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--ctl);
+  font-weight: 400;
+}
+.iqr-params input[type="radio"] {
+  width: 1.25em;
+  height: 1.25em;
+  margin: 0;
+  accent-color: var(--navy);
+}
+.iqr-params { display: grid; gap: 8px; }
+.iqr-params .ctl.range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 8px;
+}
+.iqr-params .ctl.range label { grid-column: 1 / -1; font-weight: 600; }
+.iqr-params input[type="range"] { width: 100%; min-height: var(--ctl); margin: 0; accent-color: var(--navy); }
+.iqr-params .k-value { font-weight: 700; font-variant-numeric: tabular-nums; }

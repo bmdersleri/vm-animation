@@ -57,7 +57,10 @@ export function mountIqrScene(
     const cr = cardsHost.getBoundingClientRect();
     const pr = plotHost.getBoundingClientRect();
     if (pr.width > 0 && pr.height > 0) {
-      return { cw: Math.floor(cr.width || pr.width), lw: Math.floor(pr.width), lh: Math.floor(pr.height) };
+      // the cards host has 16 px side padding: lay the cards out in its content box
+      const cs = getComputedStyle(cardsHost);
+      const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+      return { cw: Math.floor(Math.max(0, (cr.width || pr.width) - pad)), lw: Math.floor(pr.width), lh: Math.floor(pr.height) };
     }
     const lines = Math.max(1, lastStrip.split('\n').length);
     const stripH = Math.ceil(lines * BODY_FALLBACK[mode] * 1.35 + 12 + 10);
