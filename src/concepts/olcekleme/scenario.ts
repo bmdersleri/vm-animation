@@ -37,7 +37,7 @@ export const olceklemeScenario: Scenario<OlcParams> = {
     {
       id: 'en-yakin',
       title: 'En yakın komşu',
-      text: 'Yeni müşteri 12 ay, 55,00 TL ile gelir. Öklid uzaklığı (Euclidean distance) her müşteriye çizilir; en yakını M3: √((12 − 2)² + (55 − 42,30)²) = √(100 + 161,29) = 16,16.',
+      text: 'Yeni müşteri 12 ay, 55 TL ile gelir. Öklid uzaklığı (Euclidean distance) her müşteriye çizilir; en yakını M3: √((12 − 2)² + (55 − 42,30)²) = √(100 + 161,29) = 16,16.',
       term: 'Öklid uzaklığı (Euclidean distance)',
       params: { unit: 'ay', scaling: 'yok', fit: 'egitim', query: q() },
     },
@@ -123,7 +123,6 @@ export const olceklemeScenario: Scenario<OlcParams> = {
   ],
 };
 
-const UNITS: Unit[] = ['ay', 'yil', 'gun'];
 
 /** Teacher shortcuts: each acts only in the steps where its control is visible. */
 export function olcShortcuts(player: StepPlayer<OlcParams>): Shortcut[] {
@@ -133,7 +132,7 @@ export function olcShortcuts(player: StepPlayer<OlcParams>): Shortcut[] {
     {
       keys: ['u', 'U'], display: 'U', label: 'Birim: ay / yıl / gün',
       run: () => {
-        if (inSteps(SCATTER_STEPS)) player.setParam('unit', UNITS[(UNITS.indexOf(p().unit) + 1) % UNITS.length]);
+        if (inSteps(SCATTER_STEPS)) player.setParam('unit', UNIT_SWEEP[(UNIT_SWEEP.indexOf(p().unit) + 1) % UNIT_SWEEP.length]);
       },
     },
     {
