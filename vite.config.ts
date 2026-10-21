@@ -17,6 +17,7 @@ export default defineConfig({
         'iqr-aykiri': resolve(root, 'iqr-aykiri/index.html'),
         'olcekleme': resolve(root, 'olcekleme/index.html'),
         'karmasiklik-matrisi': resolve(root, 'karmasiklik-matrisi/index.html'),
+        'roc-esik': resolve(root, 'roc-esik/index.html'),
       },
     },
   },
