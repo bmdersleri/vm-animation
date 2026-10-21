@@ -119,6 +119,7 @@ describe('k-means controls', () => {
     const rows = host.querySelectorAll('tbody tr');
     expect(rows).toHaveLength(kmeansData.runs[0].turns.length);
     expect(rows[0].textContent).toContain('— (tanımsız)');
+    expect([...host.querySelectorAll('thead th')].map((th) => th.textContent)).toEqual(['Tur', 'Değişen', 'Inertia (tur sonu)']);
     expect(host.querySelectorAll('[data-current]')).toHaveLength(1);
     expect(host.querySelector('[data-current]')!.textContent).toContain('2');
     expect(host.querySelectorAll('.km-coords li')).toHaveLength(3);

@@ -67,6 +67,16 @@ describe('k-means scene', () => {
     scene.destroy(); player.destroy();
   });
 
+  it('ata frames label inertia as measured with the old centres', () => {
+    const { player, host, scene } = setup();
+    const label = () => host.querySelector('[data-inertia]')!.closest('.km-stat')!.querySelector('.km-stat-label')!.textContent;
+    player.goto(2);
+    expect(label()).toBe('Inertia (eski merkezlerle)');
+    player.goto(3);
+    expect(label()).toBe('Inertia');
+    scene.destroy(); player.destroy();
+  });
+
   it('step 5 reports turn, changed count and inertia on every frame', () => {
     vi.useFakeTimers();
     const { player, host, scene } = setup();

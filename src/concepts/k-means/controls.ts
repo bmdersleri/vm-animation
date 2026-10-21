@@ -113,7 +113,7 @@ export function mountKMeansExtra(host: HTMLElement, player: StepPlayer<KMeansPar
     });
     const table = el('table', { class: 'km-turns' },
       el('caption', {}, 'Turlar'),
-      el('thead', {}, el('tr', {}, el('th', { scope: 'col' }, 'Tur'), el('th', { scope: 'col' }, 'Değişen'), el('th', { scope: 'col' }, 'Inertia'))),
+      el('thead', {}, el('tr', {}, el('th', { scope: 'col' }, 'Tur'), el('th', { scope: 'col' }, 'Değişen'), el('th', { scope: 'col' }, 'Inertia (tur sonu)'))),
       body);
     root.replaceChildren(el('h3', { class: 'km-panel-title' }, 'Merkez koordinatları'), coords, table);
   };

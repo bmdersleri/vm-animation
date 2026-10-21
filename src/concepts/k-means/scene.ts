@@ -162,7 +162,7 @@ export function mountKMeansScene(host: HTMLElement, player: StepPlayer<KMeansPar
     const stats = el('div', 'km-stats');
     stats.append(
       stat('Renk değiştiren', v.changed === null ? 'ilk atama' : `${v.changed} nokta`, { 'data-changed': v.changed === null ? 'ilk' : String(v.changed) }),
-      stat('Inertia', inertiaText(v.inertia!), { 'data-inertia': String(v.inertia) }),
+      stat(v.phase === 'ata' ? 'Inertia (eski merkezlerle)' : 'Inertia', inertiaText(v.inertia!), { 'data-inertia': String(v.inertia) }),
     );
     const sizes = el('ul', 'km-sizes');
     v.sizes!.forEach((n, c) => {
