@@ -62,25 +62,35 @@ export interface RfeState {
   /** Rounds shown, 0 … 8 − n. */
   shown: number;
   eliminated: { col: number; round: number }[];
-  /** |beta| of this round's model: column → value. */
+  /** |beta| shown on the bars: column → value (the round's model, or the refit on the survivors once finished). */
   coef: Map<number, number>;
   lastElim: number | null;
+  /** |beta| of `lastElim` in the round that eliminated it. */
+  lastCoef: number | null;
   survivors: number[];
 }
 
-/** `rounds` rounds (capped at 8 − n); the coefficients come from rounds[max(shown, 1) − 1]. */
+/**
+ * `rounds` rounds (capped at 8 − n). While rounds remain, the coefficients are those of
+ * the round just played, rounds[max(shown, 1) − 1]; once all 8 − n rounds are shown they
+ * are sklearn's refit on the n survivors (`RFE.estimator_`): rounds[8 − n], or `final` for n = 1.
+ */
 export function rfeState(path: RfePath, n: number, rounds: number): RfeState {
-  const shown = Math.max(0, Math.min(rounds, COLUMNS.length - n));
+  const cut = COLUMNS.length - n;
+  const shown = Math.max(0, Math.min(rounds, cut));
   const eliminated = path.order.slice(0, shown).map((col, i) => ({ col, round: i + 1 }));
-  const model = path.rounds[Math.max(shown, 1) - 1];
+  const model = shown === cut ? path.rounds[cut] ?? path.final : path.rounds[Math.max(shown, 1) - 1];
   const coef = new Map<number, number>();
   model.remaining.forEach((c, i) => coef.set(c, model.coef[i]));
   const gone = new Set(eliminated.map((e) => e.col));
+  const lastElim = shown > 0 ? path.order[shown - 1] : null;
+  const played = shown > 0 ? path.rounds[shown - 1] : null;
   return {
     shown,
     eliminated,
     coef,
-    lastElim: shown > 0 ? path.order[shown - 1] : null,
+    lastElim,
+    lastCoef: played && lastElim !== null ? played.coef[played.remaining.indexOf(lastElim)] : null,
     survivors: COLUMNS.map((_, c) => c).filter((c) => !gone.has(c)),
   };
 }

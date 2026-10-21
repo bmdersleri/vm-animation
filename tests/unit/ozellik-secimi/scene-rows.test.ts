@@ -111,6 +111,11 @@ describe('secim RowsLayer', () => {
     expect(all(svg, 'line.cut')).toHaveLength(1);
     expect(kidem.querySelector('line.cut')).not.toBeNull();
     expect(text(kidem, 'text.cut-label')).toBe('12 ay');
+    // the cut passes left of the non-churners, the first of whom sit at 12 months
+    const c0 = dOf(kidem, 'c0');
+    const r = Number(/a([\d.]+),/.exec(c0)![1]);
+    const cutX = Number(q(kidem, 'line.cut').getAttribute('x1'));
+    expect(Math.min(...xsOf(c0)) + r - cutX).toBeGreaterThan(1);
     expect(text(kidem, 'text.row-value')).toBe('F = 94,66');
     expect(countSubpaths(dOf(kidem, 'c0')) + countSubpaths(dOf(kidem, 'c1'))).toBe(400);
     // the sub-strips sit one above the other: the churners are lower than the stayers

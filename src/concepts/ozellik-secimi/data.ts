@@ -13,6 +13,8 @@ export interface RfePath {
   /** Column indices in elimination order; the last one survives. */
   order: number[];
   rounds: RfeRound[];
+  /** The refit on the last survivor (RFE(n_features_to_select=1).estimator_). */
+  final: { remaining: number[]; coef: number[] };
 }
 
 const data = raw as unknown as {

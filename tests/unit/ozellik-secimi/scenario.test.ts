@@ -4,6 +4,7 @@ import {
   ozellikSecimiScenario as sc, secimShortcuts, ROUNDS_ALL, RFE_SWEEP_MS, RFE_REPLAY_MS,
   VT_STEPS, K_STEPS, RFE_STEPS, type SecimParams,
 } from '../../../src/concepts/ozellik-secimi/scenario';
+import { CHURN, COLUMNS, VALUES } from '../../../src/concepts/ozellik-secimi/data';
 
 const make = (): StepPlayer<SecimParams> => new StepPlayer<SecimParams>(sc);
 
@@ -43,6 +44,22 @@ describe('ozellikSecimiScenario', () => {
       }
     }
     expect(n).toBeGreaterThanOrEqual(6);
+  });
+
+  it('step 3 term carries its English in parentheses, in the text and the term', () => {
+    expect(sc.steps[2].term).toBe('ANOVA F-istatistiği (ANOVA F-statistic)');
+    expect(sc.steps[2].text).toContain('ANOVA F-istatistiği (ANOVA F-statistic)');
+  });
+
+  it('step 5 states what the data shows: every customer under 12 months churns, most churners do not', () => {
+    const kidem = VALUES[COLUMNS.indexOf('musteriKidemAy')];
+    const under = kidem.map((m, i) => (m < 12 ? i : -1)).filter((i) => i >= 0);
+    expect(under.every((i) => CHURN[i] === 1)).toBe(true);
+    const churners = CHURN.reduce<number>((a, b) => a + b, 0);
+    expect(under.length / churners).toBeLessThan(0.5);
+    const text = sc.steps[4].text;
+    expect(text).toContain('12 ayın altındaki her müşteri churn ediyor');
+    expect(text).not.toContain('çoğu');
   });
 
   it('every step has a term and owns all five params', () => {

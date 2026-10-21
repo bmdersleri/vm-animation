@@ -21,6 +21,9 @@ describe('ozellik-secimi data', () => {
       expect(path.rounds).toHaveLength(7);
       expect(path.rounds[0].remaining).toHaveLength(8);
       path.rounds.forEach((r, i) => expect(r.eliminated).toBe(path.order[i]));
+      // the refit on the last survivor, for n_features_to_select = 1
+      expect(path.final.remaining).toEqual([path.order[7]]);
+      expect(path.final.coef).toHaveLength(1);
     }
   });
 });

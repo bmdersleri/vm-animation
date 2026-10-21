@@ -49,8 +49,8 @@ export const ozellikSecimiScenario: Scenario<SecimParams> = {
     {
       id: 'f-skoru',
       title: 'F-skoru',
-      text: 'Her sütunun churn ile ilişkisini ANOVA F-istatistiği ölçer. Puanlar büyükten küçüğe dizilir; sabitDeger’in puanı tanımsızdır ve en sonda kalır.',
-      term: 'ANOVA F-istatistiği',
+      text: 'Her sütunun churn ile ilişkisini ANOVA F-istatistiği (ANOVA F-statistic) ölçer. Puanlar büyükten küçüğe dizilir; sabitDeger’in puanı tanımsızdır ve en sonda kalır.',
+      term: 'ANOVA F-istatistiği (ANOVA F-statistic)',
       params: { ...YOK, rounds: 0 },
     },
     {
@@ -63,7 +63,7 @@ export const ozellikSecimiScenario: Scenario<SecimParams> = {
     {
       id: 'tek-basina',
       title: 'Neden kıdem yüksek, gürültü düşük?',
-      text: 'Her sütun tek başına değerlendirilir (univariate): filtre etkileşimi görmez. Churn edenlerin çoğu 12 ayın altında; kıdemin F’si yüksek, gürültünün iki grubu üst üste biner.',
+      text: 'Her sütun tek başına değerlendirilir (univariate): filtre etkileşimi görmez. 12 ayın altındaki her müşteri churn ediyor; churn etmeyenlerin şeridi orada boş, bu yüzden kıdemin F’si yüksek. Gürültülü öznitelikte iki grup üst üste biner.',
       term: 'tek değişkenli değerlendirme (univariate)',
       params: { ...YOK, rounds: 0 },
     },

@@ -83,6 +83,27 @@ describe('select', () => {
     expect(rfeState(RFE.yok, 7, 3).shown).toBe(1);
   });
 
+  it('a finished RFE shows sklearn’s refit on the survivors (RFE.estimator_) for n 1–7 in both scalings', () => {
+    for (const s of ['yok', 'standard'] as const) {
+      for (let n = 1; n <= 7; n++) {
+        const st = rfeState(RFE[s], n, 99);
+        expect([...st.coef.keys()], `${s} n=${n}`).toEqual(st.survivors);
+        const want = secim.rfe[s].estimatorCoef[String(n) as '1'];
+        st.survivors.forEach((c, i) => expect(close(st.coef.get(c)!, want[i]), `${s} n=${n} ${COLUMNS[c]}`).toBe(true));
+      }
+    }
+    expect(rfeState(RFE.yok, 4, 99).coef.get(7)!).toBeCloseTo(0.0387, 4);
+  });
+
+  it('lastCoef: |β| of the eliminated column in the round that dropped it', () => {
+    expect(rfeState(RFE.yok, 4, 0).lastCoef).toBeNull();
+    expect(rfeState(RFE.yok, 4, 1).lastCoef!).toBeCloseTo(3.7996e-5, 8);
+    expect(rfeState(RFE.yok, 7, 1).lastCoef!).toBeCloseTo(3.7996e-5, 8);
+    expect(rfeState(RFE.yok, 4, 99).lastCoef!).toBeCloseTo(0.020976, 6);
+    // not finished: still the model of the round just played
+    expect(rfeState(RFE.yok, 4, 3).coef.size).toBe(6);
+  });
+
   it('rfe order comes from the data, not from coefficients', () => {
     const fake: RfePath = { ...RFE.yok, order: [7, 6, 5, 4, 3, 2, 1, 0] };
     expect(rfeSelected(fake, 2)).toEqual([true, true, false, false, false, false, false, false]);

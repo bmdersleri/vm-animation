@@ -263,7 +263,11 @@ def ex004() -> tuple[dict, dict]:
             eliminated_order.append(elim)
             remaining = [c for c in remaining if c != elim]
         order = eliminated_order + remaining
-        support, ranking4 = {}, None
+        # the refit on the last survivor (RFE(n_features_to_select=1).estimator_); for k >= 2 the
+        # refit on the k survivors is rounds[8 - k]
+        last = LogisticRegression(max_iter=1000).fit(X[:, remaining], y)
+        final = {"remaining": list(remaining), "coef": fls(np.abs(last.coef_[0]))}
+        support, ranking4, estimator = {}, None, {}
         for k in range(1, 8):
             sel = RFE(estimator=LogisticRegression(max_iter=1000), n_features_to_select=k).fit(X, y)
             mine = sorted(order[8 - k:])
@@ -272,8 +276,15 @@ def ex004() -> tuple[dict, dict]:
             support[k] = names(sel.get_support())
             if k == 4:
                 ranking4 = [int(v) for v in sel.ranking_]
-        rfe_page[key] = {"order": order, "rounds": rounds}
-        rfe_fix[key] = {"support": {str(k): v for k, v in support.items()}, "ranking4": ranking4}
+            # the coefficients the page shows once RFE has finished are sklearn's refit on the survivors
+            refit = rounds[8 - k] if k >= 2 else final
+            got = np.abs(sel.estimator_.coef_[0])
+            check(f"rfe {key} k={k} estimator_", refit["remaining"] == mine and
+                  np.allclose(got, refit["coef"], rtol=1e-9, atol=1e-12), (got.tolist(), refit))
+            estimator[k] = fls(got)
+        rfe_page[key] = {"order": order, "rounds": rounds, "final": final}
+        rfe_fix[key] = {"support": {str(k): v for k, v in support.items()}, "ranking4": ranking4,
+                        "estimatorCoef": {str(k): v for k, v in estimator.items()}}
 
     check("order yok", rfe_page["yok"]["order"] == [1, 4, 0, 2, 7, 3, 5, 6], rfe_page["yok"]["order"])
     check("order standard", rfe_page["standard"]["order"] == [4, 1, 0, 7, 2, 5, 3, 6],

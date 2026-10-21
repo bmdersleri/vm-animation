@@ -224,7 +224,7 @@ export class RowsLayer {
       t.attr('display', rv.split ? null : 'none').attr('x', r1(stripR)).attr('y', r1(subTop(h, lh, i) - 4));
     });
     if (el.cut) {
-      const x = r1(this.xScale(KIDEM, lay)(v.cut?.value ?? 12));
+      const x = r1(this.xScale(KIDEM, lay)(v.cut?.value ?? 11.5));
       el.cut.line.attr('display', v.cut ? null : 'none').attr('x1', x).attr('x2', x)
         .attr('y1', r1(subTop(h, lh, 0))).attr('y2', r1(subTop(h, lh, 1) + subBand(h, lh)));
       el.cut.label.attr('display', v.cut ? null : 'none').attr('x', r1(x + 8)).attr('y', r1(h - 4));

@@ -33,7 +33,8 @@ export interface SecimView {
   mode: SecimMode;
   /** Always 8 rows, in COLUMNS order. */
   rows: RowView[];
-  cut: { col: 3; value: 12; label: '12 ay' } | null;
+  /** The class boundary of the tenure rule (kıdem < 12): drawn between 11 and 12 months. */
+  cut: { col: 3; value: 11.5; label: '12 ay' } | null;
   intersect: { kbest: string[]; rfe: string[]; both: string[]; kbestTitle: string; rfeTitle: string } | null;
   rule: boolean;
   strip: string;
@@ -132,7 +133,7 @@ export function deriveSecimView(index: number, p: SecimParams): SecimView {
     stepId: ozellikSecimiScenario.steps[index].id,
     mode,
     rows,
-    cut: mode === 'split' ? { col: 3, value: 12, label: '12 ay' } : null,
+    cut: mode === 'split' ? { col: 3, value: 11.5, label: '12 ay' } : null,
     intersect,
     rule: mode === 'intersect',
     strip: stripFor(),
@@ -167,7 +168,7 @@ export function deriveSecimView(index: number, p: SecimParams): SecimView {
         const last = state.lastElim;
         const second = last === null
           ? 'henüz eleme yok'
-          : `tur ${state.shown} → ${COLUMNS[last]} elendi (|β| = ${formatNonZero(state.coef.get(last)!, 4)})`;
+          : `tur ${state.shown} → ${COLUMNS[last]} elendi (|β| = ${formatNonZero(state.lastCoef!, 4)})`;
         return `${rfeCall()}\n${second}`;
       }
       case 6:

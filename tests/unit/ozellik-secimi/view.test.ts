@@ -3,6 +3,7 @@ import { deriveSecimView, type SecimView } from '../../../src/concepts/ozellik-s
 import { ozellikSecimiScenario, ROUNDS_ALL, type SecimParams } from '../../../src/concepts/ozellik-secimi/scenario';
 import { COLUMNS, RFE } from '../../../src/concepts/ozellik-secimi/data';
 import { VARIANCES, VT_OPTIONS, rfeState } from '../../../src/concepts/ozellik-secimi/select';
+import { formatNonZero } from '../../../src/core/plot/format';
 import fixture from '../../fixtures/boyut_sklearn.json';
 
 const base = (i: number): SecimParams => ({ ...ozellikSecimiScenario.defaults, ...ozellikSecimiScenario.steps[i].params });
@@ -132,7 +133,8 @@ describe('secim view', () => {
     expect(v.rows[5].value).toBe('F = 0,04');
     expect(v.rows.filter((r) => r.hidden)).toHaveLength(6);
     expect(v.rows.filter((r) => !r.hidden).every((r) => r.split)).toBe(true);
-    expect(v.cut).toEqual({ col: 3, value: 12, label: '12 ay' });
+    // the class boundary lies between 11 and 12 months: the line passes between the dots, not through those at 12
+    expect(v.cut).toEqual({ col: 3, value: 11.5, label: '12 ay' });
   });
 
   it('step 6: round 1 eliminates toplamUcret', () => {
@@ -159,6 +161,32 @@ describe('secim view', () => {
     // mid sweep nothing is selected yet
     expect(selectedNames(V(6, { rounds: 2 }))).toEqual([]);
     expect(eliminatedNames(V(6, { rounds: 2 }))).toEqual(['toplamUcret', 'sabitDeger']);
+  });
+
+  it('steps 7–9: once RFE has finished the bars show sklearn’s refit on the survivors (estimator_)', () => {
+    const v = V(7);
+    expect(v.rows[col('odemeGecikmesi')].value).toBe('0,0387');
+    expect(v.rows[col('destekTaleplerinSayisi')].value).toBe('0,6284');
+    // the round-4 column fell before the refit: no bar and no value, like the earlier rounds
+    expect(v.rows[col('hizmetSayisi')].elimLabel).toBe('tur 4');
+    expect(v.rows[col('hizmetSayisi')].value).toBeNull();
+    expect(v.rows[col('hizmetSayisi')].bar).toBe(0);
+    expect(V(6).rows.filter((r) => r.eliminated).every((r) => r.bar === 0 && r.value === null)).toBe(true);
+    for (const s of ['yok', 'standard'] as const) {
+      for (let n = 1; n <= 7; n++) {
+        const shown = V(7, { scaling: s, nSelect: n }).rows.filter((r) => r.value !== null);
+        const want = secim.rfe[s].estimatorCoef[String(n) as '1'];
+        expect(shown.map((r) => r.name), `${s} n=${n}`).toEqual(secim.rfe[s].support[String(n) as '1']);
+        shown.forEach((r, i) => expect(r.value, `${s} n=${n} ${r.name}`).toBe(formatNonZero(want[i], 4)));
+      }
+    }
+    // mid sweep the bars are still the model of the round just played
+    expect(V(6, { rounds: 3 }).rows[col('aylikUcret')].value).toBe('0,0023');
+  });
+
+  it('step 6 strip: |β| of the eliminated column comes from the round that dropped it, also when n = 7 ends RFE there', () => {
+    expect(V(5).strip.split('\n')[1]).toBe('tur 1 → toplamUcret elendi (|β| = 0,00004)');
+    expect(V(5, { nSelect: 7 }).strip.split('\n')[1]).toBe('tur 1 → toplamUcret elendi (|β| = 0,00004)');
   });
 
   it('step 8: four survivors with gurultuluOznitelik highlighted', () => {
