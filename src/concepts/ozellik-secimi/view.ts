@@ -45,7 +45,6 @@ const KIDEM = COLUMNS.indexOf('musteriKidemAy');
 const GURULTU = COLUMNS.indexOf('gurultuluOznitelik');
 const DESTEK = COLUMNS.indexOf('destekTaleplerinSayisi');
 const TOPLAM = COLUMNS.indexOf('toplamUcret');
-const RFE_CALL = 'RFE(LogisticRegression(max_iter=1000), n_features_to_select=4)';
 
 const fv = (v: number): string => formatNonZero(v, 2);
 const fF = (v: number): string => (Number.isNaN(v) ? '—' : fv(v));
@@ -140,6 +139,10 @@ export function deriveSecimView(index: number, p: SecimParams): SecimView {
     note: noteFor(),
   };
 
+  function rfeCall(): string {
+    return `RFE(LogisticRegression(max_iter=1000), n_features_to_select=${p.nSelect})`;
+  }
+
   function rounds(): string {
     return state.shown === 0
       ? 'henüz eleme yok'
@@ -165,10 +168,10 @@ export function deriveSecimView(index: number, p: SecimParams): SecimView {
         const second = last === null
           ? 'henüz eleme yok'
           : `tur ${state.shown} → ${COLUMNS[last]} elendi (|β| = ${formatNonZero(state.coef.get(last)!, 4)})`;
-        return `${RFE_CALL}\n${second}`;
+        return `${rfeCall()}\n${second}`;
       }
       case 6:
-        return `${RFE_CALL}\n${rounds()}`;
+        return `${rfeCall()}\n${rounds()}`;
       case 7:
         return `RFE → ${join(rfeNames)}\nσ: ${join([GURULTU, KIDEM].map((c) => `${COLUMNS[c]} ${formatNumber(std0(VALUES[c]), 2)}`))}`;
       case 8: {

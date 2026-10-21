@@ -35,8 +35,8 @@ export const ozellikSecimiScenario: Scenario<SecimParams> = {
     {
       id: 'sekiz-sutun',
       title: 'Sekiz sütun',
-      text: '400 müşteri, 8 sütun, churn %42,25. Her sütun bir öznitelik (feature); hepsi modele girmeyi hak etmiyor. Hangilerini tutacağımıza karar vermek özellik seçimidir.',
-      term: 'öznitelik (feature)',
+      text: '400 müşteri, 8 sütun, churn %42,25. Her sütun bir öznitelik (feature); hepsi modele girmeyi hak etmiyor. Hangilerini tutacağımıza karar vermek özellik seçimidir (feature selection).',
+      term: 'öznitelik (feature) · özellik seçimi (feature selection)',
       params: { ...YOK, rounds: 0 },
     },
     {
@@ -63,7 +63,7 @@ export const ozellikSecimiScenario: Scenario<SecimParams> = {
     {
       id: 'tek-basina',
       title: 'Neden kıdem yüksek, gürültü düşük?',
-      text: 'Her sütun tek başına değerlendirilir (univariate): filtre etkileşimi görmez. Churn edenlerin çoğu 12 ayın altında; kıdemin F’si yüksek, gürültünün dağılımı iki grupta da aynı.',
+      text: 'Her sütun tek başına değerlendirilir (univariate): filtre etkileşimi görmez. Churn edenlerin çoğu 12 ayın altında; kıdemin F’si yüksek, gürültünün iki grubu üst üste biner.',
       term: 'tek değişkenli değerlendirme (univariate)',
       params: { ...YOK, rounds: 0 },
     },

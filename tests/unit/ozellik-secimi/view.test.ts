@@ -35,6 +35,8 @@ describe('secim view', () => {
     expect(V(4).strip).toBe('musteriKidemAy: F = 94,66 · gurultuluOznitelik: F = 0,04');
     const rfe = 'RFE(LogisticRegression(max_iter=1000), n_features_to_select=4)';
     expect(V(5).strip).toBe(`${rfe}\ntur 1 → toplamUcret elendi (|β| = 0,00004)`);
+    expect(V(5, { nSelect: 2 }).strip.split('\n')[0]).toBe('RFE(LogisticRegression(max_iter=1000), n_features_to_select=2)');
+    expect(V(6, { nSelect: 7, rounds: 1 }).strip.split('\n')[0]).toContain('n_features_to_select=7)');
     expect(V(6, { rounds: 0 }).strip).toBe(`${rfe}\nhenüz eleme yok`);
     expect(V(6, { rounds: 1 }).strip.split('\n')[1]).toBe('tur 1: toplamUcret');
     expect(V(6, { rounds: 2 }).strip.split('\n')[1]).toBe('tur 1: toplamUcret · tur 2: sabitDeger');
