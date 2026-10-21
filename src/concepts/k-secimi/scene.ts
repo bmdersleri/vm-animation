@@ -84,8 +84,7 @@ export function mountKSecimiScene(host: HTMLElement, player: StepPlayer<KSecimiP
   const silCard = card('Silhouette · ayrışma netliği', 'ks-chart-svg kc-chart-sil');
   const panel = el('aside', 'ks-panel');
   panel.setAttribute('aria-live', 'polite');
-  side.append(panel);
-  root.append(plotHost, side);
+  root.append(plotHost, side, panel);
   host.append(root);
 
   const frame = new ClusterPlotFrame(svgEl, plotHost, 'ks', 0.55);

@@ -190,4 +190,13 @@ describe('k-secimi scene', () => {
     expect(host.querySelectorAll('.cs-center')).toHaveLength(3);
     fin(scene, player);
   });
+
+  it('panel is a direct child of the scene, charts stay in the side column', () => {
+    const { player, host, scene } = setup('lab');
+    const root = host.querySelector('.ks-scene')!;
+    expect(host.querySelector('.ks-panel')!.parentElement).toBe(root);
+    expect(host.querySelector('.ks-side .ks-panel')).toBeNull();
+    expect(host.querySelectorAll('.ks-side > .ks-chart')).toHaveLength(2);
+    fin(scene, player);
+  });
 });

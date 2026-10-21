@@ -62,3 +62,34 @@ test('lab: a point next to a centre keeps its label off the centre label', async
   await expect(page.locator('.cs-ring-label').filter({ hasText: 'Nokta 50' })).toHaveCount(1);
   expect(await labelCollisions(page, 'svg.ks-plot')).toEqual([]);
 });
+
+test('lab: panel sits under the scatter and its labels stay on one line', async ({ page }) => {
+  await open(page, PAGE, 'lab', READY);
+  await gotoStep(page, 5, STEPS);
+  await page.locator('input[data-param="k"]').fill('4');
+  await expect(page.locator('.ks-k-out')).toHaveText('k = 4');
+  await page.waitForTimeout(1500);
+  const m = await page.evaluate(() => {
+    const host = document.querySelector('.ks-plot-host')!.getBoundingClientRect();
+    const panel = document.querySelector('.ks-panel')!.getBoundingClientRect();
+    const plot = document.querySelector('.ks-plot')!.getBoundingClientRect();
+    const labels = [...document.querySelectorAll('.ks-panel .ks-label')].map((l) => {
+      const r = l.getBoundingClientRect();
+      const lh = parseFloat(getComputedStyle(l).lineHeight) || parseFloat(getComputedStyle(l).fontSize) * 1.2;
+      return { text: l.textContent, ratio: r.height / lh };
+    });
+    return { gap: panel.top - host.bottom, plotW: plot.width, labels };
+  });
+  expect(m.gap).toBeGreaterThanOrEqual(-1);
+  expect(m.plotW).toBeGreaterThanOrEqual(430);
+  expect(m.labels.length).toBeGreaterThan(0);
+  for (const l of m.labels) expect(l.ratio, String(l.text)).toBeLessThanOrEqual(1.6);
+});
+
+test('ders: step 8 compare rows line up', async ({ page }) => {
+  await open(page, PAGE, 'ders', READY);
+  await gotoStep(page, 7, STEPS, 2500);
+  const tops = await page.evaluate(() => [3, 4].map((k) => [...document.querySelectorAll(`[data-compare-k="${k}"] .ks-row`)].slice(0, 3).map((r) => r.getBoundingClientRect().top)));
+  expect(tops[0]).toHaveLength(3);
+  for (let i = 0; i < 3; i++) expect(Math.abs(tops[0][i] - tops[1][i])).toBeLessThanOrEqual(3);
+});
