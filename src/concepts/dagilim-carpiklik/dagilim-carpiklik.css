@@ -1,0 +1,155 @@
+/* dagilim-carpiklik: scene (scene.ts, scene-hist.ts). Text sizes come only from the
+   --fs-* tokens; the svg has no viewBox. */
+.dag-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.dag-scene .dag-plot-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.dag-plot-host svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+.dag-scene .formula {
+  flex: none;
+  margin: 0 16px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 14px;
+  border-left: 4px solid var(--navy);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  min-height: calc(2 * 1.35em + 12px);
+}
+.dag-scene .formula .line {
+  display: block; /* inline terms wrap between the spaces renderStrip inserts */
+}
+.dag-scene .formula .term {
+  white-space: nowrap;
+}
+
+/* number line (core layer) */
+.dag-plot .nl-axis { stroke-width: 3; }
+.dag-plot .tick,
+.dag-plot .tick text { font-variant-numeric: tabular-nums; }
+/* halos keep the axis text readable where a mark line crosses it */
+.dag-plot .tick text,
+.dag-plot .axis-title,
+.dag-plot .bar-count,
+.dag-plot .bin-range {
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.dag-plot .axis-title {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+  fill: var(--navy);
+}
+
+/* dots: one path, one circle sub-path per value */
+.dag-plot path.dots { fill: var(--navy); }
+
+/* histogram: one path, one closed sub-path per bin */
+.dag-plot .hist-bar { fill: var(--navy); fill-opacity: 0.85; }
+.dag-plot .bar-count {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  fill: var(--navy);
+}
+.dag-plot .bin-range {
+  font-size: var(--fs-tick);
+  font-variant-numeric: tabular-nums;
+  fill: var(--muted);
+}
+
+/* tail shade: the long side of the distribution */
+.dag-plot .tail-shade { fill: var(--orange); fill-opacity: 0.12; }
+
+/* mean (orange triangle, solid) and median (navy diamond, dashed) */
+.dag-plot .mark-mean { stroke: var(--orange); stroke-width: 3; }
+.dag-plot .mark-median { stroke: var(--navy); stroke-width: 3; stroke-dasharray: 9 6; }
+.dag-plot .mark.mean .mark-cap { fill: var(--orange); }
+.dag-plot .mark.median .mark-cap { fill: var(--navy); }
+.dag-plot .mark-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  /* white halo keeps labels readable over lines and bars */
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.dag-plot .mark.mean .mark-label { fill: #a85a00; }
+.dag-plot .mark.median .mark-label { fill: var(--navy); }
+
+/* log axis note ("1p"): the ticks are log1p values */
+.dag-plot .log-note {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  fill: #a85a00;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- parameter panel (controls.ts) ---------- */
+.dag-params { display: grid; gap: 8px; }
+.dag-params .ctl { min-width: 0; }
+.dag-params .ctl.select { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.dag-params .ctl-label { font-weight: 600; }
+.dag-params select {
+  width: 100%;
+  min-height: var(--ctl);
+  padding: 0 8px;
+  border: 2px solid var(--navy);
+  border-radius: 8px;
+  background: var(--surface);
+  font: inherit;
+}
+.dag-params .ctl.check { display: flex; align-items: center; }
+.dag-params .opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--ctl);
+  font-weight: 400;
+}
+.dag-params input[type="checkbox"] { width: 1.25em; height: 1.25em; margin: 0; accent-color: var(--navy); }
+.dag-params .ctl.range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px 8px;
+}
+.dag-params .dag-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+.dag-params input[type="range"] { width: 100%; min-height: var(--ctl); margin: 0; accent-color: var(--navy); }
+
+/* ---------- Lab side panel (extra.ts) ---------- */
+.dag-extra p { margin: 0 0 8px; }
+.dag-extra .live-note { font-weight: 600; color: var(--navy); }
+
+/* ---------- Lab: compact params card that fits the side column at 720 px ---------- */
+/* Controls that do not apply to the current step are hidden, not greyed (controls.ts sets data-off). */
+[data-mode="lab"] .dag-params .ctl[data-off] { display: none; }
+/* a step with no control at all hides the card itself, not just its rows */
+[data-mode="lab"] .params[data-off] { display: none; }
+[data-mode="lab"] .dag-params { gap: 4px; }
+[data-mode="lab"] .dag-params .opt { min-height: 30px; }
+[data-mode="lab"] .dag-params input[type="range"] { min-height: 30px; }
+[data-mode="lab"] .side .params { flex: none; padding: 8px 14px; }
+/* a tall explain card scrolls inside itself so the params card stays fully visible below it */
+[data-mode="lab"] .side .explain { flex: 0 1 auto; min-height: 0; overflow: auto; }

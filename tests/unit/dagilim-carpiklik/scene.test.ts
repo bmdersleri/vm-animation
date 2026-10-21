@@ -1,0 +1,176 @@
+// @vitest-environment jsdom
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { StepPlayer } from '../../../src/core/player';
+import { dagilimScenario, type DagilimParams } from '../../../src/concepts/dagilim-carpiklik/scenario';
+import { mountDagilimScene } from '../../../src/concepts/dagilim-carpiklik/scene';
+import { HistLayer, MS_STEP } from '../../../src/concepts/dagilim-carpiklik/scene-hist';
+import { deriveDagilimView } from '../../../src/concepts/dagilim-carpiklik/view';
+import { countSubpaths } from '../../../src/core/plot/dots-path';
+import type { Mode } from '../../../src/core/mode';
+
+// jsdom has no DOMMatrix, which d3-transition needs to tween CSS transforms
+class FakeMatrix {
+  a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+  constructor(s = '') {
+    const t = /translate\(\s*(-?[\d.]+)(?:px)?\s*,\s*(-?[\d.]+)/.exec(s);
+    const m = /matrix\(([^)]+)\)/.exec(s);
+    if (t) { this.e = Number(t[1]); this.f = Number(t[2]); }
+    else if (m) [this.a, this.b, this.c, this.d, this.e, this.f] = m[1].split(',').map(Number);
+  }
+  get isIdentity(): boolean { return this.e === 0 && this.f === 0 && this.a === 1 && this.d === 1; }
+}
+(globalThis as { DOMMatrix?: unknown }).DOMMatrix ??= FakeMatrix;
+
+const view = (i: number, over: Partial<DagilimParams> = {}) =>
+  deriveDagilimView(i, { ...dagilimScenario.defaults, ...dagilimScenario.steps[i].params, ...over });
+const frame = (ms = 60) => new Promise((r) => setTimeout(r, ms));
+
+let cleanup: (() => void)[] = [];
+afterEach(() => {
+  vi.restoreAllMocks();
+  for (const f of cleanup) f();
+  cleanup = [];
+  document.body.replaceChildren();
+});
+
+function setup(durationScale = 0, size: [number, number] = [1280, 540], mode: Mode = 'ders') {
+  const el = document.createElement('div');
+  document.body.append(el);
+  const player = new StepPlayer(dagilimScenario);
+  const scene = mountDagilimScene(el, player, mode, { durationScale });
+  scene.resize(...size);
+  cleanup.push(() => { scene.destroy(); player.destroy(); });
+  return { el, player, scene };
+}
+
+const all = (el: Element, sel: string): SVGElement[] => [...el.querySelectorAll<SVGElement>(sel)];
+const one = (el: Element, sel: string): SVGElement => {
+  const e = el.querySelector<SVGElement>(sel);
+  if (!e) throw new Error(`missing ${sel}`);
+  return e;
+};
+const text = (e: Element | null): string => (e?.textContent ?? '').trim();
+const labels = (el: Element): string[] => all(el, 'text.mark-label').map(text);
+const tickNumbers = (el: Element): number[] =>
+  all(el, 'svg.dag-plot g.tick text').map((t) => Number(text(t).replace('−', '-').replace(',', '.')));
+const barPath = (el: Element): string => one(el, 'path.hist-bar').getAttribute('d') ?? '';
+
+describe('dagilim scene', () => {
+  it('mounts .dag-scene with svg.dag-plot, one dots path and the formula strip', () => {
+    const { el, player } = setup();
+    expect(el.querySelector('.dag-scene')).not.toBeNull();
+    one(el, '.dag-scene svg.dag-plot');
+    expect(countSubpaths(one(el, 'svg.dag-plot path.dots').getAttribute('d') ?? '')).toBe(10);
+    one(el, 'p.formula');
+    // the strip text is the view's strip at every step
+    for (let i = 0; i < dagilimScenario.steps.length; i++) {
+      player.goto(i);
+      const v = deriveDagilimView(i, player.state.params);
+      expect(text(one(el, 'p.formula'))).toBe(v.strip);
+    }
+  });
+
+  it('step 2: one path.hist-bar with five closed bars', () => {
+    const { el, player } = setup();
+    player.goto(1);
+    const d = barPath(el);
+    expect(countSubpaths(d)).toBe(5);
+    // every subpath is closed: one "Z" per bar
+    expect((d.match(/Z/g) ?? []).length).toBe(5);
+    expect(view(1).bins.map((b) => b.count)).toEqual([4, 2, 2, 1, 1]);
+    // the tallest bar belongs to the first bin
+    expect(all(el, 'text.bar-count').map(text)).toEqual(['4', '2', '2', '1', '1']);
+  });
+
+  it('step 5: three bins give three bars', () => {
+    const { el, player } = setup();
+    player.goto(4);
+    expect(countSubpaths(barPath(el))).toBe(3);
+  });
+
+  it('step 3: the marks read 16,4 (mean) and 14,5 (median)', () => {
+    const { el, player } = setup();
+    player.goto(2);
+    expect(labels(el)).toEqual(['16,4', '14,5']);
+    one(el, 'line.mark-mean');
+    one(el, 'line.mark-median');
+    // mean sits right of the median
+    expect(Number(one(el, 'line.mark-mean').getAttribute('x1')))
+      .toBeGreaterThan(Number(one(el, 'line.mark-median').getAttribute('x1')));
+  });
+
+  it('step 1: the marks exist but are hidden', () => {
+    const { el, player } = setup();
+    player.goto(0);
+    expect(labels(el)).toEqual(['16,4', '14,5']);
+    for (const g of all(el, 'g.mark')) expect(g.getAttribute('opacity')).toBe('0');
+    player.goto(2);
+    for (const g of all(el, 'g.mark')) expect(g.getAttribute('opacity')).toBe('1');
+  });
+
+  it('step 4: a right tail shade and no left one', () => {
+    const { el, player } = setup();
+    player.goto(3);
+    one(el, 'rect.tail-shade.right');
+    expect(el.querySelector('rect.tail-shade.left')).toBeNull();
+    // the shade starts at the median and runs to the right edge
+    const shade = one(el, 'rect.tail-shade.right');
+    expect(Number(shade.getAttribute('x'))).toBeCloseTo(Number(one(el, 'line.mark-median').getAttribute('x1')), 0);
+    expect(Number(shade.getAttribute('width'))).toBeGreaterThan(0);
+  });
+
+  it('step 8 with the left-skewed series: a left tail shade', () => {
+    const { el, player } = setup();
+    player.goto(7);
+    player.setParam('seri', 'sol');
+    one(el, 'rect.tail-shade.left');
+    expect(el.querySelector('rect.tail-shade.right')).toBeNull();
+  });
+
+  it('step 7: dragging 003 to 60 moves the mean to 13,6 and leaves the median at 8,5', () => {
+    const { el, player } = setup();
+    player.goto(6);
+    player.setParam('extreme', 60);
+    expect(labels(el)).toEqual(['13,6', '8,5']);
+  });
+
+  it('log step: ticks are log1p values and the axis carries the 1p note', () => {
+    const { el, player } = setup();
+    player.goto(5);
+    const ticks = tickNumbers(el);
+    expect(ticks.length).toBeGreaterThan(1);
+    for (const t of ticks) {
+      expect(t).toBeGreaterThan(2);
+      expect(t).toBeLessThan(4);
+    }
+    expect(text(one(el, 'svg.dag-plot text.axis-title'))).toContain('log1p');
+    expect(text(one(el, 'svg.dag-plot text.log-note'))).toBe('1p');
+    // raw step: hourly ticks, no note
+    player.goto(1);
+    expect(Math.max(...tickNumbers(el))).toBeGreaterThan(10);
+    expect(text(one(el, 'svg.dag-plot text.log-note'))).toBe('');
+  });
+
+  it('a step change animates the bars over MS_STEP x durationScale; a param change is instant', async () => {
+    const spy = vi.spyOn(HistLayer.prototype, 'update');
+    const { player } = setup(0.5);
+    await frame();
+    player.goto(1);
+    await frame(80);
+    expect(spy.mock.calls.at(-1)![1]).toBe(MS_STEP * 0.5);
+    spy.mockClear();
+    player.setParam('bins', 10);
+    await frame(80);
+    expect(spy.mock.calls.at(-1)![1]).toBe(0);
+    spy.mockClear();
+    const z = setup(0);
+    z.player.goto(1);
+    expect(spy.mock.calls.at(-1)![1]).toBe(0);
+  });
+
+  it('destroy() empties the host', () => {
+    const { el, scene } = setup();
+    scene.destroy();
+    expect(el.children.length).toBe(0);
+  });
+});
