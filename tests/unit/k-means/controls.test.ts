@@ -125,6 +125,8 @@ describe('k-means controls', () => {
     player.setParam('start', 1);
     expect(host.querySelectorAll('tbody tr')).toHaveLength(kmeansData.runs[1].turns.length);
     player.goto(0);
-    expect(host.hidden).toBe(false);
+    expect(host.querySelector<HTMLElement>('.km-extra')!.hidden).toBe(true);
+    player.goto(1);
+    expect(host.querySelector<HTMLElement>('.km-extra')!.hidden).toBe(false);
   });
 });
