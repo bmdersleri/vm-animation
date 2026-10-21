@@ -3,8 +3,8 @@
 .iqr-cards {
   position: relative;
   height: calc(var(--fs-body) * 6.6);
-  margin-top: calc(var(--fs-tick) * 2.4);
-  margin-bottom: calc(var(--fs-tick) * 1.6);
+  margin-top: calc(var(--fs-tick) * 1.4);
+  margin-bottom: 4px;
 }
 .iqr-cards .cell {
   position: absolute;
@@ -85,3 +85,96 @@
 @media (prefers-reduced-motion: reduce) {
   .iqr-cards .cell { transition: none; }
 }
+
+/* ---------- scene (scene.ts, scene-line.ts) ---------- */
+/* Text sizes come only from the --fs-* tokens; the svg has no viewBox. */
+.iqr-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.iqr-scene .iqr-cards-host {
+  flex: none;
+  padding: 0 16px;
+}
+.iqr-scene .iqr-cards {
+  max-width: 1256px;
+  margin-inline: auto;
+}
+.iqr-scene .iqr-plot-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.iqr-plot-host svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+.iqr-scene .formula {
+  flex: none;
+  margin: 0 16px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 14px;
+  border-left: 4px solid var(--navy);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  min-height: calc(2 * 1.35em + 12px);
+}
+.iqr-scene .formula .line {
+  display: block; /* inline terms wrap between the spaces renderStrip inserts */
+}
+.iqr-scene .formula .term {
+  white-space: nowrap;
+}
+
+/* number line: dots, marks, labels */
+.iqr-plot .nl-axis { stroke-width: 3; }
+.iqr-plot .break-mark line { stroke-width: 3; }
+.iqr-plot .pt { stroke: #fff; stroke-width: 1.5; }
+.iqr-plot .pt.normal { fill: var(--navy); }
+.iqr-plot .pt.outlier { fill: var(--orange); }
+.iqr-plot .pt.filled { fill: var(--teal); }
+.iqr-plot .pt.mid { stroke: var(--teal); stroke-width: 4; }
+.iqr-plot .zband { fill: var(--teal); fill-opacity: 0.16; stroke: var(--teal); stroke-width: 2; stroke-dasharray: 3 4; }
+.iqr-plot .box { fill: var(--navy-soft); stroke: var(--navy); stroke-width: 3; }
+.iqr-plot .whisker,
+.iqr-plot .whisker-cap { stroke: var(--navy); stroke-width: 3; }
+.iqr-plot .arm { stroke: var(--orange); stroke-width: 4; stroke-linecap: round; }
+.iqr-plot .mark-line { stroke: var(--navy); stroke-width: 3; }
+.iqr-plot .mark.median .mark-line { stroke: #0b7473; }
+.iqr-plot .mark.mean .mark-line { stroke: var(--navy); stroke-width: 2; opacity: 0.55; }
+.iqr-plot .mean-tri { fill: var(--navy); }
+.iqr-plot .fence { stroke: #a85a00; stroke-width: 3; }
+.iqr-plot .mark-label,
+.iqr-plot .pt-label,
+.iqr-plot .arm-label,
+.iqr-plot .zband-label {
+  font-size: var(--fs-tick);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  fill: var(--navy);
+  /* white halo keeps labels readable over lines, dots and tinted areas */
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.iqr-plot .pt-label { stroke-width: 8px; }
+.iqr-plot .mark.median .mark-label { fill: #0b7473; }
+.iqr-plot .mark.lo .mark-label,
+.iqr-plot .mark.hi .mark-label,
+.iqr-plot .arm-label,
+.iqr-plot .pt-label { fill: #8a4b00; }
+.iqr-plot .zband-label { fill: #0b7473; }
+.iqr-plot .tick,
+.iqr-plot .tick text { font-variant-numeric: tabular-nums; }
