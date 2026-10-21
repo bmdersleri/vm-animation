@@ -40,7 +40,7 @@ export function mountKMeansScene(host: HTMLElement, player: StepPlayer<KMeansPar
   const svgEl = document.createElementNS(SVG_NS, 'svg');
   svgEl.setAttribute('class', 'km-plot');
   svgEl.setAttribute('role', 'img');
-  svgEl.setAttribute('aria-label', 'K-Means saçılım grafiği: 150 çiçek, 3 küme merkezi');
+  svgEl.setAttribute('aria-label', `K-Means saçılım grafiği: ${kmeansData.points.length} çiçek, ${kmeansData.runs[0].start.length} küme merkezi`);
   plotHost.append(svgEl);
   const panel = el('aside', 'km-panel');
   panel.setAttribute('aria-live', 'polite');
@@ -147,7 +147,7 @@ export function mountKMeansScene(host: HTMLElement, player: StepPlayer<KMeansPar
       return;
     }
     if (v.frame === 0) {
-      panel.append(el('h3', 'km-panel-title', '150 çiçek · k = 3'));
+      panel.append(el('h3', 'km-panel-title', `${kmeansData.points.length} çiçek · k = ${v.centers.length}`));
       panel.append(el('p', 'km-note', index === 0 ? 'Henüz merkez ve grup yok.' : 'Üç başlangıç merkezi, henüz atama yok.'));
       return;
     }

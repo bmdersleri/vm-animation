@@ -28,6 +28,8 @@ describe('k-means scene', () => {
     expect(pts).toHaveLength(150);
     expect([...pts].every((p) => p.getAttribute('data-cluster') === '-')).toBe(true);
     expect(host.querySelectorAll('.cs-center')).toHaveLength(0);
+    expect(text(host, '.km-panel-title')).toBe(`${kmeansData.points.length} çiçek · k = ${good.start.length}`);
+    expect(attr(host, 'svg.km-plot', 'aria-label')).toContain(`${kmeansData.points.length} çiçek, ${good.start.length} küme merkezi`);
     scene.destroy(); player.destroy();
   });
 

@@ -46,6 +46,15 @@ describe('k-means scenario', () => {
     expect(p[7]).toEqual({ start: 0, frame: frameCount(good) - 1 });
   });
 
+  it('copy numbers come from the data', () => {
+    const sizes = [0, 0, 0];
+    good.turns.at(-1)!.labels.forEach((l) => { sizes[l] += 1; });
+    const sorted = [...sizes].sort((a, b) => a - b).join(' / ');
+    expect(kMeansScenario.steps[5].text).toContain(`boylar ${sorted}`);
+    expect(kMeansScenario.steps[0].text).toContain(`${kmeansData.points.length} çiçek`);
+    expect(kMeansScenario.steps[0].text).toContain(`k = ${good.start.length}`);
+  });
+
   it('a player on step 5 starts the sweep at frame 3', () => {
     const player = new StepPlayer(kMeansScenario);
     player.goto(4);

@@ -20,6 +20,11 @@ const good = kmeansData.runs[GOOD];
 const bad = kmeansData.runs[BAD];
 const lastGood = frameCount(good) - 1;
 const range = (from: number, to: number): number[] => Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
+const goodSizes = ((): string => {
+  const n = new Array<number>(good.start.length).fill(0);
+  good.turns.at(-1)!.labels.forEach((l) => { n[l] += 1; });
+  return n.sort((a, b) => a - b).join(' / ');
+})();
 const one = (v: number): string => formatNumber(v, 1);
 
 const defaults: KMeansParams = { start: GOOD, frame: 0, pick: kmeansData.nInitBest };
@@ -31,7 +36,7 @@ export const kMeansScenario: Scenario<KMeansParams> = {
     {
       id: 'etiketsiz',
       title: 'Etiketsiz noktalar',
-      text: '150 çiçek, iki ölçülmüş özellik: sepal length ve petal length (ölçeklenmiş). Gerçek grup bilinmiyor. K-Means grupları kendisi bulacak, ama kaç grup olacağını (k) biz söyleriz: k = 3.',
+      text: `${kmeansData.points.length} çiçek, iki ölçülmüş özellik: sepal length ve petal length (ölçeklenmiş). Gerçek grup bilinmiyor. K-Means grupları kendisi bulacak, ama kaç grup olacağını (k) biz söyleriz: k = ${good.start.length}.`,
       term: 'etiketsiz veri (unlabeled data)',
       params: { start: GOOD, frame: 0 },
     },
@@ -67,7 +72,7 @@ export const kMeansScenario: Scenario<KMeansParams> = {
     {
       id: 'dur',
       title: 'Dur: kimse değişmedi',
-      text: `Son turda hiçbir nokta renk değiştirmedi, merkezler kıpırdamadı: döngü durur. Durma koşulu, bir atama turunda hiçbir noktanın küme değiştirmemesidir. Sonuç: boylar 43 / 53 / 54, inertia ${one(good.inertia)}.`,
+      text: `Son turda hiçbir nokta renk değiştirmedi, merkezler kıpırdamadı: döngü durur. Durma koşulu, bir atama turunda hiçbir noktanın küme değiştirmemesidir. Sonuç: boylar ${goodSizes}, inertia ${one(good.inertia)}.`,
       term: 'durma koşulu (convergence)',
       params: { start: GOOD, frame: lastGood },
     },
