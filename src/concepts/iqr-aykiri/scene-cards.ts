@@ -80,12 +80,20 @@ export class CardsLayer {
     return e;
   }
 
+  /**
+   * New cells (a part change) first appear in book order, at slot `i`, so the
+   * following layout() visibly sorts them instead of dealing them in from
+   * the left edge.
+   */
   private build(cells: readonly Cell[]): void {
     for (const c of this.cells.values()) c.el.remove();
     this.cells = new Map();
+    const w = this.cellW();
     for (const c of cells) {
       const el = this.el('div', 'cell');
       el.dataset.key = c.key;
+      el.style.width = `${w}px`;
+      el.style.transform = `translate(${c.i * (w + GAP)}px, 0px)`;
       const value = this.el('span', 'cell-value');
       el.append(value);
       this.root.append(el);

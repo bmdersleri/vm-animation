@@ -4,6 +4,19 @@ import { CardsLayer } from '../../../src/concepts/iqr-aykiri/scene-cards';
 import { deriveIqrView } from '../../../src/concepts/iqr-aykiri/view';
 import { iqrAykiriScenario, type IqrParams } from '../../../src/concepts/iqr-aykiri/scenario';
 
+// jsdom has no DOMMatrix, which d3-transition needs to tween CSS transforms
+class FakeMatrix {
+  a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+  constructor(s = '') {
+    const t = /translate\(\s*(-?[\d.]+)(?:px)?\s*,\s*(-?[\d.]+)/.exec(s);
+    const m = /matrix\(([^)]+)\)/.exec(s);
+    if (t) { this.e = Number(t[1]); this.f = Number(t[2]); }
+    else if (m) [this.a, this.b, this.c, this.d, this.e, this.f] = m[1].split(',').map(Number);
+  }
+  get isIdentity(): boolean { return this.e === 0 && this.f === 0 && this.a === 1 && this.d === 1; }
+}
+(globalThis as { DOMMatrix?: unknown }).DOMMatrix ??= FakeMatrix;
+
 const D = iqrAykiriScenario.defaults;
 const view = (i: number, over: Partial<IqrParams> = {}) =>
   deriveIqrView(i, { ...D, ...iqrAykiriScenario.steps[i].params, ...over });
@@ -150,6 +163,32 @@ describe('iqr-aykiri CardsLayer', () => {
     const keys = cells(host).map((c) => c.dataset.key!);
     expect(keys).toHaveLength(8);
     expect(keys.every((k) => k.startsWith('2-'))).toBe(true);
+  });
+
+  it('part change: the 003 cards appear in book order, then sort into their slots', async () => {
+    const { host, layer } = setup();
+    layer.update(view(4), 0);
+    const v = view(5);
+    expect(v.cells.some((c) => c.slot !== c.i)).toBe(true);
+    layer.update(v, 300);
+    const w = Number(cells(host)[0].dataset.w);
+    const el = (key: string): HTMLElement => host.querySelector<HTMLElement>(`.cell[data-key="${key}"]`)!;
+    const at = (e: HTMLElement): number => Number(/translate\(([-\d.e]+)px/.exec(e.style.transform)![1]);
+    // ms 0: every new card sits at its book-order slot i (not at the left edge)
+    for (const c of v.cells) expect(at(el(c.key)), c.key).toBeCloseTo(c.i * (w + 8), 6);
+    await new Promise((r) => setTimeout(r, 120));
+    // mid-sort: a moving card is between its book slot and its sorted slot
+    const mid = v.cells.filter((c) => {
+      const [a, b] = [c.i * (w + 8), c.slot * (w + 8)].sort((p, q) => p - q);
+      const x0 = at(el(c.key));
+      return c.slot !== c.i && x0 > a + 0.5 && x0 < b - 0.5;
+    });
+    expect(mid.length).toBeGreaterThan(0);
+    await new Promise((r) => setTimeout(r, 300));
+    for (const c of v.cells) {
+      expect(el(c.key).style.transform, c.key).toBe(`translate(${x(el(c.key))}px, 0px)`);
+      expect(x(el(c.key))).toBeCloseTo(c.slot * (w + 8), 6);
+    }
   });
 
   it('resize and interrupt mid-sort leave cells at their final positions', () => {
