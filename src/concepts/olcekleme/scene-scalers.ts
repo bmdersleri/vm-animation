@@ -120,9 +120,9 @@ export class ScalersLayer {
     // Fit the stack into the svg: spacing shrinks first (never a font), then the names move
     // left of their lines. Each level is tried in turn; the last one is used even if it is tight.
     const levels = [
-      { lhK: 1.25, blockGap: 6, nameLeft: false },
-      { lhK: 1.1, blockGap: 2, nameLeft: false },
-      { lhK: 1.1, blockGap: 2, nameLeft: true },
+      { lhK: 1.35, blockGap: 6, nameLeft: false },
+      { lhK: 1.35, blockGap: 2, nameLeft: false },
+      { lhK: 1.35, blockGap: 2, nameLeft: true },
     ];
     const dims = { w: L.w, nameW, tw, R, tick, nameH, titleBelow, last };
     let chosen = levels[0];

@@ -141,7 +141,7 @@ export class SplitLayer {
     const R = this.mode === 'ders' ? 9 : 7;
     const pad = 10;
     const gap = Math.round(tick * 0.45);
-    const lh = tick * 1.3;
+    const lh = tick * 1.4; // a text box is about 1.33 em tall, so stacked rows must be at least that far apart
     const rowLabelW = Math.max(
       this.measure.width('eğitim', 'row-label', rowFs), this.measure.width('test', 'row-label', rowFs),
     );
