@@ -23,6 +23,7 @@ export interface ClusterScatterSpec {
 
 const R = 4;
 const ARM = 7;
+const TRAIL_ARM = 6;
 const MS = 450;
 const colour = (c: number | undefined): string => (c === undefined || c < 0 ? UNASSIGNED : CLUSTER[c % CLUSTER.length]);
 const plusPath = (arm: number): string => `M${-arm},0H${arm}M0,${-arm}V${arm}`;
@@ -75,9 +76,10 @@ export class ClusterScatterLayer {
   constructor(parent: SVGGElement, private readonly domain: Domain) {
     this.root = select(parent).append('g').attr('class', 'cs-layer') as unknown as G;
     const sub = (c: string): G => this.root.append('g').attr('class', c) as unknown as G;
-    this.gTrails = sub('cs-trails');
     this.gLines = sub('cs-lines');
     this.gPoints = sub('cs-points');
+    // Old-centre trails above the dense points so the faded plus stays legible.
+    this.gTrails = sub('cs-trails');
     this.gRings = sub('cs-rings');
     this.gCenters = sub('cs-centers');
     this.scales = fitEqualAspect(domain, this.rect);
@@ -139,18 +141,22 @@ export class ClusterScatterLayer {
     (spec.trails ?? []).forEach((from, i) => { if (centers[i]) trailData.push({ from, to: centers[i] }); });
     const tl = this.gTrails.selectAll<SVGGElement, Trail>('g.cs-trail').data(trailData);
     tl.exit().remove();
-    const tlBorn = tl.enter().append('g').attr('class', 'cs-trail').attr('opacity', 0.55);
-    tlBorn.append('path').attr('class', 'cs-trail-plus').attr('d', plusPath(5)).attr('fill', 'none')
+    const tlBorn = tl.enter().append('g').attr('class', 'cs-trail').attr('opacity', 0.75);
+    tlBorn.append('path').attr('class', 'cs-trail-outline').attr('d', plusPath(TRAIL_ARM)).attr('fill', 'none')
+      .attr('stroke', WHITE).attr('stroke-width', 4).attr('stroke-linecap', 'round');
+    tlBorn.append('path').attr('class', 'cs-trail-plus').attr('d', plusPath(TRAIL_ARM)).attr('fill', 'none')
       .attr('stroke-width', 2).attr('stroke-linecap', 'round');
-    tlBorn.append('path').attr('class', 'cs-trail-arrow').attr('fill', 'none').attr('stroke-width', 1.5);
+    tlBorn.append('path').attr('class', 'cs-trail-arrow').attr('fill', 'none').attr('stroke-width', 2);
     const tlAll = tlBorn.merge(tl as never) as unknown as Sel<Trail>;
     tlAll.attr('data-cluster', (_d, i) => i);
     const trPlus = (sel: AnySel): AnySel => sel.attr('transform', (d: Trail) => `translate(${px(d.from)},${py(d.from)})`);
     const trArrow = (sel: AnySel): AnySel => sel.attr('d', (d: Trail) => arrow(px(d.from), py(d.from), px(d.to), py(d.to)));
+    trPlus(tlBorn.select('path.cs-trail-outline'));
     trPlus(tlBorn.select('path.cs-trail-plus'));
     trArrow(tlBorn.select('path.cs-trail-arrow'));
     tlAll.select('path.cs-trail-plus').attr('stroke', (_d, i) => colour(i));
     tlAll.select('path.cs-trail-arrow').attr('stroke', (_d, i) => colour(i));
+    trPlus(go(tlAll.select('path.cs-trail-outline')));
     trPlus(go(tlAll.select('path.cs-trail-plus')));
     trArrow(go(tlAll.select('path.cs-trail-arrow')));
 

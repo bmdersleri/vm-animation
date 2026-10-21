@@ -2,7 +2,7 @@
 import '../svg-stubs';
 import { describe, expect, it } from 'vitest';
 import { ClusterScatterLayer, type ClusterScatterSpec } from '../../../src/core/plot/cluster-scatter';
-import { CLUSTER, NEGATIVE, UNASSIGNED } from '../../../src/core/plot/marks';
+import { CLUSTER, NEGATIVE, UNASSIGNED, WHITE } from '../../../src/core/plot/marks';
 
 const NS = 'http://www.w3.org/2000/svg';
 const PTS = [[0, 0], [1, 1], [-1, 2], [2, -1]] as const;
@@ -46,6 +46,22 @@ describe('ClusterScatterLayer', () => {
     expect(cs.map((g) => g.querySelector('text')!.textContent)).toEqual(['M1', 'M2']);
     expect(cs[1].querySelector('path.cs-plus')!.getAttribute('stroke')).toBe(CLUSTER[1]);
     expect(svg.querySelectorAll('.cs-trail')).toHaveLength(2);
+  });
+
+  it('trails sit above the points, below rings and centres, with a white outline', () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ centers: [[1, 1]], trails: [[0, 0]] }), false);
+    const order = [...svg.querySelector('.cs-layer')!.children].map((g) => g.getAttribute('class'));
+    expect(order).toEqual(['cs-lines', 'cs-points', 'cs-trails', 'cs-rings', 'cs-centers']);
+    const t = svg.querySelector('g.cs-trail')!;
+    expect(Number(t.getAttribute('opacity'))).toBeCloseTo(0.75);
+    const outline = t.querySelector('path.cs-trail-outline')!;
+    expect(outline.getAttribute('stroke')).toBe(WHITE);
+    expect(outline.getAttribute('stroke-width')).toBe('4');
+    expect(outline.getAttribute('d')).toBe(t.querySelector('path.cs-trail-plus')!.getAttribute('d'));
+    expect(outline.getAttribute('transform')).toBe(t.querySelector('path.cs-trail-plus')!.getAttribute('transform'));
+    expect(t.querySelector('path.cs-trail-plus')!.getAttribute('d')).toBe('M-6,0H6M0,-6V6');
+    expect(t.querySelector('path.cs-trail-arrow')!.getAttribute('stroke-width')).toBe('2');
   });
 
   it('lines mark only the nearest centre as data-nearest', () => {
