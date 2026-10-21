@@ -118,7 +118,7 @@ export const pcaScenario: Scenario<PcaParams> = {
     {
       id: 'kural',
       title: 'Kural',
-      text: 'Sınav Notu: özdeğer sıralaması bileşen sıralamasıyla birebir örtüşür; PC1 her zaman en büyük özdeğere sahiptir. PCA bir model girdisi (model input) üretir ve fit yalnızca eğitim verisinde çağrılır.',
+      text: 'Sınav Notu: özdeğer sıralaması bileşen sıralamasıyla birebir örtüşür; PC1 her zaman en büyük özdeğere sahiptir. PCA sıkıştırır, özellik seçimi eler, t-SNE yalnızca gösterir. Model girdisi (model input) için fit yalnızca eğitim verisinde çağrılır, transform her yerde.',
       term: 'model girdisi (model input)',
       params: { theta: 45, ...P },
     },
@@ -157,6 +157,7 @@ export function animateTheta(
 export function pcaShortcuts(player: StepPlayer<PcaParams>): Shortcut[] {
   const inSteps = (list: readonly number[]): boolean => list.includes(player.state.index);
   const PER: Perplexity[] = [5, 30, 50];
+  let stop: () => void = () => {};
   return [
     {
       keys: ['b', 'B'], display: 'B', label: '9. öznitelik birimi: ×1 / ×1000',
@@ -167,7 +168,10 @@ export function pcaShortcuts(player: StepPlayer<PcaParams>): Shortcut[] {
     {
       keys: ['y', 'Y'], display: 'Y', label: 'PC1’i bul',
       run: () => {
-        if (inSteps(THETA_STEPS)) animateTheta(player, Math.round(pairFit(player.state.params.birim).pc1Deg));
+        if (inSteps(THETA_STEPS)) {
+          stop();
+          stop = animateTheta(player, Math.round(pairFit(player.state.params.birim).pc1Deg));
+        }
       },
     },
     {

@@ -200,6 +200,23 @@ describe('pcaScenario', () => {
     expect(p.state.params.perplexity).toBe(30);
   });
 
+  it('a second Y cancels the first animation', () => {
+    const p = make();
+    p.goto(1);
+    const sc = pcaShortcuts(p).find((x) => x.keys.includes('y'))!;
+    sc.run();
+    vi.advanceTimersByTime(200);
+    sc.run();
+    const spy = vi.spyOn(p, 'setParam');
+    vi.advanceTimersByTime(16);
+    expect(spy).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(1000);
+    expect(p.state.params.theta).toBe(45);
+    const n = spy.mock.calls.length;
+    vi.advanceTimersByTime(500);
+    expect(spy.mock.calls.length).toBe(n);
+  });
+
   it('shortcut metadata', () => {
     expect(pcaShortcuts(make()).map((s) => [s.keys, s.display, s.label])).toEqual([
       [['b', 'B'], 'B', '9. öznitelik birimi: ×1 / ×1000'],
