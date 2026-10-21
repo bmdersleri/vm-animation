@@ -19,6 +19,7 @@ export default defineConfig({
         'pca': resolve(root, 'pca/index.html'),
         'ozellik-secimi': resolve(root, 'ozellik-secimi/index.html'),
         'dagilim-carpiklik': resolve(root, 'dagilim-carpiklik/index.html'),
+        'kutu-grafigi': resolve(root, 'kutu-grafigi/index.html'),
       },
     },
   },
