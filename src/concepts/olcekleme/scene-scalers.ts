@@ -108,34 +108,42 @@ export class ScalersLayer {
     const tick = fonts.tick;
     const nameFs = this.measure.fontPx('line-name', this.mode === 'ders' ? 22 : 16);
     const R = this.mode === 'ders' ? 9 : 7;
-    const pad = 10;
+    const pad = 6;
     const gap = Math.round(tick * 0.45);
-    const lh = tick * 1.25;
-    const left = 28;
-    const right = L.w - 28;
-    const sc = lineScale({ min: sv.domain[0], max: sv.domain[1] }, [left, right]);
+    const last = KEYS.length - 1;
     const tw = (t: string): number => this.measure.width(t, 'pt-label', tick);
+    const nameW = Math.max(...sv.lines.map((ln) => this.measure.width(ln.name, 'line-name', nameFs)));
+    // text boxes: ascent 0.8 em above the baseline, descent 0.2 em below
+    const nameH = nameFs * 1.0;
+    const titleBelow = gap + tick * 0.9 + tick * 0.3 + gap + fonts.axis * 0.95 + fonts.axis * 0.25;
 
-    // label rows per line: sorted by x, alternate above / below the line, stagger inside a side
-    const plan = sv.lines.map((ln, i) => this.plan(ln, sc, tw, i === KEYS.length - 1));
-    const nameH = nameFs * 1.15;
-    const lastExtra = gap + tick * 1.2 + gap + fonts.axis * 1.25;
-    const need = plan.map((p, i) => {
-      const above = Math.max(0, ...p.filter((l) => l.side === -1).map((l) => l.row + 1));
-      const under = Math.max(0, ...p.filter((l) => l.side === 1).map((l) => l.row + 1));
-      return { above, under, h: 6 + nameH + above * lh + R + 8 + R + under * lh + (i === KEYS.length - 1 ? lastExtra : 0) };
-    });
-    const total = need.reduce((a, n) => a + n.h, 0);
-    const extra = Math.max(0, (L.h - pad * 2 - total) / KEYS.length);
+    // Fit the stack into the svg: spacing shrinks first (never a font), then the names move
+    // left of their lines. Each level is tried in turn; the last one is used even if it is tight.
+    const levels = [
+      { lhK: 1.25, blockGap: 6, nameLeft: false },
+      { lhK: 1.1, blockGap: 2, nameLeft: false },
+      { lhK: 1.1, blockGap: 2, nameLeft: true },
+    ];
+    const dims = { w: L.w, nameW, tw, R, tick, nameH, titleBelow, last };
+    let chosen = levels[0];
+    let lay = this.stack(sv.lines, chosen, dims);
+    for (const lv of levels.slice(1)) {
+      if (lay.total + pad * 2 <= L.h) break;
+      chosen = lv;
+      lay = this.stack(sv.lines, lv, dims);
+    }
+    const { sc, plan, need } = lay;
+    const lh = tick * chosen.lhK;
+    const extra = Math.max(0, (L.h - pad * 2 - lay.total) / KEYS.length);
     let cursor = pad;
-
+    
     sv.lines.forEach((ln, i) => {
       const row = this.rows[i];
       const n = need[i];
       const y0 = cursor;
       cursor += n.h + extra;
-      const axisY = y0 + nameH + n.above * lh + R + 8 + extra / 2;
-      const isLast = i === KEYS.length - 1;
+      const axisY = y0 + chosen.blockGap + (chosen.nameLeft ? 0 : nameH) + n.aboveH + extra / 2;
+      const isLast = i === last;
       const tickY = axisY + gap + tick * 0.9;
       row.line.draw(sc, axisY, {
         tickCount: 7, tickY, title: isLast ? 'Ölçeklenmiş aylık fatura' : '',
@@ -144,7 +152,9 @@ export class ScalersLayer {
       // the shared axis needs tick numbers once, under the last line
       row.g.selectAll('g.tick text').style('display', isLast ? '' : 'none');
 
-      row.name.attr('x', left).attr('y', r1(y0 + nameFs * 0.95)).text(ln.name);
+      if (chosen.nameLeft) row.name.attr('x', pad + 4).attr('y', r1(axisY + nameFs * 0.35));
+      else row.name.attr('x', pad + 4).attr('y', r1(y0 + chosen.blockGap + nameFs * 0.8));
+      row.name.text(ln.name);
 
       const pts = row.pts.selectAll<SVGCircleElement, number>('circle.pt').data(ln.values.map((_, j) => j), (d) => String(d));
       pts.exit().remove();
@@ -157,8 +167,8 @@ export class ScalersLayer {
       en.merge(pts as never).attr('data-id', (j: number) => CUSTOMERS[j].id);
 
       const labelsAll = plan[i];
-      const baseBelow = axisY + R + 6 + lh * 0.8;
-      const ly = (l: Lbl): number => (l.side === -1 ? axisY - R - 6 - l.row * lh : baseBelow + l.row * lh);
+      const baseBelow = axisY + R + 4 + tick * 0.8;
+      const ly = (l: Lbl): number => (l.side === -1 ? axisY - R - 4 - l.row * lh : baseBelow + l.row * lh);
       const ls = row.labels.selectAll<SVGTextElement, Lbl>('text.pt-label').data(labelsAll, (d) => String(d.j));
       ls.exit().remove();
       const le = ls.enter().append('text').attr('class', 'pt-label').attr('text-anchor', 'middle');
@@ -168,6 +178,31 @@ export class ScalersLayer {
       le.merge(ls as never).text((l: Lbl) => l.text).attr('data-w', (l: Lbl) => r1(l.w))
         .attr('data-id', (l: Lbl) => CUSTOMERS[l.j].id);
     });
+  }
+
+  /** Scale, label plan and band heights of the three lines for one spacing level. */
+  private stack(
+    lines: ScalerLine[],
+    lv: { lhK: number; blockGap: number; nameLeft: boolean },
+    c: { w: number; nameW: number; tw: (t: string) => number; R: number; tick: number; nameH: number; titleBelow: number; last: number },
+  ): {
+    sc: ReturnType<typeof lineScale>; left: number;
+    plan: Lbl[][]; need: { aboveH: number; h: number }[]; total: number;
+  } {
+    const left = 28 + (lv.nameLeft ? c.nameW + 12 : 0);
+    const sc = lineScale({ min: -1, max: 6 }, [left, c.w - 28]);
+    const lh = c.tick * lv.lhK;
+    const plan = lines.map((ln, i) => this.plan(ln, sc, c.tw, i === c.last));
+    const need = plan.map((p, i) => {
+      const rowsOf = (side: 1 | -1): number => Math.max(0, ...p.filter((l) => l.side === side).map((l) => l.row + 1));
+      const a = rowsOf(-1);
+      const b = rowsOf(1);
+      const aboveH = a > 0 ? c.R + 4 + (a - 1) * lh + c.tick * 0.8 : c.R;
+      let belowH = b > 0 ? c.R + 4 + c.tick * 0.8 + (b - 1) * lh + c.tick * 0.2 : c.R;
+      if (i === c.last) belowH = Math.max(belowH, c.titleBelow);
+      return { aboveH, h: lv.blockGap + (lv.nameLeft ? 0 : c.nameH) + aboveH + belowH };
+    });
+    return { sc, left, plan, need, total: need.reduce((t, n) => t + n.h, 0) };
   }
 
   /** `aboveOnly`: the last line has its tick numbers below, so all its labels go above. */

@@ -16,7 +16,7 @@ const FLOW_TEXT = ['train_test_split', 'fit (yalnızca eğitim)', 'transform (e�
 const FLOW_H: Record<Mode, number> = { ders: 110, lab: 64 };
 
 type G = Selection<SVGGElement, unknown, null, undefined>;
-interface Lay { w: number; h: number; plotH: number }
+interface Lay { w: number; h: number }
 interface Pt { i: number; v: number; kind: 'train' | 'test' }
 interface Lbl { k: string; cx: number; ly: number; text: string; w: number; cls: string }
 
@@ -85,7 +85,7 @@ export class SplitLayer {
   resize(w: number, h: number, mode: Mode): void {
     if (this.lay && this.lay.w === w && this.lay.h === h && this.mode === mode) return;
     this.mode = mode;
-    this.lay = { w, h, plotH: h };
+    this.lay = { w, h };
     this.wrap.style.width = `${w}px`;
     this.wrap.style.height = `${h}px`;
     if (this.view) {
