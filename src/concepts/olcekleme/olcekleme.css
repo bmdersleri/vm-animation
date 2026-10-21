@@ -30,3 +30,105 @@
 .scale-plot .mu-label { fill: #0b7473; }
 .scale-plot .tick,
 .scale-plot .tick text { font-variant-numeric: tabular-nums; }
+
+/* scene frame: plot above, calculation strip below */
+.olc-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.olc-scene .olc-plot-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.olc-plot-host svg,
+.olc-plot-host .split-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+.olc-scene .formula {
+  flex: none;
+  margin: 0 16px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 14px;
+  border-left: 4px solid var(--navy);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  min-height: calc(2 * 1.35em + 12px);
+}
+.olc-scene .formula .line { display: block; }
+.olc-scene .formula .term { white-space: nowrap; }
+
+/* three scalers */
+.scalers-plot,
+.split-plot { font-family: var(--font); user-select: none; -webkit-user-select: none; }
+.scalers-plot .nl-axis,
+.split-plot .nl-axis { stroke-width: 3; }
+.scalers-plot .line-name {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  fill: var(--navy);
+}
+.scalers-plot .pt { fill: var(--navy); stroke: #fff; stroke-width: 1.5; }
+.scalers-plot .pt-label,
+.split-plot .z-label,
+.split-plot .mu-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  fill: var(--navy);
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.scalers-plot .tick,
+.scalers-plot .tick text,
+.split-plot .tick,
+.split-plot .tick text { font-variant-numeric: tabular-nums; }
+
+/* train / test split */
+.split-plot .row-label { font-size: var(--fs-body); font-weight: 700; fill: var(--navy); }
+.split-plot .pt.train { fill: var(--navy); stroke: #fff; stroke-width: 1.5; }
+.split-plot .pt.test { fill: #fff; stroke: var(--navy); stroke-width: 3; }
+.split-plot .mu { stroke: #0b7473; stroke-width: 3; }
+.split-plot .mu.ghost { stroke: #a85a00; stroke-dasharray: 8 6; }
+.split-plot .sigma { fill: var(--teal); fill-opacity: 0.14; stroke: none; }
+.split-plot .mu-label { fill: #0b7473; }
+.split-plot .mu-label.ghost { fill: #a85a00; }
+.split-plot .z-label { fill: #a85a00; }
+
+/* golden-rule flow */
+.split-wrap { display: flex; flex-direction: column; }
+.split-wrap > svg { position: static; flex: none; }
+.split-wrap .flow {
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 16px;
+}
+.split-wrap .flow-box {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 10px 18px;
+  border: 3px solid var(--navy);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--navy);
+  white-space: nowrap;
+}
+.split-wrap .flow-box:nth-of-type(2) { background: var(--navy-soft); }
+.split-wrap .flow-arrow { font-size: var(--fs-title); font-weight: 700; color: var(--navy); }
