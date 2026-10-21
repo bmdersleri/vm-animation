@@ -46,17 +46,24 @@ test('lab: crowded start frames keep the centre labels apart', async ({ page }) 
   }
 });
 
-test('screenshots: lab new start and play', async ({ page }) => {
+test('screenshots: lab new start and loop play', async ({ page }) => {
   await open(page, PAGE, 'lab', READY);
   await gotoStep(page, 2, STEPS);
   await page.locator('[data-act="new-start"]').click();
   await page.waitForTimeout(1200);
   expect(await labelCollisions(page, 'svg.km-plot')).toEqual([]);
   await expect(page).toHaveScreenshot('k-means-lab-new-start.png');
-  await page.locator('.play').click();
-  await expect(stepCount(page)).not.toHaveText(`Adım 3 / ${STEPS}`);
-  await page.locator('.play').click();
+  // Loop play runs the chosen start to its last frame and stops there, on the same step.
+  const loop = page.locator('[data-act="play-loop"]');
+  await loop.click();
+  await expect(loop).toHaveAttribute('aria-pressed', 'true');
+  await expect(loop).toHaveAttribute('aria-pressed', 'false', { timeout: 20_000 });
+  await expect(page.locator('.km-frame-out')).toHaveText(/^Çerçeve (\d+)\/\1 /);
+  await expect(stepCount(page)).toHaveText(`Adım 3 / ${STEPS}`);
+  await expect(page.locator('[data-run-info]')).toContainText('Başlangıç 2/12');
+  await expect(page.locator('[data-stop]')).toBeVisible();
   expect(await overlaps(page, '.km-plot text')).toEqual([]);
-  await page.waitForTimeout(1200);
+  expect(await labelCollisions(page, 'svg.km-plot')).toEqual([]);
+  await page.waitForTimeout(600);
   await expect(page).toHaveScreenshot('k-means-lab-play.png');
 });

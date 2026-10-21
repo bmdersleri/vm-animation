@@ -62,6 +62,7 @@ describe('k-means controls', () => {
       expect(visible(host, '[data-act=new-start]'), `new-start @${i + 1}`).toBe(turn);
       expect(visible(host, '[data-act=next-frame]'), `frame @${i + 1}`).toBe(turn);
       expect(visible(host, '[data-act=last-frame]'), `last @${i + 1}`).toBe(turn);
+      expect(visible(host, '[data-act=play-loop]'), `loop @${i + 1}`).toBe(turn);
       expect(visible(host, 'select[data-param=pick]'), `pick @${i + 1}`).toBe(i === 7);
     }
     player.goto(7);
@@ -107,6 +108,102 @@ describe('k-means controls', () => {
     vi.advanceTimersByTime(10000);
     expect(player.state.params).toMatchObject({ start: 1, frame: 0 });
     handle.destroy();
+  });
+
+  it('loop play runs the chosen start to its end and stops', () => {
+    vi.useFakeTimers();
+    const { player, host } = setup();
+    player.goto(2);
+    for (let i = 0; i < 3; i++) click(host, '[data-act=new-start]');
+    expect(player.state.params).toMatchObject({ start: 3, frame: 0 });
+    const loop = host.querySelector<HTMLButtonElement>('[data-act=play-loop]')!;
+    expect(loop.type).toBe('button');
+    expect(loop.getAttribute('aria-pressed')).toBe('false');
+    expect(loop.textContent).toBe('▶ Oynat');
+    loop.click();
+    expect(loop.getAttribute('aria-pressed')).toBe('true');
+    expect(loop.textContent).toBe('❚❚ Durdur');
+    vi.advanceTimersByTime(900);
+    expect(player.state.params.frame).toBe(1);
+    expect(player.state.index).toBe(2);
+    const last = frameCount(kmeansData.runs[3]) - 1;
+    vi.advanceTimersByTime(900 * (last + 3));
+    expect(player.state.params).toMatchObject({ start: 3, frame: last });
+    expect(player.state.index).toBe(2);
+    expect(loop.getAttribute('aria-pressed')).toBe('false');
+    expect(loop.textContent).toBe('▶ Oynat');
+    expect(vi.getTimerCount()).toBe(0);
+    player.destroy();
+  });
+
+  it('loop play from the last frame starts over, and a second press stops it', () => {
+    vi.useFakeTimers();
+    const { player, host } = setup();
+    player.goto(2);
+    click(host, '[data-act=last-frame]');
+    click(host, '[data-act=play-loop]');
+    expect(player.state.params.frame).toBe(0);
+    vi.advanceTimersByTime(900 * 2);
+    expect(player.state.params.frame).toBe(2);
+    click(host, '[data-act=play-loop]');
+    expect(host.querySelector('[data-act=play-loop]')!.getAttribute('aria-pressed')).toBe('false');
+    vi.advanceTimersByTime(900 * 5);
+    expect(player.state.params.frame).toBe(2);
+    expect(vi.getTimerCount()).toBe(0);
+    player.destroy();
+  });
+
+  it('a step change or another turn control stops loop play', () => {
+    vi.useFakeTimers();
+    const { player, host } = setup();
+    const loop = host.querySelector<HTMLButtonElement>('[data-act=play-loop]')!;
+    player.goto(2);
+    loop.click();
+    vi.advanceTimersByTime(900);
+    player.goto(3);
+    expect(loop.getAttribute('aria-pressed')).toBe('false');
+    const f = player.state.params.frame;
+    vi.advanceTimersByTime(900 * 5);
+    expect(player.state.params.frame).toBe(f);
+    expect(vi.getTimerCount()).toBe(0);
+    for (const act of ['new-start', 'prev-frame', 'next-frame', 'last-frame']) {
+      player.goto(2);
+      player.setParam('frame', 2);
+      loop.click();
+      expect(loop.getAttribute('aria-pressed'), act).toBe('true');
+      click(host, `[data-act=${act}]`);
+      expect(loop.getAttribute('aria-pressed'), act).toBe('false');
+      const at = player.state.params.frame;
+      vi.advanceTimersByTime(900 * 3);
+      expect(player.state.params.frame, act).toBe(at);
+    }
+    player.destroy();
+  });
+
+  it('loop play during a step sweep takes over from the shown frame', () => {
+    vi.useFakeTimers();
+    const { player, host } = setup();
+    player.goto(6);
+    vi.advanceTimersByTime(900 * 2);
+    const f = player.state.params.frame;
+    click(host, '[data-act=play-loop]');
+    expect(player.state.params.frame).toBe(f);
+    vi.advanceTimersByTime(900);
+    expect(player.state.params.frame).toBe(f + 1);
+    player.destroy();
+  });
+
+  it('loop play stops when its panel leaves the page', () => {
+    vi.useFakeTimers();
+    const { player, host } = setup();
+    player.goto(2);
+    const f = player.state.params.frame;
+    click(host, '[data-act=play-loop]');
+    host.remove();
+    vi.advanceTimersByTime(900 * 2);
+    expect(player.state.params.frame).toBe(f);
+    expect(vi.getTimerCount()).toBe(0);
+    player.destroy();
   });
 
   it('explain table lists every turn', () => {

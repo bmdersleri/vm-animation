@@ -10,6 +10,10 @@ const TURN_FIRST = 2;
 const TURN_LAST = 6;
 const STEP_BASLANGIC = 1;
 const STEP_NINIT = 7;
+/** Loop play: one frame per tick, the same pace as the lesson sweeps. */
+const LOOP_MS = 900;
+const LOOP_PLAY = '▶ Oynat';
+const LOOP_STOP = '❚❚ Durdur';
 
 let uid = 0;
 
@@ -36,9 +40,10 @@ export function mountKMeansParams(host: HTMLElement, player: StepPlayer<KMeansPa
   const prev = el('button', { type: 'button', 'data-act': 'prev-frame', 'aria-label': 'Önceki çerçeve' }, '◀ adım');
   const next = el('button', { type: 'button', 'data-act': 'next-frame', 'aria-label': 'Sonraki çerçeve' }, 'adım ▶');
   const last = el('button', { type: 'button', 'data-act': 'last-frame' }, 'Sona git');
+  const loop = el('button', { type: 'button', 'data-act': 'play-loop', 'aria-pressed': 'false', 'aria-label': 'Turları sürekli oynat' }, LOOP_PLAY);
   const frameOut = el('output', { class: 'km-frame-out', 'aria-live': 'polite' });
   const turnGroup = el('div', { class: 'ctl km-turn', role: 'group', 'aria-label': 'Tur kontrolleri' },
-    newStart, el('span', { class: 'km-step-btns' }, prev, next, last), frameOut);
+    newStart, el('span', { class: 'km-step-btns' }, prev, next, last), loop, frameOut);
 
   const select = el('select', { id: `${id}-pick`, 'data-param': 'pick' });
   kmeansData.nInit.forEach((r, i) => {
@@ -47,7 +52,7 @@ export function mountKMeansParams(host: HTMLElement, player: StepPlayer<KMeansPa
   const pickGroup = el('div', { class: 'ctl km-pick' }, el('label', { for: select.id }, 'Gösterilen başlangıç'), select);
 
   // Mouse clicks must not leave focus on a button: keyboard.ts ignores the step keys while one is focused.
-  for (const b of [newStart, prev, next, last]) b.addEventListener('mousedown', (e) => e.preventDefault());
+  for (const b of [newStart, prev, next, last, loop]) b.addEventListener('mousedown', (e) => e.preventDefault());
 
   host.append(el('div', { class: 'km-params' }, info, turnGroup, pickGroup));
 
@@ -60,16 +65,46 @@ export function mountKMeansParams(host: HTMLElement, player: StepPlayer<KMeansPa
     const s = player.state.params;
     player.setParams({ frame: clampFrame(runs[s.start], f) });
   };
+  const lastFrame = (): number => frameCount(runs[player.state.params.start]) - 1;
+
+  // Loop play of the shown start: it stops on its last frame, on a step change, on any other turn control,
+  // or once the panel is gone. Frame writes draw at once, so reduced motion needs nothing extra here.
+  let loopTimer: ReturnType<typeof setInterval> | null = null;
+  let loopStep = -1;
+  const stopLoop = (): void => {
+    if (loopTimer !== null) clearInterval(loopTimer);
+    loopTimer = null;
+    loop.setAttribute('aria-pressed', 'false');
+    setText(loop, LOOP_PLAY);
+  };
+  const tickLoop = (): void => {
+    if (!host.isConnected) { stopLoop(); return; }
+    const f = Math.min(frameNow() + 1, lastFrame());
+    goFrame(f);
+    if (f >= lastFrame()) stopLoop();
+  };
+  const startLoop = (): void => {
+    loopStep = player.state.index;
+    // Pin the shown frame now: a write cancels a running step sweep (from the last frame, start over).
+    goFrame(frameNow() >= lastFrame() ? 0 : frameNow());
+    loop.setAttribute('aria-pressed', 'true');
+    setText(loop, LOOP_STOP);
+    loopTimer = setInterval(tickLoop, LOOP_MS);
+  };
+  loop.addEventListener('click', () => (loopTimer === null ? startLoop() : stopLoop()));
+
   newStart.addEventListener('click', () => {
+    stopLoop();
     player.setParams({ start: (player.state.params.start + 1) % runs.length, frame: 0 });
   });
-  prev.addEventListener('click', () => goFrame(frameNow() - 1));
-  next.addEventListener('click', () => goFrame(frameNow() + 1));
-  last.addEventListener('click', () => goFrame(frameCount(runs[player.state.params.start]) - 1));
+  prev.addEventListener('click', () => { stopLoop(); goFrame(frameNow() - 1); });
+  next.addEventListener('click', () => { stopLoop(); goFrame(frameNow() + 1); });
+  last.addEventListener('click', () => { stopLoop(); goFrame(lastFrame()); });
   select.addEventListener('change', () => player.setParam('pick', Number(select.value)));
 
   const sync = (): void => {
     const { index, params } = player.state;
+    if (loopTimer !== null && index !== loopStep) stopLoop();
     const turn = index >= TURN_FIRST && index <= TURN_LAST;
     turnGroup.hidden = !turn;
     pickGroup.hidden = index !== STEP_NINIT;
