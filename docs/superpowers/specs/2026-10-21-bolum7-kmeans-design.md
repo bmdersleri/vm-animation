@@ -11,7 +11,7 @@ Kabul ölçütleri:
 
 1. İki yeni sayfa yayında: `k-means/` (K-Means döngüsü, 8 adım) ve `k-secimi/` (k sayısının seçimi, 9 adım); her ikisi Ders ve Laboratuvar modunda çalışır.
 2. Ekrandaki bütün sayılar (merkezler, küme boyları, inertia, silhouette, nokta bazlı silhouette) üreticinin sklearn ile hesapladığı değerlerdir ve birim testleri bunları sklearn çıktısına karşı doğrular (aşağıdaki referans tablosu).
-3. Döngü sayfasında her ata/taşı anı ayrı görülür; döngü yalnız hiçbir nokta küme değiştirmediğinde durur; kötü başlangıç 79,4 civarında takılır, `n_init=10` 43,0'ı bulur.
+3. Döngü sayfasında her ata/taşı anı ayrı görülür; döngü yalnız hiçbir nokta küme değiştirmediğinde durur; kötü başlangıç 79,2 civarında takılır, `n_init=10` 43,0'ı bulur.
 4. k sayfasında k=1..10 için inertia (dirsek) ve k=2..10 için silhouette aynı anda okunur; seçili k iki grafikte de işaretlidir; dirsek k=3, silhouette k=2 önerir ve bu çelişki bir adımda açıkça anlatılır.
 5. Ana sayfada Bölüm 7 altında iki kart "hazır" olur; DBSCAN ve Dendrogram "yakında" kalır.
 6. 1280×720 Ders ve Lab ekranlarında örtüşen ya da kesilen yazı yoktur (kontrolcü ekran görüntülerine kendisi bakar); `npm run check` yeşildir.
@@ -30,7 +30,7 @@ Kabul ölçütleri:
 | Hesaplama | Bütün çalıştırmalar Python'da önceden hesaplanır; tarayıcıda K-Means çalışmaz | Önceki bölümlerin kalıbı: doğrulanabilir sayılar, gecikmesiz etkileşim (benim kararım) |
 | Döngü kaydı | sklearn tur geçmişini vermediği için üretici Lloyd döngüsünü numpy ile kaydeder ve son durumu `KMeans(init=<aynı merkezler>, n_init=1, algorithm="lloyd")` ile birebir doğrular | Benim kararım; gösterilen her tur gerçek ve sklearn ile tutarlı |
 | İyi başlangıç | k-means++ başlangıcından 4–7 turda inertia 43,0'a varan ilk tohum | Benim kararım: animasyon ne çok kısa ne çok uzun |
-| Kötü başlangıç | `init="random"` ile inertia'sı en iyinin 1,5 katını aşan ilk tohum (beklenen ≈79,4: iki merkez aynı grubu paylaşır) | Benim kararım |
+| Kötü başlangıç | `init="random"` ile inertia'sı en iyinin 1,5 katını aşan ilk tohum (beklenen ≈79,2: iki merkez aynı grubu paylaşır) | Benim kararım |
 
 ## Kapsam dışı
 
@@ -64,12 +64,12 @@ Kabul ölçütleri:
 4. **Taşı:** Her merkez kendi kümesinin ortalamasına kayar; eski konum soluk iz olarak kalır. Tur 1 sonrası inertia görünür.
 5. **Tekrar:** Kalan turlar ata/taşı alt anlarıyla oynar (tarama). Her turda tur numarası, renk değiştiren nokta sayısı ve inertia görünür; inertia'nın her turda düştüğü (artmadığı) okunur.
 6. **Dur:** Son turda hiçbir nokta renk değiştirmez, merkezler kıpırdamaz; sonuç küme boyları 43 / 53 / 54 ve inertia 43,0. Durma koşulu açıkça yazılır.
-7. **Kötü başlangıç:** Rastgele başlangıçta iki merkez aynı gruba düşer; döngü kurallara uyarak çalışır ama yerel optimumda (≈79,4) durur. İyi sonuçla inertia karşılaştırması yan yana gösterilir.
+7. **Kötü başlangıç:** Rastgele başlangıçta iki merkez aynı gruba düşer; döngü kurallara uyarak çalışır ama yerel optimumda (≈79,2) durur. İyi sonuçla inertia karşılaştırması yan yana gösterilir.
 8. **`n_init=10`:** On ayrı başlangıcın son inertia değerleri liste/çubuk olarak görünür; en düşüğü seçilir (43,0). Kitaptaki `KMeans(n_clusters=3, n_init=10, random_state=42)` satırıyla bağ kurulur.
 
 ### Laboratuvar
 
-- "Yeni başlangıç" düğmesi önceden hesaplanmış başlangıçlar arasında sırayla dolaşır (en az 10 başlangıç; iyi, biraz kötü ≈44,2 ve kötü ≈79,4 sonuçların her biri en az bir kez bulunur). Seçilen başlangıcın döngüsü adım adım (ata/taşı) veya sürekli oynatılabilir.
+- "Yeni başlangıç" düğmesi önceden hesaplanmış başlangıçlar arasında sırayla dolaşır (en az 10 başlangıç; iyi, biraz kötü ≈44,2 ve kötü ≈79,2 sonuçların her biri en az bir kez bulunur). Seçilen başlangıcın döngüsü adım adım (ata/taşı) veya sürekli oynatılabilir.
 - Tur kontrolü yalnız döngü adımlarında (3–7) görünür; adım 8'de on başlangıç listesinden biri seçilince o başlangıcın son durumu gösterilir.
 - Ders ve Lab aynı sahneyi kullanır; Lab'da sayısal ayrıntı (merkez koordinatları, tur tablosu) açıklama altında görünür.
 
@@ -122,11 +122,11 @@ Solda saçılım (noktalar küme renginde, merkezler artı); sağda iki küçük
 | 9 | 9,83 | 0,4656 | |
 | 10 | 8,46 | 0,4650 | |
 
-  k=4'te 1 nokta, k=7, 8'de 1'er, k=10'da 2 nokta negatif silhouette alır; k=2, 3, 5, 6, 9'da negatif yoktur. Tek başlangıçlı 200 denemede k=3 için son inertia 43,0 / 44,2 / ≈79,4 çıkar.
+  k=4'te 1 nokta, k=7, 8'de 1'er, k=10'da 2 nokta negatif silhouette alır; k=2, 3, 5, 6, 9'da negatif yoktur. Tek başlangıçlı 200 denemede k=3 için son inertia 43,0 / 44,2 / ≈79,2 çıkar.
 
 ## Başlangıçlar, seçili noktalar ve adım değerleri (benim kararlarım)
 
-- **Lab başlangıç listesi (sayfa 1):** 12 başlangıç, sırası sabit. 0 = iyi başlangıç (k-means++, Ders adım 2–6), 1 = kötü başlangıç (`init="random"`, ≈79,4, Ders adım 7), kalan 10'u üreticinin sabit kuralla seçtiği k-means++ ve rastgele başlangıçların karışımı; listede en az bir ≈44,2 bulunur. Hepsinin tur tur geçmişi saklanır. "Yeni başlangıç" bu listeyi sırayla dolaşır, sonda başa döner.
+- **Lab başlangıç listesi (sayfa 1):** 12 başlangıç, sırası sabit. 0 = iyi başlangıç (k-means++, Ders adım 2–6), 1 = kötü başlangıç (`init="random"`, ≈79,2, Ders adım 7), kalan 10'u üreticinin sabit kuralla seçtiği k-means++ ve rastgele başlangıçların karışımı; listede en az bir ≈44,2 bulunur. Hepsinin tur tur geçmişi saklanır. "Yeni başlangıç" bu listeyi sırayla dolaşır, sonda başa döner.
 - **İyi/kötü tohum:** Üretici tohumları 0'dan başlayarak sırayla dener; iyi = k-means++ ile 4–7 turda 43,0'a varan ilk tohum, kötü = `init="random"` ile son inertia'sı en iyinin 1,5 katını aşan ilk tohum. Seçilen tohumlar JSON'a yazılır. 4–7 aralığında tohum bulunmazsa aralık 3–8'e genişletilir ve bu ledger'a yazılır.
 - **`n_init=10` (sayfa 1, adım 8):** sklearn'ün varsayılanı gibi on k-means++ başlangıcı: `KMeans(n_clusters=3, init="k-means++", n_init=1, random_state=s)`, s=0..9. Lab listesinden ayrı bir kümedir; her biri için yalnız son etiketler, merkezler, inertia ve tur sayısı saklanır. En düşük inertia'nın, kitaptaki `KMeans(n_clusters=3, n_init=10, random_state=42)` çağrısının inertia'sına (43,03) iki ondalıkta eşit olduğu testle doğrulanır.
 - **Sayfa 1 adım 3 uzaklık çizgileri:** 3 nokta, her tur-1 kümesinden bir tane: kümesindeki üyelerin kendi merkezine uzaklığı sıralandığında ortanca olan üye (eşitlikte küçük indeks).
