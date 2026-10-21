@@ -49,7 +49,7 @@ export const kMeansScenario: Scenario<KMeansParams> = {
     {
       id: 'ata',
       title: 'Ata: en yakın merkeze',
-      text: 'Her nokta en yakın merkezin rengini alır. Seçili üç noktadan üç merkeze çizgi çizilir; en kısası kalındır. Tur 1 atamasının küme boyları yanda.',
+      text: 'Her nokta en yakın merkezin rengini alır. Seçili üç noktadan üç merkeze çizgi çizilir; en kısası kalındır. Atamanın küme boyları yanda.',
       term: 'atama (assignment)',
       params: { start: GOOD, frame: 1 },
     },

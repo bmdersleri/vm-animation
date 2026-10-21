@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { gotoStep, labelCollisions, open, outsideStage, overlaps, pageOverflow, stepCount } from './helpers';
 
 const PAGE = '/k-means/';
@@ -34,6 +34,22 @@ test('ders: crowded bad start keeps the centre labels apart', async ({ page }) =
   expect(await labelCollisions(page, 'svg.km-plot')).toEqual([]);
 });
 
+/** Centre labels whose box centre is nearer another centre's plus than their own. */
+function ambiguousLabels(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const mid = (r: DOMRect): [number, number] => [(r.left + r.right) / 2, (r.top + r.bottom) / 2];
+    const centres = [...document.querySelectorAll('svg.km-plot g.cs-center')];
+    const plus = centres.map((g) => mid(g.querySelector('.cs-plus')!.getBoundingClientRect()));
+    const out: string[] = [];
+    centres.forEach((g, i) => {
+      const [x, y] = mid(g.querySelector('.cs-center-label')!.getBoundingClientRect());
+      const d = plus.map((p) => Math.hypot(p[0] - x, p[1] - y));
+      if (d.some((v, k) => k !== i && v < d[i])) out.push(`M${i + 1}`);
+    });
+    return out;
+  });
+}
+
 test('lab: crowded start frames keep the centre labels apart', async ({ page }) => {
   await open(page, PAGE, 'lab', READY);
   await gotoStep(page, 6, STEPS, 0);
@@ -44,6 +60,7 @@ test('lab: crowded start frames keep the centre labels apart', async ({ page }) 
   for (let f = 0; f < 4; f++) {
     await expect(page.locator('.km-scene')).toHaveAttribute('data-frame', String(f));
     expect(await labelCollisions(page, 'svg.km-plot'), `frame ${f}`).toEqual([]);
+    expect(await ambiguousLabels(page), `frame ${f}`).toEqual([]);
     await page.locator('[data-act="next-frame"]').click();
   }
 });

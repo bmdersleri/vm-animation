@@ -61,7 +61,7 @@ export function mountKMeansScene(host: HTMLElement, player: StepPlayer<KMeansPar
       labels: v.labels,
       centers: v.frame === 0 && index === 0 ? null : v.centers,
       trails: v.trails,
-      lines: index === STEP_ATA && v.labels
+      lines: index === STEP_ATA && v.phase === 'ata' && v.labels
         ? kmeansData.distancePoints.map((point) => ({ point, nearest: v.labels![point] }))
         : [],
       changed: v.phase === 'ata' ? v.changedIdx : [],

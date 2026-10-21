@@ -57,6 +57,16 @@ describe('k-means scene', () => {
     scene.destroy(); player.destroy();
   });
 
+  it('step 3 draws distance lines only on ata frames', () => {
+    const { player, host, scene } = setup('lab');
+    player.goto(2);
+    player.setParam('frame', 1); // ata
+    expect(host.querySelectorAll('line.cs-line')).toHaveLength(9);
+    player.setParam('frame', 2); // taşı
+    expect(host.querySelectorAll('line.cs-line')).toHaveLength(0);
+    scene.destroy(); player.destroy();
+  });
+
   it('step 4 moves the centres, leaves three trails and shows turn 1 inertia', () => {
     const { player, host, scene } = setup();
     player.goto(3);

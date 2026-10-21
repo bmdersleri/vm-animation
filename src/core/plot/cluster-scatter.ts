@@ -25,6 +25,7 @@ const R = 4;
 const ARM = 7;
 const TRAIL_ARM = 6;
 const MS = 450;
+const TR = 'cs';
 const colour = (c: number | undefined): string => (c === undefined || c < 0 ? UNASSIGNED : CLUSTER[c % CLUSTER.length]);
 const plusPath = (arm: number): string => `M${-arm},0H${arm}M0,${-arm}V${arm}`;
 
@@ -40,6 +41,8 @@ type Offset = { dx: number; dy: number; anchor: Anchor };
 /** Label width estimate per character, in em (bold sans digits and capitals; errs wide). */
 const CHAR_EM = 0.7;
 const LABEL_FALLBACK_PX = 12;
+/** px of tolerance: the width estimate is not exact, so near-ties count as ambiguous. */
+const AMBIGUITY_SLACK = 3;
 const overlap = (p: Box, q: Box): number =>
   Math.max(0, Math.min(p.r, q.r) - Math.max(p.l, q.l)) * Math.max(0, Math.min(p.b, q.b) - Math.max(p.t, q.t));
 /** Text box of a label written at (x, y) with the given anchor (y is the baseline). */
@@ -72,6 +75,8 @@ export class ClusterScatterLayer {
   private rect: Rect = { left: 0, top: 0, width: 100, height: 100 };
   private scales: Scales;
   private last: ClusterScatterSpec | null = null;
+  /** Label font size in px; read from the DOM once per resize. */
+  private fsCache: number | null = null;
 
   constructor(parent: SVGGElement, private readonly domain: Domain) {
     this.root = select(parent).append('g').attr('class', 'cs-layer') as unknown as G;
@@ -87,6 +92,7 @@ export class ClusterScatterLayer {
 
   resize(rect: Rect): void {
     this.rect = rect;
+    this.fsCache = null;
     this.scales = fitEqualAspect(this.domain, rect);
     if (this.last) this.update(this.last, false);
   }
@@ -96,7 +102,7 @@ export class ClusterScatterLayer {
     const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const ms = animate && !reduce ? MS : 0;
     // Instant writes must also stop a still-running 'cs' transition, or it overwrites them.
-    const go = <S extends AnySel>(sel: S): S => (ms > 0 ? tr(sel, 'cs', ms) : (sel.interrupt('cs') as S));
+    const go = <S extends AnySel>(sel: S): S => (ms > 0 ? tr(sel, TR, ms) : (sel.interrupt(TR) as S));
     const { x, y } = this.scales;
     const px = (p: Pt): number => r1(x(p[0]));
     const py = (p: Pt): number => r1(y(p[1]));
@@ -216,29 +222,47 @@ export class ClusterScatterLayer {
     spec: ClusterScatterSpec, centers: readonly Pt[], csAll: Sel<Pt>, rgAll: Sel<Ring>,
     go: <S extends AnySel>(sel: S) => S, px: (p: Pt) => number, py: (p: Pt) => number,
   ): void {
-    const first = csAll.select<SVGTextElement>('text').node() ?? rgAll.select<SVGTextElement>('text').node();
-    const read = first && typeof getComputedStyle === 'function' ? parseFloat(getComputedStyle(first).fontSize) : NaN;
-    const fs = Number.isFinite(read) && read > 0 ? read : LABEL_FALLBACK_PX;
+    let fs = this.fsCache;
+    if (fs === null) {
+      const first = csAll.select<SVGTextElement>('text').node() ?? rgAll.select<SVGTextElement>('text').node();
+      if (first) {
+        const read = typeof getComputedStyle === 'function' ? parseFloat(getComputedStyle(first).fontSize) : NaN;
+        fs = this.fsCache = Number.isFinite(read) && read > 0 ? read : LABEL_FALLBACK_PX;
+      } else fs = LABEL_FALLBACK_PX;
+    }
     const half = ARM + 2;
     const taken: Box[] = centers.map((c) => ({ l: px(c) - half, t: py(c) - half, r: px(c) + half, b: py(c) + half }));
     const m = 6;
     const area: Box = { l: this.rect.left - m, t: this.rect.top - m, r: this.rect.left + this.rect.width + m, b: this.rect.top + this.rect.height + m };
     const outside = (b: Box): number => (b.r - b.l) * (b.b - b.t) - overlap(b, area);
-    const choose = (x: number, y: number, chars: number, cands: Offset[]): Offset => {
+    // A centre label whose box centre is nearer another centre's plus than its own reads as that centre's.
+    const ambiguous = (box: Box, own: number): boolean => {
+      if (own < 0) return false;
+      const bx = (box.l + box.r) / 2;
+      const by = (box.t + box.b) / 2;
+      const dist = (c: Pt): number => Math.hypot(px(c) - bx, py(c) - by);
+      const mine = dist(centers[own]);
+      return centers.some((c, k) => k !== own && dist(c) < mine + AMBIGUITY_SLACK);
+    };
+    // Order: collision-free and unambiguous, collision-free but ambiguous, then the least overlap.
+    const choose = (x: number, y: number, chars: number, cands: Offset[], own = -1): Offset => {
       let best = cands[0];
-      let bestCost = Infinity;
+      let bestKey: [number, number, number] = [Infinity, Infinity, Infinity];
       let bestBox: Box | null = null;
       for (const o of cands) {
         const box = labelBox(x + o.dx, y + o.dy, chars, o.anchor, fs);
-        const cost = taken.reduce((sum, t) => sum + overlap(box, t), 0) + outside(box);
-        if (cost < bestCost) { best = o; bestCost = cost; bestBox = box; }
-        if (cost === 0) break;
+        const hits = taken.reduce((sum, t) => sum + overlap(box, t), 0) + outside(box);
+        const key: [number, number, number] = [hits > 0 ? 1 : 0, ambiguous(box, own) ? 1 : 0, hits];
+        if (key[0] < bestKey[0] || (key[0] === bestKey[0] && (key[1] < bestKey[1] || (key[1] === bestKey[1] && key[2] < bestKey[2])))) {
+          best = o; bestKey = key; bestBox = box;
+        }
+        if (key[0] === 0 && key[1] === 0) break;
       }
       if (bestBox) taken.push(bestBox);
       return best;
     };
     const centreCands = offsets(ARM, 4, fs);
-    const placed = centers.map((c, i) => choose(px(c), py(c), `M${i + 1}`.length, centreCands));
+    const placed = centers.map((c, i) => choose(px(c), py(c), `M${i + 1}`.length, centreCands, i));
     csAll.select('text').attr('x', (_d, i) => placed[i]?.dx ?? ARM + 4).attr('y', (_d, i) => placed[i]?.dy ?? -ARM)
       .attr('text-anchor', (_d, i) => placed[i]?.anchor ?? 'start');
 
@@ -256,21 +280,21 @@ export class ClusterScatterLayer {
   }
 
   destroy(): void {
-    this.root.selectAll('*').interrupt('cs');
+    this.root.selectAll('*').interrupt(TR);
     this.root.remove();
     this.last = null;
   }
 }
 
-/** Shaft + open arrowhead from (x1,y1) to (x2,y2); empty when the points coincide. */
+/** Shaft + open arrowhead from (x1,y1) to (x2,y2); zero-length (same commands) when the points coincide. */
 function arrow(x1: number, y1: number, x2: number, y2: number): string {
   const dx = x2 - x1;
   const dy = y2 - y1;
   const len = Math.hypot(dx, dy);
-  if (len < 1) return '';
-  const ux = dx / len;
-  const uy = dy / len;
-  const h = Math.min(6, len / 2);
+  // Below 1 px the same commands collapse onto the point, so a growing arrow does not jump in.
+  const ux = len < 1 ? 0 : dx / len;
+  const uy = len < 1 ? 0 : dy / len;
+  const h = len < 1 ? 0 : Math.min(6, len / 2);
   const c = Math.cos(0.5);
   const s = Math.sin(0.5);
   const wing = (k: number): string => `${r1(x2 - h * (ux * c + k * uy * s))},${r1(y2 - h * (uy * c - k * ux * s))}`;

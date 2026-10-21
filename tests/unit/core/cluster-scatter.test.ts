@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '../svg-stubs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ClusterScatterLayer, type ClusterScatterSpec } from '../../../src/core/plot/cluster-scatter';
 import { CLUSTER, NEGATIVE, UNASSIGNED, WHITE } from '../../../src/core/plot/marks';
 
@@ -250,6 +250,49 @@ describe('ClusterScatterLayer', () => {
     const rb = textBox(ring);
     expect(hit(rb, centreLabelBoxes(svg)[0])).toBe(false);
     expect(hit(rb, plusBoxes(svg)[0])).toBe(false);
+  });
+
+  it("centre label is never nearer another centre's plus", () => {
+    const { svg, layer } = setup({ left: 10, top: 10, width: 400, height: 400 });
+    const unit = 6 / 400; // data units per pixel (equal aspect)
+    // the second centre sits 24..48 px away, east, north and north-east of the first
+    for (const d of [10, 14, 18, 22, 24, 30, 36, 42, 48]) {
+      for (const [ax, ay] of [[1, 0], [0, 1], [0.7071, 0.7071], [0.9, 0.3]]) {
+        layer.update(spec({ centers: [[0, 0], [ax * d * unit, ay * d * unit]] }), false);
+        const pos = [...svg.querySelectorAll('g.cs-center')].map((g) => {
+          const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(g.getAttribute('transform')!)!;
+          return [Number(m[1]), Number(m[2])];
+        });
+        centreLabelBoxes(svg).forEach((b, i) => {
+          const dist = pos.map((p) => Math.hypot(p[0] - (b.l + b.r) / 2, p[1] - (b.t + b.b) / 2));
+          expect(dist[i], `M${i + 1} at ${d} px, dir ${ax},${ay}`).toBeLessThanOrEqual(Math.min(...dist));
+        });
+      }
+    }
+  });
+
+  it('arrow of zero length keeps the path structure', () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ centers: [[1, 1]], trails: [[0, 0]] }), false);
+    const moving = svg.querySelector('path.cs-trail-arrow')!.getAttribute('d')!;
+    layer.update(spec({ centers: [[0, 0]], trails: [[0, 0]] }), false);
+    const still = svg.querySelector('path.cs-trail-arrow')!.getAttribute('d')!;
+    expect(still).not.toBe('');
+    expect(still.match(/[A-Za-z]/g)).toEqual(moving.match(/[A-Za-z]/g));
+  });
+
+  it('font size is read once per resize', () => {
+    const { layer } = setup();
+    const spy = vi.spyOn(window, 'getComputedStyle');
+    const s = spec({ centers: [[0, 0], [1, 1]] });
+    layer.update(s, false);
+    layer.update(s, false);
+    layer.update(s, false);
+    expect(spy).toHaveBeenCalledTimes(1);
+    layer.resize({ left: 0, top: 0, width: 300, height: 300 });
+    layer.update(s, false);
+    expect(spy).toHaveBeenCalledTimes(2);
+    spy.mockRestore();
   });
 
   it('a lone centre keeps its label up and to the right', () => {
