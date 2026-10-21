@@ -56,3 +56,27 @@
 .pca-gauge text.var-marker-label { fill: #a85a00; }
 .pca-gauge .tick,
 .pca-gauge .tick text { font-variant-numeric: tabular-nums; }
+
+/* pca explained-variance bars and cumulative curve. --red is the threshold colour (AA on white). */
+.scree { --red: #b42318; }
+.scree rect.bar { fill: var(--navy-soft); stroke: var(--navy); stroke-width: 1; }
+.scree rect.bar.kept { fill: var(--navy); }
+.scree path.cum-line { stroke-width: 3; stroke-linejoin: round; }
+.scree circle.cum-pt { fill: var(--navy); stroke: #fff; stroke-width: 2; }
+.scree line.threshold { stroke: var(--red); stroke-width: 3; }
+.scree text.bar-label,
+.scree text.cum-label,
+.scree text.threshold-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.scree text.bar-label,
+.scree text.cum-label { fill: var(--navy); }
+.scree text.threshold-label { fill: var(--red); }
+.scree .tick,
+.scree .tick text { font-variant-numeric: tabular-nums; }
