@@ -5,6 +5,9 @@ for(const mode of ['ders','lab'] as const) {
     await page.emulateMedia({reducedMotion:'reduce'});await page.goto(`/roc-esik/?mod=${mode}`);
     await expect(page.locator('h1.title')).toHaveText('ROC, PR ve karar eşiği');
     await expect(page.locator('[data-sample]')).toHaveCount(4);
+    const opening=await page.locator('.roc-sample').evaluateAll(nodes=>nodes.map(n=>({ring:getComputedStyle(n.querySelector('.roc-ring')!).stroke,dash:getComputedStyle(n.querySelector('.roc-ring')!).strokeDasharray,actual:getComputedStyle(n.querySelector('.roc-actual')!).fill})));
+    expect(new Set(opening.map(s=>s.ring)).size).toBe(1);expect(opening.every(s=>s.dash==='none')).toBe(true);
+    expect(new Set(opening.map(s=>s.actual)).size).toBe(2);
     await page.screenshot({path:`${SHOTS}/roc-${mode}-beginning.png`});
     const expected=['kalibre olasılık','skor ≥ eşik','Recall artabilir','Precision','FPR yatay','Trapez alanı','AP:','PR referansı','Daha yüksek eşik','Test seçim döngüsüne'];
     for(let i=0;i<10;i++) {
@@ -48,6 +51,18 @@ test('lab: tied scores, none-positive convention, dataset, costs and reset',asyn
   await expect(page.locator('[data-best="true"]')).toHaveAttribute('data-candidate','none');
   await page.getByRole('button',{name:'Bu adımı sıfırla'}).click();await expect(page.locator('input[name="fnCost"]')).toHaveValue('5');
   await page.locator('.step-dot').nth(9).click();await expect(page.locator('[data-test-report]')).toContainText('dondurulan eşik 0,20');await expect(slider).toBeDisabled();
+});
+test('final report preserves the selected dataset and zero/custom costs',async({page})=>{
+  await page.goto('/roc-esik/?mod=lab');await expect(page.locator('[data-test-locked]')).toBeVisible();
+  await expect(page.locator('[data-test-report]')).toBeEmpty();
+  for(const [fpCost,fnCost,label]of [['0','0','Hiç pozitif tahmin yok'],['3','9','0,55']]){
+    await page.locator('.step-dot').nth(8).click();await page.locator('select[name="dataset"]').selectOption('imbalanced');
+    await page.locator('[name="fpCost"]').fill(fpCost);await page.locator('[name="fnCost"]').fill(fnCost);
+    await page.locator('.step-dot').nth(9).click();
+    await expect(page.locator('select[name="dataset"]')).toHaveValue('imbalanced');await expect(page.locator('select[name="dataset"]')).toBeDisabled();
+    await expect(page.locator('[data-test-report]')).toContainText(`dondurulan eşik ${label}`);await expect(page.locator('[data-test-report]')).toContainText('10 müşteri');
+    await page.screenshot({path:`${SHOTS}/roc-lab-final-${fpCost==='0'?'none':'custom'}.png`});
+  }
 });
 test('narrow lab and ders parameter panel remain readable',async({page})=>{
   await page.goto('/roc-esik/?mod=ders');await page.locator('.step-dot').nth(8).click();await page.locator('.params-toggle').click();

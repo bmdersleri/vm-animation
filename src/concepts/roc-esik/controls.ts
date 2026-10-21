@@ -29,11 +29,11 @@ export function mountRocParams(host: HTMLElement, player: StepPlayer<RocParams>)
     const {index,params:p}=player.state;
     const value=index===9?selectFinalThreshold(evaluationData.scoreSets[p.dataset],p.fpCost,p.fnCost):p.nonePositive?'none':p.threshold;
     threshold.value=String(value==='none'?p.threshold:value); threshold.disabled=value==='none'||index===9;
-    none.checked=value==='none'; none.disabled=index===9; dataset.value=p.dataset;
+    none.checked=value==='none'; none.disabled=index===9; dataset.value=p.dataset;dataset.disabled=index===9;reset.disabled=index===9;
     output.textContent=thresholdText(value);
     thresholdControl.hidden=index===0;noneControl.hidden=index===0||index===9;datasetControl.hidden=index<7;
     hint.textContent=index===0?'Bu adımda yalnız sabit doğrulama skorlarını ve gerçek sınıfları inceleyin.':index===9?'Eşik doğrulamada seçildi ve donduruldu. Test yalnız son rapor içindir.':'0–1 skor; skor ≥ eşik pozitif. Maliyetler: 0–100. Test seçimde kullanılmaz.';
-    fields.forEach((el,i)=>{el.value=String(i===0?p.fpCost:p.fnCost);}); costs.hidden=index!==8;
+    fields.forEach((el,i)=>{el.value=String(i===0?p.fpCost:p.fnCost);el.disabled=index===9;}); costs.hidden=index!==8;
   };
   sync(); const unsubscribe=player.subscribe(sync);
   return {destroy(){unsubscribe();cleanups.forEach(fn=>fn());root.remove();}};

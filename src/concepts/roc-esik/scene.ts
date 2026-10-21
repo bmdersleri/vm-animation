@@ -13,6 +13,7 @@ export function mountRocScene(host: HTMLElement, player: StepPlayer<RocParams>, 
   let mode=initialMode, destroyed=false;
   const legend=html('p',{class:'roc-legend'},'◆ Ayrılan (1) · ● Kalan (0) · İç şekil: gerçek · Çerçeve: tahmin');
   const heading=html('p',{class:'roc-heading'}), thresholdLabel=html('strong',{'data-threshold':''});
+  const locked=html('span',{'data-test-locked':'',class:'roc-locked'},'🔒 Test kilitli · son adımda açılır');
   const strip=svg('svg',{class:'roc-strip',role:'img','aria-label':'Doğrulama skorları ve karar eşiği'});
   const background=svg('g'), marks=svg('g'), thresholdLine=svg('line',{class:'roc-threshold'});
   strip.append(background,thresholdLine,marks);
@@ -46,7 +47,8 @@ export function mountRocScene(host: HTMLElement, player: StepPlayer<RocParams>, 
     root.dataset.step=String(index); root.dataset.mode=mode;
     root.dataset.teaching=String(index>=4&&index<=7);
     root.dataset.dataset=p.dataset;
-    heading.textContent=`Doğrulama · ${samples.length} müşteri · ${p.dataset==='balanced'?'dengeli':'dengesiz'}`;
+    heading.replaceChildren(document.createTextNode(`Doğrulama · ${samples.length} müşteri · ${p.dataset==='balanced'?'dengeli':'dengesiz'}`),locked);
+    locked.hidden=index===9;
     thresholdLabel.textContent=`Eşik: ${thresholdText(threshold)}`;
     thresholdLabel.hidden=index===0;
     matrix.hidden=index===0; metric.hidden=index<3||index===8;
@@ -54,13 +56,17 @@ export function mountRocScene(host: HTMLElement, player: StepPlayer<RocParams>, 
     precision.textContent=`Precision ${percent(m.precision)} · Recall ${percent(m.recall)} · F1 ${percent(m.f1)}`;
     curves.hidden=index<4||index===9; rocPanel.hidden=index===6; prPanel.hidden=index<6||index===8;
     convention.hidden=index<6||index>=8; costs.hidden=index!==8; final.hidden=index!==9;
-    auc.textContent=`AUC ${number(rocAuc(samples)!)}`;
-    ap.textContent=`AP ${number(averagePrecision(samples)!)}`;
+    const aucValue=rocAuc(samples), apValue=averagePrecision(samples);
+    auc.textContent=`AUC ${aucValue===null?'— (tanımsız)':number(aucValue)}`;
+    ap.textContent=`AP ${apValue===null?'— (tanımsız)':number(apValue)}`;
     prevalence.textContent=`PR referansı: pozitif oranı ${percent(samples.filter(s=>s.actual).length/samples.length)}`;
     costSummary.textContent=`Öneri ${thresholdText(optimum)} → maliyet ${number(cost(classify(samples,optimum),p.fpCost,p.fnCost))}. Varsayılan 0,50 → ${number(cost(classify(samples,.5),p.fpCost,p.fnCost))}. Daha yüksek eşik eşitlikte kazanır.`;
     costTable.replaceChildren(...curvePoints(samples).map(point=>html('span',{'data-candidate':String(point.threshold),'data-best':String(point.threshold===optimum)},`${thresholdText(point.threshold)}: ${number(cost(point.confusion,p.fpCost,p.fnCost))}`)));
-    const test=classify(data.test,threshold), tm=metrics(test);
-    finalReport.textContent=`Bağımsız test · ${data.test.length} müşteri · dondurulan eşik ${thresholdText(threshold)} · TN ${test.tn}, FP ${test.fp}, FN ${test.fn}, TP ${test.tp} · F1 ${percent(tm.f1)}. Test kimlikleri: ${data.test.map(s=>s.id.replace(`${p.dataset}-`, '')).join(', ')}.`;
+    finalReport.textContent='';
+    if(index===9){
+      const test=classify(data.test,threshold), tm=metrics(test);
+      finalReport.textContent=`Bağımsız test · ${data.test.length} müşteri · dondurulan eşik ${thresholdText(threshold)} · FP birim maliyeti ${number(p.fpCost)}, FN birim maliyeti ${number(p.fnCost)} · TN ${test.tn}, FP ${test.fp}, FN ${test.fn}, TP ${test.tp} · F1 ${percent(tm.f1)}. Test kimlikleri: ${data.test.map(s=>s.id.replace(`${p.dataset}-`, '')).join(', ')}.`;
+    }
     note.textContent=index===0?'Skor, kalibre olasılık garantisi değildir. Kimlik ve skor işaretlerin yanında; tam kimlik üzerine gelince görünür.':index===1?'Karar: skor ≥ eşik → ayrılır (1); diğerleri kalır (0).':index===2?'Recall artabilir, FP artabilir. Precision her veri üzerinde monoton değildir.':index===3?'Precision, recall ve F1 aynı canlı matristen hesaplanır.':index===4?'FPR yatay, TPR dikey. Kesikli diyagonal: rastgele sıralama. Bağlı skorlar blok halinde.':index===5?'Trapez alanı sabittir: eşiği oynatmak sıralamayı ve AUC değerini değiştirmez.':index===6?'AP: Σ Δrecall × precision. Turuncu nokta seçili eşiği gösterir.':index===7?'PR referansı pozitif oranıdır; ROC referansı diyagonaldir. Örnek değişince AUC de değişebilir.':index===8?'Daha yüksek eşik: eşit maliyette daha az müşteriye teklif verme iş tercihi. Adaylar yalnız doğrulama skorlarından.':'Eğitim verisinde öğren → doğrulamada seç → testi bir defa raporla. Test seçim döngüsüne geri dönmez.';
     const w=strip.clientWidth||680, h=strip.clientHeight||150, left=28,right=w-28;
     strip.setAttribute('viewBox',`0 0 ${w} ${h}`);
@@ -81,6 +87,15 @@ export function mountRocScene(host: HTMLElement, player: StepPlayer<RocParams>, 
     });
     drawCurve(rocPlot,samples,threshold,'roc',index>=5);drawCurve(prPlot,samples,threshold,'pr',index>=6);
   };
-  render();const unsubscribe=player.subscribe(render);
+  let previous=player.state;
+  render();const unsubscribe=player.subscribe((state,cause)=>{
+    const prior=previous;previous=state;
+    // Only this teaching transition carries the chosen validation policy forward.
+    if(cause==='step'&&prior.index===8&&state.index===9){
+      player.setParams({dataset:prior.params.dataset,fpCost:prior.params.fpCost,fnCost:prior.params.fnCost});
+      return;
+    }
+    render();
+  });
   return {resize(){render();},setMode(value){mode=value;render();},destroy(){if(destroyed)return;destroyed=true;unsubscribe();root.remove();markNodes.clear();}};
 }

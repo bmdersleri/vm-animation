@@ -7,14 +7,20 @@ import { svg } from './ui';
 export function drawCurve(plot: SVGSVGElement, samples: readonly ScoredSample[], threshold: Threshold, kind: 'roc'|'pr', shade: boolean): void {
   const w=plot.clientWidth||340, h=plot.clientHeight||230;
   const left=52, top=24, right=w-18, bottom=h-40;
+  plot.setAttribute('viewBox',`0 0 ${w} ${h}`);
+  plot.replaceChildren();
+  const positives=samples.filter(s=>s.actual===1).length;
+  if((kind==='roc'&&(positives===0||positives===samples.length))||(kind==='pr'&&positives===0)){
+    plot.append(svg('text',{x:'12',y:'42',class:'roc-axis'},kind==='roc'?'ROC tanımsız.':'PR / AP tanımsız.'));
+    plot.append(svg('text',{x:'12',y:'66',class:'roc-axis'},kind==='roc'?'iki gerçek sınıf gerekli.':'Gerçek pozitif yok.'));
+    return;
+  }
   const x=(v:number):number=>left+v*(right-left), y=(v:number):number=>bottom-v*(bottom-top);
   const points=curvePoints(samples), c=classify(samples,threshold), m=metrics(c);
   const xy=points.map(p=>[kind==='roc'?p.fpr!:p.recall!,kind==='roc'?p.tpr!:p.precision??1]);
   const line=xy.map(([a,b],i)=>`${i?'L':'M'}${x(a)},${y(b)}`).join(' ');
   // AP uses each interval's right-end precision, not the trapezoidal ROC rule.
   const ap=xy.map(([a,b],i)=>i?`V${y(b)} H${x(a)}`:`M${x(a)},${y(b)}`).join(' ');
-  plot.setAttribute('viewBox',`0 0 ${w} ${h}`);
-  plot.replaceChildren();
   if(shade) plot.append(svg('path',{d:`${kind==='roc'?line:ap} L${x(1)},${y(0)} L${x(0)},${y(0)} Z`,class:'roc-area'}));
   for(const v of [0,.5,1]) {
     plot.append(svg('line',{x1:String(x(v)),x2:String(x(v)),y1:String(top),y2:String(bottom),class:'roc-grid'}));

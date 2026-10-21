@@ -84,4 +84,23 @@ describe('ROC threshold lesson', () => {
     vi.advanceTimersByTime(2400); expect(host.querySelector('[data-threshold]')?.textContent).toContain('0,30');
     expect(host.querySelector('[data-auc]')?.textContent).toContain('0,625'); scene.destroy(); player.destroy();
   });
+  it('carries only cost-to-final validation choices, keeps the test locked earlier, and freezes final controls', () => {
+    const player=new StepPlayer(rocScenario),host=document.createElement('div'),controls=document.createElement('div');
+    const scene=mountRocScene(host,player,'lab'),params=mountRocParams(controls,player);
+    expect(host.querySelector('[data-test-locked]')?.textContent).toContain('Test kilitli');
+    expect(host.querySelector('[data-test-report]')?.textContent).toBe('');
+    for(const [fpCost,fnCost]of [[0,0],[3,9]]) {
+      player.goto(8);player.setParams({dataset:'imbalanced',fpCost,fnCost});
+      const selected=bestThreshold(evaluationData.scoreSets.imbalanced.validation,fpCost,fnCost);
+      player.goto(9);
+      expect(player.state.params).toMatchObject({dataset:'imbalanced',fpCost,fnCost});
+      expect(host.querySelector('[data-threshold]')?.textContent).toContain(selected==='none'?'Hiç pozitif tahmin yok':'0,55');
+      expect(controls.querySelector<HTMLSelectElement>('select[name="dataset"]')?.disabled).toBe(true);
+      expect(host.querySelector<HTMLElement>('[data-test-locked]')?.hidden).toBe(true);
+    }
+    player.first();expect(player.state.params).toEqual(rocScenario.defaults);
+    player.goto(7);player.setParam('dataset','imbalanced');player.goto(9);
+    expect(player.state.params.dataset).toBe('balanced');
+    params.destroy();scene.destroy();player.destroy();
+  });
 });
