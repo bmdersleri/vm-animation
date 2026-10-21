@@ -10,5 +10,8 @@ export function runFor(params:CvParams):CvRun {
   if(!run)throw new RangeError('Desteklenmeyen önceden hesaplanmış CV çalıştırması');
   return run;
 }
+export const cText=(c:number):string=>String(c).replace('.',',');
+export const positiveTotal=development.filter(s=>s.actual===1).length;
+export const negativeTotal=development.length-positiveTotal;
 export const foldIndex=(p:CvParams):number=>Math.max(0,Math.min(p.k-1,Math.trunc(p.fold)));
 export const positiveCount=(ids:readonly string[]):number=>development.filter(s=>s.actual===1&&ids.includes(s.id)).length;

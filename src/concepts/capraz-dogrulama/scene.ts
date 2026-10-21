@@ -3,7 +3,7 @@ import type { Mode } from '../../core/mode';
 import type { SceneHandle } from '../../core/shell';
 import type { CvParams } from './scenario';
 import { html } from '../degerlendirme/ui';
-import { cvData, foldIndex, runFor, testSamples } from './view';
+import { cvData, development, foldIndex, negativeTotal, positiveTotal, runFor, testSamples } from './view';
 import { sampleBoard } from './samples';
 import { classPanel, finalPanel, foldCard, pipelinePanel, scorePanel } from './panels';
 
@@ -25,7 +25,7 @@ export function mountCvScene(host:HTMLElement,player:StepPlayer<CvParams>,mode:M
     'Her kimliğin tek K etiketi var: doğrulama üyeliği tam 1; eğitim üyeliği K−1. Kapsama tüm geliştirmede tamamlanır.',
     'Aynı çalıştırmanın kat F1 skorları, ortalaması ve popülasyon std değeri. Yayılma güven aralığı değildir.',
     'Pozitif sınıfsız katlarda recall tanımsızdır. F1 yalnız 2TP+FP+FN=0 olduğunda tanımsızdır.',
-    'Aynı 40 kimlik; pozitifler katlara dengeli dağılır. Sınıf başına en az K örnek gereklidir.',
+    `Aynı ${development.length} kimlik; pozitifler katlara dengeli dağılır. Geliştirmede ${positiveTotal} pozitif, ${negativeTotal} negatif var; her sınıfta en az K örnek gerekir.`,
     'Doğrulama yalnız eğitimde öğrenilen dönüşümü kullanır. Sızıntı skoru her zaman artırmaz.',
     'Keşif kontrollerinden bağımsız sabit protokol. Test yalnız seçilmiş yapılandırmanın son raporudur.',
   ];

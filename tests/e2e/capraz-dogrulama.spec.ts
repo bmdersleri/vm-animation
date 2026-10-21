@@ -14,8 +14,8 @@ for(const mode of ['ders','lab'] as const){
       if(i===2){await expect(page.locator('[data-sample][data-role="validation"]')).toHaveCount(8);await expect(page.locator('[data-fit="mean"]')).toBeVisible();}
       if(i===4)await expect(page.locator('.cv-membership').first()).toHaveText(/K[1-5]/);
       if(i===5){await expect(page.locator('[data-mean]')).toHaveText('0,688');await expect(page.locator('.cv-score-note')).toContainText('güven aralığı değildir');const r=await page.locator('.cv-score-plot').boundingBox();expect(r!.height).toBeGreaterThanOrEqual(180);}
-      if(i===6)await expect(page.locator('[data-recall]')).toContainText('tanımsız');
-      if(i===7)await expect(page.locator('[data-positive-fold="0"]')).toHaveAttribute('data-count','2');
+      if(i===6){await expect(page.locator('[data-recall]')).toContainText('tanımsız');await expect(page.locator('[data-recall-undefined]')).toHaveCount(3);}
+      if(i===7)await expect(page.locator('[data-positive-fold="0"]')).toHaveAttribute('data-count','3');
       if(i===8){await expect(page.locator('[data-pipeline="correct"]')).toBeVisible();await expect(page.locator('[data-pipeline="wrong"]')).toBeVisible();await page.screenshot({path:`${SHOTS}/cv-${mode}-pipeline.png`});}
       if(i===9){await expect(page.locator('[data-test-f1]')).toHaveText('0,571');await expect(page.locator('[data-test-outcome]')).toHaveCount(15);await page.screenshot({path:`${SHOTS}/cv-${mode}-final.png`});}
       if(i===6)await page.screenshot({path:`${SHOTS}/cv-${mode}-dense.png`});
@@ -42,6 +42,7 @@ test('lab: real K/method/fold/C values, atomic fold clamp, reset and fixed final
   await page.locator('.step-dot').nth(9).click();await expect(page.locator('.cv-scene')).toHaveAttribute('data-run','5-stratified-1');
   await expect(page.locator('[data-final-protocol]')).toContainText('K=5 · StratifiedKFold');
   await expect(page.locator('[name="k"]')).toBeDisabled();await expect(page.locator('[name="method"]')).toBeDisabled();
+  await expect(page.locator('[name="k"]')).toHaveValue('5');await expect(page.locator('[name="method"]')).toHaveValue('stratified');await expect(page.locator('[name="c"]')).toBeDisabled();
 });
 test('narrow ders and lab keep board, pipeline, score chart and final test readable',async({page})=>{
   await page.setViewportSize({width:390,height:844});

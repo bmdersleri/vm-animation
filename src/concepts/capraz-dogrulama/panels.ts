@@ -1,7 +1,7 @@
 import { html, svg } from '../degerlendirme/ui';
 import type { CvRun } from '../degerlendirme/data';
 import { metrics } from '../degerlendirme/metrics';
-import { cvData, numberText, vectorText, positiveCount } from './view';
+import { cvData, cText, numberText, vectorText, positiveCount, positiveTotal, negativeTotal } from './view';
 
 const value=(label:string,n:number,attribute:string)=>html('p',{},label,html('strong',{[attribute]:'','data-value':String(n)},numberText(n)));
 export function foldCard(run:CvRun,index:number,step:number):HTMLElement{
@@ -19,14 +19,15 @@ export function foldCard(run:CvRun,index:number,step:number):HTMLElement{
 }
 
 export function scorePanel(run:CvRun,active:number,step:number):HTMLElement{
-  const plot=svg('svg',{class:'cv-score-plot',viewBox:'0 0 460 250',role:'img','aria-label':'Kat F1 skorları, ortalama ve popülasyon standart sapması'});
-  const y=(n:number)=>205-160*n;
+  const H=step===3?95:160;
+  const plot=svg('svg',{class:'cv-score-plot',viewBox:`0 0 460 ${H+90}`,role:'img','aria-label':`Kat F1 skorları: ${run.folds.map((f,i)=>`K${i+1} ${numberText(f.f1)}`).join(', ')}. Ortalama ${numberText(run.meanF1)}, popülasyon standart sapması ${numberText(run.stdF1)}.`});
+  const y=(n:number)=>H+45-H*n;
   for(const n of [0,.5,1]){plot.append(svg('line',{x1:'40',x2:'445',y1:String(y(n)),y2:String(y(n)),class:'cv-gridline'}),svg('text',{x:'32',y:String(y(n)+5),'text-anchor':'end',class:'cv-tick'},String(n).replace('.',',')));}
-  if(step===5){plot.append(svg('rect',{x:'40',y:String(y(Math.min(1,run.meanF1+run.stdF1))),width:'405',height:String(160*(Math.min(1,run.meanF1+run.stdF1)-Math.max(0,run.meanF1-run.stdF1))),class:'cv-std-band'}),svg('line',{x1:'40',x2:'445',y1:String(y(run.meanF1)),y2:String(y(run.meanF1)),class:'cv-mean-line'}));}
+  if(step===5){plot.append(svg('rect',{x:'40',y:String(y(Math.min(1,run.meanF1+run.stdF1))),width:'405',height:String(H*(Math.min(1,run.meanF1+run.stdF1)-Math.max(0,run.meanF1-run.stdF1))),class:'cv-std-band'}),svg('line',{x1:'40',x2:'445',y1:String(y(run.meanF1)),y2:String(y(run.meanF1)),class:'cv-mean-line'}));}
   run.folds.forEach((fold,i)=>{
     const revealed=step!==3||i<=active;const x=60+i*(365/run.k);
     const g=svg('g',{'data-score':String(i),'data-revealed':String(revealed),'data-value':String(fold.f1)});
-    g.append(svg('rect',{x:String(x),y:String(y(revealed?fold.f1:0)),width:String(Math.min(48,250/run.k)),height:String(Math.max(2,160*(revealed?fold.f1:0))),class:i===active?'cv-bar cv-bar-active':'cv-bar'}),svg('text',{x:String(x+24),y:'234','text-anchor':'middle',class:'cv-tick'},`K${i+1}`),svg('text',{x:String(x+24),y:String(y(revealed?fold.f1:0)-10),'text-anchor':'middle',class:'cv-tick'},revealed?numberText(fold.f1):'bekliyor'));
+    g.append(svg('rect',{x:String(x),y:String(y(revealed?fold.f1:0)),width:String(Math.min(48,250/run.k)),height:String(Math.max(2,H*(revealed?fold.f1:0))),class:i===active?'cv-bar cv-bar-active':'cv-bar'}),svg('text',{x:String(x+24),y:String(H+80),'text-anchor':'middle',class:'cv-tick'},`K${i+1}`),svg('text',{x:String(x+24),y:String(y(revealed?fold.f1:0)-10),'text-anchor':'middle',class:'cv-tick'},revealed?numberText(fold.f1):'bekliyor'));
     plot.append(g);
   });
   return html('section',{class:'cv-scores'},html('h2',{},'Kat skorları · pozitif sınıf F1'),plot,
@@ -38,9 +39,9 @@ export function classPanel(run:CvRun):HTMLElement{
   const heading=run.method==='kfold'?'Düz K-Fold':'StratifiedKFold';
   const rows=run.folds.map((fold,i)=>{
     const n=positiveCount(fold.validationIds);
-    return html('div',{class:'cv-positive-row','data-positive-fold':String(i),'data-count':String(n)},html('span',{},`K${i+1}`),html('div',{class:'cv-positive-track'},html('div',{class:'cv-positive-fill',style:`width:${100*n/fold.validationIds.length}%`})),html('span',{},`${n} / ${fold.validationIds.length}`));
+    return html('div',{class:'cv-positive-row','data-positive-fold':String(i),'data-count':String(n),...(n===0?{'data-recall-undefined':''}:{})},html('span',{},`K${i+1}`),html('div',{class:'cv-positive-track'},html('div',{class:'cv-positive-fill',style:`width:${100*n/fold.validationIds.length}%`}),...(n===0?[html('span',{class:'cv-undefined-flag'},'pozitif yok · recall tanımsız')]:[])),html('span',{},`${n} / ${fold.validationIds.length}`));
   });
-  return html('section',{class:'cv-classes'},html('h2',{},`${heading} · doğrulama pozitifleri`),html('div',{class:'cv-positive-rows'},...rows),html('p',{},'■ Ayrılan müşteri / tüm doğrulama müşterileri'),html('p',{class:'cv-class-condition'},'Geliştirmede 10 pozitif, 30 negatif: K=3 ve K=5 için her sınıfta yeterli örnek var.'));
+  return html('section',{class:'cv-classes'},html('h2',{},`${heading} · doğrulama pozitifleri`),html('div',{class:'cv-positive-rows'},...rows),html('p',{},'■ Ayrılan müşteri / tüm doğrulama müşterileri'),);
 }
 
 export function pipelinePanel(run:CvRun,index:number):HTMLElement{
@@ -55,7 +56,7 @@ export function finalPanel():HTMLElement{
   const candidates=cvData.runs.filter(r=>r.k===5&&r.method==='stratified');
   const protocol=html('section',{class:'cv-selection'},html('h2',{'data-final-protocol':''},'Sabit protokol: K=5 · StratifiedKFold'),html('p',{},'Aynı Pipeline; yalnız C değişir. Ortalama F1 büyük olan seçilir; eşitlikte küçük C.'),
     html('div',{class:'cv-candidates'},...candidates.map(run=>html('div',{'data-candidate':String(run.c),'data-mean':String(run.meanF1),'data-chosen':String(run.c===selected.c)},html('strong',{},`C=${String(run.c).replace('.',',')}`),html('span',{},`Ort. F1 ${numberText(run.meanF1)}`)))),
-    html('p',{'data-selected-c':String(selected.c)},`Seçim donduruldu: C=${selected.c}`),html('div',{class:'cv-refit'},html('h2',{},'40 geliştirme müşterisiyle yeniden fit'),html('p',{},`μ ${vectorText(selected.fitMean)}`),html('p',{},`σ ${vectorText(selected.fitScale)}`),html('p',{},'Sonraki tek adım: bağımsız dış testi raporla.')));
+    html('p',{'data-selected-c':String(selected.c)},`Seçim donduruldu: C=${cText(selected.c)}`),html('div',{class:'cv-refit'},html('h2',{},'40 geliştirme müşterisiyle yeniden fit'),html('p',{},`μ ${vectorText(selected.fitMean)}`),html('p',{},`σ ${vectorText(selected.fitScale)}`),html('p',{},'Sonraki tek adım: bağımsız dış testi raporla.')));
   const c=selected.finalTest.confusion;
   const report=html('section',{class:'cv-test-report','data-test-report':''},html('h2',{},'Dış test açıldı · 15 müşteri'),value('Son test F1 ',selected.finalTest.f1,'data-test-f1'),html('p',{},`TP ${c.tp} · FP ${c.fp} · FN ${c.fn} · TN ${c.tn}`),html('div',{class:'cv-test-outcomes'},...selected.finalTest.predictions.map(p=>html('span',{'data-test-outcome':p.id,title:p.id},`T${p.id.slice(-2)}: ${p.actual}→${p.predicted}`))),html('p',{},'Kimlik: gerçek → tahmin. Test seçim döngüsüne geri dönmez.'));
   return html('div',{class:'cv-final'},protocol,report,html('p',{class:'cv-final-note'},'Zaman ve grup bağımlı veride rastgele K-Fold uygun olmayabilir; zamana veya gruba göre ayırın.'));

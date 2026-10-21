@@ -1,7 +1,7 @@
 import type { StepPlayer } from '../../core/player';
 import type { CvParams } from './scenario';
 import { html } from '../degerlendirme/ui';
-import { foldIndex } from './view';
+import { cText, cvData, foldIndex, negativeTotal, positiveTotal } from './view';
 let uid=0;
 export function mountCvParams(host:HTMLElement,player:StepPlayer<CvParams>){
   const id=`cv-${++uid}`;
@@ -21,13 +21,14 @@ export function mountCvParams(host:HTMLElement,player:StepPlayer<CvParams>){
   on(c,'change',()=>player.setParam('c',c.value==='0.1'?.1:1));
   on(reset,'click',()=>player.goto(player.state.index));
   const sync=():void=>{
-    const {params:p,index}=player.state,locked=index===9;
+    const {index}=player.state,locked=index===9;
+    const p=locked?{...player.state.params,k:cvData.selection.k,method:cvData.selection.method,c:cvData.selection.c}:player.state.params;
     k.value=String(p.k);method.value=p.method;c.value=String(p.c);
     fold.replaceChildren(...Array.from({length:p.k},(_,i)=>html('option',{value:String(i)},`Kat ${i+1}`)));fold.value=String(foldIndex(p));
-    kControl.hidden=index===0;methodControl.hidden=index<6;foldControl.hidden=index===1||index===4||index===5||index===9;cControl.hidden=index<2||index===4||index===7||index===9;
+    kControl.hidden=index===0;methodControl.hidden=index<6;foldControl.hidden=index===1||index===4||index===5||index===9;cControl.hidden=index<2||index===4||index===7;
     for(const el of [k,method,fold,c])el.disabled=locked;
     reset.disabled=locked;
-    hint.textContent=locked?'Son seçim sabittir: K=5 StratifiedKFold; C=0,1 ve C=1. Test seçim için kullanılmaz.':'Yalnız desteklenen gerçek çalıştırmalar: K=3/5. 10 pozitif ve 30 negatif her iki K için yeterlidir. Tarayıcıda yeni eğitim yok.';
+    hint.textContent=locked?`Sabit protokol (keşif kontrolü değil): K=5 StratifiedKFold; seçilen model C=${cText(cvData.selection.c)}. Test seçim için kullanılmaz.`:`Yalnız önceden hesaplanmış gerçek çalıştırmalar: K=3/5. ${positiveTotal} pozitif ve ${negativeTotal} negatif her iki K için yeterlidir. Tarayıcıda yeni eğitim yok.`;
   };
   sync();const unsubscribe=player.subscribe(sync);
   return {destroy(){unsubscribe();listeners.forEach(off=>off());root.remove();}};

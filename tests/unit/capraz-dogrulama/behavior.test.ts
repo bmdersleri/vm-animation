@@ -4,6 +4,7 @@ import { StepPlayer } from '../../../src/core/player';
 import { cvScenario } from '../../../src/concepts/capraz-dogrulama/scenario';
 import { mountCvScene } from '../../../src/concepts/capraz-dogrulama/scene';
 import { mountCvParams } from '../../../src/concepts/capraz-dogrulama/controls';
+import { cText } from '../../../src/concepts/capraz-dogrulama/view';
 import { evaluationData } from '../../../src/concepts/degerlendirme/data';
 
 afterEach(()=>{ vi.useRealTimers(); document.body.replaceChildren(); });
@@ -95,5 +96,51 @@ describe('cross validation lesson',()=>{
     expect(player.state.params.k).toBe(3);expect(player.state.params.fold).toBe(2);expect(controls.querySelectorAll('[name="fold"] option')).toHaveLength(3);
     player.goto(9);for(const control of controls.querySelectorAll('select'))expect(control.disabled).toBe(true);
     scene.destroy();params.destroy();player.goto(0);expect(host.children).toHaveLength(0);expect(controls.children).toHaveLength(0);player.destroy();
+  });
+  it('derives the class counts from the data instead of hard-coded prose',()=>{
+    const pos=development.filter(s=>s.actual===1).length,neg=development.length-pos;
+    const {player,host,scene}=setup();const controls=document.createElement('div');const params=mountCvParams(controls,player);
+    player.goto(7);expect(host.textContent).toContain(`${pos} pozitif, ${neg} negatif`);expect(host.textContent).not.toContain('10 pozitif');
+    expect(controls.textContent).toContain(`${pos} pozitif ve ${neg} negatif`);expect(controls.textContent).not.toContain('10 pozitif');
+    params.destroy();scene.destroy();player.destroy();
+  });
+  it('labels validation folds without a positive as undefined recall',()=>{
+    const {player,host,scene}=setup();player.goto(6);
+    const run=data.runs.find(r=>r.k===5&&r.method==='kfold'&&r.c===1)!;
+    run.folds.forEach((fold,i)=>{const none=!development.some(s=>s.actual===1&&fold.validationIds.includes(s.id));
+      expect(host.querySelector(`[data-positive-fold="${i}"]`)?.hasAttribute('data-recall-undefined')).toBe(none);});
+    expect(host.querySelectorAll('[data-recall-undefined]').length).toBeGreaterThan(0);
+    player.goto(7);expect(host.querySelectorAll('[data-recall-undefined]')).toHaveLength(0);
+    scene.destroy();player.destroy();
+  });
+  it('wrong global fit equals the development-only mean and population scale; test rows are excluded',()=>{
+    const x=development.map(s=>s.x);
+    const mean=[0,1].map(j=>x.reduce((a,r)=>a+r[j],0)/x.length);
+    const scale=[0,1].map(j=>Math.sqrt(x.reduce((a,r)=>a+(r[j]-mean[j])**2,0)/x.length));
+    data.selection.fitMean.forEach((v,j)=>expect(v).toBeCloseTo(mean[j],9));
+    data.selection.fitScale.forEach((v,j)=>expect(v).toBeCloseTo(scale[j],9));
+    const {player,host,scene}=setup();player.goto(8);
+    expect(host.querySelector('[data-pipeline="wrong"]')?.textContent).toContain('Yanlış');
+    expect(JSON.parse(host.querySelector('[data-global-fit="scale"]')!.getAttribute('data-values')!)).toEqual(data.selection.fitScale);
+    scene.destroy();player.destroy();
+  });
+  it('shows the frozen chosen model in disabled final controls and formats C in Turkish',()=>{
+    expect(cText(.1)).toBe('0,1');expect(cText(1)).toBe('1');
+    const {player,host,scene}=setup();const controls=document.createElement('div');const params=mountCvParams(controls,player);
+    player.goto(9);
+    const val=(n:string)=>controls.querySelector<HTMLSelectElement>(`[name="${n}"]`)!;
+    expect(val('k').value).toBe('5');expect(val('method').value).toBe('stratified');expect(val('c').value).toBe(String(data.selection.c));
+    for(const key of ['k','method','c']){expect(controls.querySelector<HTMLElement>(`[data-control="${key}"]`)?.hidden).toBe(false);expect(val(key).disabled).toBe(true);}
+    expect(controls.querySelector<HTMLElement>('[data-control="fold"]')?.hidden).toBe(true);
+    expect(host.querySelector('[data-selected-c]')?.textContent).toContain(`C=${cText(data.selection.c)}`);
+    params.destroy();scene.destroy();player.destroy();
+  });
+  it('gives the score chart an accessible text summary with the real numbers',()=>{
+    const {player,host,scene}=setup();player.goto(5);
+    const label=host.querySelector('.cv-score-plot')!.getAttribute('aria-label')!;
+    const run=data.runs.find(r=>r.k===5&&r.method==='stratified'&&r.c===1)!;
+    expect(label).toContain(run.meanF1.toLocaleString('tr-TR',{minimumFractionDigits:3,maximumFractionDigits:3}));
+    expect(label).toContain('K5');
+    scene.destroy();player.destroy();
   });
 });
