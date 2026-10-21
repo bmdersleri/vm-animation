@@ -1,0 +1,32 @@
+/* pca scatter scene text and marks. Text sizes come only from the --fs-* tokens; the SVG has no viewBox. */
+.pca-plot {
+  touch-action: none; /* dragging the handle must not scroll the page */
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: var(--font);
+}
+.pca-scatter .hit { cursor: default; }
+[data-mode="lab"] .pca-scatter .hit { cursor: crosshair; }
+.pca-scatter path.pts { fill: var(--navy); fill-opacity: 0.55; stroke: none; }
+.pca-scatter path.proj-lines { fill: none; stroke: var(--orange); stroke-width: 1; stroke-opacity: 0.45; }
+.pca-scatter path.proj-pts { fill: var(--orange); fill-opacity: 0.85; stroke: none; }
+.pca-scatter path.drop-lines { fill: none; stroke: var(--navy); stroke-width: 1; stroke-opacity: 0.6; }
+.pca-scatter line.dir { stroke: #a85a00; stroke-width: 3.5; stroke-linecap: round; }
+.pca-scatter line.dir2 { stroke: #0b7473; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 10 6; }
+.pca-scatter .center-cross path { fill: none; stroke: var(--navy); stroke-width: 2.5; }
+.pca-scatter circle.handle { fill: var(--orange); fill-opacity: 0.9; stroke: #fff; stroke-width: 3; }
+.pca-scatter text.dir-label,
+.pca-scatter text.dir2-label {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  /* white halo keeps labels readable over dots and lines */
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.pca-scatter text.dir-label { fill: #a85a00; }
+.pca-scatter text.dir2-label { fill: #0b7473; }
+.pca-scatter .tick,
+.pca-scatter .tick text { font-variant-numeric: tabular-nums; }
