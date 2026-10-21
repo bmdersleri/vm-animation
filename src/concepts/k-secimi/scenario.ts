@@ -65,7 +65,7 @@ export const kSecimiScenario: Scenario<KSecimiParams> = {
     {
       id: 'silhouette',
       title: 'Silhouette nedir?',
-      text: `Nokta ${sp + 1} için a = kendi kümesine ortalama uzaklık (${pointText(k3.a![sp])}), b = en yakın komşu kümeye ortalama uzaklık (${pointText(k3.b![sp])}). s = (b − a) / max(a, b) = ${pointText(k3.s![sp])}. s, −1 ile +1 arasındadır: +1'e yakın net ayrışmış, 0 sınırda, negatif yanlış kümede olabilir.`,
+      text: `Örnek: Nokta ${sp + 1} için a = kendi kümesine ortalama uzaklık (${pointText(k3.a![sp])}), b = en yakın komşu kümeye ortalama uzaklık (${pointText(k3.b![sp])}). s = (b − a) / max(a, b) = ${pointText(k3.s![sp])}. s, −1 ile +1 arasındadır: +1'e yakın net ayrışmış, 0 sınırda, negatif yanlış kümede olabilir.`,
       term: 'silhouette skoru',
       params: { k: 3, point: sp },
     },

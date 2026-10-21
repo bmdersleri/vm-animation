@@ -65,6 +65,7 @@ describe('k-secimi scenario', () => {
     expect(steps[3].text).toContain('8,5');
     expect(steps[4].text).toContain('215,3');
     expect(steps[4].text).toContain('6,1');
+    expect(steps[5].text).toMatch(new RegExp(`^Örnek: Nokta ${kmeansData.silhouettePoint + 1} için a = `));
     expect(steps[6].text).toContain('0,632');
     expect(steps[7].text).toContain('0,545');
     expect(steps[7].text).toContain('0,547');
