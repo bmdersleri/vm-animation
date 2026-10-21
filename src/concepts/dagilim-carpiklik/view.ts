@@ -112,7 +112,7 @@ export function deriveDagilimView(index: number, p: DagilimParams): DagilimView 
   }
 
   const tail: DagilimView['tail'] = stepId === 'carpiklik'
-    ? 'right'
+    ? (sk > 0 ? 'right' : sk < 0 ? 'left' : null)
     : stepId === 'uc-sekil' ? (seri === 'sol' ? 'left' : seri === 'simetrik' ? null : 'right') : null;
 
   return {

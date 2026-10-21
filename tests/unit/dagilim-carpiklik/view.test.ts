@@ -39,6 +39,9 @@ describe('dagilim view', () => {
     expect(v.tail).toBe('right');
     expect(v.strip).toContain('0,90');
     expect(v.strip).toBe('çarpıklık = 0,90 > 0: sağ kuyruk uzun');
+    // the series selector is live on step 4: the shaded side follows the sign
+    expect(deriveDagilimView(3, p({ seri: 'sol' })).tail).toBe('left');
+    expect(deriveDagilimView(3, p({ seri: 'simetrik' })).tail).toBeNull();
   });
 
   it('adım 5 şerit seçilen kova sayısını izler', () => {
