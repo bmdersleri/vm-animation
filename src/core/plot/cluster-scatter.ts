@@ -1,6 +1,6 @@
 import { select, type Selection } from 'd3-selection';
 import { CLUSTER, NAVY, NEGATIVE, UNASSIGNED, WHITE, r1 } from './marks';
-import { tr } from './transition';
+import { tr, type AnySel } from './transition';
 import { fitEqualAspect, type Domain, type Rect, type Scales } from './viewport';
 
 /** Same shape as the Chapter 7 data type; defined here so core does not import from concepts. */
@@ -65,6 +65,8 @@ export class ClusterScatterLayer {
     this.last = spec;
     const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const ms = animate && !reduce ? MS : 0;
+    // Instant writes must also stop a still-running 'cs' transition, or it overwrites them.
+    const go = <S extends AnySel>(sel: S): S => (ms > 0 ? tr(sel, 'cs', ms) : (sel.interrupt('cs') as S));
     const { x, y } = this.scales;
     const px = (p: Pt): number => r1(x(p[0]));
     const py = (p: Pt): number => r1(y(p[1]));
@@ -82,7 +84,7 @@ export class ClusterScatterLayer {
         const c = spec.labels?.[i];
         return c === undefined || c < 0 ? '-' : String(c);
       });
-    tr(ptsAll, 'cs', ms)
+    go(ptsAll)
       .attr('cx', (d: Pt) => px(d)).attr('cy', (d: Pt) => py(d))
       .attr('fill', (_d: Pt, i: number) => colour(spec.labels?.[i]));
 
@@ -102,7 +104,7 @@ export class ClusterScatterLayer {
     csAll.attr('data-cluster', (_d, i) => i);
     csAll.select('path.cs-plus').attr('stroke', (_d, i) => colour(i));
     csAll.select('text').text((_d, i) => `M${i + 1}`);
-    tr(csAll, 'cs', ms).attr('transform', (d: Pt) => `translate(${px(d)},${py(d)})`);
+    go(csAll).attr('transform', (d: Pt) => `translate(${px(d)},${py(d)})`);
 
     // trails
     const trailData: Trail[] = [];
@@ -115,21 +117,29 @@ export class ClusterScatterLayer {
     tlBorn.append('path').attr('class', 'cs-trail-arrow').attr('fill', 'none').attr('stroke-width', 1.5);
     const tlAll = tlBorn.merge(tl as never) as unknown as Sel<Trail>;
     tlAll.attr('data-cluster', (_d, i) => i);
-    tlAll.select('path.cs-trail-plus').attr('stroke', (_d, i) => colour(i))
-      .attr('transform', (d: Trail) => `translate(${px(d.from)},${py(d.from)})`);
-    tlAll.select('path.cs-trail-arrow').attr('stroke', (_d, i) => colour(i))
-      .attr('d', (d: Trail) => arrow(px(d.from), py(d.from), px(d.to), py(d.to)));
+    const trPlus = (sel: AnySel): AnySel => sel.attr('transform', (d: Trail) => `translate(${px(d.from)},${py(d.from)})`);
+    const trArrow = (sel: AnySel): AnySel => sel.attr('d', (d: Trail) => arrow(px(d.from), py(d.from), px(d.to), py(d.to)));
+    trPlus(tlBorn.select('path.cs-trail-plus'));
+    trArrow(tlBorn.select('path.cs-trail-arrow'));
+    tlAll.select('path.cs-trail-plus').attr('stroke', (_d, i) => colour(i));
+    tlAll.select('path.cs-trail-arrow').attr('stroke', (_d, i) => colour(i));
+    trPlus(go(tlAll.select('path.cs-trail-plus')));
+    trArrow(go(tlAll.select('path.cs-trail-arrow')));
 
     // distance lines: point to every centre
     const segs: Seg[] = [];
-    for (const l of spec.lines ?? []) centers.forEach((_c, k) => segs.push({ point: l.point, center: k, nearest: k === l.nearest }));
+    for (const l of spec.lines ?? []) if (spec.points[l.point]) centers.forEach((_c, k) => segs.push({ point: l.point, center: k, nearest: k === l.nearest }));
     const ln = this.gLines.selectAll<SVGLineElement, Seg>('line.cs-line').data(segs);
     ln.exit().remove();
-    const lnAll = ln.enter().append('line').attr('class', 'cs-line').merge(ln as never) as unknown as Sel<Seg, SVGLineElement>;
+    const place = (sel: AnySel): AnySel => sel
+      .attr('x1', (d: Seg) => px(spec.points[d.point])).attr('y1', (d: Seg) => py(spec.points[d.point]))
+      .attr('x2', (d: Seg) => px(centers[d.center])).attr('y2', (d: Seg) => py(centers[d.center]));
+    const lnBorn = ln.enter().append('line').attr('class', 'cs-line');
+    place(lnBorn);
+    const lnAll = lnBorn.merge(ln as never) as unknown as Sel<Seg, SVGLineElement>;
+    place(go(lnAll));
     lnAll.attr('data-point', (d) => d.point).attr('data-center', (d) => d.center)
       .attr('data-nearest', (d) => String(d.nearest))
-      .attr('x1', (d) => px(spec.points[d.point])).attr('y1', (d) => py(spec.points[d.point]))
-      .attr('x2', (d) => px(centers[d.center])).attr('y2', (d) => py(centers[d.center]))
       .attr('stroke', (d) => (d.nearest ? NAVY : UNASSIGNED))
       .attr('stroke-width', (d) => (d.nearest ? 2.5 : 1))
       .attr('stroke-dasharray', (d) => (d.nearest ? null : '3 3'))
@@ -148,18 +158,24 @@ export class ClusterScatterLayer {
     rgBorn.append('text').attr('class', 'cs-ring-label').attr('font-size', 12).attr('font-weight', 700)
       .attr('fill', NAVY).attr('stroke', WHITE).attr('stroke-width', 3).attr('paint-order', 'stroke');
     const rgAll = rgBorn.merge(rg as never) as unknown as Sel<Ring>;
+    const ringPos = (sel: AnySel): AnySel => sel
+      .attr('cx', (d: Ring) => px(spec.points[d.i])).attr('cy', (d: Ring) => py(spec.points[d.i]));
+    ringPos(rgBorn.select('circle.cs-ring'));
+    rgBorn.select('text').attr('x', (d: Ring) => px(spec.points[d.i]) + R + 8).attr('y', (d: Ring) => py(spec.points[d.i]) - R - 6);
+    ringPos(go(rgAll.select('circle.cs-ring')));
+    go(rgAll.select('text'))
+      .attr('x', (d: Ring) => px(spec.points[d.i]) + R + 8).attr('y', (d: Ring) => py(spec.points[d.i]) - R - 6);
     rgAll.select('circle.cs-ring')
       .attr('data-kind', (d: Ring) => d.kind).attr('data-i', (d: Ring) => d.i)
-      .attr('cx', (d: Ring) => px(spec.points[d.i])).attr('cy', (d: Ring) => py(spec.points[d.i]))
       .attr('r', (d: Ring) => (d.kind === 'selected' ? R + 6 : d.kind === 'negative' ? R + 4 : R + 3))
       .attr('stroke', (d: Ring) => (d.kind === 'negative' ? NEGATIVE : NAVY))
       .attr('stroke-width', (d: Ring) => (d.kind === 'changed' ? 1.5 : 2.5))
       .attr('stroke-dasharray', (d: Ring) => (d.kind === 'changed' ? '2 2' : null));
-    rgAll.select('text').text((d: Ring) => (d.kind === 'selected' ? `Nokta ${d.i + 1}` : ''))
-      .attr('x', (d: Ring) => px(spec.points[d.i]) + R + 8).attr('y', (d: Ring) => py(spec.points[d.i]) - R - 6);
+    rgAll.select('text').text((d: Ring) => (d.kind === 'selected' ? `Nokta ${d.i + 1}` : ''));
   }
 
   destroy(): void {
+    this.root.selectAll('*').interrupt('cs');
     this.root.remove();
     this.last = null;
   }

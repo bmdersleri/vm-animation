@@ -96,4 +96,97 @@ describe('ClusterScatterLayer', () => {
     expect(svg.querySelector('.cs-layer')).toBeNull();
     expect(svg.querySelectorAll('circle')).toHaveLength(0);
   });
+
+  const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+  const attrs = (svg: Element, sel: string, a: string): (string | null)[] => [...svg.querySelectorAll(sel)].map((e) => e.getAttribute(a));
+
+  it('an instant update cancels a running animated one', async () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ labels: [0, 0, 0, 0], centers: [[0, 0]] }), false);
+    layer.update({ ...spec({ labels: [1, 1, 1, 1], centers: [[1, 1]] }), points: [[2, 2], [1, 1], [-1, 2], [2, -1]] }, true);
+    layer.update(spec({ labels: [2, 2, 2, 2], centers: [[-1, -1]] }), false);
+    const want = attrs(svg, 'circle.cs-point', 'cx');
+    const wantT = svg.querySelector('g.cs-center')!.getAttribute('transform');
+    await wait(700);
+    expect(attrs(svg, 'circle.cs-point', 'cx')).toEqual(want);
+    expect(attrs(svg, 'circle.cs-point', 'fill')).toEqual(Array(4).fill(CLUSTER[2]));
+    expect(svg.querySelector('g.cs-center')!.getAttribute('transform')).toBe(wantT);
+  });
+
+  it('resize mid-animation lands on the new scale', async () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ centers: [[0, 0]], lines: [{ point: 1, nearest: 0 }] }), false);
+    layer.update({ ...spec({ centers: [[1, 1]], lines: [{ point: 1, nearest: 0 }] }), points: [[2, 2], [1, 1], [-1, 2], [2, -1]] }, true);
+    layer.resize({ left: 0, top: 0, width: 200, height: 200 });
+    const want = attrs(svg, 'circle.cs-point', 'cx');
+    const wantL = attrs(svg, 'line.cs-line', 'x2');
+    await wait(700);
+    expect(attrs(svg, 'circle.cs-point', 'cx')).toEqual(want);
+    expect(attrs(svg, 'line.cs-line', 'x2')).toEqual(wantL);
+  });
+
+  it('lines and rings animate with the points and end at the target', async () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ centers: [[0, 0]], lines: [{ point: 1, nearest: 0 }], negative: [1] }), false);
+    layer.update(spec({ centers: [[2, 2]], lines: [{ point: 1, nearest: 0 }], negative: [1] }), true);
+    const x2 = svg.querySelector('line.cs-line')!.getAttribute('x2');
+    const c0 = Number(svg.querySelector('g.cs-center')!.getAttribute('transform')!.match(/translate\(([-\d.]+)/)![1]);
+    await wait(700);
+    const c1 = Number(svg.querySelector('g.cs-center')!.getAttribute('transform')!.match(/translate\(([-\d.]+)/)![1]);
+    expect(c1).toBeGreaterThan(c0); // centre glided
+    expect(Number(svg.querySelector('line.cs-line')!.getAttribute('x2'))).toBeCloseTo(c1, 0);
+    expect(x2).not.toBe(String(c1)); // the line did not jump ahead of the centre
+  });
+
+  it('repeated update keeps element counts', () => {
+    const { svg, layer } = setup();
+    const s = spec({ labels: [0, 1, 1, 0], centers: [[0, 0], [1, 1]], trails: [[0, 0], [1, 1]], lines: [{ point: 0, nearest: 0 }], changed: [1], negative: [2], selected: 3 });
+    layer.update(s, false);
+    layer.update(s, false);
+    layer.update(s, false);
+    expect(svg.querySelectorAll('circle.cs-point')).toHaveLength(4);
+    expect(svg.querySelectorAll('g.cs-center')).toHaveLength(2);
+    expect(svg.querySelectorAll('.cs-trail')).toHaveLength(2);
+    expect(svg.querySelectorAll('line.cs-line')).toHaveLength(2);
+    expect(svg.querySelectorAll('.cs-ring')).toHaveLength(3);
+  });
+
+  it('centre count 3 to 1 to 10 follows the spec', () => {
+    const { svg, layer } = setup();
+    const cs = (n: number): [number, number][] => Array.from({ length: n }, (_, i) => [i * 0.1, 0]);
+    for (const n of [3, 1, 10]) {
+      layer.update(spec({ centers: cs(n) }), false);
+      expect(svg.querySelectorAll('g.cs-center')).toHaveLength(n);
+    }
+    expect(svg.querySelectorAll('g.cs-center text')[9].textContent).toBe('M10');
+    layer.update(spec({ centers: null }), false);
+    expect(svg.querySelectorAll('g.cs-center')).toHaveLength(0);
+  });
+
+  it('labels toggle between null and values', () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ labels: [0, 1, 2, 0] }), false);
+    layer.update(spec({ labels: null }), false);
+    expect(attrs(svg, 'circle.cs-point', 'fill')).toEqual(Array(4).fill(UNASSIGNED));
+    expect(attrs(svg, 'circle.cs-point', 'data-cluster')).toEqual(Array(4).fill('-'));
+    layer.update(spec({ labels: [0, 1, 2, 0] }), false);
+    expect(attrs(svg, 'circle.cs-point', 'data-cluster')).toEqual(['0', '1', '2', '0']);
+  });
+
+  it('resize moves points, centres, lines and rings', () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ centers: [[1, 1]], lines: [{ point: 0, nearest: 0 }], selected: 1 }), false);
+    const before = [attrs(svg, 'circle.cs-point', 'cx')[1], svg.querySelector('g.cs-center')!.getAttribute('transform'), svg.querySelector('line.cs-line')!.getAttribute('x2'), svg.querySelector('.cs-ring')!.getAttribute('cx')];
+    layer.resize({ left: 0, top: 0, width: 600, height: 600 });
+    const after = [attrs(svg, 'circle.cs-point', 'cx')[1], svg.querySelector('g.cs-center')!.getAttribute('transform'), svg.querySelector('line.cs-line')!.getAttribute('x2'), svg.querySelector('.cs-ring')!.getAttribute('cx')];
+    after.forEach((a, i) => expect(a).not.toBe(before[i]));
+  });
+
+  it('lines with a bad point index, or without centres, are dropped', () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ centers: [[0, 0]], lines: [{ point: 99, nearest: 0 }, { point: -1, nearest: 0 }, { point: 1, nearest: 0 }] }), false);
+    expect(svg.querySelectorAll('line.cs-line')).toHaveLength(1);
+    layer.update(spec({ centers: null, lines: [{ point: 1, nearest: 0 }] }), false);
+    expect(svg.querySelectorAll('line.cs-line')).toHaveLength(0);
+  });
 });
