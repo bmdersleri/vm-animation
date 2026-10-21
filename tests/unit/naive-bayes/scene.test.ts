@@ -167,7 +167,7 @@ describe('mountNbScene', () => {
     expect(neg()).toBe('1');
   });
 
-  it('formula strip: reveal 2 shows two lines, part 2 one', () => {
+  it('formula strip: reveal 2 and word steps show two lines', () => {
     const { el, player } = setup();
     // terms are trimmed; the flex column gap stands for the space between them
     const lines = (): string[] => all(el, 'p.formula .line')
@@ -177,8 +177,11 @@ describe('mountNbScene', () => {
     expect(lines()).toHaveLength(2);
     expect(lines()[0]).toBe('9 / (9 + 99) = %8,3');
     player.goto(6);
-    expect(lines()).toHaveLength(1);
-    expect(lines()[0]).toContain('yeni öncül');
+    expect(lines()).toEqual([
+      'yeni öncül P(spam) 0,91 · P(kazandınız | spam) 0,20',
+      'vs P(normal) 0,09 · P(kazandınız | normal) 0,01 → %99,5 spam']);
+    player.goto(4);
+    expect(lines()).toEqual(['Henüz kelime yok: sonsal = öncül']);
   });
 });
 

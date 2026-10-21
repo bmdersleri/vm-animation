@@ -20,8 +20,8 @@ export interface NbView {
   words: string[];
   alpha: 0 | 1;
   /**
-   * Strip text with values filled in. Part 1 reveal 2 is two lines joined by
-   * "\n" (count line, then the Bayes formula); every other strip is one line.
+   * Strip text with values filled in. Part 1 reveal 2 and part 2 with words are
+   * two lines joined by "\n"; every other strip is one line.
    */
   strip: string;
   /** heights[feature][class]: Gaussian densities at the query. */
@@ -43,11 +43,14 @@ const SORT_STEP = 8;
 
 /** Percent with one decimal: "%8,3". */
 export const pct = (x: number): string => `%${formatNumber(x * 100, 1)}`;
-const f2 = (x: number): string => formatNumber(x, 2);
-/** A likelihood with two decimals, or the fewest more that keep a non-zero value from printing 0,00 (1/208 → 0,005). */
-function lik(x: number): string {
+/** A probability with two decimals; more (up to 6) when a value strictly between 0 and 1 would print 0,00 or 1,00 (1/208 → 0,005, 0,995 → 0,995). */
+function prob(x: number): string {
   let d = 2;
-  while (x > 0 && d < 6 && Math.round(x * 10 ** d) === 0) d++;
+  const edge = (): boolean => {
+    const r = Math.round(x * 10 ** d);
+    return r === 0 || r === 10 ** d;
+  };
+  while (x > 0 && x < 1 && d < 6 && edge()) d++;
   return formatNumber(x, d);
 }
 /** Slider value without trailing zeros: 0,01 / 0,9 / 0,1. */
@@ -76,8 +79,8 @@ function part2Strip(words: string[], alpha: 0 | 1, tr: (number | null)[]): strin
   const w = words[words.length - 1];
   const label = words.length === 1 ? 'öncül' : 'yeni öncül';
   return (
-    `${label} ${f2(prev)} · P(${w} | spam) ${lik(likelihood(w, 1, alpha))}  vs  ` +
-    `${f2(1 - prev)} · P(${w} | normal) ${lik(likelihood(w, 0, alpha))} → ${pct(post)} spam`
+    `${label} P(spam) ${prob(prev)} · P(${w} | spam) ${prob(likelihood(w, 1, alpha))}\n` +
+    `vs P(normal) ${prob(1 - prev)} · P(${w} | normal) ${prob(likelihood(w, 0, alpha))} → ${pct(post)} spam`
   );
 }
 

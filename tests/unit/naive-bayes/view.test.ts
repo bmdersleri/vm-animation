@@ -24,23 +24,33 @@ describe('deriveNbView', () => {
     expect(v.gauss).toBeNull();
   });
 
-  it('unseen-word likelihood never prints 0,00 under Laplace', () => {
-    const words = ['bedava', 'kazandınız', 'toplantı', 'rapor'];
-    // α = 1: (0 + 1) / (200 + 8) = 1/208 ≈ 0,0048 → the fewest decimals that are non-zero
+  it('part-2 strips label both priors (adım 6, 7, 8, 10)', () => {
+    const s = (i: number, words: string[], alpha: 0 | 1 = 0) => deriveNbView(i, p({ words, alpha })).strip.split('\n');
+    expect(s(5, ['bedava'])).toEqual([
+      'öncül P(spam) 0,40 · P(bedava | spam) 0,30',
+      'vs P(normal) 0,60 · P(bedava | normal) 0,02 → %90,9 spam']);
+    expect(s(6, ['bedava', 'kazandınız'])).toEqual([
+      'yeni öncül P(spam) 0,91 · P(kazandınız | spam) 0,20',
+      'vs P(normal) 0,09 · P(kazandınız | normal) 0,01 → %99,5 spam']);
+    expect(s(7, ['bedava', 'kazandınız', 'toplantı'])).toEqual([
+      'yeni öncül P(spam) 0,995 · P(toplantı | spam) 0,02',
+      'vs P(normal) 0,005 · P(toplantı | normal) 0,15 → %96,4 spam']);
+    const four = ['bedava', 'kazandınız', 'toplantı', 'rapor'];
+    expect(s(9, four, 1)).toEqual([
+      'yeni öncül P(spam) 0,95 · P(rapor | spam) 0,005',
+      'vs P(normal) 0,05 · P(rapor | normal) 0,02 → %81,6 spam']);
+    expect(s(9, four, 0)).toEqual([
+      'yeni öncül P(spam) 0,96 · P(rapor | spam) 0,00',
+      'vs P(normal) 0,04 · P(rapor | normal) 0,02 → %0,0 spam']);
+    expect(s(8, ['toplantı', 'kazandınız', 'bedava'])).toEqual([
+      'yeni öncül P(spam) 0,64 · P(bedava | spam) 0,30',
+      'vs P(normal) 0,36 · P(bedava | normal) 0,02 → %96,4 spam']);
     expect(likelihood('rapor', 1, 1)).toBeCloseTo(1 / 208, 12);
-    expect(deriveNbView(9, p({ words, alpha: 1 })).strip).toContain('P(rapor | spam) 0,005 ');
-    // α = 0: it really is zero
-    expect(deriveNbView(9, p({ words, alpha: 0 })).strip).toContain('P(rapor | spam) 0,00 ');
   });
 
-  it('step 6 strip says yeni öncül', () => {
+  it('step 6 strip keeps the bar label', () => {
     const v = deriveNbView(6, p({ words: ['bedava', 'kazandınız'] }));
-    expect(v.strip).toBe(
-      'yeni öncül 0,91 · P(kazandınız | spam) 0,20  vs  0,09 · P(kazandınız | normal) 0,01 → %99,5 spam',
-    );
     expect(v.bar?.label).toBe('P(spam)');
-    const first = deriveNbView(5, p({ words: ['bedava'] }));
-    expect(first.strip.startsWith('öncül 0,40 · P(bedava | spam)')).toBe(true);
   });
 
   it('ghost trail only at step 8', () => {
