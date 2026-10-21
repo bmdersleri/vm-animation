@@ -1,7 +1,7 @@
 import { curvePoints, type ScoredSample, type Threshold } from '../degerlendirme/curves';
 import { classify } from '../degerlendirme/curves';
 import { metrics } from '../degerlendirme/metrics';
-import { svg } from './ui';
+import { number, svg } from './ui';
 
 /** Render in measured pixels: axis typography stays readable in either shell mode. */
 export function drawCurve(plot: SVGSVGElement, samples: readonly ScoredSample[], threshold: Threshold, kind: 'roc'|'pr', shade: boolean): void {
@@ -25,8 +25,8 @@ export function drawCurve(plot: SVGSVGElement, samples: readonly ScoredSample[],
   for(const v of [0,.5,1]) {
     plot.append(svg('line',{x1:String(x(v)),x2:String(x(v)),y1:String(top),y2:String(bottom),class:'roc-grid'}));
     plot.append(svg('line',{x1:String(left),x2:String(right),y1:String(y(v)),y2:String(y(v)),class:'roc-grid'}));
-    plot.append(svg('text',{x:String(x(v)),y:String(bottom+18),'text-anchor':'middle',class:'roc-tick'},String(v)));
-    plot.append(svg('text',{x:String(left-9),y:String(y(v)+5),'text-anchor':'end',class:'roc-tick'},String(v)));
+    plot.append(svg('text',{x:String(x(v)),y:String(bottom+18),'text-anchor':'middle',class:'roc-tick'},number(v)));
+    plot.append(svg('text',{x:String(left-9),y:String(y(v)+5),'text-anchor':'end',class:'roc-tick'},number(v)));
   }
   const prevalence=samples.filter(s=>s.actual===1).length/samples.length;
   plot.append(svg('line',{x1:String(left),y1:String(kind==='roc'?bottom:y(prevalence)),x2:String(right),y2:String(kind==='roc'?top:y(prevalence)),class:'roc-reference'}));

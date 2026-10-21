@@ -13,7 +13,12 @@ for(const mode of ['ders','lab'] as const) {
     for(let i=0;i<10;i++) {
       await page.locator('.step-dot').nth(i).click();await expect(page.locator('.roc-scene')).toHaveAttribute('data-step',String(i));
       await expect(page.locator('.roc-note')).toContainText(expected[i]);
+      await expect(page.locator('[data-positive-key]'),`step ${i+1}`).toBeVisible();await expect(page.locator('[data-positive-key]')).toContainText('Pozitif: Ayrılan müşteri (churn=1)');
+      if(i===7){await expect(page.locator('.roc-scene')).toHaveAttribute('data-dataset','imbalanced',{timeout:5000});
+        const crossing=await page.locator('.roc-strip text').evaluateAll(nodes=>{const boxes=nodes.map(n=>n.getBoundingClientRect()).filter(r=>r.width>0);return boxes.some((a,i)=>boxes.some((b,j)=>j>i&&a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top));});
+        expect(crossing,'strip labels overlap').toBe(false);await expect(page.locator('[data-sample]')).toHaveCount(12);await expect(page.locator('[data-prevalence]')).toContainText('%16,67');await page.screenshot({path:`${SHOTS}/roc-${mode}-imbalanced.png`});}
       if(i===4)await expect(page.locator('[data-operating="roc"]')).toHaveAttribute('data-x','0.5');
+      if(i===4)expect(await page.locator('[data-panel="roc"] .roc-tick').allTextContents()).toEqual(expect.arrayContaining(['0','0,5','1']));
       if(i===5)await expect(page.locator('[data-auc]')).toHaveText('AUC 0,625');
       if(i===6)await expect(page.locator('[data-ap]')).toHaveText('AP 0,583');
       if(i===4||i===6) {
@@ -44,7 +49,7 @@ test('lab: tied scores, none-positive convention, dataset, costs and reset',asyn
   await page.locator('.step-dot').nth(7).click();
   await page.locator('select[name="dataset"]').selectOption('imbalanced');await expect(page.locator('[data-sample]')).toHaveCount(12);
   await expect(page.locator('[data-prevalence]')).toContainText('%16,67');
-  const scoreLabels=await page.locator('.roc-id').evaluateAll(nodes=>{const boxes=nodes.map(n=>n.getBoundingClientRect());return boxes.some((a,i)=>boxes.some((b,j)=>j>i&&a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top));});
+  const scoreLabels=await page.locator('.roc-strip text').evaluateAll(nodes=>{const boxes=nodes.map(n=>n.getBoundingClientRect());return boxes.some((a,i)=>boxes.some((b,j)=>j>i&&a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top));});
   expect(scoreLabels).toBe(false);
   await page.locator('.step-dot').nth(8).click();await expect(page.locator('.roc-cost-summary')).toContainText('Öneri 0,20 → maliyet 1. Varsayılan 0,50 → 6');
   await page.locator('input[name="fpCost"]').fill('0');await page.locator('input[name="fnCost"]').fill('0');

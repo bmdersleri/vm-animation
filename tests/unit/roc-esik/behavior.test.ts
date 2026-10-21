@@ -84,6 +84,52 @@ describe('ROC threshold lesson', () => {
     vi.advanceTimersByTime(2400); expect(host.querySelector('[data-threshold]')?.textContent).toContain('0,30');
     expect(host.querySelector('[data-auc]')?.textContent).toContain('0,625'); scene.destroy(); player.destroy();
   });
+  it('a finished threshold sweep stays on its last value until the step changes', () => {
+    vi.useFakeTimers(); const player = new StepPlayer(rocScenario); const host = document.createElement('div'); const scene = mountRocScene(host, player, 'ders');
+    for (const [step, last, text] of [[2, .1, '0,10'], [3, .8, '0,80']] as const) {
+      player.goto(step); vi.advanceTimersByTime(4*1200);
+      expect(player.state.params.threshold).toBe(last);
+      vi.advanceTimersByTime(5000);
+      expect(player.state.params.threshold).toBe(last);
+      expect(host.querySelector('[data-threshold]')?.textContent).toBe(`Eşik: ${text}`);
+    }
+    player.goto(4); expect(player.state.params.threshold).toBe(.5);
+    scene.destroy(); player.destroy();
+  });
+  it('step 8 moves from the balanced to the imbalanced sample in Ders and stays there', () => {
+    vi.useFakeTimers(); const player = new StepPlayer(rocScenario); const host = document.createElement('div'); const scene = mountRocScene(host, player, 'ders');
+    expect(rocScenario.steps[7].sweep).toEqual({ key: 'dataset', values: ['balanced','imbalanced'], intervalMs: 2500 });
+    player.goto(7);
+    expect(host.querySelectorAll('[data-sample]')).toHaveLength(evaluationData.scoreSets.balanced.validation.length);
+    vi.advanceTimersByTime(2500);
+    expect(host.querySelector<HTMLElement>('.roc-scene')?.dataset.dataset).toBe('imbalanced');
+    expect(host.querySelectorAll('[data-sample]')).toHaveLength(evaluationData.scoreSets.imbalanced.validation.length);
+    vi.advanceTimersByTime(10000);
+    expect(player.state.params.dataset).toBe('imbalanced');
+    expect(host.querySelector('[data-prevalence]')?.textContent).toContain('%16,67');
+    player.goto(8); expect(player.state.params.dataset).toBe('balanced');
+    scene.destroy(); player.destroy();
+  });
+  it('names the positive class on every step', () => {
+    const player = new StepPlayer(rocScenario); const host = document.createElement('div'); const scene = mountRocScene(host, player, 'lab');
+    for (let i = 0; i < 10; i++) { player.goto(i); const key = host.querySelector<HTMLElement>('[data-positive-key]');
+      expect(key?.textContent, `step ${i+1}`).toContain('Pozitif: Ayrılan müşteri (churn=1)');
+      expect(key?.closest('.roc-legend'), `step ${i+1}`).toBeNull();
+      for (let el: HTMLElement | null = key!; el && el !== host; el = el.parentElement) expect(el.hidden, `step ${i+1}`).toBe(false); }
+    scene.destroy(); player.destroy();
+  });
+  it('writes ROC/PR axis ticks and mark tooltips with a Turkish decimal comma', () => {
+    const player = new StepPlayer(rocScenario); const host = document.createElement('div'); const scene = mountRocScene(host, player, 'lab');
+    player.goto(6);
+    const ticks = [...host.querySelectorAll('.roc-plot .roc-tick')].map(t => t.textContent);
+    expect(ticks).toContain('0,5');
+    expect(ticks.filter(t => /\d\.\d/.test(t ?? ''))).toEqual([]);
+    const titles = [...host.querySelectorAll('.roc-sample title')].map(t => t.textContent ?? '');
+    expect(titles.length).toBeGreaterThan(0);
+    expect(titles.filter(t => /\d\.\d/.test(t))).toEqual([]);
+    expect(titles.some(t => t.includes('skor 0,'))).toBe(true);
+    scene.destroy(); player.destroy();
+  });
   it('carries only cost-to-final validation choices, keeps the test locked earlier, and freezes final controls', () => {
     const player=new StepPlayer(rocScenario),host=document.createElement('div'),controls=document.createElement('div');
     const scene=mountRocScene(host,player,'lab'),params=mountRocParams(controls,player);

@@ -4,13 +4,14 @@ import { html, thresholdText } from './ui';
 import { evaluationData } from '../degerlendirme/data';
 import { selectFinalThreshold } from './selection';
 let uid = 0;
+const share = (key: RocParams['dataset']): string => { const v = evaluationData.scoreSets[key].validation; return `${v.filter(s => s.actual === 1).length} / ${v.length} pozitif`; };
 export function mountRocParams(host: HTMLElement, player: StepPlayer<RocParams>): { destroy(): void } {
   const id = `roc-${++uid}`; const cleanups: (() => void)[] = [];
   const on = (el: HTMLElement, event: string, fn: () => void): void => { el.addEventListener(event,fn); cleanups.push(() => el.removeEventListener(event,fn)); };
   const threshold = html('input',{ type:'range', id:`${id}-threshold`, name:'threshold', min:'0',max:'1',step:'.01' });
   const output = html('output', { for:threshold.id });
   const none = html('input',{ type:'checkbox', id:`${id}-none`,name:'nonePositive' });
-  const dataset = html('select',{ id:`${id}-dataset`,name:'dataset' },html('option',{value:'balanced'},'Dengeli · 2 / 4 pozitif'),html('option',{value:'imbalanced'},'Dengesiz · 2 / 12 pozitif'));
+  const dataset = html('select',{ id:`${id}-dataset`,name:'dataset' },html('option',{value:'balanced'},`Dengeli · ${share('balanced')}`),html('option',{value:'imbalanced'},`Dengesiz · ${share('imbalanced')}`));
   const fields = (['fpCost','fnCost'] as const).map(key => html('input',{ type:'number',name:key,id:`${id}-${key}`,min:'0',max:'100',step:'any' }));
   const costs = html('fieldset',{ 'data-control':'costs' },html('legend',{},'Birim hata maliyeti'),...fields.map((el,i) => html('label',{for:el.id},i===0?'FP · Gereksiz teklif':'FN · Kaçırılan müşteri',el)));
   const reset = html('button',{type:'button'},'Bu adımı sıfırla');

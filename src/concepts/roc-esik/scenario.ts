@@ -13,5 +13,16 @@ const moments = [
   ['maliyet','İş hedefine göre eşik seç','Doğrulamada FP × birim maliyet + FN × birim maliyeti en aza indirin. Eşitlikte daha yüksek eşik seçilir: daha az müşteriye teklif verme tercihi.','doğrulamada maliyet taraması'],
   ['test','Eşiği dondur, testi aç','Eğitim → doğrulamada eşik seçimi → bağımsız test. Eşik yalnız doğrulamada seçilir. Test etiketleri, skorları ve adayları seçime girmez.','test yalnız son rapor içindir'],
 ] as const;
-export const rocScenario: Scenario<RocParams> = { defaults, steps: moments.map(([id,title,text,term], index) => ({ id,title,text,term,params:{...defaults}, ...(index===2||index===3?{sweep:{key:'threshold' as const,values:index===2?[.8,.5,.3,.1]:[.1,.3,.5,.8],intervalMs:1200}}:{}) })) };
+// A sweep key left out of the step params stays at its last swept value when the sweep ends (threshold steps).
+// Step 8 keeps `dataset` in its params, so the sweep closes on that value: balanced → imbalanced.
+const sweeps: Partial<Record<number, NonNullable<Scenario<RocParams>['steps'][number]['sweep']>>> = {
+  2: { key: 'threshold', values: [.8,.5,.3,.1], intervalMs: 1200 },
+  3: { key: 'threshold', values: [.1,.3,.5,.8], intervalMs: 1200 },
+  7: { key: 'dataset', values: ['balanced','imbalanced'], intervalMs: 2500 },
+};
+const stepParams = (index: number): Partial<RocParams> => {
+  if (index === 2 || index === 3) { const { nonePositive, dataset, fpCost, fnCost } = defaults; return { nonePositive, dataset, fpCost, fnCost }; }
+  return index === 7 ? { ...defaults, dataset: 'imbalanced' } : { ...defaults };
+};
+export const rocScenario: Scenario<RocParams> = { defaults, steps: moments.map(([id,title,text,term], index) => ({ id,title,text,term,params:stepParams(index), ...(sweeps[index]?{sweep:sweeps[index]}:{}) })) };
 export const rocEsikScenario = rocScenario;

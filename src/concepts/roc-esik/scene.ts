@@ -8,10 +8,13 @@ import type { RocParams } from './scenario';
 import { selectFinalThreshold } from './selection';
 import { drawCurve } from './plots';
 import { html, number, percent, svg, thresholdText } from './ui';
+import { UNDEFINED_TEXT } from '../degerlendirme/ui';
 
 export function mountRocScene(host: HTMLElement, player: StepPlayer<RocParams>, initialMode: Mode): SceneHandle {
   let mode=initialMode, destroyed=false;
-  const legend=html('p',{class:'roc-legend'},'◆ Ayrılan (1) · ● Kalan (0) · İç şekil: gerçek · Çerçeve: tahmin');
+  const legend=html('p',{class:'roc-legend'},'İç şekil: gerçek sınıf · Çerçeve: tahmin');
+  // The positive class stays named on every step, also where the shape legend is hidden.
+  const positiveKey=html('span',{class:'roc-positive-key','data-positive-key':''},html('strong',{},'◆ Pozitif: Ayrılan müşteri (churn=1)'),' · ● Kalan (0)');
   const heading=html('p',{class:'roc-heading'}), thresholdLabel=html('strong',{'data-threshold':''});
   const locked=html('span',{'data-test-locked':'',class:'roc-locked'},'🔒 Test kilitli · son adımda açılır');
   const strip=svg('svg',{class:'roc-strip',role:'img','aria-label':'Doğrulama skorları ve karar eşiği'});
@@ -36,7 +39,7 @@ export function mountRocScene(host: HTMLElement, player: StepPlayer<RocParams>, 
   const final=html('div',{class:'roc-final'},flow,finalReport);
   const note=html('p',{class:'roc-note',role:'status'});
   const annotations=html('div',{class:'roc-annotations'},convention,note);
-  const root=html('div',{class:'roc-scene'},legend,html('div',{class:'roc-live-heading'},heading,thresholdLabel),strip,matrix,metric,curves,costs,final,annotations);
+  const root=html('div',{class:'roc-scene'},legend,html('div',{class:'roc-live-heading'},positiveKey,heading,thresholdLabel),strip,matrix,metric,curves,costs,final,annotations);
   host.append(root);
   const render=():void=>{
     if(destroyed)return;
@@ -57,8 +60,8 @@ export function mountRocScene(host: HTMLElement, player: StepPlayer<RocParams>, 
     curves.hidden=index<4||index===9; rocPanel.hidden=index===6; prPanel.hidden=index<6||index===8;
     convention.hidden=index<6||index>=8; costs.hidden=index!==8; final.hidden=index!==9;
     const aucValue=rocAuc(samples), apValue=averagePrecision(samples);
-    auc.textContent=`AUC ${aucValue===null?'— (tanımsız)':number(aucValue)}`;
-    ap.textContent=`AP ${apValue===null?'— (tanımsız)':number(apValue)}`;
+    auc.textContent=`AUC ${aucValue===null?UNDEFINED_TEXT:number(aucValue)}`;
+    ap.textContent=`AP ${apValue===null?UNDEFINED_TEXT:number(apValue)}`;
     prevalence.textContent=`PR referansı: pozitif oranı ${percent(samples.filter(s=>s.actual).length/samples.length)}`;
     costSummary.textContent=`Öneri ${thresholdText(optimum)} → maliyet ${number(cost(classify(samples,optimum),p.fpCost,p.fnCost))}. Varsayılan 0,50 → ${number(cost(classify(samples,.5),p.fpCost,p.fnCost))}. Daha yüksek eşik eşitlikte kazanır.`;
     costTable.replaceChildren(...curvePoints(samples).map(point=>html('span',{'data-candidate':String(point.threshold),'data-best':String(point.threshold===optimum)},`${thresholdText(point.threshold)}: ${number(cost(point.confusion,p.fpCost,p.fnCost))}`)));
@@ -78,12 +81,16 @@ export function mountRocScene(host: HTMLElement, player: StepPlayer<RocParams>, 
     thresholdLine.setAttribute('x1',String(thresholdX));thresholdLine.setAttribute('x2',String(thresholdX));thresholdLine.setAttribute('y1','12');thresholdLine.setAttribute('y2',String(h-25));thresholdLine.style.visibility=index===0?'hidden':'visible';
     const keep=new Set(samples.map(s=>s.id)); for(const [id,node]of markNodes)if(!keep.has(id)){node.remove();markNodes.delete(id);}
     samples.forEach((s,i)=>{
-      let node=markNodes.get(s.id);if(!node){node=svg('g',{'data-sample':s.id,class:'roc-sample'});node.append(svg('circle',{r:'10',class:'roc-ring'}),svg('path',{d:s.actual?'M0,-6 L6,0 L0,6 L-6,0 Z':'M-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0',class:'roc-actual'}),svg('text',{'text-anchor':'middle',class:'roc-id'}),svg('title',{},`${s.id} · gerçek ${s.actual} · skor ${s.score}`));marks.append(node);markNodes.set(s.id,node);}
+      let node=markNodes.get(s.id);if(!node){node=svg('g',{'data-sample':s.id,class:'roc-sample'});node.append(svg('circle',{r:'10',class:'roc-ring'}),svg('path',{d:s.actual?'M0,-6 L6,0 L0,6 L-6,0 Z':'M-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0',class:'roc-actual'}),svg('text',{'text-anchor':'middle',class:'roc-id'}),svg('title',{},`${s.id} · gerçek ${s.actual} · skor ${thresholdText(s.score)}`));marks.append(node);markNodes.set(s.id,node);}
       node.dataset.actual=String(s.actual); node.dataset.predicted=String(threshold!=='none'&&s.score>=threshold?1:0);
       const markY=index>=4&&index<=7?(s.actual?38:65):43+(i%3)*Math.min(25,(h-70)/3);
       node.setAttribute('transform',`translate(${left+s.score*(right-left)},${markY})`);
       const text=node.querySelector('text')!;text.setAttribute('y','5');text.setAttribute('x',s.score>.85?'-14':'14');text.setAttribute('text-anchor',s.score>.85?'end':'start');text.textContent=`${i+1} · ${thresholdText(s.score)}`;
-      if(p.dataset==='imbalanced'&&index>=4&&index<=7){text.setAttribute('x','0');text.setAttribute('y',s.actual?'-14':'22');text.setAttribute('text-anchor','middle');text.textContent=String(i+1);}
+      if(p.dataset==='imbalanced'&&index>=4&&index<=7){
+        // Bottom-row labels near the right end would sit on the "1 · skor" axis label: put them beside the mark.
+        const beside=!s.actual&&s.score>.85;
+        text.setAttribute('x',beside?'-14':'0');text.setAttribute('y',s.actual?'-14':beside?'5':'22');text.setAttribute('text-anchor',beside?'end':'middle');text.textContent=String(i+1);
+      }
     });
     drawCurve(rocPlot,samples,threshold,'roc',index>=5);drawCurve(prPlot,samples,threshold,'pr',index>=6);
   };
