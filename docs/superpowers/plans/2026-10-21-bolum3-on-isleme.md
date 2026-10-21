@@ -220,7 +220,7 @@ tests/e2e/home.spec.ts, README.md        Task 20
   - 002: ortalama 68,77, medyan 43,65; mod "Aylık".
   - 003: Q1 41,35; Q3 57,76; IQR 16,41; 1,5·IQR 24,62; sınırlar 16,73 / 82,38 ve 3,0 ile −7,89 / 107,00; aykırı yalnız indeks 7; bıyıklar 29,85 / 60,20; medyan 48,05; ortalama 100,49; std 143,74; z(480) 2,64; ortalamalar 100,49 / 46,27 / 50,79.
   - 004: uzaklıklar ay `[27.45, 22.09, 16.16, 36.90, 145.06, 50.32]`, z `[0.65, 0.97, 0.49, 1.48, 2.49, 2.13]`; yıl en yakın M2 2,68; gün en yakın M5 188,22; μ (25; 72,95), σ (22,73; 58,29); ölçeklenmiş tablo ve yeni müşteri (−0,57; −0,31); fatura sütununun üç ölçekleyici satırı; Robust merkez 49,63, ölçek 27,36; `zByUnit` üç birimde 1e-12 içinde aynı.
-  - 006: test indeksleri `[4, 8, 3]`; churn oranı 0,29 / 0,33; eğitimden μ 58,63, σ 19,26, test z `[−0.71, −1.33, −1.05]`; tümünden μ 52,69, σ 18,69, test z `[−0.41, −1.05, −0.76]`.
+  - 006: test indeksleri `[4, 8, 3]`; churn oranı 0,29 / 0,33; eğitimden μ 58,63, σ 19,26, test z `[−0.71, −1.33, −1.04]`; tümünden μ 52,69, σ 18,69, test z `[−0.41, −1.05, −0.76]`.
 - `src/concepts/iqr-aykiri/data.ts`:
   ```ts
   export const FILL: { values: (number | null)[]; extremeIndex: number };
@@ -892,7 +892,7 @@ tests/e2e/home.spec.ts, README.md        Task 20
     - 7: `StandardScaler (x − 72,95) / 58,29 · MinMaxScaler (x − 29,85) / 170,15 · RobustScaler (x − 49,63) / 27,36`
     - 8: `((12 − 25) / 22,73; (55 − 72,95) / 58,29) = (−0,57; −0,31)`
     - 9: `stratify: churn oranı eğitimde 0,29, testte 0,33`
-    - 10: `eğitimden fit: μ = 58,63, σ = 19,26 → test z: −0,71 · −1,33 · −1,05`
+    - 10: `eğitimden fit: μ = 58,63, σ = 19,26 → test z: −0,71 · −1,33 · −1,04`
     - 11: `tüm veriyle fit: μ = 52,69, σ = 18,69 → test z: −0,41 · −1,05 · −0,76`
     - 12: `önce ayır, sonra öğren, sonra uygula`
     - Index 10–11'de Lab'de `fit` değişirse şerit seçilen kapsamın kalıbını kullanır.

@@ -214,7 +214,7 @@ Ayrım: `train_test_split(test_size=0.3, random_state=42, stratify=churn)`.
 - **Test** (sıra numaraları 4, 8, 3): 45,00 · 33,00 · 38,50.
 - **Eğitim:** kalan yedi değer.
 - **Churn oranı:** eğitimde 0,29, testte 0,33 (kitapla aynı).
-- **Yalnız eğitimle fit:** μ = 58,63, σ = 19,26. Test z değerleri −0,71 · −1,33 · −1,05.
+- **Yalnız eğitimle fit:** μ = 58,63, σ = 19,26. Test z değerleri −0,71 · −1,33 · −1,04.
 - **Tüm veriyle fit (sızıntı):** μ = 52,69, σ = 18,69. Test z değerleri −0,41 · −1,05 · −0,76.
 
 ### Adımlar
@@ -237,7 +237,7 @@ Ayrım: `train_test_split(test_size=0.3, random_state=42, stratify=churn)`.
 
 9. **Yeni müşteri: yalnızca transform.** Dağılım z biriminde geri gelir. Yeni müşteri, eğitimden öğrenilen μ ve σ ile dönüşür. Şerit: ((12 − 25) / 22,73; (55 − 72,95) / 58,29) = (−0,57; −0,31). Terim: fit / transform.
 10. **Önce ayır.** Sahne kitabın 006 verisine geçer: tek bir fatura sayı doğrusunda 10 nokta. `stratify` ile 7 eğitim (dolu ●) ve 3 test (içi boş ○) ayrılır. Şerit: churn oranı eğitimde 0,29, testte 0,33. Terim: eğitim-test ayrımı (train-test split).
-11. **Eğitimden öğren.** Test noktaları soluklaşır. μ ve ±σ yalnızca eğitim noktalarından hesaplanır: μ = 58,63, σ = 19,26. Ardından test noktaları bu ölçekle dönüşür: −0,71 · −1,33 · −1,05.
+11. **Eğitimden öğren.** Test noktaları soluklaşır. μ ve ±σ yalnızca eğitim noktalarından hesaplanır: μ = 58,63, σ = 19,26. Ardından test noktaları bu ölçekle dönüşür: −0,71 · −1,33 · −1,04.
 12. **Yanlış sıra: sızıntı.** Ölçekleyici bu kez on noktanın tümüyle `fit` edilir. μ çizgisi test noktalarına doğru 52,69'a kayar, σ 18,69 olur. İki μ çizgisi yan yana kalır. Test z değerleri −0,41 · −1,05 · −0,76'ya değişir. Mesaj: test kümesi kendi değerlendirmesini etkiledi, program ise hata vermedi. Terim: veri sızıntısı (data leakage).
 13. **Altın kural.** Üç kutulu akış: `train_test_split` → `fit` (yalnızca eğitim) → `transform` (eğitim ve test). Kitabın cümlesi: "önce ayır, sonra öğren, sonra uygula". Pipeline bu sırayı yapısal olarak zorlar. Terim: Pipeline.
 
