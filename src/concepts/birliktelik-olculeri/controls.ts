@@ -110,7 +110,7 @@ export function mountBirliktelikOlculeriParams(host: HTMLElement, player: StepPl
   // ---- reset ----
   const reset = el('button', { type: 'button', class: 'bk-reset', 'data-ctl': 'reset' }, 'Sıfırla');
   reset.addEventListener('click', () => player.setParams({ edits: [] }));
-  const resetNote = el('span', { class: 'bk-ctl-hint', id: `${id}-reset` }, 'Sepet kitaptaki 18 fişe döner.');
+  const resetNote = el('span', { class: 'bk-ctl-hint', id: `${id}-reset` }, `Sepet kitaptaki ${ROWS} fişe döner.`);
   reset.setAttribute('aria-describedby', resetNote.id);
 
   host.append(el('div', { class: 'bk-params' }, editor, xPick.group, yPick.group, sSup.group, sConf.group, sLift.group,

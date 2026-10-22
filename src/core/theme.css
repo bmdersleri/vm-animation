@@ -9,6 +9,10 @@
   --muted: #3f526a; /* secondary text, 7.4:1 on --bg */
   --line: #c9d5e3;
   --navy-soft: #dbe5f0;
+  /* Accent (= ACCENT in core/plot/marks.ts), its soft background and its text shade (AA on the soft background). */
+  --accent: #a85a00;
+  --accent-soft: #fbe5c8;
+  --accent-text: #7a4300;
 
   --font: "Segoe UI", system-ui, sans-serif;
 

@@ -40,8 +40,8 @@ export const radiusOf = (lift: number): number => Math.min(17, 3 + 6 * lift);
 export const isKept = (r: Rule, minLift: number): boolean => minLift <= 0 || r.lift > minLift + EPS;
 const hollow = (r: Rule): boolean => r.lift <= 1 + EPS;
 
-const LEGEND_FILLED = '<svg class="bk-key-mark" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="#14365C"/></svg>';
-const LEGEND_HOLLOW = '<svg class="bk-key-mark" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="#fff" stroke="#A85A00" stroke-width="2.5"/></svg>';
+const LEGEND_FILLED = `<svg class="bk-key-mark" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="${NAVY}"/></svg>`;
+const LEGEND_HOLLOW = `<svg class="bk-key-mark" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="${WHITE}" stroke="${ACCENT}" stroke-width="2.5"/></svg>`;
 
 /** Rule scatter: support (x) against confidence (y); marker size and fill carry lift (hollow = lift at most 1). */
 export function mountRuleScatter(host: HTMLElement, onPick: (rule: Rule) => void): RuleScatter {
