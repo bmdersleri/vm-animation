@@ -70,6 +70,7 @@
   font-weight: 600;
   fill: var(--navy);
   font-variant-numeric: tabular-nums;
+  stroke-width: 2px;
 }
 .kor-plot path.pts { stroke-width: 1.2; }
 .kor-plot path.trend {

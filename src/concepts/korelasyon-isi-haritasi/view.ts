@@ -78,9 +78,11 @@ function heatView(variables: readonly string[], matrix: readonly (readonly numbe
 export const ANSCOMBE_SUMMARY: string = (() => {
   const avg = (pick: (s: (typeof ANSCOMBE)[number]) => number): number =>
     mean(ANSCOMBE.map(pick));
-  return `x̄ ≈ ${trim(avg((s) => s.meanX))} · ȳ ≈ ${trim(avg((s) => s.meanY))} `
-    + `· var ≈ ${trim(avg((s) => s.varX))} / ${trim(avg((s) => s.varY))} `
-    + `· r ≈ ${f3(avg((s) => s.r))}`;
+  // thin spaces (U+2009) around ≈ keep the glyph from crowding its neighbours at panel width
+  const approx = ' ≈ ';
+  return `x̄${approx}${trim(avg((s) => s.meanX))} · ȳ${approx}${trim(avg((s) => s.meanY))} `
+    + `· var${approx}${trim(avg((s) => s.varX))} / ${trim(avg((s) => s.varY))} `
+    + `· r${approx}${f3(avg((s) => s.r))}`;
 })();
 
 const NOTES: readonly string[] = [

@@ -79,9 +79,15 @@ describe('korelasyon görünümü', () => {
     const stats = v.panels.map((p) => p.stats);
     expect(new Set(stats).size).toBe(1);
     expect(stats[0]).toBe(ANSCOMBE_SUMMARY);
-    expect(stats[0]).toContain('r ≈ 0,816');
+    expect(stats[0]).toContain('r ≈ 0,816');
     expect(v.heat).toBeNull();
     expect(v.set).toBe(1);
+  });
+
+  it('anscombe summary puts thin spaces around ≈', () => {
+    expect(ANSCOMBE_SUMMARY.match(/≈/g)).toHaveLength(4);
+    expect(ANSCOMBE_SUMMARY.match(/ ≈ /g)).toHaveLength(4);
+    expect(ANSCOMBE_SUMMARY).not.toMatch(/ ≈|≈ /);
   });
 
   it('panel özeti dört setin hepsine tolerans içinde yaklaşır', () => {

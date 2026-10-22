@@ -110,13 +110,28 @@ describe('korelasyon scene', () => {
     expect(stats).toHaveLength(4);
     for (const s of stats) {
       // the shared line is approximate from step 6's review: ≈ carries set III's variance and set IV's r
-      expect(text(s)).toContain('r ≈ 0,816');
-      expect(text(s)).toContain('ȳ ≈ 7,5');
+      expect(text(s)).toContain('r ≈ 0,816');
+      expect(text(s)).toContain('ȳ ≈ 7,5');
     }
     // the four panels share one axes pair: every y axis starts at the same tick value
     expect(new Set(panels.map((p) => text(p.querySelector('g.axis.y g.tick text')))).size).toBe(1);
     expect(all(el, 'g.panel path.pts')).toHaveLength(4);
     expect(all(el, 'g.panel path.trend')).toHaveLength(4);
+  });
+
+  it('panel IV draws overlapping points so each one shows', () => {
+    const { el, player } = setup();
+    player.goto(4);
+    const pts = (id: string): SVGElement => one(el, `g.panel[data-set=${id}] path.pts`);
+    const radius = (e: SVGElement): string => /a([\d.]+),/.exec(e.getAttribute('d') ?? '')![1];
+    const iv = pts('IV');
+    expect(iv.style.fill).toBe('none');
+    expect(iv.style.strokeWidth).toBe('1.5');
+    expect(iv.style.stroke).not.toBe('');
+    expect(pts('I').style.fill).not.toBe('none');
+    // same radius as the other panels, and every one of the 11 points is its own sub-path at its real x
+    expect(radius(iv)).toBe(radius(pts('I')));
+    expect((iv.getAttribute('d') ?? '').match(/M/g)).toHaveLength(11);
   });
 
   it('step 4: 16 rect.cell and a 1,000 diagonal', () => {

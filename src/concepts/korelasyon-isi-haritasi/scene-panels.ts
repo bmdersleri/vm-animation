@@ -278,7 +278,7 @@ export class PanelsLayer {
     const claimBand = state.stepId === 'nedensellik' ? this.claimBand(w, mode) : 0;
     const cellH = (h - claimBand - 2 * margin - gapY * (rows - 1)) / rows;
     const titleH = Math.round(axis * 1.5);
-    const statsH = Math.round(axis * 1.8);
+    const statsH = Math.round(axis * 2.2);
     const yTickW = this.measure.width('−12,5', 'tick', tick);
     const yTitleW = Math.round(axis * 1.35);
     const xTickH = Math.round(tick * 1.1 + axis * 1.35);
@@ -332,7 +332,9 @@ export class PanelsLayer {
 
       // the colour belongs to the set, not to the slot: set IV is navy alone or in the quartet; 004 panels keep the first
       const color = PANEL_COLORS[Math.max(0, ANSCOMBE_IDS.indexOf(panel.id))];
-      p.pts.style('fill', color).style('stroke', '#ffffff').style('stroke-width', 1.2);
+      // set IV stacks ten points at x = 8: hollow rings (same radius, real x) keep each one visible
+      if (panel.id === 'IV') p.pts.style('fill', 'none').style('stroke', color).style('stroke-width', 1.5);
+      else p.pts.style('fill', color).style('stroke', '#ffffff').style('stroke-width', 1.2);
       const dPts = circlesPath(pts.map((pt) => sc.x(pt.x)), pts.map((pt) => sc.y(pt.y)), dotR);
       if (ms > 0) tr(p.pts as AnySel, TN, ms).attr('d', dPts);
       else p.pts.attr('d', dPts);
@@ -360,7 +362,8 @@ export class PanelsLayer {
         .text(panel.id.length <= 4 ? `${panel.id} · n = ${pts.length}` : '');
       p.stats
         .attr('x', r1(plot.left + plot.width / 2))
-        .attr('y', r1(Math.min(cellTop + cellH - axis * 0.4, plot.top + plot.height + tick * 3)))
+        // one text line under the x axis title (centred on the same x), never on top of it
+        .attr('y', r1(xTickY + tick * 0.3 + gap + axis * 0.95 + axis * 1.3))
         .text(panel.stats);
     });
 

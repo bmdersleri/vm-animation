@@ -231,6 +231,22 @@ describe('dagilim scene', () => {
     expect(logRanges[0]).toBe('2,2–2,44');
   });
 
+  it('bin range labels are placed per bar when some do not fit', () => {
+    const { el, player } = setup(0, [900, 540]);
+    player.goto(1);
+    player.setParam('bins', 10);
+    const labs = all(el, 'text.bin-range').map(text);
+    // not all-or-none: the wide edge bars keep the full range, the narrow ones the lower bound alone
+    expect(labs.some((t) => t.includes('–'))).toBe(true);
+    expect(labs.some((t) => !t.includes('–'))).toBe(true);
+    expect(labs[0]).toBe('8–10,2');
+    expect(labs[1]).toBe('10,2');
+    // one label per bar at most, in bar order, none repeated
+    const xs = all(el, 'text.bin-range').map((l) => Number(l.getAttribute('x')));
+    expect(xs).toEqual([...xs].sort((a, b) => a - b));
+    expect(new Set(xs).size).toBe(xs.length);
+  });
+
   it('a step change stops an in-flight drag', () => {
     const { el, player } = setup();
     player.goto(6);
