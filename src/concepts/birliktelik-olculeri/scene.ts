@@ -88,7 +88,7 @@ function read(index: number, params: BirliktelikOlculeriParams, counted: number 
   return { tx, x, y, kind, flags, cols, total: rank };
 }
 
-const TAGGED: readonly PanelKind[] = ['conf', 'trap', 'real'];
+const TAGGED: readonly PanelKind[] = ['support2', 'conf', 'trap', 'real'];
 
 export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPlayer<BirliktelikOlculeriParams>, initialMode: Mode): SceneHandle {
   const root = el('div', 'bk-scene');

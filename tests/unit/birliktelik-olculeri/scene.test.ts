@@ -166,4 +166,47 @@ describe('birliktelik-olculeri scene', () => {
     expect(read()).toBe(0);
     fin(scene, player);
   });
+
+  it('no product name carries an apostrophe suffix, for every Lab pick of steps 5-8', () => {
+    const { player, host, scene } = setup();
+    const suffixed = /\p{L}'[\p{L}]+/u;
+    const names = sepetData.items.map((i) => sepetData.names[i]);
+    for (const s of birliktelikOlculeriScenario.steps) {
+      for (const name of names) expect(s.text.includes(`${name}'`), `${s.id}: ${name}'`).toBe(false);
+    }
+    for (const step of [4, 5, 6, 7]) {
+      player.goto(step);
+      for (const x of sepetData.items) {
+        for (const y of sepetData.items) {
+          if (x === y) continue;
+          player.setParams({ x: [x], y: [y] });
+          const t = host.querySelector('.bk-panel')!.textContent ?? '';
+          for (const name of names) expect(t.includes(`${name}'`), `step ${step + 1} ${x}->${y}: ${name}'`).toBe(false);
+          expect(t).not.toMatch(suffixed);
+        }
+      }
+    }
+    fin(scene, player);
+  });
+
+  it('step 4 asks for Y instead of counting X alone, and tags both columns', () => {
+    const { player, host, scene } = setup();
+    player.goto(3);
+    expect(host.querySelectorAll('th.bk-col-head[data-hl] .bk-tag')[0].textContent).toBe('X');
+    expect(host.querySelectorAll('th.bk-col-head[data-hl] .bk-tag')[1].textContent).toBe('Y');
+    player.setParams({ y: [] });
+    expect(host.querySelector('.bk-panel')!.textContent).toBe('Bir öncül ve bir sonuç seç.');
+    expect(rowsWith(host, 'data-match')).toBe(0);
+    fin(scene, player);
+  });
+
+  it('reduced motion starts no count-up timer', () => {
+    vi.useFakeTimers();
+    const { player, scene } = setup(true);
+    player.goto(2);
+    expect(vi.getTimerCount()).toBe(0);
+    player.goto(4);
+    expect(vi.getTimerCount()).toBe(0);
+    fin(scene, player);
+  });
 });

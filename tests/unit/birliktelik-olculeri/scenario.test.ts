@@ -40,7 +40,7 @@ describe('birliktelik-olculeri scenario', () => {
     expect(text('kurallar')).toContain(`${all.length} kural`);
     expect(text('suzgec')).toContain(`${kept.length} kuralı bırakır`);
     expect(text('suzgec')).toContain(`${all.length - kept.length} kural soluklaşır`);
-    expect(text('suzgec')).toContain('güven 1,000, kaldıraç 1,500');
+    expect(text('suzgec')).toContain('{Ekmek, Yumurta} → Süt (güven 1,000, kaldıraç 1,500)');
   });
 
   it('steps choose the rules the spec names', () => {

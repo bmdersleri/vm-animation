@@ -102,8 +102,8 @@ export function drawPanel(panel: HTMLElement, spec: PanelSpec): void {
 
   if (kind === 'support1' || kind === 'support2') {
     const set = kind === 'support1' ? xs : sortItems([...new Set([...xs, ...ys])]);
-    if (set.length === 0) {
-      panel.append(el('p', 'bk-note', NEED_ITEM));
+    if (kind === 'support1' ? xs.length === 0 : xs.length === 0 || ys.length === 0) {
+      panel.append(el('p', 'bk-note', kind === 'support1' ? NEED_ITEM : NEED_RULE));
       return;
     }
     const m = measures(tx, set, set);
@@ -125,7 +125,7 @@ export function drawPanel(panel: HTMLElement, spec: PanelSpec): void {
   const m = measures(tx, xs, ys);
   panel.append(
     el('h3', 'bk-title', `Kural: ${setNames(xs)} → ${setNames(ys)}`),
-    row(`${setNames(xs)}'li fiş`, String(m.cx), { 'data-of': String(m.cx) }),
+    row(`${xs.length > 1 ? setBraces(xs) : setNames(xs)} içeren fiş`, String(m.cx), { 'data-of': String(m.cx) }),
     row('Birlikte olan', String(spec.counted ?? m.cxy), { 'data-count': String(spec.counted ?? m.cxy) }),
   );
   panel.append(strip(confidenceStrip(tx, xs, ys), { 'data-strip-kind': 'confidence' }));
