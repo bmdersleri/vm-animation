@@ -1,0 +1,150 @@
+/* kutu-grafigi: scene (scene.ts, scene-box.ts). Text sizes come only from the
+   --fs-* tokens; the svg has no viewBox. */
+.kutu-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.kutu-scene .kutu-plot-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.kutu-plot-host svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+.kutu-scene .formula {
+  flex: none;
+  margin: 0 16px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 14px;
+  border-left: 4px solid var(--navy);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  min-height: calc(2 * 1.35em + 12px);
+}
+.kutu-scene .formula .line {
+  display: block; /* inline terms wrap between the spaces renderStrip inserts */
+}
+.kutu-scene .formula .term {
+  white-space: nowrap;
+}
+
+/* shared axis (core number-line layer) */
+.kutu-plot .nl-axis { stroke-width: 3; }
+.kutu-plot .tick,
+.kutu-plot .tick text { font-variant-numeric: tabular-nums; }
+.kutu-plot .tick text,
+.kutu-plot .axis-title,
+.kutu-plot .group-label,
+.kutu-plot .fence-alt-label {
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.kutu-plot .axis-title {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+  fill: var(--navy);
+}
+
+/* one row per group: the group name sits in the left column */
+.kutu-plot .group-label {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+  fill: var(--navy);
+}
+
+/* the raw observations (their fill/stroke colours come from the view, inline) */
+.kutu-plot circle.dot { stroke: #fff; stroke-width: 1.5; }
+
+/* the quartile box and the median line inside it */
+.kutu-plot rect.box {
+  fill-opacity: 0.12;
+  stroke-width: 3;
+}
+.kutu-plot line.median { stroke-width: 3; }
+
+/* whiskers (solid) and fences (dashed), the outlier diamond stays hollow */
+.kutu-plot line.whisker,
+.kutu-plot line.whisker-cap { stroke-width: 2.5; }
+.kutu-plot line.fence { stroke-width: 2; stroke-dasharray: 9 6; }
+.kutu-plot line.fence.alt { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 5; }
+.kutu-plot path.outlier { fill: none; stroke-width: 2.5; }
+
+/* step 8: the Silverman density silhouette behind the box */
+.kutu-plot path.violin {
+  fill-opacity: 0.12;
+  stroke-width: 1.5;
+}
+
+/* the small "k = 3,0" tag next to the secondary fence pair */
+.kutu-plot .fence-alt-label {
+  font-size: var(--fs-tick);
+  fill: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* drag handle around a group's extreme observation (Lab, steps 6–8) */
+.kutu-plot .drag-handle {
+  fill: transparent;
+  stroke: var(--orange);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+  cursor: grab;
+  touch-action: none;
+}
+.kutu-plot .drag-handle:active { cursor: grabbing; stroke-dasharray: none; }
+
+/* ---------- parameter panel (controls.ts) ---------- */
+.kutu-params { display: grid; gap: 8px; }
+.kutu-params .ctl { min-width: 0; }
+.kutu-params fieldset.ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.kutu-params fieldset.ctl legend { float: left; width: 100%; padding: 0; font-weight: 600; }
+.kutu-params .opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--ctl);
+  font-weight: 400;
+}
+.kutu-params input[type="radio"],
+.kutu-params input[type="checkbox"] { width: 1.25em; height: 1.25em; margin: 0; accent-color: var(--navy); }
+.kutu-params .ctl.check { display: flex; align-items: center; }
+
+/* ---------- Lab side panel (extra.ts) ---------- */
+.kutu-extra p { margin: 0 0 8px; }
+.kutu-extra .live-note { font-weight: 600; color: var(--navy); }
+
+/* ---------- Lab: compact params card that fits the side column at 720 px ---------- */
+/* Controls that do not apply to the current step are hidden, not greyed (controls.ts sets data-off). */
+[data-mode="lab"] .kutu-params .ctl[data-off] { display: none; }
+/* a step with no control at all hides the card itself, not just its rows */
+[data-mode="lab"] .params[data-off] { display: none; }
+[data-mode="lab"] .kutu-params { gap: 4px; }
+[data-mode="lab"] .kutu-params fieldset.ctl { gap: 0 14px; }
+[data-mode="lab"] .kutu-params fieldset.ctl legend { width: auto; }
+[data-mode="lab"] .kutu-params .opt { min-height: 30px; }
+[data-mode="lab"] .side .params { flex: none; padding: 8px 14px; }
+/* a tall explain card scrolls inside itself so the params card stays fully visible below it */
+[data-mode="lab"] .side .explain { flex: 0 1 auto; min-height: 0; overflow: auto; }
