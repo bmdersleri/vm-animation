@@ -224,50 +224,54 @@ export class DendrogramLayer {
     const cutLine = cAll.select('line').attr('data-cut', (d) => d).attr('x1', plot.left).attr('x2', right);
     go(cutLine as unknown as AnySel).attr('y1', (d: number) => Y(d)).attr('y2', (d: number) => Y(d));
     const cutText = (c: number): string => `kesim ${formatNumber(c, 2)}`;
-    // The label takes the rightmost stretch of the cut line that no branch stem crosses.
-    const labelX = (c: number): number => {
-      const w = cutText(c).length * tick * 0.62 + 8;
-      const stems: number[] = [];
-      for (const b of shown) {
-        if (b.yl <= c && c <= b.height) stems.push(X(b.xl));
-        if (b.yr <= c && c <= b.height) stems.push(X(b.xr));
-      }
-      for (let x = right - 6 - w; x >= plot.left + 4; x -= 6) if (stems.every((sx) => sx < x - 4 || sx > x + w + 4)) return r1(x);
-      return r1(right - 6 - w);
-    };
     // The label box keeps CLEAR px from every drawn bar (horizontal parts and stems). Candidates, in order: above the
-    // line at the right, above at the left, below at the right, below at the left; none fits: the stem-only placement.
+    // line at the right, above at the left, below at the right, below at the left. Pass 1 tries "kesim 2,09", pass 2
+    // the bare number (the panel names the cut height); nothing clear: the full text where it crosses fewest bars.
     const segs: { x1: number; x2: number; y1: number; y2: number }[] = [];
     for (const b of shown) {
       segs.push({ x1: X(b.xl), x2: X(b.xr), y1: Y(b.height), y2: Y(b.height) });
       segs.push({ x1: X(b.xl), x2: X(b.xl), y1: Y(b.height), y2: Y(b.yl) });
       segs.push({ x1: X(b.xr), x2: X(b.xr), y1: Y(b.height), y2: Y(b.yr) });
     }
-    const clearOf = (x: number, top: number, w: number): boolean => segs.every((g) =>
-      g.x2 < x - CLEAR || g.x1 > x + w + CLEAR || Math.max(g.y1, g.y2) < top - CLEAR || Math.min(g.y1, g.y2) > top + tick + CLEAR);
-    const place = (c: number): { x: number; y: number } => {
-      const w = cutText(c).length * tick * 0.62 + 8;
+    const crossed = (x: number, top: number, w: number): number => segs.filter((g) =>
+      !(g.x2 < x - CLEAR || g.x1 > x + w + CLEAR || Math.max(g.y1, g.y2) < top - CLEAR || Math.min(g.y1, g.y2) > top + tick + CLEAR)).length;
+    const clearOf = (x: number, top: number, w: number): boolean => crossed(x, top, w) === 0;
+    const place = (c: number): { x: number; y: number; text: string; short: boolean } => {
       const yc = Y(c);
       const lo = plot.left + 4;
-      const hi = right - 6 - w;
-      const scan = (dir: 'right' | 'left', top: number): number | null => {
-        for (let x = dir === 'right' ? hi : lo; dir === 'right' ? x >= lo : x <= hi; x += dir === 'right' ? -6 : 6) if (clearOf(x, top, w)) return r1(x);
-        return null;
-      };
       const above = { top: yc - 5 - tick, base: yc - 5 };
       const below = { top: yc + 3, base: yc + tick + 3 };
-      const options: [typeof above, 'right' | 'left', boolean][] = [
-        [above, 'right', above.top >= plot.top], [above, 'left', above.top >= plot.top],
-        [below, 'right', below.top + tick <= bottom], [below, 'left', below.top + tick <= bottom],
-      ];
-      for (const [pos, dir, fits] of options) {
-        const x = fits ? scan(dir, pos.top) : null;
-        if (x !== null) return { x, y: r1(pos.base) };
+      const rows = [...(above.top >= plot.top ? [above] : []), ...(below.top + tick <= bottom ? [below] : [])];
+      const full = cutText(c);
+      const widthOf = (text: string): number => text.length * tick * 0.62 + 8;
+      if (rows.length === 0) {
+        return { x: r1(Math.max(lo, right - 6 - widthOf(full))), y: r1(Math.min(bottom, Math.max(plot.top + tick, yc - 5))), text: full, short: false };
       }
-      return { x: labelX(c), y: labelY(c) };
+      for (const [text, short] of [[full, false], [formatNumber(c, 2), true]] as const) {
+        const w = widthOf(text);
+        const hi = right - 6 - w;
+        for (const row of rows) {
+          for (let x = hi; x >= lo; x -= 6) if (clearOf(x, row.top, w)) return { x: r1(x), y: r1(row.base), text, short };
+          for (let x = lo; x <= hi; x += 6) if (clearOf(x, row.top, w)) return { x: r1(x), y: r1(row.base), text, short };
+        }
+      }
+      const w = widthOf(full);
+      const hi = right - 6 - w;
+      let best = { x: r1(Math.max(lo, hi)), y: r1(rows[0].base), hits: Infinity };
+      for (const row of rows) {
+        for (let x = hi; x >= lo; x -= 6) {
+          const hits = crossed(x, row.top, w);
+          if (hits < best.hits) best = { x: r1(x), y: r1(row.base), hits };
+        }
+      }
+      return { x: best.x, y: best.y, text: full, short: false };
     };
-    const cutLabel = cAll.select<SVGTextElement>('text').attr('text-anchor', 'start').attr('x', (d) => place(d).x).text((d) => cutText(d));
-    go(cutLabel as unknown as AnySel).attr('y', (d: number) => place(d).y);
+    const spot = cut === null ? null : place(cut);
+    if (spot) {
+      const cutLabel = cAll.select<SVGTextElement>('text').attr('text-anchor', 'start').attr('x', spot.x)
+        .attr('data-short', spot.short ? 'true' : null).text(spot.text);
+      go(cutLabel as unknown as AnySel).attr('y', spot.y);
+    }
 
     // leaves
     const lf = this.gLeaves.selectAll<SVGGElement, number>('g.dg-leaf').data(s.leafX.map((_x, i) => i), (d) => d);

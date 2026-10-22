@@ -5,6 +5,7 @@ import { DendrogramLayer, type DendrogramSpec } from '../../../src/core/plot/den
 import { CLUSTER, NAVY, UNASSIGNED } from '../../../src/core/plot/marks';
 import { dendrogramData as D } from '../../../src/concepts/dendrogram/data';
 import { branches, cutForK, labelsAtHeight, leafX } from '../../../src/concepts/dendrogram/tree';
+import { axisTopOf } from '../../../src/concepts/dendrogram/view';
 
 const NS = 'http://www.w3.org/2000/svg';
 const ld = D.linkages.ward;
@@ -110,6 +111,35 @@ describe('DendrogramLayer', () => {
     const line2 = num(svg.querySelector('line.dg-cut'), 'y1');
     expect(base2).toBeLessThan(line2);
     expect(barY(svg, 1) + 4).toBeLessThanOrEqual(base2 - 13);
+  });
+
+  it('at the Lab size the cut label crosses no branch, for every linkage and stored k', () => {
+    // Lab tick font 13 px; 350x500 = the 1280x720 Lab tree before the stacked layout, 736x228 = after it
+    let shortSeen = false;
+    for (const [w, h] of [[350, 500], [736, 228]]) for (const l of ['ward', 'complete', 'average', 'single'] as const) {
+      const { svg, layer } = setup();
+      svg.style.fontSize = '13px';
+      (svg.firstElementChild as SVGGElement).style.fontSize = '13px';
+      layer.resize({ left: 0, top: 0, width: w, height: h }, axisTopOf(l));
+      const lk = D.linkages[l];
+      const bl = branches(lk, n);
+      for (const { k } of lk.cuts) {
+        layer.update({ branches: bl, leafX: leafX(lk), leafLabels: D.points.map((_p, i) => String(i + 1)), shown: bl.length, cut: cutForK(lk, k) }, false);
+        const t = svg.querySelector('text.dg-cut-label')!;
+        if (l === 'ward' && w === 350 && k === 5) shortSeen = t.getAttribute('data-short') === 'true';
+        const x = num(t, 'x'); const y = num(t, 'y'); const tw = t.textContent!.length * 13 * 0.62;
+        for (const p of svg.querySelectorAll('path.dg-branch')) {
+          const [x1, y1, yb, x2, y2] = /M(-?[\d.]+),(-?[\d.]+)V(-?[\d.]+)H(-?[\d.]+)V(-?[\d.]+)/.exec(p.getAttribute('d')!)!.slice(1).map(Number);
+          for (const [ax, ay, bx, by] of [[x1, y1, x1, yb], [x1, yb, x2, yb], [x2, yb, x2, y2]]) {
+            const apart = Math.max(ax, bx) < x - 2 || Math.min(ax, bx) > x + tw + 2 || Math.max(ay, by) < y - 15 || Math.min(ay, by) > y + 2;
+            expect(apart, `${l} ${w}x${h} k=${k} merge ${p.getAttribute('data-merge')}`).toBe(true);
+          }
+        }
+      }
+      layer.destroy();
+    }
+    // ward k = 5 at the narrow size fits only as the bare number (the panel names the cut height)
+    expect(shortSeen).toBe(true);
   });
 
   it('each shown branch has a wide transparent hit path on its bar, above the branches, children over parents', () => {
