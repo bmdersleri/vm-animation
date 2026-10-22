@@ -24,6 +24,7 @@ export default defineConfig({
         'k-means': resolve(root, 'k-means/index.html'),
         'k-secimi': resolve(root, 'k-secimi/index.html'),
         'dbscan': resolve(root, 'dbscan/index.html'),
+        'dendrogram': resolve(root, 'dendrogram/index.html'),
       },
     },
   },
