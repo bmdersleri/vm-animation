@@ -63,6 +63,26 @@ describe('dagilimScenario', () => {
     expect(p.state.params.seri).toBe('002');
   });
 
+  it('steps 5 and 6 own series 002: a series picked on step 4 does not leak into them', () => {
+    for (const target of [4, 5]) {
+      const p = make();
+      p.goto(3);
+      p.setParam('seri', 'sol');
+      p.goto(target);
+      expect(p.state.params.seri, `step ${target + 1}`).toBe('002');
+    }
+  });
+
+  it('steps 7 and 8 own the default five bins: the bin-count step does not leak into them', () => {
+    for (const target of [6, 7]) {
+      const p = make();
+      p.goto(4);
+      p.setParam('bins', 10);
+      p.goto(target);
+      expect(p.state.params.bins, `step ${target + 1}`).toBe(5);
+    }
+  });
+
   it('S cycles the series', () => {
     const p = make();
     p.goto(0);
@@ -105,8 +125,8 @@ describe('dagilimScenario', () => {
     press(p, 'S');
     press(p, 'K');
     press(p, 'L');
-    // step 7 no longer owns `bins`: the 3 chosen on the bin-count step survives into the tail step
-    expect([p.state.params.seri, p.state.params.bins, p.state.params.log]).toEqual(['003', 3, false]);
+    // step 7 owns the spec's default five bins: the 3 of the bin-count step does not survive into it
+    expect([p.state.params.seri, p.state.params.bins, p.state.params.log]).toEqual(['003', 5, false]);
 
     p.goto(8);
     const before = { ...p.state.params };

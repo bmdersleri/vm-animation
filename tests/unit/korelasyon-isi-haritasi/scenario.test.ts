@@ -52,6 +52,15 @@ describe('korelasyon senaryosu', () => {
     expect(p.state.params.set).toBe(2);
   });
 
+  it('adım 6 kaldıraç y’sini sahiplenir: sürüklenen değer adım dönüşünde 12,5’e döner', () => {
+    const p = make();
+    p.goto(5);
+    p.setParam('noktaY', 6);
+    p.goto(6);
+    p.goto(5);
+    expect(p.state.params.noktaY).toBe(12.5);
+  });
+
   it('S seti I → II → III → IV → I döngüsünde gezdirir, yalnız 5–7. adımlarda', () => {
     const p = make();
     p.goto(0);
