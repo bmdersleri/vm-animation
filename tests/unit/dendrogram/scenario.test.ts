@@ -88,5 +88,5 @@ describe('dendrogram scenario', () => {
     p.destroy();
   });
 
-  labTextTests(steps as never, [2, 4, 5, 6, 8, 9, 10]);
+  labTextTests(steps, [2, 4, 5, 6, 8, 9, 10]);
 });

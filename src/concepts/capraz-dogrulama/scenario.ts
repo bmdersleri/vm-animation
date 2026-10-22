@@ -20,5 +20,7 @@ const stepParams=(i:number):Partial<CvParams>=>{
   if(i===3){const {k,method,c}=defaults;return {k,method,c};}
   return {...defaults,...(i===6?{method:'kfold' as const}:{})};
 };
-export const cvScenario:Scenario<CvParams>={defaults,steps:moments.map(([id,title,text,term],i)=>({id,title,text,term,params:stepParams(i),...(i===3?{sweep:{key:'fold' as const,values:[0,1,2,3,4],intervalMs:1200}}:{})}))};
+/** Step 7 is the one lesson text that states a result (some folds have no positives) which the Lab method select can undo. */
+const labTexts:Record<string,string>={'duz-kfold':'Yöntem seçicisini düz K-Fold ile StratifiedKFold arasında değiştir. Pozitif sınıfı olmayan katlar ve tanımsız recall, kat paneli ile çubuklarda canlı okunur.'};
+export const cvScenario:Scenario<CvParams>={defaults,steps:moments.map(([id,title,text,term],i)=>({id,title,text,term,...(labTexts[id]?{labText:labTexts[id]}:{}),params:stepParams(i),...(i===3?{sweep:{key:'fold' as const,values:[0,1,2,3,4],intervalMs:1200}}:{})}))};
 export const caprazDogrulamaScenario=cvScenario;
