@@ -4,6 +4,7 @@ import { dendrogramData as D } from '../../../src/concepts/dendrogram/data';
 import { cutForK } from '../../../src/concepts/dendrogram/tree';
 import { cutSizes, heightText, sizesText } from '../../../src/concepts/dendrogram/view';
 import { dendrogramScenario } from '../../../src/concepts/dendrogram/scenario';
+import { labTextTests } from '../lab-text';
 
 const steps = dendrogramScenario.steps;
 const n = D.points.length;
@@ -86,4 +87,6 @@ describe('dendrogram scenario', () => {
     expect(steps[9].text).toContain(`single ${desc('single')}`);
     p.destroy();
   });
+
+  labTextTests(steps as never, [2, 4, 5, 6, 8, 9, 10]);
 });
