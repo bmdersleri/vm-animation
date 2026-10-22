@@ -109,6 +109,8 @@ export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPla
   });
   const scatter: RuleScatter = mountRuleScatter(rulesSlot, (rule) => player.setParams({ x: [...rule.x], y: [...rule.y] }));
   let size = { w: 900, h: 560 };
+  /** Cells and rule points are interactive only in the Lab; in Ders a stray click must not edit the book's baskets. */
+  const lab = (): boolean => root.dataset.mode === 'lab';
 
   let destroyed = false;
   /** Step 3-5 count-up: baskets counted so far (null = counting is done or not running). */
@@ -153,7 +155,7 @@ export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPla
   }
 
   function paint(s: PlayerState<BirliktelikOlculeriParams>, r: Reading): void {
-    fis.update({ tx: r.tx, cols: r.cols, rows: r.flags, bars: s.index === STEP_SUPPORT1, tags: TAGGED.includes(r.kind) });
+    fis.update({ tx: r.tx, cols: r.cols, rows: r.flags, bars: s.index === STEP_SUPPORT1, tags: TAGGED.includes(r.kind), interactive: lab() });
   }
 
   function render(s: PlayerState<BirliktelikOlculeriParams>): void {
@@ -164,7 +166,7 @@ export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPla
     const set = r.kind === 'rules' ? ruleSet(r, s.params) : null;
     drawPanel(panel, panelSpec(s, r, set));
     paint(s, r);
-    if (set) scatter.update({ rules: set.all, minSupport: s.params.minSupport, minConfidence: s.params.minConfidence, minLift: s.params.minLift, selected: { x: r.x, y: r.y }, width: Math.floor(size.w * 0.55), height: Math.floor(size.h * 0.8) });
+    if (set) scatter.update({ rules: set.all, minSupport: s.params.minSupport, minConfidence: s.params.minConfidence, minLift: s.params.minLift, selected: { x: r.x, y: r.y }, width: Math.floor(size.w * 0.55), height: Math.floor(size.h * 0.8), interactive: lab() });
   }
 
   /** A count-up tick: the number and the counted rows change in place; the panel is rebuilt only when the count ends. */

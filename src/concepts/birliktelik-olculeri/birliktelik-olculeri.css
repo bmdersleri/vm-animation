@@ -25,7 +25,7 @@
 .bk-scene[data-view="rules"] .bk-list { display: none; }
 .bk-scene[data-view="rules"] .bk-table-host { display: none; }
 .bk-scene:not([data-view="rules"]) .bk-rules-slot { display: none; }
-.bk-table .bk-cell { cursor: pointer; }
+.bk-scene[data-mode="lab"] .bk-cell { cursor: pointer; }
 .bk-table .bk-cell:focus-visible { outline: 3px solid var(--navy); outline-offset: -3px; }
 
 .bk-list {
@@ -142,7 +142,7 @@
 .bk-plot .bk-thr-label,
 .bk-plot .bk-rule-label,
 .bk-plot .bk-rule-empty { font-size: var(--fs-tick); }
-.bk-rule-pt { cursor: pointer; }
+.bk-scene[data-mode="lab"] .bk-rule-pt { cursor: pointer; }
 .bk-rule-pt[data-dim="true"] { opacity: 0.22; }
 .bk-rule-pt:focus-visible { outline: none; }
 .bk-rule-pt:focus-visible .bk-rule-dot { stroke: var(--navy); stroke-width: 4; }

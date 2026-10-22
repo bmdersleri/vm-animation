@@ -23,6 +23,8 @@ export interface TableSpec {
   bars: boolean;
   /** Tag the highlighted column headers with their X / Y letter. */
   tags: boolean;
+  /** Lab only: cells are focusable and toggle on click or Space / Enter. In Ders they are plain cells, so the step keys keep working. */
+  interactive: boolean;
 }
 
 const ITEMS = sepetData.items;
@@ -43,7 +45,7 @@ export interface FisTable {
 
 /**
  * Builds the receipt list and the 18 x 6 one-hot table once; `update` only repaints attributes and text.
- * A cell toggles on click, or on Space / Enter; arrow keys move between cells (one tab stop).
+ * In the Lab a cell toggles on click, or on Space / Enter; arrow keys move between cells (one tab stop).
  */
 export function mountFisTable(host: HTMLElement, rowCount: number, onToggle: (row: number, col: number) => void = () => {}): FisTable {
   const list = el('ol', 'bk-list');
@@ -92,7 +94,6 @@ export function mountFisTable(host: HTMLElement, rowCount: number, onToggle: (ro
       td.dataset.col = String(c);
       td.dataset.item = item;
       td.setAttribute('role', 'gridcell');
-      td.tabIndex = r === 0 && c === 0 ? 0 : -1;
       tr.append(td);
       return td;
     });
@@ -129,24 +130,31 @@ export function mountFisTable(host: HTMLElement, rowCount: number, onToggle: (ro
   host.append(list, table);
 
   table.setAttribute('role', 'grid');
+  let interactive = false;
+  /** The cell that holds the grid's one tab stop in the Lab. */
+  let rover: HTMLTableCellElement | undefined = cells[0]?.[0];
   const cellOf = (e: Event): HTMLTableCellElement | null => (e.target as Element).closest<HTMLTableCellElement>('td.bk-cell');
+  const rove = (to: HTMLTableCellElement): void => {
+    rover = to;
+    for (const row of cells) for (const td of row) td.tabIndex = td === to ? 0 : -1;
+  };
   const focusCell = (r: number, c: number): void => {
     const to = cells[Math.max(0, Math.min(rowCount - 1, r))]?.[Math.max(0, Math.min(ITEMS.length - 1, c))];
     if (!to) return;
-    for (const row of cells) for (const td of row) td.tabIndex = td === to ? 0 : -1;
+    rove(to);
     to.focus();
   };
   table.addEventListener('click', (e) => {
     const td = cellOf(e);
-    if (td) onToggle(Number(td.dataset.row), Number(td.dataset.col));
+    if (interactive && td) onToggle(Number(td.dataset.row), Number(td.dataset.col));
   });
   table.addEventListener('focusin', (e) => {
     const td = cellOf(e);
-    if (td) for (const row of cells) for (const t of row) t.tabIndex = t === td ? 0 : -1;
+    if (interactive && td) rove(td);
   });
   table.addEventListener('keydown', (e) => {
     const td = cellOf(e);
-    if (!td) return;
+    if (!interactive || !td) return;
     const r = Number(td.dataset.row);
     const c = Number(td.dataset.col);
     const move: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
@@ -167,6 +175,8 @@ export function mountFisTable(host: HTMLElement, rowCount: number, onToggle: (ro
     table,
     update(spec: TableSpec): void {
       const { tx, cols, rows } = spec;
+      interactive = spec.interactive;
+      if (!interactive && table.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
       for (let r = 0; r < rowCount; r++) {
         const line = r < tx.length ? basketLine(tx, r) : '';
         if (lines[r].textContent !== line) lines[r].textContent = line;
@@ -186,7 +196,8 @@ export function mountFisTable(host: HTMLElement, rowCount: number, onToggle: (ro
           const glyph = on ? '●' : '';
           if (td.textContent !== glyph) td.textContent = glyph;
           td.setAttribute('aria-label', `Fiş ${r + 1}, ${itemName(item)}: ${on ? 'var' : 'yok'}`);
-          td.setAttribute('aria-selected', String(on));
+          if (interactive) td.tabIndex = td === rover ? 0 : -1;
+          else td.removeAttribute('tabindex');
         });
       }
       ITEMS.forEach((item, c) => {

@@ -23,6 +23,8 @@ export interface RuleScatterSpec {
   /** Fallback size (px) when the slot has no layout yet. */
   width: number;
   height: number;
+  /** Lab only: points are focusable buttons that pick their rule. In Ders they are plain marks, so the step keys keep working. */
+  interactive: boolean;
 }
 
 export interface RuleScatter {
@@ -67,14 +69,16 @@ export function mountRuleScatter(host: HTMLElement, onPick: (rule: Rule) => void
   const axes = new AxesLayer(gAxes);
   const nodes = new Map<string, SVGGElement>();
   let current: readonly Rule[] = [];
+  let interactive = false;
 
   const pick = (e: Event): void => {
+    if (!interactive) return;
     const g = (e.target as Element).closest<SVGGElement>('.bk-rule-pt');
     const rule = g ? current.find((r) => ruleKey(r) === g.dataset.key) : undefined;
     if (rule) onPick(rule);
   };
   const onKey = (e: KeyboardEvent): void => {
-    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (!interactive || (e.key !== 'Enter' && e.key !== ' ')) return;
     e.preventDefault();
     e.stopPropagation();
     pick(e);
@@ -88,8 +92,6 @@ export function mountRuleScatter(host: HTMLElement, onPick: (rule: Rule) => void
     if (!g) {
       g = document.createElementNS(SVG_NS, 'g');
       g.setAttribute('class', 'bk-rule-pt');
-      g.setAttribute('role', 'button');
-      g.setAttribute('tabindex', '0');
       g.dataset.key = key;
       const ring = document.createElementNS(SVG_NS, 'circle');
       ring.setAttribute('class', 'bk-rule-ring');
@@ -114,6 +116,8 @@ export function mountRuleScatter(host: HTMLElement, onPick: (rule: Rule) => void
     svg.setAttribute('width', String(W));
     svg.setAttribute('height', String(H));
     current = spec.rules;
+    interactive = spec.interactive;
+    if (!interactive && svg.contains(document.activeElement)) (document.activeElement as SVGElement).blur();
 
     const left = Math.round(fs * 3.4);
     const top = Math.round(fs * 1.2);
@@ -177,6 +181,13 @@ export function mountRuleScatter(host: HTMLElement, onPick: (rule: Rule) => void
       g.dataset.lift = String(rule.lift);
       g.dataset.support = String(rule.support);
       g.dataset.confidence = String(rule.confidence);
+      if (interactive) {
+        g.setAttribute('role', 'button');
+        g.setAttribute('tabindex', '0');
+      } else {
+        g.removeAttribute('role');
+        g.removeAttribute('tabindex');
+      }
       g.setAttribute('aria-label', `${ruleText(rule)}: destek ${ratioText(rule.support)}, güven ${ratioText(rule.confidence)}, kaldıraç ${ratioText(rule.lift)}`);
       const [ring, dot] = [g.children[0], g.children[1]];
       ring.setAttribute('r', String(r1(r + 4)));

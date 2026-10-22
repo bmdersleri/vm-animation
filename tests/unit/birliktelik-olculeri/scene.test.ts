@@ -21,6 +21,7 @@ const setup = (reduce = true) => {
 const fin = (scene: { destroy(): void }, player: StepPlayer<BirliktelikOlculeriParams>) => { scene.destroy(); player.destroy(); };
 const attr = (host: HTMLElement, sel: string, a: string) => host.querySelector(sel)?.getAttribute(a);
 const rowsWith = (host: HTMLElement, a: string) => host.querySelectorAll(`tr.bk-row[${a}="true"]`).length;
+const key = (k: string) => new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true });
 
 describe('birliktelik-olculeri scene', () => {
   it('step 1 lists the receipts and step 2 shows the one-hot table', () => {
@@ -197,6 +198,69 @@ describe('birliktelik-olculeri scene', () => {
     player.setParams({ y: [] });
     expect(host.querySelector('.bk-panel')!.textContent).toBe('Bir öncül ve bir sonuç seç.');
     expect(rowsWith(host, 'data-match')).toBe(0);
+    fin(scene, player);
+  });
+
+  it('in Ders a cell is plain: a click edits nothing and ArrowRight still reaches the step keys', () => {
+    const { player, host, scene } = setup();
+    player.goto(1);
+    const cell = host.querySelector<HTMLTableCellElement>('td.bk-cell[data-row="0"][data-col="0"]')!;
+    expect(host.querySelectorAll('td.bk-cell[tabindex]')).toHaveLength(0);
+    cell.click();
+    expect(player.state.params.edits).toEqual([]);
+    const bubbled = vi.fn();
+    window.addEventListener('keydown', bubbled);
+    const right = key('ArrowRight');
+    cell.dispatchEvent(right);
+    expect(bubbled).toHaveBeenCalledTimes(1);
+    expect(right.defaultPrevented).toBe(false);
+    cell.dispatchEvent(key(' '));
+    expect(player.state.params.edits).toEqual([]);
+    expect(bubbled).toHaveBeenCalledTimes(2);
+    // Lab: the same click edits, and the grid keeps its keys to itself
+    scene.setMode('lab');
+    expect(host.querySelectorAll('td.bk-cell[tabindex="0"]')).toHaveLength(1);
+    cell.click();
+    expect(player.state.params.edits).toEqual([0]);
+    cell.focus();
+    const labRight = key('ArrowRight');
+    cell.dispatchEvent(labRight);
+    expect(bubbled).toHaveBeenCalledTimes(2);
+    expect(labRight.defaultPrevented).toBe(true);
+    // Lab -> Ders drops the focus and the tab stops
+    const focused = document.activeElement as HTMLElement;
+    expect(focused.classList.contains('bk-cell')).toBe(true);
+    scene.setMode('ders');
+    expect(document.activeElement).not.toBe(focused);
+    expect(host.querySelectorAll('td.bk-cell[tabindex]')).toHaveLength(0);
+    window.removeEventListener('keydown', bubbled);
+    fin(scene, player);
+  });
+
+  it('in Ders a rule point is a plain mark: a click picks nothing', () => {
+    const { player, host, scene } = setup();
+    player.goto(8);
+    const pt = host.querySelector<SVGGElement>('g.bk-rule-pt[data-key="sut>yumurta"]')!;
+    expect(pt.hasAttribute('role')).toBe(false);
+    expect(pt.hasAttribute('tabindex')).toBe(false);
+    pt.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(player.state.params.x).toEqual(['ekmek']);
+    expect(player.state.params.y).toEqual(['sut']);
+    const enter = key('Enter');
+    pt.dispatchEvent(enter);
+    expect(enter.defaultPrevented).toBe(false);
+    expect(player.state.params.x).toEqual(['ekmek']);
+    scene.setMode('lab');
+    expect(pt.getAttribute('role')).toBe('button');
+    expect(pt.getAttribute('tabindex')).toBe('0');
+    pt.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(player.state.params.x).toEqual(['sut']);
+    expect(player.state.params.y).toEqual(['yumurta']);
+    (pt as unknown as HTMLElement).focus();
+    expect(document.activeElement).toBe(pt);
+    scene.setMode('ders');
+    expect(document.activeElement).not.toBe(pt);
+    expect(pt.hasAttribute('role')).toBe(false);
     fin(scene, player);
   });
 
