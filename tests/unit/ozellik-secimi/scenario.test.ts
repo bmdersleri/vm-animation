@@ -108,6 +108,30 @@ describe('ozellikSecimiScenario', () => {
     }
   });
 
+  it('step 9 replay covers every RFE round for each nSelect, and Ders (nSelect 4) still plays 0 .. 3', () => {
+    // rounds shown are 0 .. 7 - nSelect (round 0 is applied on arrival, before nSelect can change), then ROUNDS_ALL
+    for (let n = 1; n <= 7; n++) {
+      const p = make();
+      p.goto(8);
+      p.setParam('nSelect', n);
+      const shown = [p.state.params.rounds];
+      for (let t = 0; t < 9; t++) {
+        vi.advanceTimersByTime(RFE_REPLAY_MS);
+        shown.push(p.state.params.rounds);
+      }
+      const distinct = shown.filter((v, i) => i === 0 || v !== shown[i - 1]);
+      const expected = [...Array.from({ length: 8 - n }, (_, i) => i), ROUNDS_ALL];
+      expect(distinct, `nSelect ${n}`).toEqual(expected);
+      p.destroy();
+    }
+    const d = make();
+    d.goto(8);
+    const shown = [d.state.params.rounds];
+    for (let t = 0; t < 5; t++) { vi.advanceTimersByTime(RFE_REPLAY_MS); shown.push(d.state.params.rounds); }
+    expect(shown).toEqual([0, 1, 2, 3, ROUNDS_ALL, ROUNDS_ALL]);
+    d.destroy();
+  });
+
   it('step 7 sweep: an nSelect set before arriving is reset by the step (it owns nSelect), so the default sweeps', () => {
     const p = make();
     p.setParam('nSelect', 6);

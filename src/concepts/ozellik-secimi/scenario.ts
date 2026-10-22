@@ -102,7 +102,8 @@ export const ozellikSecimiScenario: Scenario<SecimParams> = {
       labText: `Ölçeklemeyi kapatıp aç, tutulacak sütun sayısını değiştir. RFE'nin sonunda hangi sütunların kaldığı sahnede canlı okunur.`,
       term: 'StandardScaler',
       params: { ...B, scaling: 'standard', rounds: ROUNDS_ALL },
-      sweep: { key: 'rounds', values: [0, 1, 2, 3], intervalMs: RFE_REPLAY_MS },
+      // Replay rounds 0 .. cut-1, then ROUNDS_ALL is the last round (cut = COLUMNS.length - nSelect); nSelect may change mid-replay.
+      sweep: { key: 'rounds', values: [0, 1, 2, 3, 4, 5, 6], intervalMs: RFE_REPLAY_MS, count: (p) => COLUMNS.length - p.nSelect },
     },
     {
       id: 'kesisim',
