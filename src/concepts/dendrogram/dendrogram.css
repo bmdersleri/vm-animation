@@ -14,6 +14,22 @@
 .dg-scatter-host { grid-area: scatter; position: relative; min-width: 0; min-height: 0; }
 .dg-tree-host { grid-area: tree; position: relative; min-width: 0; min-height: 0; }
 .dg-panel { grid-area: panel; }
+/* Step 10 names the drawn tree; it floats over the tree host's top right corner (empty above the root bar, away from
+   the axis tick labels) and takes no room from the plot. */
+.dg-tree-caption {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--navy-soft);
+  color: var(--navy);
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  pointer-events: none;
+}
+.dg-tree-caption[hidden] { display: none; }
+.dg-table tr[aria-current="true"] { background: var(--navy-soft); }
 .dg-scatter,
 .dg-tree {
   position: absolute;
@@ -117,16 +133,32 @@
   overflow-wrap: anywhere;
 }
 
-/* Lab has a narrow stage: both plots share it about evenly. */
-.dg-scene[data-mode="lab"] { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); }
+/* Lab (stage about 736 x 576 at 1280x720): scatter and panel share the top row, the tree takes the full width
+   below, so its 17 leaf labels get about 39 px each and the equal-aspect scatter grows to about 343 x 284. */
+@media (min-width: 901px) {
+  .dg-scene[data-mode="lab"] {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr);
+    grid-template-areas: "scatter panel" "tree tree";
+    column-gap: var(--gap);
+  }
+  .dg-scene[data-mode="lab"] .dg-panel { align-self: start; max-height: 100%; }
+  /* Step 10's table needs the full width: the tree above it, the scatter hidden (as in Ders). */
+  .dg-scene[data-view="table"][data-mode="lab"] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "tree" "panel";
+  }
+  .dg-scene[data-view="table"][data-mode="lab"] .dg-scatter-host { display: none; }
+}
 /* Step 10 is a table: the tree stays as context, the scatter makes room for it. */
-.dg-scene[data-step="9"][data-mode="ders"] {
+.dg-scene[data-view="table"][data-mode="ders"] {
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
   grid-template-rows: minmax(0, 1fr);
   grid-template-areas: "tree panel";
 }
-.dg-scene[data-step="9"][data-mode="ders"] .dg-scatter-host { display: none; }
-.dg-scene[data-step="9"][data-mode="ders"] .dg-panel { align-self: start; }
+.dg-scene[data-view="table"][data-mode="ders"] .dg-scatter-host { display: none; }
+.dg-scene[data-view="table"][data-mode="ders"] .dg-panel { align-self: start; }
 
 @media (max-width: 900px) {
   .dg-scene,
@@ -135,12 +167,12 @@
     grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto;
     grid-template-areas: "scatter" "tree" "panel";
   }
-  .dg-scene[data-step="9"][data-mode="ders"] {
+  .dg-scene[data-view="table"][data-mode="ders"] {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto;
     grid-template-areas: "tree" "panel";
   }
-  .dg-scene[data-step="9"][data-mode="ders"] .dg-panel { align-self: stretch; }
+  .dg-scene[data-view="table"][data-mode="ders"] .dg-panel { align-self: stretch; }
 }
 
 /* Lab controls and click targets (Task 6) */

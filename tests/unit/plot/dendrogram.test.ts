@@ -5,6 +5,7 @@ import { DendrogramLayer, type DendrogramSpec } from '../../../src/core/plot/den
 import { CLUSTER, NAVY, UNASSIGNED } from '../../../src/core/plot/marks';
 import { dendrogramData as D } from '../../../src/concepts/dendrogram/data';
 import { branches, cutForK, labelsAtHeight, leafX } from '../../../src/concepts/dendrogram/tree';
+import { axisTopOf } from '../../../src/concepts/dendrogram/view';
 
 const NS = 'http://www.w3.org/2000/svg';
 const ld = D.linkages.ward;
@@ -87,6 +88,60 @@ describe('DendrogramLayer', () => {
     expect(y - 13).toBeGreaterThanOrEqual(num(svg.querySelector('rect.dg-frame'), 'y'));
   });
 
+  it('cut label keeps clear of horizontal bars', () => {
+    const { svg, layer } = setup();
+    // one wide bar; the cut is 10 px under it, so the default spot (just above the line) would touch the bar
+    const bar = { id: 2, xl: 0, xr: 1, x: 0.5, yl: 0, yr: 0, height: 1, members: [0, 1] };
+    const frame = svg.querySelector('rect.dg-frame')!;
+    layer.resize(RECT, 1);
+    layer.update({ branches: [bar], leafX: [0, 1], leafLabels: ['1', '2'], shown: 1, cut: 0.5 }, false);
+    const plotH2 = Number(frame.getAttribute('height'));
+    const c = 1 - 10 * (1.06 / plotH2);
+    layer.update({ branches: [bar], leafX: [0, 1], leafLabels: ['1', '2'], shown: 1, cut: c }, false);
+    const barY2 = barY(svg, 1);
+    const lineY = num(svg.querySelector('line.dg-cut'), 'y1');
+    expect(lineY - barY2).toBeGreaterThan(8);
+    expect(lineY - barY2).toBeLessThan(12);
+    const base = num(svg.querySelector('text.dg-cut-label'), 'y');
+    // the label does not sit between the bar and the line: it moved below the line
+    expect(base).toBeGreaterThan(lineY);
+    // and with room above the bar the label stays above the line, 4 px clear of the bar
+    layer.update({ branches: [bar], leafX: [0, 1], leafLabels: ['1', '2'], shown: 1, cut: 1 - 40 * (1.06 / plotH2) }, false);
+    const base2 = num(svg.querySelector('text.dg-cut-label'), 'y');
+    const line2 = num(svg.querySelector('line.dg-cut'), 'y1');
+    expect(base2).toBeLessThan(line2);
+    expect(barY(svg, 1) + 4).toBeLessThanOrEqual(base2 - 13);
+  });
+
+  it('at the Lab size the cut label crosses no branch, for every linkage and stored k', () => {
+    // Lab tick font 13 px; 350x500 = the 1280x720 Lab tree before the stacked layout, 736x228 = after it
+    let shortSeen = false;
+    for (const [w, h] of [[350, 500], [736, 228]]) for (const l of ['ward', 'complete', 'average', 'single'] as const) {
+      const { svg, layer } = setup();
+      svg.style.fontSize = '13px';
+      (svg.firstElementChild as SVGGElement).style.fontSize = '13px';
+      layer.resize({ left: 0, top: 0, width: w, height: h }, axisTopOf(l));
+      const lk = D.linkages[l];
+      const bl = branches(lk, n);
+      for (const { k } of lk.cuts) {
+        layer.update({ branches: bl, leafX: leafX(lk), leafLabels: D.points.map((_p, i) => String(i + 1)), shown: bl.length, cut: cutForK(lk, k) }, false);
+        const t = svg.querySelector('text.dg-cut-label')!;
+        if (l === 'ward' && w === 350 && k === 5) shortSeen = t.getAttribute('data-short') === 'true';
+        const x = num(t, 'x'); const y = num(t, 'y'); const tw = t.textContent!.length * 13 * 0.62;
+        for (const p of svg.querySelectorAll('path.dg-branch')) {
+          const [x1, y1, yb, x2, y2] = /M(-?[\d.]+),(-?[\d.]+)V(-?[\d.]+)H(-?[\d.]+)V(-?[\d.]+)/.exec(p.getAttribute('d')!)!.slice(1).map(Number);
+          for (const [ax, ay, bx, by] of [[x1, y1, x1, yb], [x1, yb, x2, yb], [x2, yb, x2, y2]]) {
+            const apart = Math.max(ax, bx) < x - 2 || Math.min(ax, bx) > x + tw + 2 || Math.max(ay, by) < y - 15 || Math.min(ay, by) > y + 2;
+            expect(apart, `${l} ${w}x${h} k=${k} merge ${p.getAttribute('data-merge')}`).toBe(true);
+          }
+        }
+      }
+      layer.destroy();
+    }
+    // ward k = 5 at the narrow size fits only as the bare number (the panel names the cut height)
+    expect(shortSeen).toBe(true);
+  });
+
   it('each shown branch has a wide transparent hit path on its bar, above the branches, children over parents', () => {
     const { svg, layer } = setup();
     layer.update(spec({ shown: 6 }), false);
@@ -98,11 +153,14 @@ describe('DendrogramLayer', () => {
     const last = [...svg.querySelectorAll('path.dg-branch, line.dg-cut')].pop()!;
     expect(last.compareDocumentPosition(hits[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const pos = new Map(hits.map((h, i) => [Number(h.getAttribute('data-merge')), i]));
+    expect(Math.max(...hits.map((h) => num(h, 'stroke-width')))).toBe(12);
     bs.forEach((b, i) => {
       const hit = hits[pos.get(i + 1)!];
       expect(hit.getAttribute('stroke')).toBe('transparent');
       expect(hit.getAttribute('pointer-events')).toBe('stroke');
-      expect(num(hit, 'stroke-width')).toBeGreaterThanOrEqual(12);
+      // 12 px wide, narrower only where another bar over the same x stretch is closer (next test)
+      expect(num(hit, 'stroke-width')).toBeGreaterThanOrEqual(3);
+      expect(num(hit, 'stroke-width')).toBeLessThanOrEqual(12);
       // the bar only: from the left child's x to the right child's x at the merge height
       const v = svg.querySelector(`path.dg-branch[data-merge="${i + 1}"]`)!.getAttribute('d')!;
       const [, x1, , yb, x2] = /M(-?[\d.]+),(-?[\d.]+)V(-?[\d.]+)H(-?[\d.]+)/.exec(v)!;
@@ -112,6 +170,30 @@ describe('DendrogramLayer', () => {
     });
     layer.update(spec({ shown: 2 }), false);
     expect(svg.querySelectorAll('path.dg-hit')).toHaveLength(2);
+  });
+
+  it('hit bands never cover another bar: in a short tree they narrow to the gap between close bars', () => {
+    // the 1280x720 Lab tree (736x228): single-linkage merges 10 and 12 lie about 5,6 px apart
+    const { svg, layer } = setup();
+    const sl = D.linkages.single;
+    layer.resize({ left: 0, top: 0, width: 736, height: 228 }, axisTopOf('single'));
+    layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), false);
+    const bands = [...svg.querySelectorAll('path.dg-hit')].map((h) => {
+      const [x1, y, x2] = /M(-?[\d.]+),(-?[\d.]+)H(-?[\d.]+)/.exec(h.getAttribute('d')!)!.slice(1).map(Number);
+      return { m: h.getAttribute('data-merge'), x1, x2, y, w: num(h, 'stroke-width') };
+    });
+    let narrowed = 0;
+    for (const a of bands) {
+      if (a.w < 12) narrowed++;
+      for (const b of bands) {
+        // bars that share an x stretch (a child's centre touching its parent's end is no stretch)
+        if (a === b || Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1) <= 0.5) continue;
+        // a's band reaches w/2 from its bar; it must stop short of b's bar
+        expect(a.w / 2, `merge ${a.m} vs ${b.m}`).toBeLessThan(Math.abs(a.y - b.y));
+      }
+    }
+    expect(narrowed).toBeGreaterThan(0);
+    expect(Math.max(...bands.map((b) => b.w))).toBe(12);
   });
 
   it('branches above the cut are muted, clusters below take their colour', () => {
@@ -177,6 +259,41 @@ describe('DendrogramLayer', () => {
       vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q }));
       return r;
     };
+
+    it('a linkage change tweens a branch path through a shape between its start and end', async () => {
+      // real clock, and placed before the fake-timer tests: d3-timer stays stuck once a fake clock has driven it
+      const { svg, layer } = live();
+      const sl = D.linkages.single;
+      const d = (m: number): number[] => (svg.querySelector(`path.dg-branch[data-merge="${m}"]`)!.getAttribute('d')!.match(/-?[\d.]+/g) ?? []).map(Number);
+      const all = (): number[][] => [...Array(n - 1).keys()].map((i) => d(i + 1));
+      layer.update(spec(), false);
+      const start = all();
+      // same y scale (ward's top), so the single-linkage bars really move
+      layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
+      // sample every 25 ms through the 450 ms tween, so a stalled event loop cannot skip the middle
+      const samples: number[][][] = [];
+      for (let i = 0; i < 20; i++) {
+        await new Promise((r) => setTimeout(r, 25));
+        samples.push(all());
+      }
+      await new Promise((r) => setTimeout(r, 700));
+      const end = all();
+      // the branch whose path travels furthest
+      let m = 0;
+      let best = -1;
+      start.forEach((a, i) => { const t = a.reduce((acc, v, k) => acc + Math.abs(v - end[i][k]), 0); if (t > best) { best = t; m = i; } });
+      expect(best).toBeGreaterThan(5);
+      // the first sample that has left the start
+      const mid = samples.find((x) => x[m].some((v, k) => v !== start[m][k]));
+      expect(mid).toBeDefined();
+      expect(mid![m]).not.toEqual(start[m]);
+      expect(mid![m]).not.toEqual(end[m]);
+      mid![m].forEach((v, k) => {
+        expect(v).toBeGreaterThanOrEqual(Math.min(start[m][k], end[m][k]) - 0.5);
+        expect(v).toBeLessThanOrEqual(Math.max(start[m][k], end[m][k]) + 0.5);
+      });
+      layer.destroy();
+    });
 
     it('interrupts a running transition and settles on the last spec with stable counts', () => {
       vi.useFakeTimers();

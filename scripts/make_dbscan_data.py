@@ -20,7 +20,7 @@ Examples (at eps 0.3 / min_samples 5):
             border point), smaller index first;
   noise  C: the noise point whose nearest other point is farthest (ties: smaller index).
 kdist: for min_samples 2..15 the sorted m-th neighbour distance (self counted),
-  NearestNeighbors(n_neighbors=m).
+  NearestNeighbors(n_neighbors=m), plus each curve's own knee (same formula).
 Fixture: eps in {0.10, 0.15, ..., 1.00} x min_samples in {2, 3, 5, 8, 10, 15}:
   sklearn core_sample_indices_, labels_ and border points reachable from several
   clusters (ambiguousBorder: {index: [clusters]}).
@@ -139,9 +139,12 @@ def generate():
     kdist = []
     for m in range(2, 16):
         d = NearestNeighbors(n_neighbors=m).fit(points).kneighbors(points)[0][:, m - 1]
-        kdist.append({"minSamples": m, "sorted": [r6(v) for v in np.sort(d)]})
+        srt = np.sort(d)
+        kdist.append({"minSamples": m, "sorted": [r6(v) for v in srt], "knee": r6(knee(srt))})
     k5 = np.array(kdist[3]["sorted"])
     kn = knee(k5)
+    if kdist[3]["knee"] != r6(kn):
+        fail("min_samples 5 curve knee differs from the top-level knee")
     if abs(kn - EPS) > 0.1:
         fail(f"knee {kn} is farther than 0.1 from {EPS}")
 

@@ -23,6 +23,7 @@ const STEP_KDIST = stepIndex(dbscanScenario, 'k-uzaklik');
 /** The scaled moons plus outliers span about ±1.9; room for the eps circle's label. */
 const DOMAIN: Domain = { x: [-2.2, 2.2], y: [-2.2, 2.1] };
 const COUNT_MS = 60;
+const MAX_CHIPS = 12;
 const GLYPH: Record<Kind, string> = { core: '●', border: '○', noise: '×' };
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, text?: string): HTMLElementTagNameMap[K] {
@@ -102,6 +103,8 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
   let lastKd = '';
   /** Step 3 count-up: how many neighbours have been counted so far (null = all). */
   let counted: number | null = null;
+  /** Step index of the last emit; play/pause re-emit 'step' with the same index and must not restart the count-up. */
+  let lastIndex = player.state.index;
   let countTimer: ReturnType<typeof setInterval> | null = null;
 
   const stopCount = (): void => {
@@ -167,12 +170,20 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
   function sizeList(sizes: readonly number[]): HTMLElement {
     const ul = el('ul', 'db-sizes');
     ul.setAttribute('data-clusters', '');
-    sizes.forEach((c, i) => {
+    // Lab only: free eps / min_samples values can give dozens of clusters; the fixed Ders values peak at 14, which fit.
+    const cap = mode === 'lab' ? MAX_CHIPS : Infinity;
+    sizes.slice(0, cap).forEach((c, i) => {
       const li = el('li', 'db-size');
       li.setAttribute('data-size', String(c));
       li.append(chip(i), el('strong', 'db-value', String(c)));
       ul.append(li);
     });
+    if (sizes.length > cap) {
+      const more = sizes.length - cap;
+      const li = el('li', 'db-size-more', `… ${more} küme daha`);
+      li.setAttribute('data-more', String(more));
+      ul.append(li);
+    }
     return ul;
   }
 
@@ -195,7 +206,7 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
   function drawPanel(s: PlayerState<DbscanParams>, r: DbscanResult): void {
     const { index, params } = s;
     panel.replaceChildren();
-    root.dataset.step = String(index);
+    root.dataset.view = index === STEP_KDIST ? 'kdist' : 'scatter';
     if (index === STEP_KDIST) {
       panel.append(kd);
       return;
@@ -245,7 +256,7 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
     kdTitle.textContent = `${curve.minSamples}. en yakın komşuya uzaklık (kendisi dahil)`;
     const code = `DBSCAN(eps=${params.eps}, min_samples=${params.minSamples})`;
     if (kdCode.textContent !== code) kdCode.textContent = code;
-    kdChart.set({ sorted: curve.sorted, eps: params.eps, knee: curve.minSamples === dbscanData.meta.minSamples ? dbscanData.knee : null });
+    kdChart.set({ sorted: curve.sorted, eps: params.eps, knee: curve.knee });
   }
 
   function layout(index: number): void {
@@ -274,6 +285,20 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
     rendered = true;
   }
 
+  /** A count-up tick: the number and the rings change in place; the panel is rebuilt only when the count ends. */
+  function tickCount(s: PlayerState<DbscanParams>): void {
+    const num = panel.querySelector('[data-neighbours]');
+    if (destroyed) return;
+    if (!num) {
+      render(s, false);
+      return;
+    }
+    const shown = String(counted ?? 0);
+    num.textContent = shown;
+    num.setAttribute('data-neighbours', shown);
+    layer.update(specFor(s, compute(s.params.eps, s.params.minSamples)), false);
+  }
+
   const startCount = (s: PlayerState<DbscanParams>): void => {
     stopCount();
     const p = s.params.point;
@@ -284,8 +309,10 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
     panel.setAttribute('aria-live', 'off');
     countTimer = setInterval(() => {
       counted = (counted ?? 0) + 1;
-      if (counted >= total) stopCount();
-      render(player.state, false);
+      if (counted >= total) {
+        stopCount();
+        render(player.state, false);
+      } else tickCount(player.state);
     }, COUNT_MS);
   };
 
@@ -300,8 +327,10 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
   svgEl.addEventListener('click', onClick);
 
   const unsubscribe = player.subscribe((s: PlayerState<DbscanParams>, cause: ChangeCause) => {
-    if (cause === 'step') startCount(s);
-    else if (cause === 'param') stopCount();
+    if (cause === 'step') {
+      if (s.index !== lastIndex) startCount(s);
+    } else if (cause === 'param') stopCount();
+    lastIndex = s.index;
     render(s, rendered && cause !== 'param');
   });
   startCount(player.state);

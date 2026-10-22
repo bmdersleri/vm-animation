@@ -32,6 +32,25 @@ describe('dbscan data', () => {
     }
   });
 
+  it('every kdist curve carries its knee from the same formula', () => {
+    for (const k of kdist) {
+      const s = k.sorted;
+      const lo = s[0];
+      const span = s[s.length - 1] - lo;
+      let best = 0;
+      let bestGap = -1;
+      s.forEach((v, i) => {
+        const gap = Math.abs(i / (s.length - 1) - (v - lo) / span);
+        if (gap > bestGap) { bestGap = gap; best = i; }
+      });
+      expect(Math.abs(k.knee - s[best]), `minSamples ${k.minSamples}`).toBeLessThan(1e-6);
+    }
+  });
+
+  it("top-level knee equals the min_samples 5 curve's knee", () => {
+    expect(knee).toBe(kdist.find((k) => k.minSamples === 5)!.knee);
+  });
+
   it('knee is within 0.1 of 0.3', () => {
     expect(Math.abs(knee - 0.3)).toBeLessThanOrEqual(0.1);
   });

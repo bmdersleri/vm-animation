@@ -12,6 +12,11 @@ export interface DendrogramParams {
   k: number | null;
   /** Selected point index, or null. */
   point: number | null;
+  /**
+   * 0-based merge the scene singles out instead of the newest one (step 4's example), or null.
+   * Ignored when the linkage is not Ward, when a cut is drawn, or when merges <= focusMerge.
+   */
+  focusMerge: number | null;
 }
 
 const n = D.points.length;
@@ -26,17 +31,19 @@ const ex = D.linkages.ward.merges;
 const sizesOf = (l: Linkage, k: number): string => sizesText(cutSizes(l, k));
 const desc = (l: Linkage): number[] => sizesDesc(l, natural);
 const plus = (xs: readonly number[]): string => xs.join(' + ');
-const kStep = 4;
+const kStep = 5;
 const lengthOf = (g: 'A' | 'B' | 'zincir'): number => D.meta.groups[g].length;
 const chainJoined = desc('single')[0];
 const rows = linkageRows();
 
+// Step 4 stays where step 3's sweep ended, so the tree does not rewind.
+const SWEEP_END = 8;
 const values = (from: number, to: number): number[] => Array.from({ length: to - from + 1 }, (_v, i) => from + i);
-const base = { linkage: 'ward' as const, point: null };
+const base = { linkage: 'ward' as const, point: null, focusMerge: null };
 
 // A sweep's key is left out of that step's params, so the sweep ends on its last value.
 export const dendrogramScenario: Scenario<DendrogramParams> = {
-  defaults: { linkage: 'ward', merges: 0, k: null, point: null },
+  defaults: { linkage: 'ward', merges: 0, k: null, point: null, focusMerge: null },
   steps: [
     {
       id: 'yapraklar',
@@ -56,14 +63,14 @@ export const dendrogramScenario: Scenario<DendrogramParams> = {
       title: 'Birleşmeye devam',
       text: 'Her adımda en yakın iki küme birleşir ve küme sayısı bir azalır. Yeni dallar giderek daha yüksekte durur: birleşme uzaklığı hiç azalmaz.',
       params: { ...base, k: null },
-      sweep: { key: 'merges', values: values(2, 8), intervalMs: 1100 },
+      sweep: { key: 'merges', values: values(2, SWEEP_END), intervalMs: 1100 },
     },
     {
       id: 'ward',
       title: 'İki kümenin uzaklığı ne demek?',
       text: `Ward'da "en yakın" şu demektir: birleşince küme içi kareler toplamı en az artan çift birleşir. Örnek, birleşme ${example.merge + 1} (${clusterName(exampleInfo.left)} ile ${clusterName(exampleInfo.right)}): kareler toplamı yalnızca ${formatNumber(example.increase, 3)} artar; dendrogramdaki yükseklik √(2 × ${formatNumber(example.increase, 3)}) = ${heightText(ex[example.merge].height)}.`,
       term: 'Ward bağlantısı (Ward linkage)',
-      params: { ...base, merges: example.merge + 1, k: null },
+      params: { ...base, merges: SWEEP_END, k: null, focusMerge: example.merge },
     },
     {
       id: 'agac',

@@ -159,10 +159,103 @@ describe('dbscan scene', () => {
     expect(text(host, '.db-code')).toBe('DBSCAN(eps=0.3, min_samples=5)');
     expect(host.querySelectorAll('.kd-line')).toHaveLength(1);
     expect(host.textContent).not.toMatch(/NaN|Infinity|undefined/);
-    // another min_samples has no stored knee
     player.setParam('minSamples', 9);
-    expect(host.querySelector('[data-knee]')).toBeNull();
     expect(text(host, '.db-code')).toBe('DBSCAN(eps=0.3, min_samples=9)');
+    fin(scene, player);
+  });
+
+  it('step 10 marks a knee for every min_samples', () => {
+    const { player, host, scene } = setup('lab');
+    player.goto(9);
+    for (const m of [2, 5, 15]) {
+      player.setParam('minSamples', m);
+      const curve = d.kdist.find((k) => k.minSamples === m)!;
+      expect(host.querySelectorAll('[data-knee]'), `m ${m}`).toHaveLength(1);
+      expect(Number(attr(host, '[data-knee]', 'data-knee'))).toBe(curve.knee);
+    }
+    fin(scene, player);
+  });
+
+  it('root view names the k-distance step', () => {
+    const { player, host, scene } = setup();
+    const root = host.querySelector('.db-scene')!;
+    expect(root.getAttribute('data-view')).toBe('scatter');
+    player.goto(9);
+    expect(root.getAttribute('data-view')).toBe('kdist');
+    player.goto(8);
+    expect(root.getAttribute('data-view')).toBe('scatter');
+    expect(root.hasAttribute('data-step')).toBe(false);
+    fin(scene, player);
+  });
+
+  it('cluster list caps at 12 chips and names the rest', () => {
+    const { player, host, scene } = setup('lab');
+    player.goto(6);
+    player.setParams({ eps: 0.11, minSamples: 2 });
+    const r = dbscan(d.points, 0.11, 2);
+    const total = clusterSizes(r).length;
+    expect(total).toBeGreaterThan(12);
+    expect(host.querySelectorAll('li.db-size')).toHaveLength(12);
+    expect(attr(host, '[data-more]', 'data-more')).toBe(String(total - 12));
+    expect(text(host, '[data-more]')).toBe(`… ${total - 12} küme daha`);
+    expect(host.querySelector('[data-clusters]')!.lastElementChild).toBe(host.querySelector('[data-more]'));
+    fin(scene, player);
+  });
+
+  it('the Ders eps sweep keeps every chip: the cap is Lab only', () => {
+    const { player, host, scene } = setup('ders');
+    player.goto(8);
+    player.setParams({ eps: 0.15 });
+    const total = clusterSizes(dbscan(d.points, 0.15, player.state.params.minSamples)).length;
+    expect(total).toBeGreaterThan(12);
+    expect(host.querySelectorAll('li.db-size')).toHaveLength(total);
+    expect(host.querySelector('[data-more]')).toBeNull();
+    fin(scene, player);
+  });
+
+  it('play and pause do not restart the step 3 count-up', () => {
+    vi.useFakeTimers();
+    const { player, host, scene } = setup('ders', false);
+    player.goto(2);
+    const total = base.neighbours[A].length;
+    vi.advanceTimersByTime(60 * (total + 2));
+    const shown = () => text(host, '[data-neighbours]');
+    expect(shown()).toBe(String(total));
+    player.play();
+    player.pause();
+    expect(shown()).toBe(String(total));
+    vi.advanceTimersByTime(60 * 3);
+    expect(shown()).toBe(String(total));
+    // mid-count: play and pause keep the same count-up running
+    player.goto(0);
+    player.goto(2);
+    vi.advanceTimersByTime(60 * 3);
+    player.play();
+    player.pause();
+    expect(shown()).toBe('3');
+    vi.advanceTimersByTime(60);
+    expect(shown()).toBe('4');
+    fin(scene, player);
+  });
+
+  it('count-up ticks update the neighbour count in place', () => {
+    vi.useFakeTimers();
+    const { player, host, scene } = setup('ders', false);
+    player.goto(2);
+    vi.advanceTimersByTime(60 * 2);
+    const block = host.querySelector('.db-point');
+    const num = host.querySelector('[data-neighbours]');
+    expect(num!.textContent).toBe('2');
+    vi.advanceTimersByTime(60);
+    expect(host.querySelector('.db-point')).toBe(block);
+    expect(host.querySelector('[data-neighbours]')).toBe(num);
+    expect(num!.textContent).toBe('3');
+    expect(num!.getAttribute('data-neighbours')).toBe('3');
+    expect(host.querySelectorAll('circle.pk-nbr')).toHaveLength(2);
+    // the last tick draws the panel once more, with the final count and a polite live region
+    vi.advanceTimersByTime(60 * base.neighbours[A].length);
+    expect(text(host, '[data-neighbours]')).toBe(String(base.neighbours[A].length));
+    expect(host.querySelector('.db-panel')!.getAttribute('aria-live')).toBe('polite');
     fin(scene, player);
   });
 
