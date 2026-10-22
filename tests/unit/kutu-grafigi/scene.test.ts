@@ -4,6 +4,7 @@ import { StepPlayer } from '../../../src/core/player';
 import { kutuScenario, type KutuParams } from '../../../src/concepts/kutu-grafigi/scenario';
 import { mountKutuScene } from '../../../src/concepts/kutu-grafigi/scene';
 import { deriveKutuView } from '../../../src/concepts/kutu-grafigi/view';
+import { bindKeys } from '../../../src/core/keyboard';
 import type { Mode } from '../../../src/core/mode';
 
 // jsdom has no DOMMatrix, which d3-transition needs to tween CSS transforms
@@ -261,6 +262,20 @@ describe('kutu scene', () => {
     for (let i = 0; i < 8; i++) press('ArrowRight', true);
     expect(live()).toBe(90);
     expect(player.state.params).toEqual({ k: 1.5, sixth: false, third: false, dots: true });
+  });
+
+  it('lab, step 3: an arrow key on a focused handle moves the handle, not the step', () => {
+    const { el, player } = setup(0, [1280, 540], 'lab');
+    const unbind = bindKeys(window, player, { toggleFullscreen() {}, toggleHelp() {} }, []);
+    cleanup.push(unbind);
+    player.goto(2);
+    const handle = one(el, 'circle.drag-handle[data-group=bilgisayar]');
+    const before = one(el, 'svg.kutu-plot').getAttribute('data-drag');
+    handle.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+    expect(player.state.index).toBe(2);
+    const after = one(el, 'svg.kutu-plot').getAttribute('data-drag');
+    expect(after).not.toBe(before);
+    expect((JSON.parse(after ?? '{}') as Record<string, number>).bilgisayar).toBe(97);
   });
 
   it('lab, step 6: dragging the Elektrik extreme to 90 updates data-drag, fences and whiskers without touching the params', () => {

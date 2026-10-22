@@ -614,6 +614,8 @@ export class PanelsLayer {
     const dir = ev.key === 'ArrowUp' ? 1 : ev.key === 'ArrowDown' ? -1 : 0;
     if (dir === 0) return;
     ev.preventDefault();
+    // the focused point owns its arrows, whatever the shell binds on window
+    ev.stopPropagation();
     const stepPx = ev.shiftKey ? LEV_STEP * 4 : LEV_STEP;
     const next = clamp(this.levY + dir * stepPx, LEV_MIN, LEV_MAX);
     if (next === this.levY) return;

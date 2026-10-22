@@ -94,6 +94,19 @@ test('ders: step 7 adds the third box beside the two it compares', async ({ page
   await expect(page.locator('.formula')).toContainText('medyan 72 = 72 · IQR 12 > 8');
 });
 
+test('lab: arrow keys on a focused drag handle move the handle, not the step', async ({ page }) => {
+  await open(page, PAGE, 'lab', READY);
+  await gotoStep(page, 2, STEPS, 800);
+  const svg = page.locator('svg.kutu-plot');
+  const before = await svg.getAttribute('data-drag');
+  await page.locator('circle.drag-handle[data-group="bilgisayar"]').focus();
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowLeft');
+  await expect(stepCount(page)).toHaveText(`Adım 3 / ${STEPS}`);
+  await expect(svg).not.toHaveAttribute('data-drag', before ?? '');
+  expect(JSON.parse((await svg.getAttribute('data-drag')) ?? '{}')).toMatchObject({ bilgisayar: 96 });
+});
+
 test('lab: params card fits and hides closed groups', async ({ page }) => {
   await open(page, PAGE, 'lab', READY);
   for (let step = 0; step < STEPS; step++) {

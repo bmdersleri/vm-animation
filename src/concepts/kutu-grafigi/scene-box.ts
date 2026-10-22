@@ -13,7 +13,7 @@ import type { GroupView, KutuView } from './view';
 
 /** Base duration of a step's moves, before `durationScale`. */
 export const MS_STEP = 450;
-/** First step whose groups can be dragged (step 6, `aykiri`), and only in Lab. */
+/** First Ders step whose groups can be dragged (step 6, `aykiri`); Lab drags on every step. */
 export const DRAG_FROM = 5;
 /** Transition name of every move/fade in this layer (interrupted on each update). */
 const TN = 'kutu-box';
@@ -439,7 +439,7 @@ export class BoxLayer {
       .attr('x', r1(L.plotR)).attr('y', r1(L.rowsBottom + 2)).attr('text-anchor', 'end')
       .text((d) => d.label);
 
-    // ---- drag handles: the Lab-only extreme of Bilgisayar and Elektrik
+    // ---- drag handles: the extreme of Bilgisayar and Elektrik (Lab every step, Ders from step 6)
     const handles: HandleD[] = st.dragOn
       ? rows.flatMap((row): HandleD[] => {
         const spec = DRAG[row.id];
@@ -558,6 +558,8 @@ export class BoxLayer {
     const dir = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
     if (dir === 0) return;
     ev.preventDefault();
+    // the shell binds ←/→ to step navigation on window: the focused handle owns them
+    ev.stopPropagation();
     const next = clamp(d.value + dir * (ev.shiftKey ? 5 : 1), d.spec.min, d.spec.max);
     if (next === d.value) return;
     this.lastDrag = next;

@@ -209,6 +209,18 @@ describe('korelasyon scene', () => {
     expect(player.state.params.noktaY).toBe(6);
   });
 
+  it('step 6 keyboard: the focused point keeps its arrows from the window key binding', () => {
+    const { el, player } = setup();
+    player.goto(5);
+    let reached = 0;
+    const onKey = (): void => { reached++; };
+    window.addEventListener('keydown', onKey);
+    cleanup.push(() => window.removeEventListener('keydown', onKey));
+    one(el, 'circle.leverage').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(player.state.params.noktaY).toBe(13);
+    expect(reached).toBe(0);
+  });
+
   it('step 6: sets I–III hide the leverage handle and show their own r', () => {
     const { el, player } = setup();
     player.goto(5);
