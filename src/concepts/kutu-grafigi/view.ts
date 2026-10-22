@@ -82,7 +82,12 @@ function outlierStrip(groups: GroupView[], k: KutuParams['k']): string {
   return `${parts.join(' · ')} → aykırı`;
 }
 
-function stripFor(stepId: string, p: KutuParams, groups: GroupView[]): string {
+/**
+ * One step's strip sentence from the groups actually drawn. Exported so the
+ * scene can re-render it after a Lab drag, when the groups are no longer the
+ * view's own (the sentence must agree with the fences on screen).
+ */
+export function stripFor(stepId: string, p: KutuParams, groups: GroupView[]): string {
   const first = groups[0];
   switch (stepId) {
     case 'iki-grup':
@@ -141,4 +146,31 @@ export function deriveKutuView(index: number, p: KutuParams): KutuView {
     fences: i >= 4,
     showViolin: stepId === 'sinir',
   };
+}
+
+/** The scene-local Lab drag: the value each group's extreme observation now has, and where it started. */
+export interface DragOverrides {
+  values: ReadonlyMap<GroupId, number>;
+  origins: ReadonlyMap<GroupId, number>;
+}
+
+/**
+ * The view's groups with the Lab drag applied: the observation whose value is
+ * `origins[id]` moves to `values[id]`, then the five-number summary, the mean
+ * and the outlier indexes are recomputed. Groups without a drag are returned
+ * untouched. Pure: the scene keeps the drag, the view keeps the statistics.
+ */
+export function withDrag(groups: readonly GroupView[], drag: DragOverrides, k: number): GroupView[] {
+  return groups.map((g) => {
+    const value = drag.values.get(g.id);
+    const origin = drag.origins.get(g.id);
+    if (value === undefined || origin === undefined || !g.values.includes(origin)) return g;
+    const values = g.values.map((v) => (v === origin ? value : v)).sort((a, b) => a - b);
+    const stats = boxStats(values, k);
+    const outlierIndexes: number[] = [];
+    values.forEach((v, i) => {
+      if (v < stats.lo || v > stats.hi) outlierIndexes.push(i);
+    });
+    return { ...g, values, stats, outlierIndexes, mean: mean(values) };
+  });
 }

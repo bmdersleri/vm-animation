@@ -177,13 +177,90 @@ describe('kutu scene', () => {
     const alt = all(el, 'line.fence.alt');
     expect(alt).toHaveLength(6);
     expect(attrValue(el, 'line.fence.alt[data-group=bilgisayar][data-side=lo]')).toBeCloseTo(50, 1);
-    // k = 3 puts the upper fence at 106, past the 100 mark: it clips to the axis edge
-    expect(attrValue(el, 'line.fence.alt[data-group=bilgisayar][data-side=hi]')).toBeCloseTo(100, 1);
     expect(all(el, 'text.fence-alt-label').map(text)).toEqual(['k = 3,0', 'k = 3,0', 'k = 3,0']);
     // the violin only belongs to this step
     player.goto(6);
     expect(all(el, 'path.violin')).toHaveLength(0);
     expect(all(el, 'line.fence.alt')).toHaveLength(0);
+  });
+
+  it('step 8 links to the iqr-aykiri page inside the scene', () => {
+    const { el, player } = setup();
+    player.goto(7);
+    const links = all(el, 'a.kutu-link');
+    expect(links).toHaveLength(1);
+    expect(links[0].getAttribute('href')).toBe('../iqr-aykiri/');
+    expect(text(links[0])).toContain('IQR');
+    player.goto(6);
+    expect(all(el, 'a.kutu-link')).toHaveLength(0);
+  });
+
+  it('a fence outside the 40–100 axis gets a caret and its own value', () => {
+    const { el, player } = setup();
+    player.goto(4);
+    player.setParam('k', 3);
+    // Bilgisayar hi = 106 leaves the axis; Elektrik hi = 100 sits exactly on it
+    const active = all(el, 'path.fence-clip:not(.alt)');
+    expect(active).toHaveLength(1);
+    expect(active[0].getAttribute('data-side')).toBe('hi');
+    expect(active[0].getAttribute('data-group')).toBe('bilgisayar');
+    expect(active[0].getAttribute('data-value')).toBe('106');
+    expect(all(el, 'text.fence-clip-label:not(.alt)').map(text)).toEqual(['106']);
+    expect(el.querySelector('path.fence-clip[data-group=elektrik]')).toBeNull();
+    // the caret sits on the right edge, not on a made-up 100 fence
+    expect(Number(active[0].getAttribute('d')?.match(/^M([\d.]+)/)?.[1]))
+      .toBeCloseTo(Number(one(el, 'line.fence[data-group=elektrik][data-side=hi]').getAttribute('x1')), 0);
+
+    player.goto(7);
+    const altClips = all(el, 'path.fence-clip.alt');
+    const makine = altClips.filter((p) => p.getAttribute('data-group') === 'makine');
+    expect(makine.map((p) => p.getAttribute('data-value')).sort()).toEqual(['114', '30']);
+    expect(all(el, 'text.fence-clip-label.alt[data-group=makine]').map(text).sort()).toEqual(['114', '30']);
+  });
+
+  it('lab, step 6: the strip follows the drag and a step change restores the view strip', () => {
+    const { el, player } = setup(0, [1280, 540], 'lab');
+    player.goto(5);
+    expect(text(one(el, 'p.formula'))).toContain('55 < 56');
+    const handle = one(el, 'circle.drag-handle[data-group=elektrik]');
+    fire(handle, 'pointerdown', xOf(el, 55));
+    fire(handle, 'pointermove', xOf(el, 90));
+    fire(handle, 'pointerup', xOf(el, 90));
+    const drawn = attrValue(el, 'line.fence[data-group=elektrik][data-side=hi]');
+    expect(drawn).toBeCloseTo(92, 1);
+    const stripText = text(one(el, 'p.formula'));
+    // the old 55 < 56 verdict is gone; only the Bilgisayar 98 > 94 remains
+    expect(stripText).not.toContain('55 < 56');
+    expect(stripText).toContain('98 > 94');
+    player.goto(6);
+    expect(text(one(el, 'p.formula'))).toBe(deriveKutuView(6, player.state.params).strip);
+  });
+
+  it('lab, step 1: the handles are live on every Lab step and the arrow keys move them', () => {
+    const { el, player } = setup(0, [1280, 540], 'lab');
+    player.goto(0);
+    const handle = one(el, 'circle.drag-handle[data-group=elektrik]');
+    expect(all(el, 'circle.drag-handle[data-group]')).toHaveLength(2);
+    expect(handle.getAttribute('tabindex')).toBe('0');
+    const press = (key: string, shift = false): void => {
+      handle.dispatchEvent(new KeyboardEvent('keydown', { key, shiftKey: shift, bubbles: true }));
+    };
+    const live = (): number => {
+      const o = JSON.parse(one(el, 'svg.kutu-plot').getAttribute('data-drag') ?? '{}') as Record<string, number>;
+      return o.elektrik;
+    };
+    press('ArrowRight');
+    expect(live()).toBe(56);
+    for (let i = 0; i < 3; i++) press('ArrowRight');
+    expect(live()).toBe(59);
+    press('ArrowRight', true);
+    expect(live()).toBe(64);
+    press('ArrowLeft', true);
+    expect(live()).toBe(59);
+    // the same clamp as a pointer drag: never past the group's 90 limit
+    for (let i = 0; i < 8; i++) press('ArrowRight', true);
+    expect(live()).toBe(90);
+    expect(player.state.params).toEqual({ k: 1.5, sixth: false, third: false, dots: true });
   });
 
   it('lab, step 6: dragging the Elektrik extreme to 90 updates data-drag, fences and whiskers without touching the params', () => {
@@ -206,15 +283,17 @@ describe('kutu scene', () => {
     expect(reset).toEqual({ bilgisayar: 98, elektrik: 55 });
   });
 
-  it('the drag handle exists only in Lab from step 6 on', () => {
+  it('the drag handles are live on every Lab step and only from step 6 in Ders', () => {
     const ders = setup();
-    ders.player.goto(5);
+    ders.player.goto(4);
     expect(ders.el.querySelector('circle.drag-handle')).toBeNull();
     expect(one(ders.el, 'svg.kutu-plot').hasAttribute('data-drag')).toBe(false);
+    ders.player.goto(5);
+    expect(all(ders.el, 'circle.drag-handle[data-group]')).toHaveLength(2);
     const lab = setup(0, [1280, 540], 'lab');
-    lab.player.goto(4);
-    expect(lab.el.querySelector('circle.drag-handle')).toBeNull();
-    lab.player.goto(5);
+    lab.player.goto(0);
+    expect(all(lab.el, 'circle.drag-handle[data-group]')).toHaveLength(2);
+    lab.player.goto(3);
     expect(all(lab.el, 'circle.drag-handle[data-group]')).toHaveLength(2);
     expect(one(lab.el, 'circle.drag-handle[data-group=bilgisayar]').getAttribute('aria-valuemax')).toBe('100');
     expect(one(lab.el, 'circle.drag-handle[data-group=elektrik]').getAttribute('aria-valuemin')).toBe('40');

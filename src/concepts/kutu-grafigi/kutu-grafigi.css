@@ -97,7 +97,33 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* drag handle around a group's extreme observation (Lab, steps 6–8) */
+/* a fence outside the 40–100 axis: a caret on the edge plus its real value */
+.kutu-plot path.fence-clip { fill-opacity: 0.9; stroke: none; }
+.kutu-plot path.fence-clip.alt { fill: var(--muted); fill-opacity: 0.8; }
+.kutu-plot .fence-clip-label {
+  font-size: var(--fs-tick);
+  fill: var(--muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+/* step 8: the in-scene link to the deep dive on IQR and outliers */
+.kutu-plot a.kutu-link { cursor: pointer; }
+.kutu-plot a.kutu-link .kutu-link-text {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+  fill: var(--navy);
+  text-decoration: underline;
+}
+.kutu-plot a.kutu-link:hover .kutu-link-text,
+.kutu-plot a.kutu-link:focus-visible .kutu-link-text { fill: var(--orange); }
+.kutu-plot a.kutu-link:focus-visible { outline: none; }
+
+/* drag handle around a group's extreme observation (every Lab step, Ders from step 6) */
 .kutu-plot .drag-handle {
   fill: transparent;
   stroke: var(--orange);

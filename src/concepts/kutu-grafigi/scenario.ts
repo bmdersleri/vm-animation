@@ -27,7 +27,7 @@ export const kutuScenario: Scenario<KutuParams> = {
     {
       id: 'iki-grup',
       title: 'İki grup',
-      text: 'İki şerit: Bilgisayar beş not, Elektrik beş not; eksen 50–100. İki sınıfın notlarını yan yana görmek, dağılımları tek bakışta karşılaştırmayı sağlar.',
+      text: 'İki şerit: Bilgisayar beş not, Elektrik beş not; eksen 40–100. İki sınıfın notlarını yan yana görmek, dağılımları tek bakışta karşılaştırmayı sağlar.',
       term: 'grup karşılaştırması (group comparison)',
       params: { k: 1.5, sixth: false, third: false, dots: true },
     },

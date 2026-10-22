@@ -4,7 +4,7 @@ import type { Mode } from '../../core/mode';
 import { renderStrip } from '../../core/plot/strip';
 import type { GroupId } from './data';
 import type { KutuParams } from './scenario';
-import { deriveKutuView } from './view';
+import { deriveKutuView, stripFor, withDrag } from './view';
 import { BoxLayer, DRAG_FROM, MS_STEP } from './scene-box';
 
 /** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
@@ -40,7 +40,6 @@ export function mountKutuScene(
   /** The observation the teacher moved, per group, and the value it started from. */
   const dragValues = new Map<GroupId, number>();
   const dragOrigins = new Map<GroupId, number>();
-  let view = deriveKutuView(0, player.state.params);
 
   layer.onDrag((id, value, origin) => {
     if (!dragOrigins.has(id)) dragOrigins.set(id, origin);
@@ -75,19 +74,24 @@ export function mountKutuScene(
       dragOrigins.clear();
       shownIndex = state.index;
     }
-    view = deriveKutuView(state.index, state.params);
+    const view = deriveKutuView(state.index, state.params);
+    // the groups actually drawn: the scene-local drag applied, so the strip agrees with the fences
+    const groups = withDrag(view.groups, { values: dragValues, origins: dragOrigins }, state.params.k);
+    const stripText = stripFor(view.stepId, state.params, groups);
     // control changes are instant; steps animate
     const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
-    lastStrip = view.strip;
-    renderStrip(strip, view.strip);
+    lastStrip = stripText;
+    renderStrip(strip, stripText);
     const a = area();
     layer.resize(a.w, a.h, mode);
     layer.update(view, {
       index: state.index,
       k: state.params.k,
+      groups,
       dragValues,
       dragOrigins,
-      dragOn: mode === 'lab' && state.index >= DRAG_FROM,
+      // the Lab spec does not gate the drag by step; Ders offers it from step 6
+      dragOn: mode === 'lab' || state.index >= DRAG_FROM,
     }, ms);
     rendered = true;
   }

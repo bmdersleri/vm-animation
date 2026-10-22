@@ -9,7 +9,7 @@ import { TextMeasure } from '../../core/plot/text-measure';
 import { tr, type AnySel } from '../../core/plot/transition';
 import type { GroupId } from './data';
 import { boxStats, kde, type BoxStats } from './kutu';
-import type { KutuView } from './view';
+import type { GroupView, KutuView } from './view';
 
 /** Base duration of a step's moves, before `durationScale`. */
 export const MS_STEP = 450;
@@ -66,15 +66,22 @@ interface DotD { row: RowD; value: number; x: number; y: number }
 interface OutD { row: RowD; value: number; x: number }
 interface VioD { row: RowD; d: string }
 interface AltD { row: RowD; stats: BoxStats }
+interface ClipD { row: RowD; side: 'lo' | 'hi'; value: number }
 interface HandleD { row: RowD; spec: DragSpec; value: number }
+interface LinkD { href: string; label: string }
 
-/** Everything the scene owns outside the view: the step index, k and the scene-local drag. */
+/** Step 8 sends the reader to the deep dive on the same rule. */
+const LINK: LinkD = { href: '../iqr-aykiri/', label: 'IQR ve aykırı değer →' };
+
+/** Everything the scene owns outside the view: the step index, k, the drag and the groups drawn. */
 export interface LayerState {
   index: number;
   k: number;
+  /** The view's groups with the drag applied: exactly what this draw shows. */
+  groups: readonly GroupView[];
   dragValues: ReadonlyMap<GroupId, number>;
   dragOrigins: ReadonlyMap<GroupId, number>;
-  /** Lab, step 6 on: the handles are live. */
+  /** Lab any step, Ders from step 6: the handles are live. */
   dragOn: boolean;
 }
 
@@ -82,21 +89,19 @@ const clamp = (v: number, a: number, b: number): number => Math.min(b, Math.max(
 const extremeOf = (values: readonly number[], dir: DragSpec['dir']): number =>
   dir === 'max' ? Math.max(...values) : Math.min(...values);
 
-/** Rows in view order, with the scene-local drag applied to its own observation. */
+/** Up to two decimals with trailing zeros trimmed: "74", "63,5", "106". */
+function trim(x: number): string {
+  return formatNumber(x, 2).replace(/(,\d*?)0+$/, '$1').replace(/,$/, '');
+}
+
+/** Rows in view order, with the drag-applied groups the scene computed. */
 function rowsOf(v: KutuView, st: LayerState): RowD[] {
   return v.groups.map((g) => {
-    const base = g.values;
-    const dragged = st.dragValues.get(g.id);
-    const origin = st.dragOrigins.get(g.id);
-    let values = base;
-    let stats = g.stats;
-    if (dragged !== undefined && origin !== undefined) {
-      values = base.map((x) => (x === origin ? dragged : x)).sort((a, b) => a - b);
-      // page maths, not the view's statistic: the drag changed the data
-      stats = boxStats(values, st.k);
-    }
+    const eff = st.groups.find((e) => e.id === g.id) ?? g;
     return {
-      id: g.id, name: g.name, color: g.color, base, values, stats, dots: g.dots,
+      id: g.id, name: g.name, color: g.color,
+      // the handle's origin is the view's own observation, never the dragged one
+      base: g.values, values: eff.values, stats: eff.stats, dots: g.dots,
       y: 0, band: 0, half: 0,
     };
   });
@@ -125,6 +130,7 @@ export class BoxLayer {
   private readonly gDots: G;
   private readonly gOutlier: G;
   private readonly gLabel: G;
+  private readonly gLink: G;
   private readonly gDrag: G;
   private lay: Lay | null = null;
   private mode: Mode = 'ders';
@@ -160,6 +166,7 @@ export class BoxLayer {
     this.gDots = g('dot-layer');
     this.gOutlier = g('outlier-layer');
     this.gLabel = g('label-layer');
+    this.gLink = g('link-layer');
     this.gDrag = g('drag-layer');
     const probe = svg.append('text').attr('class', 'probe').attr('visibility', 'hidden').attr('aria-hidden', 'true');
     this.measure = new TextMeasure(probe.node()!);
@@ -282,6 +289,7 @@ export class BoxLayer {
     placeFence(fence.enter);
     placeFence(tr(fence.upd, TN, ms));
     this.fade(fence.all, showFences ? 1 : 0, ms);
+    this.drawClips(this.gFence, fences.filter((f) => f.value < AXIS_MIN || f.value > AXIS_MAX), false, showFences, ms);
 
     // ---- step 8: the other k as a secondary, dashed fence pair with a small label
     const otherK = st.k === 1.5 ? 3 : 1.5;
@@ -310,6 +318,7 @@ export class BoxLayer {
     altLabels.text(altLabel)
       .attr('x', (d: AltD) => r1(Math.min(sc(d.stats.hi) + 6, L.w - 8 - this.measure.width(altLabel, 'fence-alt-label', L.tick))))
       .attr('y', (d: AltD) => r1(d.row.y - d.row.band * 0.3));
+    this.drawClips(this.gAlt, altFences.filter((f) => f.value < AXIS_MIN || f.value > AXIS_MAX), true, showViolin, ms);
 
     // ---- whiskers: from the box edge to the outermost observation inside the fence
     const whisks: WhiskD[] = rows.flatMap((row): WhiskD[] => [
@@ -413,6 +422,23 @@ export class BoxLayer {
     labels.attr('data-group', (d) => d.id).text((d) => d.name)
       .attr('x', L.pad).attr('y', (d: RowD) => r1(d.y + L.axis * 0.35));
 
+    // ---- step 8: a real link to the deep dive, bottom right
+    const link = this.gLink.selectAll<HTMLAnchorElement, LinkD>('a.kutu-link')
+      .data(v.showViolin ? [LINK] : [], (d) => d.href)
+      .join(
+        (enter) => {
+          const a = enter.append('a').attr('class', 'kutu-link');
+          a.append('text').attr('class', 'kutu-link-text');
+          return a;
+        },
+        (update) => update,
+        (exit) => exit.remove(),
+      );
+    link.attr('href', (d) => d.href);
+    link.select<SVGTextElement>('text.kutu-link-text')
+      .attr('x', r1(L.plotR)).attr('y', r1(L.rowsBottom + 2)).attr('text-anchor', 'end')
+      .text((d) => d.label);
+
     // ---- drag handles: the Lab-only extreme of Bilgisayar and Elektrik
     const handles: HandleD[] = st.dragOn
       ? rows.flatMap((row): HandleD[] => {
@@ -423,9 +449,12 @@ export class BoxLayer {
       : [];
     const handle = this.join(this.gDrag, 'circle.drag-handle', handles, (d) => d.row.id, 'circle', 'drag-handle');
     const hEnter = handle.enter.attr('role', 'slider')
+      .attr('tabindex', '0')
+      .attr('aria-orientation', 'horizontal')
       .attr('aria-valuemin', (d: HandleD) => d.spec.min)
       .attr('aria-valuemax', (d: HandleD) => d.spec.max)
       .attr('aria-label', (d: HandleD) => `${d.row.name} uç değeri`)
+      .on('keydown', (ev: KeyboardEvent, d: HandleD) => this.key(ev, d))
       .on('pointerdown', (ev: PointerEvent, d: HandleD) => this.down(ev, d.row.id))
       .on('pointermove', (ev: PointerEvent, d: HandleD) => this.move(ev, d.row.id))
       .on('pointerup', (ev: PointerEvent, d: HandleD) => this.up(ev, d.row.id))
@@ -477,6 +506,62 @@ export class BoxLayer {
   private fade(s: AnySel, to: number, ms: number): void {
     if (ms > 0) tr(s, TN, ms).attr('opacity', to);
     else s.attr('opacity', to);
+  }
+
+  /**
+   * A fence outside the fixed 40–100 axis must not sit silently on the edge
+   * tick: a caret at the clipped end plus the fence's own value tells the
+   * reader that the fence leaves the axis. The dashed step-8 pair uses the
+   * muted variant.
+   */
+  private drawClips(g: G, clips: ClipD[], alt: boolean, show: boolean, ms: number): void {
+    const L = this.lay!;
+    const caret = this.join(
+      g, alt ? 'path.fence-clip.alt' : 'path.fence-clip', show ? clips : [],
+      (d) => `${d.row.id}:${d.side}`, 'path', alt ? 'fence-clip alt' : 'fence-clip',
+    );
+    caret.all.attr('data-group', (d: ClipD) => d.row.id).attr('data-side', (d: ClipD) => d.side)
+      .attr('data-value', (d: ClipD) => trim(d.value))
+      .style('fill', (d: ClipD) => (alt ? 'var(--muted)' : d.row.color));
+    const s = Math.max(5, Math.round(L.tick * 0.5));
+    const place = (x: AnySel): void => {
+      x.attr('d', (d: ClipD) => {
+        const edge = d.side === 'lo' ? L.plotL : L.plotR;
+        const y = d.row.y;
+        // the tip sits on the axis edge and points out of the plot
+        return d.side === 'lo'
+          ? `M${r1(edge)},${r1(y)}L${r1(edge + s)},${r1(y - s)}L${r1(edge + s)},${r1(y + s)}Z`
+          : `M${r1(edge)},${r1(y)}L${r1(edge - s)},${r1(y - s)}L${r1(edge - s)},${r1(y + s)}Z`;
+      });
+    };
+    place(caret.enter);
+    place(tr(caret.upd, TN, ms));
+    if (ms > 0) tr(caret.all, TN, ms).attr('opacity', 1);
+    else caret.all.attr('opacity', 1);
+
+    const labels = g.selectAll<SVGTextElement, ClipD>(alt ? 'text.fence-clip-label.alt' : 'text.fence-clip-label')
+      .data(show ? clips : [], (d) => `${d.row.id}:${d.side}`)
+      .join(
+        (enter) => enter.append('text').attr('class', alt ? 'fence-clip-label alt' : 'fence-clip-label'),
+        (update) => update,
+        (exit) => exit.remove(),
+      );
+    labels.attr('data-group', (d: ClipD) => d.row.id).attr('data-side', (d: ClipD) => d.side)
+      .text((d: ClipD) => trim(d.value))
+      .attr('text-anchor', (d: ClipD) => (d.side === 'lo' ? 'start' : 'end'))
+      .attr('x', (d: ClipD) => r1(d.side === 'lo' ? L.plotL + s + 6 : L.plotR - s - 6))
+      .attr('y', (d: ClipD) => r1(d.row.y + L.tick * 0.45));
+  }
+
+  /** Arrow keys move the focused handle through the same clamp/set path as the pointer. */
+  private key(ev: KeyboardEvent, d: HandleD): void {
+    const dir = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+    if (dir === 0) return;
+    ev.preventDefault();
+    const next = clamp(d.value + dir * (ev.shiftKey ? 5 : 1), d.spec.min, d.spec.max);
+    if (next === d.value) return;
+    this.lastDrag = next;
+    this.onDragCb?.(d.row.id, next, extremeOf(d.row.base, d.spec.dir));
   }
 
   // ------------------------------------------------------------- pointer drag
