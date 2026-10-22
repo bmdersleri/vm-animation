@@ -132,8 +132,12 @@
   overflow-wrap: anywhere;
 }
 
-/* Lab has a narrow stage: both plots share it about evenly. */
-.dg-scene[data-mode="lab"] { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); }
+/* Lab has a narrow stage (about 740 px at 1280x720): the scatter keeps its aspect, so its width sets its height,
+   and the tree needs about 16 px per leaf label. The split gives the scatter what the tree can spare. */
+.dg-scene[data-mode="lab"] {
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+  column-gap: calc(var(--gap) * 0.5);
+}
 /* Step 10 is a table: the tree stays as context, the scatter makes room for it. */
 .dg-scene[data-view="table"][data-mode="ders"] {
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
