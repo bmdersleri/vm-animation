@@ -30,6 +30,21 @@ const base = dbscan(d.points, d.meta.eps, d.meta.minSamples);
 const { core: A, border: B, noise: C } = d.examples;
 
 describe('dbscan scene', () => {
+  it('the panel eps reads like the Lab slider output (two decimals); Ders keeps the short form', () => {
+    const { player, host, scene } = setup('lab');
+    player.goto(2);
+    expect(text(host, '[data-eps]')).toBe('0,30');
+    player.setParam('eps', 0.4);
+    expect(text(host, '[data-eps]')).toBe('0,40');
+    player.setParam('eps', 0.15);
+    expect(text(host, '[data-eps]')).toBe('0,15');
+    scene.setMode('ders');
+    expect(text(host, '[data-eps]')).toBe('0,15');
+    player.setParam('eps', 0.3);
+    expect(text(host, '[data-eps]')).toBe('0,3');
+    fin(scene, player);
+  });
+
   it('step 1 draws every point grey with no kinds', () => {
     const { player, host, scene } = setup();
     expect(host.querySelectorAll('g.pk-point')).toHaveLength(d.points.length);

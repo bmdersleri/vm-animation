@@ -33,7 +33,9 @@ test('lab: eps slider and point click', async ({ page }) => {
   await expect(page.locator('input[data-param="point"]')).toHaveValue('21');
   const eps = page.locator('input[data-param="eps"]');
   await eps.fill('0.4');
-  await expect(page.locator('.db-out').first()).toContainText('eps = 0,4');
+  await expect(page.locator('.db-out').first()).toHaveText('eps = 0,40');
+  // the panel next to the slider uses the same two-decimal form
+  await expect(page.locator('.db-panel [data-eps]')).toHaveText('0,40');
   await page.waitForTimeout(1200);
   expect(await outsideStage(page, TEXTS)).toEqual([]);
   expect(await labelCollisions(page, 'svg.db-plot')).toEqual([]);

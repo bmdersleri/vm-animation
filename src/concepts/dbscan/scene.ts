@@ -2,6 +2,7 @@ import { select } from 'd3-selection';
 import { stepIndex, type ChangeCause, type PlayerState, type StepPlayer } from '../../core/player';
 import type { Mode } from '../../core/mode';
 import type { SceneHandle } from '../../core/shell';
+import { formatNumber } from '../../core/plot/format';
 import { CLUSTER } from '../../core/plot/marks';
 import { PointKindsLayer, type PointKindsSpec } from '../../core/plot/point-kinds';
 import type { Domain } from '../../core/plot/viewport';
@@ -212,7 +213,8 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
     const head = el('div', 'db-head');
     head.append(
       el('h3', 'db-panel-title', 'DBSCAN'),
-      row('eps', epsText(params.eps), { 'data-eps': String(params.eps) }),
+      // Lab: the same two-decimal form as the slider output beside it; Ders: the short form of the step text
+      row('eps', mode === 'lab' ? formatNumber(params.eps, 2) : epsText(params.eps), { 'data-eps': String(params.eps) }),
       row('min_samples', String(params.minSamples), { 'data-min-samples': String(params.minSamples) }),
     );
     panel.append(head);
