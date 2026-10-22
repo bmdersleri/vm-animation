@@ -1,6 +1,7 @@
 import { sepetData, type Basket, type Item, type Itemset } from '../birliktelik/data';
 import { setBraces, setNames, sortItems } from '../birliktelik/format';
 import { count } from '../birliktelik/metrics';
+import type { Rule } from '../birliktelik/rules';
 import { formatNumber, formatPercent } from '../../core/plot/format';
 
 export const UNDEFINED = '— (tanımsız)';
@@ -56,12 +57,35 @@ export function measures(tx: readonly Basket[], x: Itemset, y: Itemset): Measure
 }
 
 const fraction = (num: number, den: number): string => `${num} / ${den}`;
-const rule = (x: Itemset, y: Itemset): string => `${setNames(x)} → ${setNames(y)}`;
+
+/** One side of a rule: "Ekmek", or "{Ekmek, Yumurta}" when it holds several items. */
+export const side = (s: Itemset): string => (s.length > 1 ? setBraces(s) : setNames(s));
+/** "{Ekmek, Yumurta} → Süt". */
+export const ruleText = (r: { x: Itemset; y: Itemset }): string => `${side(r.x)} → ${side(r.y)}`;
+const rule = (x: Itemset, y: Itemset): string => ruleText({ x, y });
+
+/** Support and confidence to 6 decimals: rules that share both sit on the same scatter point. */
+const spotKey = (r: Rule): string => `${Math.round(r.support * 1e6)}|${Math.round(r.confidence * 1e6)}`;
+
+/** The rules grouped by scatter point, in rule order; a group with more than one rule is a stacked point. */
+export function spotGroups(rules: readonly Rule[]): Rule[][] {
+  const groups = new Map<string, Rule[]>();
+  for (const r of rules) {
+    const k = spotKey(r);
+    const g = groups.get(k);
+    if (g) g.push(r);
+    else groups.set(k, [r]);
+  }
+  return [...groups.values()];
+}
+
+/** The rules that share `rule`'s scatter point (itself included), in rule order. */
+export const sameSpot = (rules: readonly Rule[], rule: Rule): Rule[] => rules.filter((q) => spotKey(q) === spotKey(rule));
 
 /** "destek({Ekmek, Süt}) = 7 / 18 = 0,389" (a single item reads "destek(Ekmek)"). */
 export function supportStrip(tx: readonly Basket[], set: Itemset): string {
   const c = count(tx, set);
-  const label = set.length === 1 ? setNames(set) : setBraces(set);
+  const label = side(set);
   return `destek(${label}) = ${fraction(c, tx.length)} = ${tx.length === 0 ? UNDEFINED : ratioText(c / tx.length)}`;
 }
 
@@ -74,7 +98,7 @@ export function confidenceStrip(tx: readonly Basket[], x: Itemset, y: Itemset): 
 /** "taban oran = destek(Süt) = 12 / 18 = 0,667". */
 export function baseStrip(tx: readonly Basket[], y: Itemset): string {
   const cy = count(tx, y);
-  const label = y.length === 1 ? setNames(y) : setBraces(y);
+  const label = side(y);
   return `taban oran = destek(${label}) = ${fraction(cy, tx.length)} = ${tx.length === 0 ? UNDEFINED : ratioText(cy / tx.length)}`;
 }
 

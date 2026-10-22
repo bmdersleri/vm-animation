@@ -1,7 +1,8 @@
 import { sepetData, type Basket, type Itemset } from '../birliktelik/data';
 import { setBraces, setNames, sortItems } from '../birliktelik/format';
+import type { Rule } from '../birliktelik/rules';
 import { renderStrip } from '../../core/plot/strip';
-import { baseStrip, confidenceStrip, liftStrip, measures, ratioText, supportStrip } from './view';
+import { baseStrip, confidenceStrip, liftStrip, measures, ratioText, ruleText, side, supportStrip } from './view';
 
 /** What the reading panel shows; the scene maps a step to one of these. */
 export type PanelKind = 'list' | 'table' | 'support1' | 'support2' | 'conf' | 'trap' | 'real' | 'rules';
@@ -13,14 +14,34 @@ export interface PanelSpec {
   y: Itemset;
   /** Count-up in progress: the baskets counted so far (null = counting is done or not animated). */
   counted: number | null;
-  /** Step 9-10 summary: rules found, rules kept by the lift filter, filter on. */
-  rules?: { total: number; kept: number; filtering: boolean; minLift: number; noSets?: boolean };
+  /**
+   * Step 9-10 summary: rules found, rules kept by the lift filter, filter on, and the groups of two or more rules
+   * that share one scatter point (same support and confidence), in rule order.
+   */
+  rules?: { total: number; kept: number; filtering: boolean; noSets?: boolean; stacks: readonly (readonly Rule[])[] };
   /** The book's code lines shown under the panel (steps 2 and 10). */
   code?: readonly string[];
 }
 
 export const NEED_RULE = 'Bir öncül ve bir sonuç seç.';
 export const NEED_ITEM = 'Bir ürün seç.';
+/** Stacked-point notes shown at most; a busier Lab scatter gets one summary line instead of the rest. */
+const MAX_STACK_NOTES = 2;
+/** Rules named per stacked-point note. */
+const MAX_STACK_NAMES = 3;
+
+function stackNotes(stacks: readonly (readonly Rule[])[]): HTMLElement[] {
+  const notes = stacks.slice(0, MAX_STACK_NOTES).map((g) => {
+    const names = g.slice(0, MAX_STACK_NAMES).map(ruleText);
+    if (g.length > MAX_STACK_NAMES) names.push('…');
+    const p = el('p', 'bk-note', `Aynı noktada ${g.length} kural: ${names.join(' · ')}`);
+    p.dataset.stack = String(g.length);
+    return p;
+  });
+  const rest = stacks.length - MAX_STACK_NOTES;
+  if (rest > 0) notes.push(el('p', 'bk-note', `… ve ${rest} noktada daha birden çok kural var.`));
+  return notes;
+}
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -96,11 +117,12 @@ export function drawPanel(panel: HTMLElement, spec: PanelSpec): void {
       panel.append(row('Kural', String(r.total), { 'data-rules': String(r.total) }));
       if (r.total === 0) panel.append(el('p', 'bk-note', r.noSets ? 'Bu eşikte sık küme yok.' : 'Bu eşiklerde kural yok.'));
       if (r.filtering) panel.append(row('Kalan', String(r.kept), { 'data-kept': String(r.kept) }), row('Soluk', String(r.total - r.kept), { 'data-faded': String(r.total - r.kept) }));
+      panel.append(...stackNotes(r.stacks));
     }
     if (xs.length > 0 && ys.length > 0) {
       const m = measures(tx, xs, ys);
       panel.append(
-        el('p', 'bk-note', `Seçili kural: ${setNames(xs)} → ${setNames(ys)}`),
+        el('p', 'bk-note', `Seçili kural: ${ruleText({ x: xs, y: ys })}`),
         row('Destek', ratioText(m.support), { 'data-sel-support': String(m.support) }),
         row('Güven', ratioText(m.confidence), { 'data-sel-confidence': String(m.confidence) }),
         row('Kaldıraç', ratioText(m.lift), { 'data-sel-lift': String(m.lift) }),
@@ -134,8 +156,8 @@ export function drawPanel(panel: HTMLElement, spec: PanelSpec): void {
   }
   const m = measures(tx, xs, ys);
   panel.append(
-    el('h3', 'bk-title', `Kural: ${setNames(xs)} → ${setNames(ys)}`),
-    row(`${xs.length > 1 ? setBraces(xs) : setNames(xs)} içeren fiş`, String(m.cx), { 'data-of': String(m.cx) }),
+    el('h3', 'bk-title', `Kural: ${ruleText({ x: xs, y: ys })}`),
+    row(`${side(xs)} içeren fiş`, String(m.cx), { 'data-of': String(m.cx) }),
     row('Birlikte olan', String(spec.counted ?? m.cxy), { 'data-count': String(spec.counted ?? m.cxy) }),
   );
   panel.append(strip(confidenceStrip(tx, xs, ys), { 'data-strip-kind': 'confidence' }));

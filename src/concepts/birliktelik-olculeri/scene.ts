@@ -9,7 +9,7 @@ import { drawPanel, type PanelKind, type PanelSpec } from './scene-panel';
 import { isKept, mountRuleScatter, type RuleScatter } from './scene-rules';
 import { mountFisTable, type RowFlag, type Role } from './scene-table';
 import { FILTER_LIFT, MIN_CONFIDENCE, birliktelikOlculeriScenario as scenario, type BirliktelikOlculeriParams } from './scenario';
-import { applyEdits, toggleEdit } from './view';
+import { applyEdits, spotGroups, toggleEdit } from './view';
 
 const STEP_LIST = stepIndex(scenario, 'fisler');
 const STEP_TABLE = stepIndex(scenario, 'tablo');
@@ -131,9 +131,9 @@ export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPla
     const spec: PanelSpec = { kind: r.kind, tx: r.tx, x: r.x, y: r.y, counted };
     if (index === STEP_TABLE) spec.code = ['TransactionEncoder().fit(...).transform(...)'];
     if (r.kind === 'rules') {
-      const { all, kept, noSets } = set as RuleSet;
+      const { all, kept, noSets, stacks } = set as RuleSet;
       const filtering = params.minLift > 0;
-      spec.rules = { total: all.length, kept: kept.length, filtering, minLift: params.minLift, noSets };
+      spec.rules = { total: all.length, kept: kept.length, filtering, noSets, stacks };
       if (index === STEP_FILTER) {
         spec.code = [
           `association_rules(..., metric="confidence", min_threshold=${MIN_CONFIDENCE})`,
@@ -144,14 +144,14 @@ export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPla
     return spec;
   }
 
-  interface RuleSet { all: Rule[]; kept: Rule[]; noSets: boolean }
+  interface RuleSet { all: Rule[]; kept: Rule[]; noSets: boolean; stacks: Rule[][] }
 
   /** Rules of the (edited) baskets at the Lab thresholds, and those the lift filter keeps. */
   function ruleSet(r: Reading, params: BirliktelikOlculeriParams): RuleSet {
     const all = rules(r.tx, params.minSupport, params.minConfidence);
     const kept = all.filter((q) => isKept(q, params.minLift));
     const noSets = r.tx.length === 0 || aprioriTrace(r.tx, minCountFor(params.minSupport, r.tx.length)).frequent.size === 0;
-    return { all, kept, noSets };
+    return { all, kept, noSets, stacks: spotGroups(all).filter((g) => g.length > 1) };
   }
 
   function paint(s: PlayerState<BirliktelikOlculeriParams>, r: Reading): void {

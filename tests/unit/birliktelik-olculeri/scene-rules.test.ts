@@ -102,6 +102,28 @@ describe('birliktelik-olculeri rule scatter', () => {
     fin(scene, player);
   });
 
+  it('the panel names the rules that share a point', () => {
+    const { player, host, scene } = setup();
+    player.goto(8);
+    const stacks = [...host.querySelectorAll<HTMLElement>('.bk-panel [data-stack]')].map((p) => p.textContent);
+    expect(stacks).toEqual([
+      'Aynı noktada 2 kural: Peynir → Yumurta · Peynir → Süt',
+      'Aynı noktada 2 kural: Yumurta → {Ekmek, Süt} · Yumurta → Ekmek',
+    ]);
+    fin(scene, player);
+  });
+
+  it('a busy Lab scatter caps the stacked-point notes', () => {
+    const { player, host, scene } = setup();
+    player.goto(8);
+    player.setParams({ minSupport: 0.05, minConfidence: 0.1 });
+    expect(host.querySelectorAll('.bk-panel [data-stack]')).toHaveLength(2);
+    const notes = [...host.querySelectorAll('.bk-panel .bk-note')].map((p) => p.textContent);
+    expect(notes).toContain('… ve 20 noktada daha birden çok kural var.');
+    expect(host.querySelector('.bk-panel [data-stack]')!.textContent).toMatch(/ · …$/);
+    fin(scene, player);
+  });
+
   it('adds no Turkish suffix after a product name', () => {
     const { player, host, scene } = setup();
     for (const i of [8, 9]) {

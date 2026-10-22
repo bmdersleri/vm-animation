@@ -3,7 +3,7 @@ import { sepetData, type Item } from '../birliktelik/data';
 import { setBraces, setNames } from '../birliktelik/format';
 import { rules } from '../birliktelik/rules';
 import { formatTrim } from '../../core/plot/format';
-import { basketLine, measures, percentText, ratioText } from './view';
+import { basketLine, measures, percentText, ratioText, spotGroups } from './view';
 
 export interface BirliktelikOlculeriParams {
   /** Antecedent (X) and consequent (Y) items. */
@@ -33,6 +33,8 @@ const SY = measures(tx, [SUT], [YUMURTA]);
 const all = rules(tx, MIN_SUPPORT, MIN_CONFIDENCE);
 const kept = all.filter((r) => r.lift > FILTER_LIFT + 1e-9);
 const top = kept[0];
+/** Scatter points: rules with the same support and confidence share one. */
+const spots = spotGroups(all).length;
 const EXAMPLE_BASKET = 3;
 const th = (v: number): string => formatTrim(v, 2);
 
@@ -104,8 +106,8 @@ export const birliktelikOlculeriScenario: Scenario<BirliktelikOlculeriParams> = 
     {
       id: 'kurallar',
       title: 'Bütün kurallar',
-      text: `min_support ${th(MIN_SUPPORT)} ve min güven ${th(MIN_CONFIDENCE)} ile ${all.length} kural çıkar (association_rules). Saçılımda her nokta bir kural: yatay eksen destek, dikey eksen güven; nokta rengi ve boyu kaldıraç. Kaldıraç = 1 sınırının iki yanı farklı biçimde çizilir; ${setNames([EKMEK])} → ${setNames([SUT])} noktası işaretli.`,
-      labText: 'Destek, güven ve kaldıraç kaydırıcılarını oynat: kural sayısı ve saçılım anında değişir; kaldıraç kaydırıcısı en düşük konumdayken süzgeç kapalıdır. Bir noktaya tıklamak o kuralı seçer. Fiş düzenleyerek sepeti de değiştirebilirsin.',
+      text: `min_support ${th(MIN_SUPPORT)} ve min güven ${th(MIN_CONFIDENCE)} ile ${all.length} kural çıkar (association_rules). Saçılımda her daire bir kural: yatay eksen destek, dikey eksen güven; dairenin boyu kaldıraçla büyür. Kaldıracı 1'den büyük kurallar dolu, 1 ya da daha küçük olanlar içi boş çizilir; ${setNames([EKMEK])} → ${setNames([SUT])} işaretli. Desteği ve güveni aynı olan kurallar üst üste düşer: ${all.length} kural ${spots} noktada görünür.`,
+      labText: 'Destek, güven ve kaldıraç kaydırıcılarını oynat: kural sayısı ve saçılım anında değişir; kaldıraç kaydırıcısı en düşük konumdayken süzgeç kapalıdır. Bir noktaya tıklamak o kuralı seçer; üst üste düşen kurallar arasında aynı noktaya yeniden tıklayarak geçilir. Fiş düzenleyerek sepeti de değiştirebilirsin.',
       term: 'birliktelik kuralı',
       params: { x: [EKMEK], y: [SUT], ...base, minLift: 0 },
     },

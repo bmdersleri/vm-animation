@@ -38,6 +38,10 @@ describe('birliktelik-olculeri scenario', () => {
     const all = rules(tx, 0.2, 0.5);
     const kept = all.filter((r) => r.lift > 1.1 + 1e-9);
     expect(text('kurallar')).toContain(`${all.length} kural`);
+    // rules with the same support and confidence share a point: 13 rules on 11 points
+    const spots = new Set(all.map((r) => `${r.support.toFixed(6)}|${r.confidence.toFixed(6)}`)).size;
+    expect([all.length, spots]).toEqual([13, 11]);
+    expect(text('kurallar')).toContain(`${all.length} kural ${spots} noktada`);
     expect(text('suzgec')).toContain(`${kept.length} kuralı bırakır`);
     expect(text('suzgec')).toContain(`${all.length - kept.length} kural soluklaşır`);
     expect(text('suzgec')).toContain('{Ekmek, Yumurta} → Süt (güven 1,000, kaldıraç 1,500)');

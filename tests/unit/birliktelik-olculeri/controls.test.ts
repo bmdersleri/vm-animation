@@ -107,6 +107,37 @@ describe('birliktelik-olculeri controls', () => {
     scene.destroy();
   });
 
+  it('clicking a shared point again picks the next rule on it', () => {
+    const { player, sceneHost, scene } = setup();
+    player.goto(8);
+    const at = (k: string) => sceneHost.querySelector<SVGGElement>(`g.bk-rule-pt[data-key="${k}"]`)!;
+    const click = (k: string) => at(k).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    // Peynir -> Süt (smaller lift) is drawn over Peynir -> Yumurta, so clicks land on it
+    click('peynir>sut');
+    expect([player.state.params.x, player.state.params.y]).toEqual([['peynir'], ['sut']]);
+    click('peynir>sut');
+    expect([player.state.params.x, player.state.params.y]).toEqual([['peynir'], ['yumurta']]);
+    expect(at('peynir>yumurta').dataset.selected).toBe('true');
+    click('peynir>sut');
+    expect([player.state.params.x, player.state.params.y]).toEqual([['peynir'], ['sut']]);
+    // Enter picks exactly the focused rule, without cycling
+    at('peynir>sut').dispatchEvent(key('Enter'));
+    expect([player.state.params.x, player.state.params.y]).toEqual([['peynir'], ['sut']]);
+    scene.destroy();
+  });
+
+  it('a multi-item side reads in braces in the panel and the strips', () => {
+    const { player, sceneHost, scene } = setup();
+    player.goto(4);
+    player.setParams({ x: ['ekmek', 'yumurta'], y: ['sut', 'peynir'] });
+    expect(sceneHost.querySelector('.bk-panel .bk-title')!.textContent).toBe('Kural: {Ekmek, Yumurta} → {Süt, Peynir}');
+    expect(sceneHost.querySelector('[data-strip-kind="confidence"]')!.textContent).toMatch(/^güven\(\{Ekmek, Yumurta\} → \{Süt, Peynir\}\) = /);
+    player.goto(8);
+    player.setParams({ x: ['ekmek', 'yumurta'], y: ['sut'] });
+    expect([...sceneHost.querySelectorAll('.bk-panel .bk-note')].map((p) => p.textContent)).toContain('Seçili kural: {Ekmek, Yumurta} → Süt');
+    scene.destroy();
+  });
+
   it('sliders write the thresholds on the 0.05 grid', () => {
     const { player, sceneHost, params, scene } = setup();
     player.goto(8);

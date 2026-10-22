@@ -5,9 +5,9 @@ import { chooseOffset, labelArea, labelBox, offsets, type Anchor, type Box } fro
 import { ACCENT, NAVY, WHITE, r1 } from '../../core/plot/marks';
 import { fitViewport, type Rect } from '../../core/plot/viewport';
 import type { Itemset } from '../birliktelik/data';
-import { setBraces, setKey, setNames } from '../birliktelik/format';
+import { setKey } from '../birliktelik/format';
 import type { Rule } from '../birliktelik/rules';
-import { ratioText } from './view';
+import { ratioText, ruleText, sameSpot } from './view';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 type G = Selection<SVGGElement, unknown, null, undefined>;
@@ -34,8 +34,6 @@ export interface RuleScatter {
 
 const EPS = 1e-9;
 export const ruleKey = (r: { x: Itemset; y: Itemset }): string => `${setKey(r.x)}>${setKey(r.y)}`;
-const side = (s: Itemset): string => (s.length > 1 ? setBraces(s) : setNames(s));
-export const ruleText = (r: { x: Itemset; y: Itemset }): string => `${side(r.x)} → ${side(r.y)}`;
 /** Marker radius grows with lift. */
 export const radiusOf = (lift: number): number => Math.min(17, 3 + 6 * lift);
 /** The rule stays in colour: no filter, or its lift is above the filter. */
@@ -70,20 +68,34 @@ export function mountRuleScatter(host: HTMLElement, onPick: (rule: Rule) => void
   const nodes = new Map<string, SVGGElement>();
   let current: readonly Rule[] = [];
   let interactive = false;
+  /** Key of the rule marked as chosen at the last update. */
+  let selKey = '';
 
-  const pick = (e: Event): void => {
-    if (!interactive) return;
+  const ruleAt = (e: Event): Rule | undefined => {
     const g = (e.target as Element).closest<SVGGElement>('.bk-rule-pt');
-    const rule = g ? current.find((r) => ruleKey(r) === g.dataset.key) : undefined;
-    if (rule) onPick(rule);
+    return g ? current.find((r) => ruleKey(r) === g.dataset.key) : undefined;
   };
+  /**
+   * A click picks the rule under the pointer. Rules with the same support and confidence share one point, and
+   * only the top marker takes the click, so a click on the point of the chosen rule picks the next rule there.
+   */
+  const onClick = (e: Event): void => {
+    const rule = interactive ? ruleAt(e) : undefined;
+    if (!rule) return;
+    const group = sameSpot(current, rule);
+    const at = group.findIndex((r) => ruleKey(r) === selKey);
+    onPick(at < 0 ? rule : group[(at + 1) % group.length]);
+  };
+  /** Every point is its own tab stop, so Enter / Space pick exactly the focused rule. */
   const onKey = (e: KeyboardEvent): void => {
     if (!interactive || (e.key !== 'Enter' && e.key !== ' ')) return;
+    const rule = ruleAt(e);
+    if (!rule) return;
     e.preventDefault();
     e.stopPropagation();
-    pick(e);
+    onPick(rule);
   };
-  svg.addEventListener('click', pick);
+  svg.addEventListener('click', onClick);
   svg.addEventListener('keydown', onKey);
 
   function node(rule: Rule): SVGGElement {
@@ -165,7 +177,7 @@ export function mountRuleScatter(host: HTMLElement, onPick: (rule: Rule) => void
     const active = svg.contains(document.activeElement) ? (document.activeElement as SVGElement) : null;
     const keep = new Set(spec.rules.map(ruleKey));
     for (const [k, g] of nodes) if (!keep.has(k)) { g.remove(); nodes.delete(k); }
-    const selKey = ruleKey(spec.selected);
+    selKey = ruleKey(spec.selected);
     const pos = new Map<string, { x: number; y: number; r: number }>();
     for (const rule of spec.rules) {
       const g = node(rule);
@@ -240,7 +252,7 @@ export function mountRuleScatter(host: HTMLElement, onPick: (rule: Rule) => void
   return {
     update,
     destroy(): void {
-      svg.removeEventListener('click', pick);
+      svg.removeEventListener('click', onClick);
       svg.removeEventListener('keydown', onKey);
       legend.remove();
       plotHost.remove();
