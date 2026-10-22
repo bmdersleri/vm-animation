@@ -28,6 +28,7 @@ export default defineConfig({
         'k-secimi': resolve(root, 'k-secimi/index.html'),
         'dbscan': resolve(root, 'dbscan/index.html'),
         'dendrogram': resolve(root, 'dendrogram/index.html'),
+        'birliktelik-olculeri': resolve(root, 'birliktelik-olculeri/index.html'),
       },
     },
   },
