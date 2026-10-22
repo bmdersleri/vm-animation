@@ -72,6 +72,16 @@ describe('apriori FP-tree scene', () => {
     fin(scene, player);
   });
 
+  it('the aside writes the baskets in product order', () => {
+    const { host, scene, player } = setup();
+    player.goto(STEP['fp-agac']);
+    player.setParams({ inserted: 4 });
+    expect(host.querySelector('.ap-fp-note')!.textContent).toMatch(/^Fiş 4: Ekmek, Süt, Yumurta, Tereyağı → /);
+    player.setParams({ inserted: 11 });
+    expect(host.querySelector('.ap-fp-note')!.textContent).toMatch(/^Fiş 11: Ekmek, Süt, Tereyağı → /);
+    fin(scene, player);
+  });
+
   it('the insertion sweep runs basket by basket, and is skipped under reduced motion', () => {
     vi.useFakeTimers();
     const slow = setup(false);

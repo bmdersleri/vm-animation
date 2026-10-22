@@ -1,3 +1,4 @@
+import { setNames } from '../birliktelik/format';
 import { LATTICE, LEVELS, type NodeState, type PaintedNode } from './view';
 
 export interface Box {
@@ -168,6 +169,11 @@ export function mountLattice(host: HTMLElement, onPick: (key: string) => void = 
       e.stopPropagation();
       const to = row[Math.max(0, Math.min(row.length - 1, at + (e.key === 'ArrowRight' ? 1 : -1)))];
       focusNode(to.key);
+    } else if (e.key === 'Home' || e.key === 'End') {
+      // Inside the level row; the page's first / last step keys must not fire.
+      e.preventDefault();
+      e.stopPropagation();
+      focusNode((e.key === 'Home' ? row[0] : row[row.length - 1]).key);
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault();
       e.stopPropagation();
@@ -209,7 +215,8 @@ export function mountLattice(host: HTMLElement, onPick: (key: string) => void = 
         e.box.dataset.count = p.count === null ? '' : String(p.count);
         setText(e.sub, p.count !== null ? String(p.count) : p.prunedBy ? `⊘${p.prunedBy}` : p.state === 'candidate' ? '…' : '');
         e.box.title = `${p.node.abbr}: ${STATE_NAME[p.state]}`;
-        e.box.setAttribute('aria-label', `${p.node.abbr}: ${STATE_NAME[p.state]}${p.count !== null ? `, ${p.count} fiş` : ''}`);
+        // Product names first: a screen reader spells "EST" letter by letter.
+        e.box.setAttribute('aria-label', `${setNames(p.node.set)} (${p.node.abbr}): ${STATE_NAME[p.state]}${p.count !== null ? `, ${p.count} fiş` : ''}`);
         const on = interactive && spec.selected === p.node.key;
         if (on) e.box.dataset.selected = 'true';
         else delete e.box.dataset.selected;

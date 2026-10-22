@@ -89,6 +89,29 @@ describe('apriori lattice scene', () => {
     fin(scene, player);
   });
 
+  it('node labels read the product names, then the abbreviation', () => {
+    const { host, scene, player } = setup();
+    player.goto(STEP.seviye2);
+    expect(node(host, 'ES').getAttribute('aria-label')).toBe('Ekmek, Süt (ES): sık, 7 fiş');
+    player.goto(STEP.budama);
+    expect(node(host, 'EST').getAttribute('aria-label')).toBe('Ekmek, Süt, Tereyağı (EST): budandı');
+    fin(scene, player);
+  });
+
+  it('a low Lab threshold caps the prune reasons at four lines', () => {
+    const { host, scene, player } = setup();
+    scene.setMode('lab');
+    player.goto(STEP.dur);
+    player.setParams({ minCount: 1 });
+    const notes = [...host.querySelectorAll('.ap-note')].map((n) => n.textContent!);
+    expect(notes.length).toBeLessThanOrEqual(5);
+    expect(notes[notes.length - 1]).toMatch(/^… ve \d+ aday daha budandı; gerekçe için düğüme tıkla\.$/);
+    // the lesson threshold lists every reason
+    player.setParams({ minCount: 4 });
+    expect([...host.querySelectorAll('.ap-note')].some((n) => n.textContent!.startsWith('…'))).toBe(false);
+    fin(scene, player);
+  });
+
   it('step 5 shows EST pruned by ST', () => {
     const { host, scene, player } = setup();
     player.goto(STEP.budama);

@@ -143,6 +143,24 @@ describe('apriori controls', () => {
     scene.destroy();
   });
 
+  it('Home and End move within the level row and do not change the step', () => {
+    const { player, sceneHost, scene } = setup();
+    player.goto(STEP.budama);
+    const at = (abbr: string) => sceneHost.querySelector<HTMLElement>(`.ap-node[data-abbr="${abbr}"]`)!;
+    const bubbled = vi.fn();
+    window.addEventListener('keydown', bubbled);
+    at('Y').focus();
+    at('Y').dispatchEvent(key('End'));
+    expect(document.activeElement).toBe(at('R'));
+    at('R').dispatchEvent(key('Home'));
+    expect(document.activeElement).toBe(at('E'));
+    expect(at('E').tabIndex).toBe(0);
+    expect(bubbled).not.toHaveBeenCalled();
+    expect(player.state.index).toBe(STEP.budama);
+    window.removeEventListener('keydown', bubbled);
+    scene.destroy();
+  });
+
   it("only the step's controls are visible", () => {
     const { player, params, scene } = setup();
     const ctls = ['minCount', 'level', 'inserted', 'baseItem'];

@@ -113,7 +113,9 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
     setText(frequent, `sık küme: ${c.frequent}`);
     root.dataset.counting = String(scan !== null);
 
-    const reasons = s.index >= STEP_PROPERTY ? pruneReasons(minCount, level).map((r) => r.text) : [];
+    // Low Lab thresholds prune many candidates; the aside lists at most four lines and points to the nodes for the rest.
+    const all = s.index >= STEP_PROPERTY ? pruneReasons(minCount, level).map((r) => r.text) : [];
+    const reasons = all.length > 4 ? [...all.slice(0, 3), `… ve ${all.length - 3} aday daha budandı; gerekçe için düğüme tıkla.`] : all;
     const rare = s.index >= STEP_PROPERTY && level >= 1 ? rareNotes(minCount) : [];
     const lines = [...rare, ...reasons];
     const sig = lines.join('\n');

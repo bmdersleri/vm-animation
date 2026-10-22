@@ -157,8 +157,11 @@ export function mountFisTable(host: HTMLElement, rowCount: number, onToggle: (ro
     if (!interactive || !td) return;
     const r = Number(td.dataset.row);
     const c = Number(td.dataset.col);
-    const move: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
-    // the page's step keys (arrows, Space) must not also fire while a cell is focused
+    // Home / End stay in the row, as in a grid
+    const move: Record<string, [number, number]> = {
+      ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1], Home: [0, -c], End: [0, ITEMS.length - 1 - c],
+    };
+    // the page's step keys (arrows, Space, Home, End) must not also fire while a cell is focused
     if (e.key in move) {
       e.preventDefault();
       e.stopPropagation();

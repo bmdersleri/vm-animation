@@ -64,6 +64,24 @@ describe('birliktelik-olculeri controls', () => {
     scene.destroy();
   });
 
+  it('Home and End move within the row and do not change the step', () => {
+    const { player, sceneHost, scene } = setup();
+    player.goto(1);
+    const bubbled = vi.fn();
+    window.addEventListener('keydown', bubbled);
+    const c = cell(sceneHost, 2, 'yumurta');
+    c.focus();
+    c.dispatchEvent(key('End'));
+    expect(document.activeElement).toBe(cell(sceneHost, 2, sepetData.items[sepetData.items.length - 1]));
+    (document.activeElement as HTMLElement).dispatchEvent(key('Home'));
+    expect(document.activeElement).toBe(cell(sceneHost, 2, 'ekmek'));
+    expect(cell(sceneHost, 2, 'ekmek').tabIndex).toBe(0);
+    expect(bubbled).not.toHaveBeenCalled();
+    expect(player.state.index).toBe(1);
+    window.removeEventListener('keydown', bubbled);
+    scene.destroy();
+  });
+
   it('reset restores the book basket', () => {
     const { player, sceneHost, params, scene } = setup();
     player.goto(1);

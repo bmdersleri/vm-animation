@@ -1,7 +1,7 @@
 import type { Node } from '../birliktelik/fptree';
 import { sepetData } from '../birliktelik/data';
 import { fpGrowth } from '../birliktelik/fptree';
-import { itemName, keyToSet, setAbbr } from '../birliktelik/format';
+import { itemName, keyToSet, setAbbr, setNames } from '../birliktelik/format';
 import { count } from '../birliktelik/metrics';
 import { formatNumber } from '../../core/plot/format';
 import { LATTICE, analyse, conditionalSummary, fpFor, itemCountText, setCountText } from './view';
@@ -271,13 +271,13 @@ export function mountFpTree(main: HTMLElement, side: HTMLElement): FpScene {
     note.hidden = false;
     countLine.hidden = view !== 'build';
     if (view === 'order') {
-      const lines = t.filtered.slice(0, 3).map((f, i) => `Fiş ${i + 1}: ${names(tx[i], ', ')} → ${f.length ? names(f, ' › ') : ALL_DROPPED}`);
+      const lines = t.filtered.slice(0, 3).map((f, i) => `Fiş ${i + 1}: ${setNames(tx[i])} → ${f.length ? names(f, ' › ') : ALL_DROPPED}`);
       setText(note, [`Sıklık sırası: ${names(t.order, ' › ') || '—'}`, ...lines].join('\n'));
     } else if (view === 'build') {
       if (inserted === 0) setText(note, 'Henüz fiş eklenmedi; ağaçta yalnız kök var.');
       else {
         const f = t.filtered[inserted - 1];
-        setText(note, `Fiş ${inserted}: ${names(tx[inserted - 1], ', ')} → ${f.length ? names(f, ' › ') : `${ALL_DROPPED}: fişteki ürünlerin hiçbiri eşiği geçmiyor, ağaç değişmez.`}`);
+        setText(note, `Fiş ${inserted}: ${setNames(tx[inserted - 1])} → ${f.length ? names(f, ' › ') : `${ALL_DROPPED}: fişteki ürünlerin hiçbiri eşiği geçmiyor, ağaç değişmez.`}`);
       }
       setText(countLine, `${inserted} fiş, ${nodeCount} düğüm`);
     } else setText(note, '');
