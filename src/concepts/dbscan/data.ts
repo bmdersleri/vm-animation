@@ -4,6 +4,8 @@ export type Pt = readonly [number, number];
 export interface KDist {
   readonly minSamples: number;
   readonly sorted: readonly number[];
+  /** Knee of this curve (a distance), from the generator's Kneedle formula. */
+  readonly knee: number;
 }
 export interface DbscanData {
   readonly meta: {
