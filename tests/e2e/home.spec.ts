@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test('home lists 23 concepts and the k-NN card opens the k-NN page', async ({ page }) => {
+test('home lists 24 concepts and the k-NN card opens the k-NN page', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.card')).toHaveCount(23);
+  await expect(page.locator('.card')).toHaveCount(24);
   await page.locator('a.card.hazir[href$="knn/"]').click();
   await expect(page).toHaveURL(/\/knn\/$/);
   await expect(page.locator('.step-count')).toHaveText('Adım 1 / 12');
@@ -49,6 +49,20 @@ test('the chapter 2 cards open their pages and walk every Ders step', async ({ p
     await page.waitForTimeout(1200);
     // the last korelasyon step shows the rule and links, no panels
     await expect(page.locator(p.last ?? p.scene).first()).toBeAttached();
+  }
+});
+
+test('the chapter 8 cards open their pages', async ({ page }) => {
+  const pages = [
+    { href: 'birliktelik-olculeri/', steps: 10, scene: 'table.bk-table, .bk-list' },
+    { href: 'apriori/', steps: 11, scene: '.ap-lattice' },
+  ];
+  for (const p of pages) {
+    await page.goto('/');
+    await page.locator(`a.card.hazir[href$="${p.href}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`/${p.href}$`));
+    await expect(page.locator('.step-count')).toHaveText(`Adım 1 / ${p.steps}`);
+    await expect(page.locator(p.scene).first()).toBeAttached();
   }
 });
 

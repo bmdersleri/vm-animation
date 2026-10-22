@@ -1,6 +1,6 @@
 # VM Animasyon
 
-Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme**, **Özellik Seçimi (filtre ve sarmalayıcı)**, **Karmaşıklık Matrisi ve Metrikler**, **ROC, PR ve Karar Eşiği**, **Çapraz Doğrulama ve Veri Sızıntısı**, **K-Means Döngüsü**, **k Sayısının Seçimi**, **DBSCAN**, **Hiyerarşik Kümeleme ve Dendrogram**, **Dağılım, Ortalama–Medyan ve Çarpıklık**, **Korelasyon, Isı Haritası ve Anscombe Dörtlüsü** ile **Kutu Grafiği (çeyrekler ve aykırı değerler)**.
+Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme**, **Özellik Seçimi (filtre ve sarmalayıcı)**, **Karmaşıklık Matrisi ve Metrikler**, **ROC, PR ve Karar Eşiği**, **Çapraz Doğrulama ve Veri Sızıntısı**, **K-Means Döngüsü**, **k Sayısının Seçimi**, **DBSCAN**, **Hiyerarşik Kümeleme ve Dendrogram**, **Destek, Güven ve Kaldıraç**, **Apriori ve FP-Growth**, **Dağılım, Ortalama–Medyan ve Çarpıklık**, **Korelasyon, Isı Haritası ve Anscombe Dörtlüsü** ile **Kutu Grafiği (çeyrekler ve aykırı değerler)**.
 
 İçerik, "Modern Veri Madenciliğine Giriş" kitabına (Prof. Dr. İsmail KIRBAŞ) dayanır.
 
@@ -20,6 +20,8 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - Kutu grafiği (çeyrekler ve aykırı değerler): https://bmdersleri.github.io/vm-animation/kutu-grafigi/
 - DBSCAN: https://bmdersleri.github.io/vm-animation/dbscan/
 - Hiyerarşik kümeleme ve dendrogram: https://bmdersleri.github.io/vm-animation/dendrogram/
+- Destek, güven ve kaldıraç: https://bmdersleri.github.io/vm-animation/birliktelik-olculeri/
+- Apriori ve FP-Growth: https://bmdersleri.github.io/vm-animation/apriori/
 - Karmaşıklık matrisi: https://bmdersleri.github.io/vm-animation/karmasiklik-matrisi/
 - ROC ve karar eşiği: https://bmdersleri.github.io/vm-animation/roc-esik/
 - Çapraz doğrulama: https://bmdersleri.github.io/vm-animation/capraz-dogrulama/
@@ -100,6 +102,7 @@ python scripts/make_degerlendirme_data.py
 python scripts/make_kmeans_data.py
 python scripts/make_dbscan_data.py
 python scripts/make_dendrogram_data.py
+python scripts/make_birliktelik_data.py
 ```
 
 - `make_knn_data.py`: Telco churn CSV'sinden k-NN örneğini ve scikit-learn referans değerlerini üretir.
@@ -112,6 +115,7 @@ python scripts/make_dendrogram_data.py
 - `make_kmeans_data.py`: Bölüm 7 sayfalarının (K-Means döngüsü ve k sayısının seçimi) ortak Iris verisini ve scikit-learn referanslarını üretir (`src/concepts/kmeans/data/`); CSV gerekmez.
 - `make_dbscan_data.py`: DBSCAN sayfasının iki hilal verisini ve scikit-learn referanslarını üretir (`src/concepts/dbscan/data/`); CSV gerekmez.
 - `make_dendrogram_data.py`: Hiyerarşik kümeleme ve dendrogram sayfasının verisini ve SciPy/scikit-learn referanslarını üretir (`src/concepts/dendrogram/data/`); CSV gerekmez.
+- `make_birliktelik_data.py`: Bölüm 8 sayfalarının (destek/güven/kaldıraç ve Apriori/FP-Growth) ortak 18 fişlik sepet verisini ve mlxtend referanslarını üretir (`src/concepts/birliktelik/data/`); CSV gerekmez.
 
 ## Yeni kavram ekleme
 

@@ -13,25 +13,26 @@ describe('home page', () => {
   it('one card per concept', () => {
     const root = render();
     expect(root.querySelectorAll('.card').length).toBe(concepts.length);
-    expect(concepts.length).toBe(23);
+    expect(concepts.length).toBe(24);
   });
 
-  it('only hazir cards are links: the three chapter 2 pages, iqr-aykiri/, olcekleme/, pca/, ozellik-secimi/, karar-agaci/, knn/, naive-bayes/, the three chapter 6 pages and the four chapter 7 pages', () => {
+  it('only hazir cards are links: the three chapter 2 pages, iqr-aykiri/, olcekleme/, pca/, ozellik-secimi/, karar-agaci/, knn/, naive-bayes/, the three chapter 6 pages and the four chapter 7 pages and the two chapter 8 pages', () => {
     const root = render();
     const links = [...root.querySelectorAll<HTMLAnchorElement>('a.card')];
-    expect(links.length).toBe(17);
+    expect(links.length).toBe(19);
     expect(links.map((l) => l.getAttribute('href'))).toEqual([
       'dagilim-carpiklik/', 'korelasyon-isi-haritasi/', 'kutu-grafigi/',
       'iqr-aykiri/', 'olcekleme/', 'pca/', 'ozellik-secimi/', 'karar-agaci/', 'knn/', 'naive-bayes/',
       'karmasiklik-matrisi/', 'roc-esik/', 'capraz-dogrulama/', 'k-means/', 'k-secimi/', 'dbscan/', 'dendrogram/',
+      'birliktelik-olculeri/', 'apriori/',
     ]);
     expect(links[8].textContent).toContain('k-En Yakın Komşu (k-NN)');
     const ders = root.querySelector<HTMLAnchorElement>('a.card-ders[href="knn/?mod=ders"]');
     expect(ders?.getAttribute('href')).toBe('knn/?mod=ders');
     expect(ders?.textContent).toBe('Ders modunda aç');
     const soon = root.querySelectorAll('.card.yakinda');
-    expect(soon.length).toBe(6);
-    expect(concepts.length - links.length).toBe(6);
+    expect(soon.length).toBe(5);
+    expect(concepts.length - links.length).toBe(5);
     soon.forEach((c) => {
       expect(c.tagName).not.toBe('A');
       expect(c.textContent).toContain('Yakında');
@@ -70,6 +71,8 @@ describe('home page', () => {
     expect([...sec6.querySelectorAll('a.card')].map((a) => a.getAttribute('href'))).toEqual(['karmasiklik-matrisi/', 'roc-esik/', 'capraz-dogrulama/']);
     const sec7 = [...root.querySelectorAll('section')][5];
     expect([...sec7.querySelectorAll('a.card')].map((a) => a.getAttribute('href'))).toEqual(['k-means/', 'k-secimi/', 'dbscan/', 'dendrogram/']);
+    const sec8 = [...root.querySelectorAll('section')][6];
+    expect([...sec8.querySelectorAll('a.card')].map((a) => a.getAttribute('href'))).toEqual(['birliktelik-olculeri/', 'apriori/']);
     const sec4 = [...root.querySelectorAll('section')][2];
     expect([...sec4.querySelectorAll('h3')].map((h) => h.textContent)).toEqual([
       'PCA ve t-SNE ile boyut indirgeme',
