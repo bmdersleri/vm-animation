@@ -107,7 +107,7 @@ export const birliktelikOlculeriScenario: Scenario<BirliktelikOlculeriParams> = 
       id: 'kurallar',
       title: 'Bütün kurallar',
       text: `min_support ${th(MIN_SUPPORT)} ve min güven ${th(MIN_CONFIDENCE)} ile ${all.length} kural çıkar (association_rules). Saçılımda her daire bir kural: yatay eksen destek, dikey eksen güven; dairenin boyu kaldıraçla büyür. Kaldıracı 1'den büyük kurallar dolu, 1 ya da daha küçük olanlar içi boş çizilir; ${setNames([EKMEK])} → ${setNames([SUT])} işaretli. Desteği ve güveni aynı olan kurallar üst üste düşer: ${all.length} kural ${spots} noktada görünür.`,
-      labText: 'Destek, güven ve kaldıraç kaydırıcılarını oynat: kural sayısı ve saçılım anında değişir; kaldıraç kaydırıcısı en düşük konumdayken süzgeç kapalıdır. Bir noktaya tıklamak o kuralı seçer; üst üste düşen kurallar arasında aynı noktaya yeniden tıklayarak geçilir. Fiş düzenleyerek sepeti de değiştirebilirsin.',
+      labText: 'Destek, güven ve kaldıraç kaydırıcılarını oynat: kural sayısı ve saçılım anında değişir; kaldıraç kaydırıcısı en düşük konumdayken süzgeç kapalıdır. Bir noktaya tıklamak o kuralı seçer; üst üste düşen kurallar arasında geçmek için aynı noktaya yeniden tıkla. Fiş düzenleyerek sepeti de değiştirebilirsin.',
       term: 'birliktelik kuralı',
       params: { x: [EKMEK], y: [SUT], ...base, minLift: 0 },
     },
