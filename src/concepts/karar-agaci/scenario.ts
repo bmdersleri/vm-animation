@@ -92,7 +92,7 @@ export const treeScenario: Scenario<TreeParams> = {
       id: 'dagilim',
       title: 'Sayısal veri',
       text: 'Şimdi müşteriler: sözleşme süresi ve şikâyet sayısı, iki sayısal öznitelik (numerical feature). Ağaçta yalnızca kök var.',
-      labText: `En fazla derinlik kaydırıcısını oynat. Ağacın kaç düğümlü olduğu ve bölgelerin sahnedeki hali canlı değişir.`,
+      labText: `En fazla derinlik kaydırıcısını oynat. Ağacın biçimi ve bölgelerin sahnedeki hali canlı değişir.`,
       term: 'sayısal öznitelik (numerical feature)',
       params: { criterion: 'gini', depth: 0, scan: -1, showTest: false, userSplit: null },
     },

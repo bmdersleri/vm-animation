@@ -107,7 +107,7 @@ export const dbscanScenario: Scenario<DbscanParams> = {
       title: 'eps nasıl seçilir: k-uzaklık grafiği',
       text: `Her noktanın ${meta.minSamples}. en yakın komşusuna uzaklığı (kendisi dahil sayılarak) küçükten büyüğe sıralanır. Grafiğin büküldüğü yer (≈ ${epsText(Math.round(dbscanData.knee * 100) / 100)}) eps için iyi bir adaydır; seçtiğimiz eps = ${eps} çizgisi bu bükülmenin yakınındadır. ${countsText(base)}.`,
       term: 'k-uzaklık grafiği',
-      labText: `eps ve min_samples değerlerini değiştir. Grafikteki eps çizgisi kaydırıcıyla hareket eder; bükülmenin yanındaki değer iyi bir adaydır.`,
+      labText: `min_samples kaydırıcısını oynat. Grafikteki eğri seçilen min_samples değerine göre değişir; eps çizgisinin bükülmeye yakınlığına bak.`,
       params: { ...fixed, point: null },
     },
   ],

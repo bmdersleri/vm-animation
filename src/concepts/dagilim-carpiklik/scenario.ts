@@ -70,7 +70,7 @@ export const dagilimScenario: Scenario<DagilimParams> = {
       id: 'log',
       title: 'Log dönüşümü',
       text: 'log1p açılır: noktalar log eksenine kayar, kuyruk sıkışır, çarpıklık 0,90 → 0,25 olur. Logaritmik dönüşüm (log transform) kuyruğu kısaltır ama yönünü değiştirmez; her zaman sıfıra indirmez.',
-      labText: `Log dönüşümünü aç ve kapat, seriyi değiştir. Çarpıklığın dönüşümden önceki ve sonraki değeri sahnede yan yana okunur.`,
+      labText: `Log dönüşümünü aç ve kapat, kova sayısını değiştir. Çarpıklığın dönüşümden önceki ve sonraki değeri sahnede yan yana okunur.`,
       term: 'logaritmik dönüşüm (log transform)',
       params: { seri: '002', log: true },
     },

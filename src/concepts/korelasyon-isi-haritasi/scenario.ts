@@ -61,7 +61,7 @@ export const korelasyonScenario: Scenario<KorelParams> = {
       id: 'kaldirac',
       title: 'Kaldıraç',
       text: 'Set IV büyütülür: on nokta x = 8’de, tek kaldıraç noktası (19; 12,50). Noktanın y’si sürüklenince r −0,249 ile 0,958 arasında değişir; nokta çıkarılınca x sabit kalır, r tanımsız olur.',
-      labText: `Kaldıraç noktasının y değerini tablodan ya da kısayoldan değiştir. Pearson r sahnede canlı okunur.`,
+      labText: `Kaldıraç noktasının y değerini kaydırıcıyla ya da K kısayoluyla değiştir. Pearson r sahnede canlı okunur.`,
       term: 'kaldıraç (leverage)',
       params: { set: 4, noktaY: 12.5 },
     },

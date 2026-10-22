@@ -57,7 +57,7 @@ export const kMeansScenario: Scenario<KMeansParams> = {
       id: 'tasi',
       title: 'Taşı: merkez ortalamaya',
       text: `Her merkez kendi kümesinin ortalamasına kayar; eski konum soluk iz olarak kalır. Tur 1 sonunda inertia (küme içi kareler toplamı) ${one(good.turns[0].inertia)}.`,
-      labText: `Turları adım adım ilerlet ve Yeni başlangıç düğmesine bas. Her turun sonundaki inertia değeri kontrol panelinde ve sahnede canlı okunur.`,
+      labText: `Turları adım adım ilerlet ve Yeni başlangıç düğmesine bas. Her turun sonundaki inertia değeri sahnede ve tur tablosunda canlı okunur.`,
       term: 'güncelleme (update) · inertia',
       params: { start: GOOD, frame: 2 },
     },

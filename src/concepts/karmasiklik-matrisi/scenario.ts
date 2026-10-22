@@ -21,11 +21,11 @@ const moments = [
 ] as const;
 /** Lab step-card text for steps whose lesson text quotes the starting example's numbers; the Lab lets the student edit the four counts. */
 const labTexts: Record<string, string> = {
-  accuracy: 'Dört hücre sayısını değiştir. Accuracy, bütün müşteriler içindeki doğru tahmin payı olarak metrik kartında canlı okunur.',
-  precision: 'FP ve TP sayılarını değiştir. Precision, pozitif tahmin sütunundan hesaplanıp metrik kartında canlı okunur.',
-  recall: 'FN ve TP sayılarını değiştir. Recall, gerçekten ayrılan satırından hesaplanıp metrik kartında canlı okunur.',
-  f1: 'Hücre sayılarını değiştir. F1, precision ve recall birlikte oynarken metrik kartında canlı okunur.',
-  'accuracy-tuzagi': 'Matriste gösterilen modeli ve hücre sayılarını değiştir. Herkese "kalır" diyen modelin accuracy, recall ve F1 değerleri metrik kartında canlı karşılaştırılır.',
+  accuracy: 'Dört hücre sayısını değiştir. Accuracy, bütün müşteriler içindeki doğru tahmin payı olarak sahnede canlı okunur.',
+  precision: 'FP ve TP sayılarını değiştir. Precision, pozitif tahmin sütunundan hesaplanıp sahnede canlı okunur.',
+  recall: 'FN ve TP sayılarını değiştir. Recall, gerçekten ayrılan satırından hesaplanıp sahnede canlı okunur.',
+  f1: 'Hücre sayılarını değiştir. F1, precision ve recall birlikte oynarken sahnede canlı okunur.',
+  'accuracy-tuzagi': 'Matriste gösterilen modeli ve hücre sayılarını değiştir. Herkese "kalır" diyen modelin accuracy, recall ve F1 değerleri sahnede canlı karşılaştırılır.',
 };
 export const matrixScenario: Scenario<MatrixParams> = {
   defaults,
