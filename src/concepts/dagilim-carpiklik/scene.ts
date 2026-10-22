@@ -54,8 +54,19 @@ export function mountDagilimScene(
     return { w: size!.w, h: Math.max(120, size!.h - stripH) };
   }
 
+  /** One render, timed as the `dag-render` measure for the performance spec. */
   function render(state: PlayerState<DagilimParams>, cause: ChangeCause, instant: boolean): void {
     if (!size) return;
+    const hasPerf = typeof performance !== 'undefined' && typeof performance.mark === 'function';
+    if (hasPerf) performance.mark('dag-render-start');
+    try {
+      draw(state, cause, instant);
+    } finally {
+      if (hasPerf) performance.measure('dag-render', 'dag-render-start');
+    }
+  }
+
+  function draw(state: PlayerState<DagilimParams>, cause: ChangeCause, instant: boolean): void {
     layer.interrupt();
     const v = deriveDagilimView(state.index, state.params);
     // slider / select / shortcut tweaks are instant; steps animate

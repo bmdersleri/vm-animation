@@ -10,7 +10,8 @@ import { fontSizes, gotoStep, open, outsideStage, overlaps, pageOverflow, params
 const PAGE = '/korelasyon-isi-haritasi/';
 const READY = 'svg.kor-plot g.panel';
 const STEPS = 10;
-const LABELS = '.panel-title, .panel-stats, .cell-text, .row-label, .col-label, .legend-label, '
+// .col-label is rotated −45°: its axis-aligned box always touches its neighbours', so it is not checked here
+const LABELS = '.panel-title, .panel-stats, .cell-text, .row-label, .legend-label, '
   + '.claim-title, .claim-body, .eda-title, .eda-body, .kor-rule, .kor-link-text, .leverage-hint, .drop-note';
 
 test('ders keyboard walkthrough', async ({ page }) => {
@@ -85,7 +86,9 @@ test('ders: the quartet shows four panels under one shared summary', async ({ pa
   await expect(stats).toHaveCount(4);
   for (const t of await stats.allTextContents()) {
     expect(t).toContain('r ≈ 0,816');
-    expect(t).toContain('ȳ ≈ 7,5009');
+    // the shared line is approximate by design (view.ts ANSCOMBE_SUMMARY); 7,5009 is in the step text
+    expect(t).toContain('x̄ ≈ 9');
+    expect(t).toContain('ȳ ≈ 7,5');
   }
   await expect(page.locator('.formula')).toContainText('aynı özet · dört farklı örüntü');
 });

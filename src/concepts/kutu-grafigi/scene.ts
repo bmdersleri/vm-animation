@@ -65,8 +65,19 @@ export function mountKutuScene(
     return { w: size!.w, h: Math.max(120, size!.h - stripH) };
   }
 
+  /** One render, timed as the `kutu-render` measure for the performance spec. */
   function render(state: PlayerState<KutuParams>, cause: ChangeCause, instant: boolean): void {
     if (!size) return;
+    const hasPerf = typeof performance !== 'undefined' && typeof performance.mark === 'function';
+    if (hasPerf) performance.mark('kutu-render-start');
+    try {
+      draw(state, cause, instant);
+    } finally {
+      if (hasPerf) performance.measure('kutu-render', 'kutu-render-start');
+    }
+  }
+
+  function draw(state: PlayerState<KutuParams>, cause: ChangeCause, instant: boolean): void {
     layer.interrupt();
     // the drag belongs to one step only
     if (state.index !== shownIndex) {

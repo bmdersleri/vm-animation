@@ -433,7 +433,7 @@ export class PanelsLayer {
     const cardW = (w - 2 * margin - gap) / 2;
     const pad = Math.max(8, Math.round(tick * 0.7));
     const lines = Math.max(1, ...CLAIMS.map((c) => this.wrap(c.body, cardW - 2 * pad, tick).length));
-    return Math.round(pad * 2 + axis * 1.3 + lines * tick * 1.35);
+    return Math.round(pad * 2 + axis * 1.7 + lines * tick * 1.35);
   }
 
   /** Step 3's two cards: the observed relation and the proof that is missing. */
@@ -472,7 +472,7 @@ export class PanelsLayer {
       .text((d) => d.title);
     upd.select<SVGTextElement>('text.claim-body')
       .attr('x', (d) => r1(d.x + d.pad))
-      .attr('y', (d) => r1(d.y + d.pad + axis * 1.9))
+      .attr('y', (d) => r1(d.y + d.pad + axis * 2.3))
       .each(function (this: SVGTextElement, d: CardD) {
         select(this).selectAll<SVGTSpanElement, string>('tspan').data(d.lines).join('tspan')
           .attr('x', r1(d.x + d.pad))

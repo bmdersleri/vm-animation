@@ -30,7 +30,7 @@ test('the chapter 3, 4 and 5 cards open their pages', async ({ page }) => {
 test('the chapter 2 cards open their pages and walk every Ders step', async ({ page }) => {
   const pages = [
     { href: 'dagilim-carpiklik/', steps: 9, scene: 'svg.dag-plot path.hist-bar', title: 'Dağılım, ortalama–medyan ve çarpıklık' },
-    { href: 'korelasyon-isi-haritasi/', steps: 10, scene: 'svg.kor-plot g.panel', title: 'Korelasyon, ısı haritası ve Anscombe Dörtlüsü' },
+    { href: 'korelasyon-isi-haritasi/', steps: 10, scene: 'svg.kor-plot g.panel', last: 'svg.kor-plot', title: 'Korelasyon, ısı haritası ve Anscombe Dörtlüsü' },
     { href: 'kutu-grafigi/', steps: 8, scene: 'svg.kutu-plot rect.box', title: 'Kutu grafiği: çeyrekler ve aykırı değerler' },
   ];
   for (const p of pages) {
@@ -47,7 +47,8 @@ test('the chapter 2 cards open their pages and walk every Ders step', async ({ p
       await expect(page.locator('.step-count')).toHaveText(`Adım ${i + 1} / ${p.steps}`);
     }
     await page.waitForTimeout(1200);
-    await expect(page.locator(p.scene).first()).toBeAttached();
+    // the last korelasyon step shows the rule and links, no panels
+    await expect(page.locator(p.last ?? p.scene).first()).toBeAttached();
   }
 });
 

@@ -396,7 +396,7 @@ export class HistLayer {
       .attr('x', (d) => r1(d.x + d.pad)).attr('y', (d) => r1(d.y + d.pad + d.titlePx * 0.9))
       .text((d) => d.title);
     upd.select<SVGTextElement>('text.rule-body')
-      .attr('x', (d) => r1(d.x + d.pad)).attr('y', (d) => r1(d.y + d.pad + d.titlePx * 1.6))
+      .attr('x', (d) => r1(d.x + d.pad)).attr('y', (d) => r1(d.y + d.pad + d.titlePx * 2.25))
       .each(function (this: SVGTextElement, d: RuleD) {
         select(this).selectAll<SVGTSpanElement, string>('tspan').data(d.lines).join('tspan')
           .attr('x', r1(d.x + d.pad))
