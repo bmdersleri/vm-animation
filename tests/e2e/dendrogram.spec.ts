@@ -13,12 +13,13 @@ test('dendrogram: page opens', async ({ page }) => {
 });
 
 test('screenshots: ders key steps stay inside the stage', async ({ page }) => {
-  for (const step of [2, 6, 8, 9]) {
+  for (const step of [2, 6, 8, 9, 10]) {
     await open(page, PAGE, 'ders', READY);
     await gotoStep(page, step - 1, STEPS, 2500);
     expect(await outsideStage(page, TEXTS), `step ${step}`).toEqual([]);
     expect(await labelCollisions(page, 'svg.dg-scatter'), `step ${step}`).toEqual([]);
     expect((await pageOverflow(page)).x).toBeLessThanOrEqual(0);
+    if (step === 10) expect(await overlaps(page, '.dg-tree-caption, .dg-tree text'), 'step 10').toEqual([]);
     await expect(page).toHaveScreenshot(`dendrogram-ders-${step}.png`);
   }
 });
