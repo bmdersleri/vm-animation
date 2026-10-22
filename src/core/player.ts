@@ -71,8 +71,8 @@ export class StepPlayer<P extends object> {
     const step = this.scenario.steps[idx];
     for (const key of Object.keys(step.params ?? {}) as (keyof P)[]) delete this.overrides[key];
     if (step.sweep) delete this.overrides[step.sweep.key];
-    this.startSweep(true);
-    if (!step.sweep) this.emit('step');
+    // a sweep that plays nothing at entry (empty `values`, or `count` 0) leaves the step change to this emit
+    if (!this.startSweep(true)) this.emit('step');
   }
 
   next(): void { this.goto(this.index + 1); }
@@ -145,9 +145,10 @@ export class StepPlayer<P extends object> {
     this.sweepValue = null;
   }
 
-  private startSweep(notify: boolean): void {
+  /** Starts the step's sweep; returns whether it played a first value (and so emitted, when `notify`). */
+  private startSweep(notify: boolean): boolean {
     const sw = this.scenario.steps[this.index].sweep;
-    if (!sw || sw.values.length === 0) return;
+    if (!sw || sw.values.length === 0) return false;
     const step = this.scenario.steps[this.index];
     this.sweeping = true;
     let n = 0;
@@ -159,13 +160,15 @@ export class StepPlayer<P extends object> {
       } else {
         this.sweepTimer = null;
         this.sweeping = false;
-        if (step.params && sw.key in step.params) {
+        // nothing played at entry: no sweep value to clear, and the caller emits the step change
+        if (n > 0 && step.params && sw.key in step.params) {
           this.sweepValue = null;
           this.emit('sweep');
         }
       }
     };
     apply();
+    return n > 0;
   }
 
   private emit(cause: ChangeCause): void {

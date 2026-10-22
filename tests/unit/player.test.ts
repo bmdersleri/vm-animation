@@ -157,6 +157,34 @@ describe('StepPlayer', () => {
       vi.advanceTimersByTime(600);
       expect(seen).toEqual([1, 3, 7]);
     });
+
+    const entry = (sc: Scenario<P>): [number, string][] => {
+      const p = new StepPlayer(sc);
+      const seen: [number, string][] = [];
+      p.subscribe((s, c) => seen.push([s.index, c]));
+      p.goto(1);
+      vi.advanceTimersByTime(1000);
+      return seen;
+    };
+    const twoSteps = (sweepParams: Partial<P> | undefined, values: number[], count?: (p: P) => number): Scenario<P> => ({
+      defaults: { k: 5, m: 'a' },
+      steps: [
+        { id: 'a', title: '', text: '' },
+        { id: 'sw', title: '', text: '', params: sweepParams, sweep: { key: 'k', values, intervalMs: 100, count } },
+      ],
+    });
+
+    it('count 0 at step entry still emits the step change once (step params without the swept key)', () => {
+      expect(entry(twoSteps({ m: 'b' }, [1, 3], () => 0))).toEqual([[1, 'step']]);
+    });
+
+    it('count 0 at step entry emits the step change once (step params with the swept key)', () => {
+      expect(entry(twoSteps({ k: 7 }, [1, 3], () => 0))).toEqual([[1, 'step']]);
+    });
+
+    it('an empty values list still emits the step change once', () => {
+      expect(entry(twoSteps(undefined, []))).toEqual([[1, 'step']]);
+    });
   });
 
   it('play stops at last step', () => {
