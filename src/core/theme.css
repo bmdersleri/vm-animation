@@ -377,6 +377,9 @@ body {
     grid-column: 1;
     grid-row: auto;
     height: clamp(320px, 60vh, 640px);
+    /* tall HTML scenes scroll inside the stage instead of being cut off */
+    overflow-x: hidden;
+    overflow-y: auto;
   }
   [data-mode="ders"] .explain {
     grid-row: auto;

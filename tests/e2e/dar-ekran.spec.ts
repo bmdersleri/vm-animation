@@ -62,3 +62,38 @@ test('confusion matrix digits stay inside their cells at 390 px', async ({ page 
     expect(bad, mode).toEqual([]);
   }
 });
+
+test('tall scenes are not cut at 390 px', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const cases = [
+    { href: 'capraz-dogrulama/', step: 3 },
+    { href: 'karmasiklik-matrisi/', step: 6 },
+  ];
+  for (const c of cases) {
+    await page.goto(`/${c.href}?mod=ders`);
+    await page.locator('.step-dot').nth(c.step).click();
+    await page.waitForTimeout(500);
+    const r = await page.evaluate(() => {
+      const stage = document.querySelector<HTMLElement>('.stage')!;
+      stage.scrollTop = stage.scrollHeight;
+      const sb = stage.getBoundingClientRect();
+      let maxBottom = 0;
+      for (const e of stage.querySelectorAll('*')) {
+        const b = e.getBoundingClientRect();
+        if (b.width > 0 && b.height > 0 && !e.closest('[hidden]') && !e.closest('.matrix-sr-summary')) maxBottom = Math.max(maxBottom, b.bottom);
+      }
+      const note = document.querySelector('.matrix-note')?.getBoundingClientRect();
+      return {
+        stageBottom: sb.bottom, maxBottom, noteBottom: note?.bottom ?? null,
+        scrolls: stage.scrollHeight > stage.clientHeight,
+        overflowY: getComputedStyle(stage).overflowY,
+        pageOverflow: document.documentElement.scrollWidth - innerWidth,
+      };
+    });
+    // the last content is reachable: either the stage fits it or it scrolls and shows it once scrolled to the end
+    expect(r.maxBottom, c.href).toBeLessThanOrEqual(r.stageBottom + 1);
+    if (r.scrolls) expect(r.overflowY, c.href).toBe('auto');
+    if (r.noteBottom !== null) expect(r.noteBottom, `${c.href} note`).toBeLessThanOrEqual(r.stageBottom + 1);
+    expect(r.pageOverflow, c.href).toBeLessThanOrEqual(1);
+  }
+});
