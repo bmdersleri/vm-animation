@@ -2,6 +2,7 @@ import '../../core/theme.css';
 import './birliktelik-olculeri.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
 import { birliktelikOlculeriScenario, type BirliktelikOlculeriParams } from './scenario';
+import { mountBirliktelikOlculeriParams } from './controls';
 import { mountBirliktelikOlculeriScene } from './scene';
 
 export const birliktelikOlculeriPage: ConceptPage<BirliktelikOlculeriParams> = {
@@ -9,8 +10,7 @@ export const birliktelikOlculeriPage: ConceptPage<BirliktelikOlculeriParams> = {
   chapter: 'Bölüm 8 · Birliktelik Kuralı Madenciliği',
   scenario: birliktelikOlculeriScenario,
   mountScene: mountBirliktelikOlculeriScene,
-  // The Lab controls (rule picker, basket editing, thresholds) come in a later task.
-  mountParams: () => {},
+  mountParams: mountBirliktelikOlculeriParams,
 };
 
 const app = document.querySelector<HTMLElement>('#app');

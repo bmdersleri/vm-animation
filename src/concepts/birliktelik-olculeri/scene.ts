@@ -3,11 +3,13 @@ import type { Mode } from '../../core/mode';
 import type { SceneHandle } from '../../core/shell';
 import { sepetData, type Basket, type Item, type Itemset } from '../birliktelik/data';
 import { sortItems } from '../birliktelik/format';
-import { rules } from '../birliktelik/rules';
+import { aprioriTrace } from '../birliktelik/apriori';
+import { minCountFor, rules, type Rule } from '../birliktelik/rules';
 import { drawPanel, type PanelKind, type PanelSpec } from './scene-panel';
+import { isKept, mountRuleScatter, type RuleScatter } from './scene-rules';
 import { mountFisTable, type RowFlag, type Role } from './scene-table';
 import { FILTER_LIFT, MIN_CONFIDENCE, birliktelikOlculeriScenario as scenario, type BirliktelikOlculeriParams } from './scenario';
-import { applyEdits } from './view';
+import { applyEdits, toggleEdit } from './view';
 
 const STEP_LIST = stepIndex(scenario, 'fisler');
 const STEP_TABLE = stepIndex(scenario, 'tablo');
@@ -22,6 +24,7 @@ const STEP_FILTER = stepIndex(scenario, 'suzgec');
 const COUNT_STEPS = [STEP_SUPPORT1, STEP_SUPPORT2, STEP_CONF];
 const COUNT_MS = 90;
 const ROWS = sepetData.transactions.length;
+const ITEMS = sepetData.items.length;
 
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -94,14 +97,18 @@ export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPla
   const root = el('div', 'bk-scene');
   root.dataset.mode = initialMode;
   const tableHost = el('div', 'bk-table-host');
-  // Room for the rule scatter of steps 9-10 (drawn in a later task).
+  // The rule scatter of steps 9-10.
   const rulesSlot = el('div', 'bk-rules-slot');
   rulesSlot.dataset.slot = 'rules';
   const panel = el('aside', 'bk-panel');
   panel.setAttribute('aria-live', 'polite');
   root.append(tableHost, rulesSlot, panel);
   host.append(root);
-  const fis = mountFisTable(tableHost, ROWS);
+  const fis = mountFisTable(tableHost, ROWS, (row, col) => {
+    player.setParams({ edits: toggleEdit(player.state.params.edits, row * ITEMS + col) });
+  });
+  const scatter: RuleScatter = mountRuleScatter(rulesSlot, (rule) => player.setParams({ x: [...rule.x], y: [...rule.y] }));
+  let size = { w: 900, h: 560 };
 
   let destroyed = false;
   /** Step 3-5 count-up: baskets counted so far (null = counting is done or not running). */
@@ -117,15 +124,14 @@ export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPla
     panel.setAttribute('aria-live', 'polite');
   };
 
-  function panelSpec(s: PlayerState<BirliktelikOlculeriParams>, r: Reading): PanelSpec {
+  function panelSpec(s: PlayerState<BirliktelikOlculeriParams>, r: Reading, set: RuleSet | null): PanelSpec {
     const { index, params } = s;
     const spec: PanelSpec = { kind: r.kind, tx: r.tx, x: r.x, y: r.y, counted };
     if (index === STEP_TABLE) spec.code = ['TransactionEncoder().fit(...).transform(...)'];
     if (r.kind === 'rules') {
-      const all = rules(r.tx, params.minSupport, params.minConfidence);
+      const { all, kept, noSets } = set as RuleSet;
       const filtering = params.minLift > 0;
-      const kept = filtering ? all.filter((q) => q.lift > params.minLift + 1e-9) : all;
-      spec.rules = { total: all.length, kept: kept.length, filtering, minLift: params.minLift };
+      spec.rules = { total: all.length, kept: kept.length, filtering, minLift: params.minLift, noSets };
       if (index === STEP_FILTER) {
         spec.code = [
           `association_rules(..., metric="confidence", min_threshold=${MIN_CONFIDENCE})`,
@@ -134,6 +140,16 @@ export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPla
       }
     }
     return spec;
+  }
+
+  interface RuleSet { all: Rule[]; kept: Rule[]; noSets: boolean }
+
+  /** Rules of the (edited) baskets at the Lab thresholds, and those the lift filter keeps. */
+  function ruleSet(r: Reading, params: BirliktelikOlculeriParams): RuleSet {
+    const all = rules(r.tx, params.minSupport, params.minConfidence);
+    const kept = all.filter((q) => isKept(q, params.minLift));
+    const noSets = r.tx.length === 0 || aprioriTrace(r.tx, minCountFor(params.minSupport, r.tx.length)).frequent.size === 0;
+    return { all, kept, noSets };
   }
 
   function paint(s: PlayerState<BirliktelikOlculeriParams>, r: Reading): void {
@@ -145,8 +161,10 @@ export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPla
     const r = read(s.index, s.params, counted);
     root.dataset.view = s.index === STEP_LIST ? 'list' : s.index >= STEP_RULES ? 'rules' : 'table';
     root.dataset.counting = String(counted !== null);
-    drawPanel(panel, panelSpec(s, r));
+    const set = r.kind === 'rules' ? ruleSet(r, s.params) : null;
+    drawPanel(panel, panelSpec(s, r, set));
     paint(s, r);
+    if (set) scatter.update({ rules: set.all, minSupport: s.params.minSupport, minConfidence: s.params.minConfidence, minLift: s.params.minLift, selected: { x: r.x, y: r.y }, width: Math.floor(size.w * 0.55), height: Math.floor(size.h * 0.8) });
   }
 
   /** A count-up tick: the number and the counted rows change in place; the panel is rebuilt only when the count ends. */
@@ -191,7 +209,8 @@ export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPla
   render(player.state);
 
   return {
-    resize(): void {
+    resize(w: number, h: number): void {
+      size = { w, h };
       render(player.state);
     },
     setMode(m: Mode): void {
@@ -202,6 +221,7 @@ export function mountBirliktelikOlculeriScene(host: HTMLElement, player: StepPla
       destroyed = true;
       stopCount();
       unsubscribe();
+      scatter.destroy();
       root.remove();
     },
   };

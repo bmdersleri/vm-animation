@@ -13,6 +13,7 @@
 }
 .bk-table-host,
 .bk-rules-slot { grid-area: main; position: relative; min-width: 0; min-height: 0; }
+.bk-rules-slot { display: flex; flex-direction: column; gap: 4px; }
 .bk-panel { grid-area: panel; }
 
 /* Lab stage is narrow (about 736 px): the table gets the larger share so the column names fit. */
@@ -24,6 +25,8 @@
 .bk-scene[data-view="rules"] .bk-list { display: none; }
 .bk-scene[data-view="rules"] .bk-table-host { display: none; }
 .bk-scene:not([data-view="rules"]) .bk-rules-slot { display: none; }
+.bk-table .bk-cell { cursor: pointer; }
+.bk-table .bk-cell:focus-visible { outline: 3px solid var(--navy); outline-offset: -3px; }
 
 .bk-list {
   margin: 0;
@@ -127,6 +130,41 @@
 .bk-gauge-base { position: absolute; top: -0.4em; bottom: -0.4em; width: 0; border-left: 3px dashed #a85a00; }
 .bk-gauge-base-label { position: absolute; bottom: 100%; left: 0; transform: translateX(-50%); white-space: nowrap; color: #7a4300; font-weight: 700; }
 .bk-gauge-scale { display: flex; justify-content: space-between; color: var(--muted); }
+
+/* Rule scatter (steps 9-10). */
+.bk-rule-legend { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: var(--fs-tick); color: var(--muted); }
+.bk-key { display: inline-flex; align-items: center; gap: 4px; }
+.bk-key-mark { flex: none; }
+.bk-plot-host { position: relative; flex: 1 1 0; min-height: 0; }
+.bk-plot { position: absolute; top: 0; left: 0; display: block; font-family: var(--font); font-size: var(--fs-tick); user-select: none; -webkit-user-select: none; }
+.bk-plot .tick text { font-size: var(--fs-tick); font-variant-numeric: tabular-nums; fill: var(--muted); }
+.bk-plot .axis-title { font-size: var(--fs-axis); font-weight: 600; fill: var(--navy); }
+.bk-plot .bk-thr-label,
+.bk-plot .bk-rule-label,
+.bk-plot .bk-rule-empty { font-size: var(--fs-tick); }
+.bk-rule-pt { cursor: pointer; }
+.bk-rule-pt[data-dim="true"] { opacity: 0.22; }
+.bk-rule-pt:focus-visible { outline: none; }
+.bk-rule-pt:focus-visible .bk-rule-dot { stroke: var(--navy); stroke-width: 4; }
+
+/* Lab controls. */
+.bk-params { display: grid; gap: 8px; font-size: var(--fs-tick); }
+.bk-params [hidden] { display: none; }
+.bk-params .ctl { display: grid; gap: 4px; }
+.bk-params label,
+.bk-ctl-title { font-weight: 600; }
+.bk-params .range { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; }
+.bk-out { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 10em; }
+.bk-editor input { font: inherit; width: 7em; padding: 2px 6px; }
+.bk-chips { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.bk-chip { font: inherit; padding: 2px 10px; border: 2px solid var(--navy); border-radius: 999px; background: var(--surface); color: var(--navy); cursor: pointer; }
+.bk-chip[aria-pressed="true"] { background: var(--navy); color: #fff; }
+.bk-chip[aria-pressed="true"]::before { content: "✓ "; }
+.bk-chip:disabled { opacity: 0.4; cursor: not-allowed; border-style: dashed; }
+.bk-pick[data-ctl="y"] .bk-chip[aria-pressed="true"] { background: #a85a00; border-color: #a85a00; }
+.bk-reset { font: inherit; padding: 2px 14px; justify-self: start; border: 2px solid var(--navy); border-radius: 6px; background: var(--surface); color: var(--navy); cursor: pointer; }
+.bk-ctl-hint { color: var(--muted); }
+.bk-params :focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
 
 @media (max-width: 900px) {
   .bk-scene,

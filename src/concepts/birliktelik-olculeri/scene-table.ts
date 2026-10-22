@@ -41,8 +41,11 @@ export interface FisTable {
   update(spec: TableSpec): void;
 }
 
-/** Builds the receipt list and the 18 x 6 one-hot table once; `update` only repaints attributes and text. */
-export function mountFisTable(host: HTMLElement, rowCount: number): FisTable {
+/**
+ * Builds the receipt list and the 18 x 6 one-hot table once; `update` only repaints attributes and text.
+ * A cell toggles on click, or on Space / Enter; arrow keys move between cells (one tab stop).
+ */
+export function mountFisTable(host: HTMLElement, rowCount: number, onToggle: (row: number, col: number) => void = () => {}): FisTable {
   const list = el('ol', 'bk-list');
   list.setAttribute('aria-label', 'Kasa fişleri');
   const lines: HTMLLIElement[] = [];
@@ -88,6 +91,8 @@ export function mountFisTable(host: HTMLElement, rowCount: number): FisTable {
       td.dataset.row = String(r);
       td.dataset.col = String(c);
       td.dataset.item = item;
+      td.setAttribute('role', 'gridcell');
+      td.tabIndex = r === 0 && c === 0 ? 0 : -1;
       tr.append(td);
       return td;
     });
@@ -123,6 +128,40 @@ export function mountFisTable(host: HTMLElement, rowCount: number): FisTable {
 
   host.append(list, table);
 
+  table.setAttribute('role', 'grid');
+  const cellOf = (e: Event): HTMLTableCellElement | null => (e.target as Element).closest<HTMLTableCellElement>('td.bk-cell');
+  const focusCell = (r: number, c: number): void => {
+    const to = cells[Math.max(0, Math.min(rowCount - 1, r))]?.[Math.max(0, Math.min(ITEMS.length - 1, c))];
+    if (!to) return;
+    for (const row of cells) for (const td of row) td.tabIndex = td === to ? 0 : -1;
+    to.focus();
+  };
+  table.addEventListener('click', (e) => {
+    const td = cellOf(e);
+    if (td) onToggle(Number(td.dataset.row), Number(td.dataset.col));
+  });
+  table.addEventListener('focusin', (e) => {
+    const td = cellOf(e);
+    if (td) for (const row of cells) for (const t of row) t.tabIndex = t === td ? 0 : -1;
+  });
+  table.addEventListener('keydown', (e) => {
+    const td = cellOf(e);
+    if (!td) return;
+    const r = Number(td.dataset.row);
+    const c = Number(td.dataset.col);
+    const move: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+    // the page's step keys (arrows, Space) must not also fire while a cell is focused
+    if (e.key in move) {
+      e.preventDefault();
+      e.stopPropagation();
+      focusCell(r + move[e.key][0], c + move[e.key][1]);
+    } else if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      onToggle(r, c);
+    }
+  });
+
   return {
     list,
     table,
@@ -147,6 +186,7 @@ export function mountFisTable(host: HTMLElement, rowCount: number): FisTable {
           const glyph = on ? '●' : '';
           if (td.textContent !== glyph) td.textContent = glyph;
           td.setAttribute('aria-label', `Fiş ${r + 1}, ${itemName(item)}: ${on ? 'var' : 'yok'}`);
+          td.setAttribute('aria-selected', String(on));
         });
       }
       ITEMS.forEach((item, c) => {

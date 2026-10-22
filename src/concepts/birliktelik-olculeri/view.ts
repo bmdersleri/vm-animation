@@ -86,6 +86,12 @@ export function liftStrip(tx: readonly Basket[], x: Itemset, y: Itemset): string
   return `${head} = ${ratioText(m.confidence)} / ${ratioText(m.base)} = ${ratioText(m.lift)}`;
 }
 
+/** Flips one cell: a code already listed is removed (so edits never outgrow the cells changed), otherwise it is appended. */
+export function toggleEdit(edits: readonly number[], code: number): number[] {
+  const at = edits.indexOf(code);
+  return at < 0 ? [...edits, code] : edits.filter((_, i) => i !== at);
+}
+
 /** "Fiş 4: Ekmek, Süt, Yumurta, Tereyağı" (1-based basket number). */
 export function basketLine(tx: readonly Basket[], row: number): string {
   return `Fiş ${row + 1}: ${tx[row].length === 0 ? 'boş sepet' : setNames(tx[row])}`;

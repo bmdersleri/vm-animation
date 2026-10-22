@@ -14,7 +14,7 @@ export interface PanelSpec {
   /** Count-up in progress: the baskets counted so far (null = counting is done or not animated). */
   counted: number | null;
   /** Step 9-10 summary: rules found, rules kept by the lift filter, filter on. */
-  rules?: { total: number; kept: number; filtering: boolean; minLift: number };
+  rules?: { total: number; kept: number; filtering: boolean; minLift: number; noSets?: boolean };
   /** The book's code lines shown under the panel (steps 2 and 10). */
   code?: readonly string[];
 }
@@ -94,7 +94,17 @@ export function drawPanel(panel: HTMLElement, spec: PanelSpec): void {
     panel.append(el('h3', 'bk-title', 'Kural saçılımı'));
     if (r) {
       panel.append(row('Kural', String(r.total), { 'data-rules': String(r.total) }));
+      if (r.total === 0) panel.append(el('p', 'bk-note', r.noSets ? 'Bu eşikte sık küme yok.' : 'Bu eşiklerde kural yok.'));
       if (r.filtering) panel.append(row('Kalan', String(r.kept), { 'data-kept': String(r.kept) }), row('Soluk', String(r.total - r.kept), { 'data-faded': String(r.total - r.kept) }));
+    }
+    if (xs.length > 0 && ys.length > 0) {
+      const m = measures(tx, xs, ys);
+      panel.append(
+        el('p', 'bk-note', `Seçili kural: ${setNames(xs)} → ${setNames(ys)}`),
+        row('Destek', ratioText(m.support), { 'data-sel-support': String(m.support) }),
+        row('Güven', ratioText(m.confidence), { 'data-sel-confidence': String(m.confidence) }),
+        row('Kaldıraç', ratioText(m.lift), { 'data-sel-lift': String(m.lift) }),
+      );
     }
     appendCode(panel, spec.code);
     return;
