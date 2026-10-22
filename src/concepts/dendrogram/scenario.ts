@@ -56,7 +56,7 @@ export const dendrogramScenario: Scenario<DendrogramParams> = {
       id: 'ilk-birlesme',
       title: 'İlk birleşme',
       text: `En yakın iki küme birleşir: ${clusterName(firstMerge.left)} ile ${clusterName(firstMerge.right)}. Dendrogramda ilk dal tam bu uzaklığın, ${heightText(firstMerge.height)} yüksekliğinde çizilir. Küme sayısı ${n - 1}'e düştü.`,
-      labText: `Bağlantıyı değiştir: en yakın iki küme ve ilk dalın yüksekliği bağlantıya göre değişir. Birleşme kaydırıcısıyla ağacı adım adım izle; sayılar sağdaki panelde canlı okunur.`,
+      labText: `Bağlantıyı değiştir: en yakın iki küme ve ilk dalın yüksekliği bağlantıya göre değişir. Birleşme kaydırıcısıyla ağacı adım adım izle; sayılar panelde canlı okunur.`,
       params: { ...base, merges: 1, k: null },
     },
     {
@@ -118,7 +118,7 @@ export const dendrogramScenario: Scenario<DendrogramParams> = {
       id: 'tablo',
       title: 'Üç bağlantı, bir tablo',
       text: `Aynı ${n} nokta, üç bağlantı: ${natural} kümede boylar ${rows.map((r) => `${r.linkage === 'ward' ? 'Ward' : r.linkage} ${sizesText(r.sizes)}`).join(', ')}. Bağlantı, "iki kümenin uzaklığı"nı nasıl tanımladığınızdır; ağacı o belirler.`,
-      labText: `Tablodaki satırları karşılaştır: her bağlantı için kümelerin boyları orada canlı okunur. Bağlantıyı seçince ağaç ve saçılım o bağlantıya göre çizilir.`,
+      labText: `Tablodaki satırları karşılaştır: her bağlantı için kümelerin boyları orada canlı okunur. Bağlantıyı seçince ağaç o bağlantıya göre çizilir.`,
       term: 'bağlantı (linkage)',
       params: { ...base, merges: last, k: natural },
     },

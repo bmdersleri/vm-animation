@@ -51,7 +51,7 @@ export const dbscanScenario: Scenario<DbscanParams> = {
       title: 'eps dairesi',
       text: `Her noktaya aynı soru sorulur: "eps yarıçapında kaç komşun var?" Seçili noktanın (Nokta ${examples.core + 1}) eps = ${eps} yarıçaplı dairesinde ${a.neighbours} nokta var; noktanın kendisi de sayılır.`,
       term: 'eps (komşuluk yarıçapı)',
-      labText: `Bir nokta seç (kutudan ya da saçılımda tıklayarak) ve eps kaydırıcısını oynat. Dairenin içindeki nokta sayısı sağdaki panelde canlı değişir.`,
+      labText: `Bir nokta seç (kutudan ya da saçılımda tıklayarak) ve eps kaydırıcısını oynat. Dairenin içindeki nokta sayısı panelde canlı değişir.`,
       params: { ...fixed, point: examples.core },
     },
     {
