@@ -4,15 +4,13 @@ import type { Mode } from '../../core/mode';
 import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { renderStrip } from '../../core/plot/strip';
 import type { OlcParams } from './scenario';
-import { deriveOlcView } from './view';
+import { deriveOlcView, SHARED_FRAME_STEPS } from './view';
 import { MOVE_MS, ScatterLayer, type QueryPointer } from './scene-scatter';
 import { ScalersLayer } from './scene-scalers';
 import { SplitLayer } from './scene-split';
 
-/** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
-
-/** Zero-based steps 3 and 4: same space, different plot frame. */
-const FRAME_STEPS: readonly number[] = [2, 3];
+/** Zero-based steps 3 and 4: the step before the shared frame and its first step (same space, different plot frame). */
+const FRAME_STEPS: readonly number[] = [SHARED_FRAME_STEPS[0] - 1, SHARED_FRAME_STEPS[0]];
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
@@ -85,8 +83,9 @@ export function mountOlcScene(
       // dragging the new customer changes only `query`: follow the pointer without easing
       const queryOnly = cause === 'param' && !!before && before.index === state.index
         && before.params.unit === p.unit && before.params.scaling === p.scaling && before.params.fit === p.fit;
-      // steps 3 <-> 4 only widen or narrow the plot frame (view.ts SHARED_FRAME_STEPS): under reduced motion that is instant
-      const frameOnly = !!before && before.index !== state.index && before.params.unit === p.unit
+      // steps 3 <-> 4 widen or narrow the plot frame (view.ts SHARED_FRAME_STEPS): under reduced motion that is instant,
+      // decided by the step pair alone (the step 3 unit sweep may have left another unit than step 4's)
+      const frameOnly = !!before && before.index !== state.index
         && FRAME_STEPS.includes(before.index) && FRAME_STEPS.includes(state.index);
       const ms = ds > 0 && !instant && !queryOnly && !(frameOnly && reducedMotion()) ? MOVE_MS * ds : 0;
       prev = { index: state.index, params: p };

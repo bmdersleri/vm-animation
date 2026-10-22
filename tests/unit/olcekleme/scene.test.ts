@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
-import { olceklemeScenario, type OlcParams } from '../../../src/concepts/olcekleme/scenario';
+import { olceklemeScenario, UNIT_SWEEP_MS, type OlcParams } from '../../../src/concepts/olcekleme/scenario';
 import { mountOlcScene } from '../../../src/concepts/olcekleme/scene';
 import { MOVE_MS, ScatterLayer } from '../../../src/concepts/olcekleme/scene-scatter';
 import { ScalersLayer } from '../../../src/concepts/olcekleme/scene-scalers';
@@ -307,21 +307,35 @@ describe('olcekleme scene', () => {
       expect(mid).toBeGreaterThan(end + 1);
     });
 
-    it('is instant under reduced motion, and only for the frame change', async () => {
+    it('is instant under reduced motion after the step 3 unit sweep has ended, and only for the frame change', async () => {
       const spy = vi.spyOn(ScatterLayer.prototype, 'update');
       vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce') }));
-      const { player } = setup(1);
-      player.goto(2);
-      await frame(30);
-      spy.mockClear();
-      player.goto(3);
-      await frame(30);
-      expect(spy.mock.calls.at(-1)![1]).toBe(0);
-      spy.mockClear();
-      player.goto(5);
-      await frame(30);
-      expect(spy.mock.calls.at(-1)![1]).toBe(MOVE_MS);
-      vi.unstubAllGlobals();
+      // the step 3 sweep (ay -> yil -> gun) runs on fake timers, so the normal flow is driven without a 5 s wait
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'] });
+      try {
+        const { player } = setup(1);
+        player.goto(2);
+        vi.advanceTimersByTime(3 * UNIT_SWEEP_MS + 100);
+        // the sweep has ended on its last unit; step 4 sets 'ay' again
+        expect(player.state.params.unit).toBe('gun');
+        vi.useRealTimers();
+        spy.mockClear();
+        player.goto(3);
+        await frame(30);
+        expect(player.state.params.unit).toBe('ay');
+        expect(spy.mock.calls.at(-1)![1]).toBe(0);
+        spy.mockClear();
+        player.goto(2);
+        await frame(30);
+        expect(spy.mock.calls.at(-1)![1]).toBe(0);
+        spy.mockClear();
+        player.goto(5);
+        await frame(30);
+        expect(spy.mock.calls.at(-1)![1]).toBe(MOVE_MS);
+      } finally {
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+      }
     });
   });
 

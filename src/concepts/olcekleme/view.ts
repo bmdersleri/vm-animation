@@ -97,7 +97,7 @@ function muLabels(unit: Unit): [string, string] {
 interface Geo { pt: (c: { t: number; f: number }) => Pt2; box: Domain; frame: Domain; anchor: AspectAnchor; ds: number[]; qp: Pt2 }
 
 /** Steps 4 and 5 (μ and x − μ): one shared frame, so the centring is a translation on screen. */
-const SHARED_FRAME_STEPS: readonly number[] = [3, 4];
+export const SHARED_FRAME_STEPS: readonly number[] = [3, 4];
 
 function geometry(index: number, p: OlcParams, space: Space): Geo {
   const k = UNIT_FACTOR[p.unit];
