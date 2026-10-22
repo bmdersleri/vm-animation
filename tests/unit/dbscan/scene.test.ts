@@ -202,6 +202,17 @@ describe('dbscan scene', () => {
     fin(scene, player);
   });
 
+  it('the Ders eps sweep keeps every chip: the cap is Lab only', () => {
+    const { player, host, scene } = setup('ders');
+    player.goto(8);
+    player.setParams({ eps: 0.15 });
+    const total = clusterSizes(dbscan(d.points, 0.15, player.state.params.minSamples)).length;
+    expect(total).toBeGreaterThan(12);
+    expect(host.querySelectorAll('li.db-size')).toHaveLength(total);
+    expect(host.querySelector('[data-more]')).toBeNull();
+    fin(scene, player);
+  });
+
   it('play and pause do not restart the step 3 count-up', () => {
     vi.useFakeTimers();
     const { player, host, scene } = setup('ders', false);

@@ -170,14 +170,16 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
   function sizeList(sizes: readonly number[]): HTMLElement {
     const ul = el('ul', 'db-sizes');
     ul.setAttribute('data-clusters', '');
-    sizes.slice(0, MAX_CHIPS).forEach((c, i) => {
+    // Lab only: free eps / min_samples values can give dozens of clusters; the fixed Ders values peak at 14, which fit.
+    const cap = mode === 'lab' ? MAX_CHIPS : Infinity;
+    sizes.slice(0, cap).forEach((c, i) => {
       const li = el('li', 'db-size');
       li.setAttribute('data-size', String(c));
       li.append(chip(i), el('strong', 'db-value', String(c)));
       ul.append(li);
     });
-    if (sizes.length > MAX_CHIPS) {
-      const more = sizes.length - MAX_CHIPS;
+    if (sizes.length > cap) {
+      const more = sizes.length - cap;
       const li = el('li', 'db-size-more', `… ${more} küme daha`);
       li.setAttribute('data-more', String(more));
       ul.append(li);
