@@ -85,6 +85,8 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
   let destroyed = false;
   let rendered = false;
   let lastTree = '';
+  // A clicked branch (0-based merge index) lives only for the step, linkage and point it was picked in.
+  let picked: { merge: number; step: number; linkage: string; point: number | null } | null = null;
 
   function pointBlock(p: number, cluster: readonly number[] | null): HTMLElement {
     const box = el('div', 'dg-picked');
@@ -176,6 +178,12 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
       panel.append(ul);
     }
     const p = params.point;
+    if (picked && !(p !== null && p >= 0 && p < N)) {
+      const b = treeOf(params.linkage)[picked.merge];
+      const box = el('div', 'dg-picked');
+      box.append(el('h3', 'dg-picked-title', `Dal ${picked.merge + 1}`), el('p', 'dg-note', `Altında ${b.members.length} nokta, yükseklik ${heightText(b.height)}.`));
+      panel.append(box);
+    }
     if (p !== null && p >= 0 && p < N) {
       const labels = k !== null ? ld.cuts[k - 1].labels : null;
       const cluster = labels
@@ -225,13 +233,18 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
       if (newest) hulls.push({ members: newest.members, kind: 'merge', colour: ACCENT, merge: merges });
     }
     const point = params.point !== null && params.point >= 0 && params.point < N ? params.point : null;
-    const scatterSpec: ScatterSpec = { points: D.points, label: labels, hulls, merged: newest ? newest.members : [], selected: point };
+    if (picked && (picked.step !== index || picked.linkage !== params.linkage || picked.point !== point || picked.merge >= merges)) picked = null;
+    const pickedBranch = picked ? bs[picked.merge] : null;
+    const scatterSpec: ScatterSpec = {
+      points: D.points, label: labels, hulls, merged: newest ? newest.members : [], selected: point,
+      focus: pickedBranch ? pickedBranch.members : [],
+    };
     const treeSpec: DendrogramSpec = {
       branches: bs,
       leafX: leafX(ld),
       leafLabels: LEAF_LABELS,
       shown: merges,
-      highlight: newest ? merges - 1 : null,
+      highlight: newest ? merges - 1 : picked ? picked.merge : null,
       cut,
       colourOf: labels ? (p) => CLUSTER[labels[p] % CLUSTER.length] : undefined,
       selectedLeaf: point,
@@ -239,8 +252,33 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
     };
     scatter.update(scatterSpec, animate);
     tree.update(treeSpec, animate);
+    treeSvg.querySelectorAll('path.dg-branch').forEach((p) => {
+      p.setAttribute('data-picked', picked && Number(p.getAttribute('data-merge')) === picked.merge + 1 ? 'true' : 'false');
+    });
     rendered = true;
   }
+
+  // A click on a point or a leaf label selects the point (again: clears it); a click on a branch picks it.
+  const onPoint = (e: Event): void => {
+    const t = (e.target as Element | null)?.closest('g.dg-point, g.dg-leaf');
+    if (!t) return;
+    const i = Number(t.getAttribute('data-i'));
+    if (!Number.isInteger(i) || i < 0 || i >= N) return;
+    player.setParams({ point: player.state.params.point === i ? null : i });
+  };
+  const onBranch = (e: Event): void => {
+    const b = (e.target as Element | null)?.closest('path.dg-branch');
+    if (!b) return;
+    const m = Number(b.getAttribute('data-merge')) - 1;
+    if (!Number.isInteger(m) || m < 0 || m >= N - 1) return;
+    const s = player.state;
+    picked = { merge: m, step: s.index, linkage: s.params.linkage, point: null };
+    // Picking a branch drops the point selection; the render sees the matching (null) point.
+    if (s.params.point !== null) player.setParams({ point: null });
+    else render(s, false);
+  };
+  scatterSvg.addEventListener('click', onPoint);
+  treeSvg.addEventListener('click', (e) => { if ((e.target as Element | null)?.closest('g.dg-leaf')) onPoint(e); else onBranch(e); });
 
   const unsubscribe = player.subscribe((s, cause) => render(s, rendered && cause !== 'param'));
   render(player.state, false);

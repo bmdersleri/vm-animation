@@ -22,6 +22,8 @@ export interface ScatterSpec {
   /** Points of the newest merge: drawn in the accent colour. */
   merged: readonly number[];
   selected?: number | null;
+  /** Points of a clicked dendrogram branch: drawn with a heavy navy outline. */
+  focus?: readonly number[];
 }
 
 const R = 5.5;
@@ -90,6 +92,7 @@ export class ScatterLayer {
     const px = (p: Pt): number => r1(x(p[0]));
     const py = (p: Pt): number => r1(y(p[1]));
     const merged = new Set(s.merged);
+    const focus = new Set(s.focus ?? []);
 
     // rounded outlines
     const hulls = this.gHulls.selectAll<SVGPathElement, Hull>('path.dg-hull').data(s.hulls);
@@ -117,7 +120,9 @@ export class ScatterLayer {
     all.attr('transform', (d) => `translate(${px(d)},${py(d)})`)
       .attr('data-i', (_d, i) => i)
       .attr('data-cluster', (_d, i) => (s.label && s.label[i] >= 0 ? String(s.label[i]) : '-'))
-      .attr('data-merged', (_d, i) => (merged.has(i) ? 'true' : 'false'));
+      .attr('data-merged', (_d, i) => (merged.has(i) ? 'true' : 'false'))
+      .attr('data-focus', (_d, i) => (focus.has(i) ? 'true' : 'false'));
+    all.select('circle').attr('stroke', (_d, i) => (focus.has(i) ? NAVY : WHITE)).attr('stroke-width', (_d, i) => (focus.has(i) ? 3 : 1.2));
     const fill = (i: number): string => (merged.has(i) ? ACCENT : s.label ? colour(s.label[i]) : UNASSIGNED);
     go(all.select('circle') as unknown as AnySel).attr('fill', (_d: Pt, i: number) => fill(i));
 

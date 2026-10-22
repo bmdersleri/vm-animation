@@ -145,3 +145,24 @@
 
 /* Lab controls and click targets (Task 6) */
 .dg-scatter g.dg-point { cursor: pointer; }
+.dg-tree path.dg-branch,
+.dg-tree g.dg-leaf { cursor: pointer; }
+.dg-tree path.dg-branch[data-picked="true"] { stroke-width: 4.5; }
+
+.dg-params { display: grid; gap: 8px; font-size: var(--fs-tick); }
+.dg-params [hidden] { display: none; }
+.dg-params .ctl { display: grid; gap: 4px; }
+.dg-params label { font-weight: 600; }
+.dg-params select,
+.dg-pick input { font: inherit; padding: 2px 6px; }
+.dg-pick input { width: 6em; }
+.dg-params .dg-merge,
+.dg-params .dg-cut-ctl { grid-template-columns: minmax(0, 1fr); }
+.dg-step-btns,
+.dg-k-btns { display: flex; flex-wrap: wrap; gap: 4px; }
+.dg-params button { font: inherit; padding: 2px 10px; min-width: 2.2em; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--navy); cursor: pointer; }
+.dg-params button[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+.dg-params button:disabled { opacity: 0.45; cursor: default; }
+.dg-out { font-variant-numeric: tabular-nums; font-weight: 600; }
+.dg-pick-hint { color: var(--muted); }
+.dg-params :focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
