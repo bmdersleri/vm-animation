@@ -191,7 +191,8 @@ export class HistLayer {
     const range: [number, number] = [L.marginX, Math.max(L.marginX + 40, L.w - L.marginX)];
     const sc = lineScale(dom, range);
     this.inv = dragOn ? { d0: dom.min, d1: dom.max, r0: range[0], r1: range[1] } : null;
-    const title = v.log ? 'log1p (saat + 1)' : 'Haftalık çalışma saati (saat)';
+    // n stays in sight on every step (spec red line on small samples)
+    const title = `${v.log ? 'log1p (saat + 1)' : 'Haftalık çalışma saati (saat)'} · n = ${v.values.length}`;
     this.nl.draw(
       sc, L.axisY,
       { tickCount: L.w > 700 ? 6 : 5, tickY: L.tickY, title, titleY: L.titleY },

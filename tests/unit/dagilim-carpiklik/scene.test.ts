@@ -51,6 +51,7 @@ const one = (el: Element, sel: string): SVGElement => {
   return e;
 };
 const text = (e: Element | null): string => (e?.textContent ?? '').trim();
+const lines = (el: Element): string[] => all(el, 'p.formula span.line').map(text);
 const labels = (el: Element): string[] => all(el, 'text.mark-label').map(text);
 const tickNumbers = (el: Element): number[] =>
   all(el, 'svg.dag-plot g.tick text').map((t) => Number(text(t).replace('−', '-').replace(',', '.')));
@@ -79,7 +80,7 @@ describe('dagilim scene', () => {
     for (let i = 0; i < dagilimScenario.steps.length; i++) {
       player.goto(i);
       const v = deriveDagilimView(i, player.state.params);
-      expect(text(one(el, 'p.formula'))).toBe(v.strip);
+      expect(lines(el)).toEqual(v.strip.split('\n'));
     }
   });
 
@@ -203,6 +204,18 @@ describe('dagilim scene', () => {
     player.goto(7);
     expect(all(el, 'g.rule')).toHaveLength(0);
     expect(all(el, 'a')).toHaveLength(0);
+  });
+
+  it('every step names n in the number line title', () => {
+    const { el, player } = setup();
+    for (let i = 0; i < dagilimScenario.steps.length; i++) {
+      player.goto(i);
+      expect(text(one(el, 'svg.dag-plot text.axis-title')), `step ${i + 1}`).toMatch(/· n = 10$/);
+    }
+    player.goto(0);
+    expect(text(one(el, 'svg.dag-plot text.axis-title'))).toBe('Haftalık çalışma saati (saat) · n = 10');
+    player.goto(5);
+    expect(text(one(el, 'svg.dag-plot text.axis-title'))).toBe('log1p (saat + 1) · n = 10');
   });
 
   it('log step: ticks are log1p values and the axis carries the 1p note', () => {

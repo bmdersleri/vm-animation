@@ -111,7 +111,8 @@ export function deriveDagilimView(index: number, p: DagilimParams): DagilimView 
     }
     case 'kural':
     default:
-      strip = '|çarpıklık| < 0,5 ≈ simetrik · 0,5–1 orta · > 1 güçlü · çarpıklık varsa özet: medyan + IQR';
+      strip = '|çarpıklık| < 0,5 ≈ simetrik · 0,5–1 orta · > 1 güçlü · çarpıklık varsa özet: medyan + IQR'
+        + `\nn = ${formatNumber(n, 0)}: küçük örneklemde çarpıklık tek gözlemle değişir`;
       break;
   }
 

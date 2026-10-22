@@ -109,6 +109,11 @@ describe('dagilim view', () => {
     expect(v.thresholds).toBe(true);
     expect(v.strip).toContain('|çarpıklık| < 0,5 ≈ simetrik · 0,5–1 orta · > 1 güçlü');
     expect(v.strip).toContain('medyan + IQR');
+    // the small-sample warning closes the page (spec red line)
+    expect(v.strip.split('\n')).toEqual([
+      '|çarpıklık| < 0,5 ≈ simetrik · 0,5–1 orta · > 1 güçlü · çarpıklık varsa özet: medyan + IQR',
+      'n = 10: küçük örneklemde çarpıklık tek gözlemle değişir',
+    ]);
     for (let i = 0; i < 8; i++) expect(deriveDagilimView(i, p()).thresholds).toBe(false);
   });
 

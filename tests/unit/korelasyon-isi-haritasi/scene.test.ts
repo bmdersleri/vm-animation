@@ -44,6 +44,7 @@ const one = (el: Element, sel: string): SVGElement => {
   return e;
 };
 const text = (e: Element | null): string => (e?.textContent ?? '').trim();
+const lines = (el: Element): string[] => all(el, 'p.formula span.line').map(text);
 const Ev = (): typeof MouseEvent => (window.PointerEvent ?? MouseEvent) as typeof MouseEvent;
 const fire = (target: Element, kind: string, x: number, y: number): void => {
   const C = Ev();
@@ -82,7 +83,7 @@ describe('korelasyon scene', () => {
     expect(all(el, 'g.panel[data-set=calisma-not] path.trend')).toHaveLength(0);
     for (let i = 0; i < korelasyonScenario.steps.length; i++) {
       player.goto(i);
-      expect(text(one(el, 'p.formula')), `adım ${i + 1}`).toBe(deriveKorelView(i, player.state.params).strip);
+      expect(lines(el), `adım ${i + 1}`).toEqual(deriveKorelView(i, player.state.params).strip.split('\n'));
     }
     player.goto(1);
     expect(text(one(el, 'p.formula'))).toContain('0,995');
@@ -258,6 +259,16 @@ describe('korelasyon scene', () => {
     player.goto(6);
     expect(fill('II')).toBe(quartet.II);
     expect(quartet.II).not.toBe(quartet.I);
+  });
+
+  it('every Anscombe panel title names its set and n', () => {
+    const { el, player } = setup();
+    player.goto(4);
+    expect(all(el, 'text.panel-title').map(text)).toEqual(['I · n = 11', 'II · n = 11', 'III · n = 11', 'IV · n = 11']);
+    player.goto(5);
+    expect(all(el, 'text.panel-title').map(text)).toEqual(['IV · n = 11']);
+    player.goto(6);
+    expect(all(el, 'text.panel-title').map(text)).toEqual(['II · n = 11']);
   });
 
   it('step 5 with set IV: no leverage handle and no data-drag (only step 6 drags the point)', () => {

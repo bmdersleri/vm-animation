@@ -61,7 +61,7 @@ describe('korelasyon görünümü', () => {
     for (const cell of heat.cells.filter((c) => c.row === c.col)) expect(cell.text).toBe('1,000');
     expect(heat.cells.find((c) => c.row === 0 && c.col === 2)?.text).toBe('0,999');
     expect(heat.cells.find((c) => c.row === 0 && c.col === 1)?.text).toBe('−0,991');
-    expect(v.strip).toBe('4 değişken · 16 hücre · köşegen 1,000');
+    expect(v.strip).toBe('n = 6 · 4 değişken · 16 hücre · köşegen 1,000');
   });
 
   it('adım 4 churn açıkken 5 × 5 olur', () => {
@@ -69,7 +69,7 @@ describe('korelasyon görünümü', () => {
     if (!heat) throw new Error('ısı haritası yok');
     expect(heat.cells).toHaveLength(25);
     expect(heat.variables[4]).toBe('churn');
-    expect(V(3, { churn: true }).strip).toBe('5 değişken · 25 hücre · köşegen 1,000');
+    expect(V(3, { churn: true }).strip).toBe('n = 6 · 5 değişken · 25 hücre · köşegen 1,000');
   });
 
   it('adım 5 dört panel, aynı yaklaşık özet: r ≈ 0,816', () => {
@@ -181,7 +181,8 @@ describe('korelasyon görünümü', () => {
     const off = V(7, { churn: false });
     expect(off.heat?.variables).toHaveLength(4);
     expect(off.heat?.cells).toHaveLength(16);
-    expect(off.strip).toContain('4 değişken · 16 hücre');
+    expect(off.strip).toBe('n = 6 · 4 değişken · 16 hücre · köşegen 1,000 · churn kapalı');
+    expect(V(7).strip.startsWith('n = 6 · 5 değişken · 25 hücre · churn 0/1 → ')).toBe(true);
     expect(off.strip).toContain('churn kapalı');
   });
 
@@ -198,6 +199,8 @@ describe('korelasyon görünümü', () => {
     const v = V(9);
     expect(v.strip).toContain('Özet istatistik yeterli değildir, grafik şart');
     for (const link of ['kutu-grafigi', 'iqr-aykiri', 'pca']) expect(v.strip).toContain(link);
+    // the small-sample warning closes the page (spec red line)
+    expect(v.strip.split('\n')[1]).toBe('küçük örneklem (n = 6–11): r tek gözlemle dalgalanır');
     expect(v.panels).toEqual([]);
     expect(v.note).toContain('grafik şart');
   });

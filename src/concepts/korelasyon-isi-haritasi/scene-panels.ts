@@ -356,7 +356,8 @@ export class PanelsLayer {
         .attr('x', r1(plot.left))
         .attr('y', r1(cellTop + axis * 0.95))
         .style('fill', color)
-        .text(panel.id.length <= 4 ? panel.id : '');
+        // the set and its n, the drawn points (a dropped leverage point leaves ten)
+        .text(panel.id.length <= 4 ? `${panel.id} · n = ${pts.length}` : '');
       p.stats
         .attr('x', r1(plot.left + plot.width / 2))
         .attr('y', r1(Math.min(cellTop + cellH - axis * 0.4, plot.top + plot.height + tick * 3)))

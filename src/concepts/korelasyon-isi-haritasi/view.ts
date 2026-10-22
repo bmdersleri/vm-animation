@@ -31,6 +31,8 @@ export interface KorelView {
 }
 
 const f3 = (x: number): string => formatNonZero(x, 3);
+/** Example 006's row count: the heat strips name n (spec red line on small samples). */
+const HEAT_N = HEATMAP.rows.length;
 
 /** Up to two decimals with trailing zeros trimmed: "12,5", "6", "19". */
 const trim = (x: number): string => formatTrim(x, 2);
@@ -138,7 +140,7 @@ export function deriveKorelView(index: number, p: KorelParams): KorelView {
       heat = p.churn
         ? heatView(HEATMAP.withChurn.variables, HEATMAP.withChurn.matrix)
         : heatView(HEATMAP.variables, HEATMAP.matrix);
-      strip = `${heat.variables.length} değişken · ${heat.cells.length} hücre · köşegen 1,000`;
+      strip = `n = ${HEAT_N} · ${heat.variables.length} değişken · ${heat.cells.length} hücre · köşegen 1,000`;
       break;
     }
     case 'anscombe': {
@@ -181,10 +183,10 @@ export function deriveKorelView(index: number, p: KorelParams): KorelView {
       if (p.churn) {
         const last = HEATMAP.withChurn.matrix.length - 1;
         const churnR = HEATMAP.withChurn.matrix[last].slice(0, last);
-        strip = `5 değişken · ${heat.cells.length} hücre · churn 0/1 → `
+        strip = `n = ${HEAT_N} · 5 değişken · ${heat.cells.length} hücre · churn 0/1 → `
           + `${f3(Math.min(...churnR))} … ${f3(Math.max(...churnR))}`;
       } else {
-        strip = `4 değişken · ${heat.cells.length} hücre · köşegen 1,000 · churn kapalı`;
+        strip = `n = ${HEAT_N} · 4 değişken · ${heat.cells.length} hücre · köşegen 1,000 · churn kapalı`;
       }
       break;
     }
@@ -195,7 +197,8 @@ export function deriveKorelView(index: number, p: KorelParams): KorelView {
     case 'kural':
     default:
       strip = 'Özet istatistik yeterli değildir, grafik şart · '
-        + 'kutu-grafigi · iqr-aykiri · pca';
+        + 'kutu-grafigi · iqr-aykiri · pca'
+        + '\nküçük örneklem (n = 6–11): r tek gözlemle dalgalanır';
       break;
   }
 
