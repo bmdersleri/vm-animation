@@ -87,6 +87,31 @@ describe('DendrogramLayer', () => {
     expect(y - 13).toBeGreaterThanOrEqual(num(svg.querySelector('rect.dg-frame'), 'y'));
   });
 
+  it('cut label keeps clear of horizontal bars', () => {
+    const { svg, layer } = setup();
+    // one wide bar; the cut is 10 px under it, so the default spot (just above the line) would touch the bar
+    const bar = { id: 2, xl: 0, xr: 1, x: 0.5, yl: 0, yr: 0, height: 1, members: [0, 1] };
+    const frame = svg.querySelector('rect.dg-frame')!;
+    layer.resize(RECT, 1);
+    layer.update({ branches: [bar], leafX: [0, 1], leafLabels: ['1', '2'], shown: 1, cut: 0.5 }, false);
+    const plotH2 = Number(frame.getAttribute('height'));
+    const c = 1 - 10 * (1.06 / plotH2);
+    layer.update({ branches: [bar], leafX: [0, 1], leafLabels: ['1', '2'], shown: 1, cut: c }, false);
+    const barY2 = barY(svg, 1);
+    const lineY = num(svg.querySelector('line.dg-cut'), 'y1');
+    expect(lineY - barY2).toBeGreaterThan(8);
+    expect(lineY - barY2).toBeLessThan(12);
+    const base = num(svg.querySelector('text.dg-cut-label'), 'y');
+    // the label does not sit between the bar and the line: it moved below the line
+    expect(base).toBeGreaterThan(lineY);
+    // and with room above the bar the label stays above the line, 4 px clear of the bar
+    layer.update({ branches: [bar], leafX: [0, 1], leafLabels: ['1', '2'], shown: 1, cut: 1 - 40 * (1.06 / plotH2) }, false);
+    const base2 = num(svg.querySelector('text.dg-cut-label'), 'y');
+    const line2 = num(svg.querySelector('line.dg-cut'), 'y1');
+    expect(base2).toBeLessThan(line2);
+    expect(barY(svg, 1) + 4).toBeLessThanOrEqual(base2 - 13);
+  });
+
   it('each shown branch has a wide transparent hit path on its bar, above the branches, children over parents', () => {
     const { svg, layer } = setup();
     layer.update(spec({ shown: 6 }), false);

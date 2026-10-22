@@ -45,6 +45,8 @@ export interface DendrogramSpec {
 const MS = 450;
 /** Width of the transparent click band along each branch's bar. */
 const HIT_WIDTH = 12;
+/** Least gap between the cut label and any branch bar. */
+const CLEAR = 4;
 const TR = 'dg';
 const TITLE = 'birleşme uzaklığı';
 const TITLE_LINES = ['birleşme', 'uzaklığı'];
@@ -233,8 +235,39 @@ export class DendrogramLayer {
       for (let x = right - 6 - w; x >= plot.left + 4; x -= 6) if (stems.every((sx) => sx < x - 4 || sx > x + w + 4)) return r1(x);
       return r1(right - 6 - w);
     };
-    const cutLabel = cAll.select<SVGTextElement>('text').attr('text-anchor', 'start').attr('x', (d) => labelX(d)).text((d) => cutText(d));
-    go(cutLabel as unknown as AnySel).attr('y', labelY);
+    // The label box keeps CLEAR px from every drawn bar (horizontal parts and stems). Candidates, in order: above the
+    // line at the right, above at the left, below at the right, below at the left; none fits: the stem-only placement.
+    const segs: { x1: number; x2: number; y1: number; y2: number }[] = [];
+    for (const b of shown) {
+      segs.push({ x1: X(b.xl), x2: X(b.xr), y1: Y(b.height), y2: Y(b.height) });
+      segs.push({ x1: X(b.xl), x2: X(b.xl), y1: Y(b.height), y2: Y(b.yl) });
+      segs.push({ x1: X(b.xr), x2: X(b.xr), y1: Y(b.height), y2: Y(b.yr) });
+    }
+    const clearOf = (x: number, top: number, w: number): boolean => segs.every((g) =>
+      g.x2 < x - CLEAR || g.x1 > x + w + CLEAR || Math.max(g.y1, g.y2) < top - CLEAR || Math.min(g.y1, g.y2) > top + tick + CLEAR);
+    const place = (c: number): { x: number; y: number } => {
+      const w = cutText(c).length * tick * 0.62 + 8;
+      const yc = Y(c);
+      const lo = plot.left + 4;
+      const hi = right - 6 - w;
+      const scan = (dir: 'right' | 'left', top: number): number | null => {
+        for (let x = dir === 'right' ? hi : lo; dir === 'right' ? x >= lo : x <= hi; x += dir === 'right' ? -6 : 6) if (clearOf(x, top, w)) return r1(x);
+        return null;
+      };
+      const above = { top: yc - 5 - tick, base: yc - 5 };
+      const below = { top: yc + 3, base: yc + tick + 3 };
+      const options: [typeof above, 'right' | 'left', boolean][] = [
+        [above, 'right', above.top >= plot.top], [above, 'left', above.top >= plot.top],
+        [below, 'right', below.top + tick <= bottom], [below, 'left', below.top + tick <= bottom],
+      ];
+      for (const [pos, dir, fits] of options) {
+        const x = fits ? scan(dir, pos.top) : null;
+        if (x !== null) return { x, y: r1(pos.base) };
+      }
+      return { x: labelX(c), y: labelY(c) };
+    };
+    const cutLabel = cAll.select<SVGTextElement>('text').attr('text-anchor', 'start').attr('x', (d) => place(d).x).text((d) => cutText(d));
+    go(cutLabel as unknown as AnySel).attr('y', (d: number) => place(d).y);
 
     // leaves
     const lf = this.gLeaves.selectAll<SVGGElement, number>('g.dg-leaf').data(s.leafX.map((_x, i) => i), (d) => d);
