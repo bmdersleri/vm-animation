@@ -3,6 +3,7 @@ import { StepPlayer } from '../../../src/core/player';
 import { kMeansScenario, frameCount } from '../../../src/concepts/k-means/scenario';
 import { deriveView, inertiaText } from '../../../src/concepts/k-means/view';
 import { kmeansData } from '../../../src/concepts/kmeans/data';
+import { labTextTests } from '../lab-text';
 
 const good = kmeansData.runs[0];
 const bad = kmeansData.runs[1];
@@ -112,4 +113,6 @@ describe('k-means view', () => {
     expect(deriveView({ start: 0, frame: 99 }).frame).toBe(frameCount(good) - 1);
     expect(deriveView({ start: 0, frame: -3 }).frame).toBe(0);
   });
+
+  labTextTests(kMeansScenario.steps, [4, 6, 7]);
 });

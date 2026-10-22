@@ -4,6 +4,7 @@ import { kSecimiScenario, ELBOW_K } from '../../../src/concepts/k-secimi/scenari
 import { deriveKView, silhouetteText, inertiaText, dropText, changedBetween, pointStats, peakK, clampK } from '../../../src/concepts/k-secimi/view';
 import { kmeansData, kResult } from '../../../src/concepts/kmeans/data';
 import { drops } from '../../../src/concepts/kmeans/geometry';
+import { labTextTests } from '../lab-text';
 
 const steps = kSecimiScenario.steps;
 
@@ -124,4 +125,6 @@ describe('k-secimi view', () => {
     expect(pointStats(3, i)).toEqual({ a: r.a![i], b: r.b![i], s: r.s![i] });
     expect(pointStats(1, i)).toBeNull();
   });
+
+  labTextTests(kSecimiScenario.steps, [1, 2, 3, 6, 8]);
 });

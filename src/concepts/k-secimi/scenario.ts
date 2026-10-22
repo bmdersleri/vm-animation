@@ -32,6 +32,7 @@ export const kSecimiScenario: Scenario<KSecimiParams> = {
       id: 'k1',
       title: 'k=1: tek küme',
       text: `Tek merkez verinin ortasındadır. Inertia ${inertiaText(kResult(1).inertia)}: ölçeklenmiş 2 özellikte toplam varyans (${n} × 2). Silhouette ${silhouetteText(null)}: karşılaştırılacak komşu küme yok.`,
+      labText: `k kaydırıcısını oynat. Seçilen k için inertia ve silhouette değerleri sahnede canlı okunur.`,
       term: 'küme sayısı (k)',
       params: { k: 1, point: null },
     },
@@ -39,12 +40,14 @@ export const kSecimiScenario: Scenario<KSecimiParams> = {
       id: 'k2',
       title: 'k=2: alttaki grup kopar',
       text: `Alttaki küçük grup ayrılır; boylar ${sizesText(2)}. Inertia ${inertiaText(kResult(2).inertia)}'ye düşer.`,
+      labText: `k kaydırıcısını oynat. Kümelerin boyları ve inertia, seçilen k için sahnede canlı okunur.`,
       params: { k: 2, point: null },
     },
     {
       id: 'k3',
       title: 'k=3: üstteki grup bölünür',
       text: `Üstteki büyük grup ikiye bölünür; boylar ${sizesText(3)}, inertia ${inertiaText(k3.inertia)}. Kesikli halkalı noktalar k=2'ye göre küme değiştirenlerdir.`,
+      labText: `k kaydırıcısını oynat. Kümelerin boyları ve inertia sahnede canlı okunur; bir önceki k'ya göre küme değiştiren noktalar halkayla gösterilir.`,
       params: { k: 3, point: null },
     },
     {
@@ -66,6 +69,7 @@ export const kSecimiScenario: Scenario<KSecimiParams> = {
       id: 'silhouette',
       title: 'Silhouette nedir?',
       text: `Örnek: Nokta ${sp + 1} için a = kendi kümesine ortalama uzaklık (${pointText(k3.a![sp])}), b = en yakın komşu kümeye ortalama uzaklık (${pointText(k3.b![sp])}). s = (b − a) / max(a, b) = ${pointText(k3.s![sp])}. s, −1 ile +1 arasındadır: +1'e yakın net ayrışmış, 0 sınırda, negatif yanlış kümede olabilir.`,
+      labText: `Noktayı kutudan ya da saçılımda tıklayarak seç ve k kaydırıcısını oynat. a, b ve s değerleri sahnede canlı okunur.`,
       term: 'silhouette skoru',
       params: { k: 3, point: sp },
     },
@@ -80,6 +84,7 @@ export const kSecimiScenario: Scenario<KSecimiParams> = {
       id: 'k3-k4',
       title: 'k=3 mü k=4 mü?',
       text: `k=3 (${sil(3)}) ile k=4 (${sil(4)}) neredeyse eşit. Ama k=4'te ${small4} çiçeklik küçük bir küme kopar ve ${neg4} noktanın silhouette'i negatife düşer (kırmızı halka). Neredeyse eşit skor, çok farklı bölünme.`,
+      labText: `k kaydırıcısını üç ile dört arasında gezdir. Ortalama silhouette, en küçük kümenin boyu ve negatif silhouette'li nokta sayısı sahnede canlı okunur.`,
       params: { k: 4, point: null },
     },
     {
