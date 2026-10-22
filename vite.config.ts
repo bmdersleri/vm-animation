@@ -20,6 +20,7 @@ export default defineConfig({
         'ozellik-secimi': resolve(root, 'ozellik-secimi/index.html'),
         'dagilim-carpiklik': resolve(root, 'dagilim-carpiklik/index.html'),
         'kutu-grafigi': resolve(root, 'kutu-grafigi/index.html'),
+        'korelasyon-isi-haritasi': resolve(root, 'korelasyon-isi-haritasi/index.html'),
       },
     },
   },
