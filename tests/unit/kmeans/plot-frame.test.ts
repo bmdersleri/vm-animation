@@ -17,7 +17,7 @@ const setup = (prefix: string, share: number) => {
 describe('ClusterPlotFrame', () => {
   it('builds axes, the page marks group and a font probe in that order', () => {
     const { svg } = setup('km', 0.62);
-    expect([...svg.children].map((c) => c.getAttribute('class'))).toEqual(['axes', 'km-marks', 'km-probe']);
+    expect([...svg.children].map((c) => c.getAttribute('class'))).toEqual(['axes', 'km-marks', 'km-probe', 'probe']);
     expect(svg.querySelector('.km-marks .cs-layer')).not.toBeNull();
   });
 
@@ -60,5 +60,18 @@ describe('ClusterPlotFrame', () => {
     expect(ticks('x')).toEqual(['−2', '0', '2']);
     expect(ticks('y')).toEqual(['0', '2']);
     expect(title()).toEqual(['petal length', '(ölçeklenmiş)']);
+  });
+
+  it('y title stays on one line when its measured width fits', () => {
+    // 4 px per character: the whole title is 104 px, inside the 160 px SVG (the old 0.5 em estimate said 247)
+    const proto = SVGElement.prototype as unknown as { getComputedTextLength?: () => number };
+    proto.getComputedTextLength = function (this: SVGElement) { return (this.textContent ?? '').length * 4; };
+    try {
+      const { svg, frame } = setup('ks', 0.55);
+      frame.layout('ders', { w: 1000, h: 160 });
+      expect([...svg.querySelectorAll('.axis-title.y tspan')].map((t) => t.textContent)).toEqual(['petal length (ölçeklenmiş)']);
+    } finally {
+      delete proto.getComputedTextLength;
+    }
   });
 });

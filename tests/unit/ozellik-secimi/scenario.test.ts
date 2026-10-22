@@ -89,6 +89,25 @@ describe('ozellikSecimiScenario', () => {
     expect(p.state.params.rounds).toBe(ROUNDS_ALL);
   });
 
+  it('step 7 sweep covers every RFE round for each nSelect', () => {
+    // the Lab nSelect slider runs 1-7; 2-7 are tested here (1 follows the same rule)
+    for (let n = 2; n <= 7; n++) {
+      const cut = 8 - n;
+      const p = make();
+      p.goto(6);
+      p.setParam('nSelect', n);
+      const shown = [Math.min(p.state.params.rounds, cut)];
+      for (let t = 0; t < 8; t++) {
+        vi.advanceTimersByTime(RFE_SWEEP_MS);
+        shown.push(Math.min(p.state.params.rounds, cut));
+      }
+      const distinct = shown.filter((v, i) => i === 0 || v !== shown[i - 1]);
+      expect(distinct, `nSelect ${n}`).toEqual(Array.from({ length: cut }, (_, i) => i + 1));
+      expect(p.state.params.rounds).toBe(ROUNDS_ALL);
+      p.destroy();
+    }
+  });
+
   it('book scaling per step', () => {
     const p = make();
     p.goto(8);

@@ -7,7 +7,8 @@ export interface Step<P> {
   /** Term introduced by this step, e.g. "tembel öğrenme (lazy learning)"; Ders shows it beside the title. */
   term?: string;
   params?: Partial<P>;
-  sweep?: { key: keyof P; values: unknown[]; intervalMs: number };
+  /** `count`, when given, caps how many of `values` are played; it is read at every tick, so a param changed mid-sweep applies. */
+  sweep?: { key: keyof P; values: unknown[]; intervalMs: number; count?: (params: P) => number };
 }
 export interface Scenario<P> {
   defaults: P;
@@ -151,7 +152,7 @@ export class StepPlayer<P extends object> {
     this.sweeping = true;
     let n = 0;
     const apply = (): void => {
-      if (n < sw.values.length) {
+      if (n < sw.values.length && (!sw.count || n < sw.count(this.state.params))) {
         this.sweepValue = { key: sw.key, value: sw.values[n++] };
         this.sweepTimer = setTimeout(apply, sw.intervalMs);
         if (notify || n > 1) this.emit('sweep');

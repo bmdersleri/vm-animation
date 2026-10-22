@@ -1,6 +1,7 @@
 import { select } from 'd3-selection';
 import type { Mode } from '../../core/mode';
 import { AxesLayer } from '../../core/plot/axes';
+import { TextMeasure } from '../../core/plot/text-measure';
 import { ClusterScatterLayer } from '../../core/plot/cluster-scatter';
 import { fitEqualAspect, type Domain, type Rect } from '../../core/plot/viewport';
 
@@ -10,8 +11,6 @@ const X_TITLE = 'sepal length (ölçeklenmiş)';
 const Y_TITLE = 'petal length (ölçeklenmiş)';
 /** The y title on two lines, for a plot too short to hold it on one. */
 const Y_TITLE_LINES = ['petal length', '(ölçeklenmiş)'];
-/** Rough rendered length of a title: 0.5 em per character (Chrome measures about 0.45). */
-const titleLen = (text: string, px: number): number => text.length * px * 0.5;
 const FONT_FALLBACK: Record<Mode, { tick: number; axis: number }> = { ders: { tick: 18, axis: 19 }, lab: { tick: 13, axis: 14 } };
 
 export interface PlotFonts { tick: number; axis: number }
@@ -39,6 +38,8 @@ export class ClusterPlotFrame<L extends FrameLayer = ClusterScatterLayer> {
   private readonly yTitle: { text: string; lines: readonly string[] };
   private readonly axes: AxesLayer;
   private readonly probe: SVGTextElement;
+  /** Measures the y title; kept apart from `probe`, whose class carries the tick font. */
+  private readonly measure: TextMeasure;
   private lastPlot = '';
 
   /**
@@ -62,6 +63,8 @@ export class ClusterPlotFrame<L extends FrameLayer = ClusterScatterLayer> {
     this.layer = opts.makeLayer ? opts.makeLayer(marks, this.domain) : (new ClusterScatterLayer(marks, this.domain) as unknown as L);
     this.probe = svg.append('text').attr('class', `${prefix}-probe`)
       .attr('visibility', 'hidden').attr('aria-hidden', 'true').node()!;
+    this.measure = new TextMeasure(svg.append('text').attr('class', 'probe')
+      .attr('visibility', 'hidden').attr('aria-hidden', 'true').node()!);
   }
 
   /** Tick and axis-title font sizes from CSS, or the mode's fallback. */
@@ -99,9 +102,10 @@ export class ClusterPlotFrame<L extends FrameLayer = ClusterScatterLayer> {
     const unit = plot.height / (this.domain.y[1] - this.domain.y[0]);
     const gap = tick * 1.6;
     const titleX = plot.left - 8 - tick * 2.6 - axis * 0.3;
-    const split = titleLen(this.yTitle.text, axis) > h - 4 && titleX - axis * 2 >= 0;
+    const titleLen = (text: string): number => this.measure.width(text, 'axis-title', axis);
+    const split = titleLen(this.yTitle.text) > h - 4 && titleX - axis * 2 >= 0;
     const lines = split ? [...this.yTitle.lines] : [this.yTitle.text];
-    const half = Math.max(...lines.map((l) => titleLen(l, axis))) / 2 + 2;
+    const half = Math.max(...lines.map(titleLen)) / 2 + 2;
     const titleY = Math.min(Math.max(plot.top + plot.height / 2, half), h - half);
     this.axes.draw(sc, plot, {
       xTickCount: unit >= gap ? 6 : 2, yTickCount: unit / 2 >= gap ? 6 : unit >= gap ? 4 : 2,

@@ -1,6 +1,6 @@
 import type { Scenario, StepPlayer } from '../../core/player';
 import type { Shortcut } from '../../core/keyboard';
-import type { Scaling } from './data';
+import { COLUMNS, type Scaling } from './data';
 import { VT_OPTIONS, type VtThreshold } from './select';
 
 export interface SecimParams {
@@ -84,7 +84,8 @@ export const ozellikSecimiScenario: Scenario<SecimParams> = {
       labText: `Tutulacak sütun sayısını ve ölçeklemeyi değiştir. Turların sayısı ve her turda elenen sütun sahnede canlı okunur.`,
       term: 'RFE (Recursive Feature Elimination)',
       params: { ...YOK, rounds: ROUNDS_ALL },
-      sweep: { key: 'rounds', values: [1, 2, 3], intervalMs: RFE_SWEEP_MS },
+      // Rounds 1 .. cut-1 sweep, then ROUNDS_ALL is the last round (cut = COLUMNS.length - nSelect); nSelect may change mid-sweep.
+      sweep: { key: 'rounds', values: [1, 2, 3, 4, 5, 6], intervalMs: RFE_SWEEP_MS, count: (p) => COLUMNS.length - 1 - p.nSelect },
     },
     {
       id: 'gurultu-secildi',
