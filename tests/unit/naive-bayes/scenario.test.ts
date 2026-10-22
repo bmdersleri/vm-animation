@@ -7,6 +7,7 @@ import { PRIOR_SPAM, trail } from '../../../src/concepts/naive-bayes/spam';
 import { deriveNbView, pct } from '../../../src/concepts/naive-bayes/view';
 import { formatNumber } from '../../../src/core/plot/format';
 import fixture from '../../fixtures/naive-bayes_sklearn.json';
+import { labTextTests } from '../lab-text';
 
 function make(): StepPlayer<NbParams> {
   return new StepPlayer<NbParams>(nbScenario);
@@ -252,4 +253,6 @@ describe('nbShortcuts', () => {
     expect(pl.state.params.prior).toBe(0.008);
     pl.destroy();
   });
+
+  labTextTests(nbScenario.steps, [1, 2, 3, 4, 5, 6, 7, 8, 10, 12]);
 });

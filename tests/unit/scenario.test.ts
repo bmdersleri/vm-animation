@@ -5,6 +5,7 @@ import { kNearest, vote } from '../../src/concepts/knn/knn';
 import { featureSpace } from '../../src/concepts/knn/space';
 import { computeRegions, type RegionGrid } from '../../src/concepts/knn/regions';
 import { knnScenario, knnShortcuts, switchDataset, type KnnParams } from '../../src/concepts/knn/scenario';
+import { labTextTests } from './lab-text';
 
 function predict(p: KnnParams): { winner: number; ids: number[] } {
   const s = featureSpace(p.dataset, p.scaled);
@@ -184,4 +185,8 @@ describe('switchDataset', () => {
     expect(pl.state.params.query).toEqual(demo.defaultQuery.toplam);
     expect(fn).toHaveBeenCalledTimes(1);
   });
+});
+
+describe('knnScenario Lab text', () => {
+  labTextTests(knnScenario.steps, [6, 8, 9, 10, 11, 12]);
 });
