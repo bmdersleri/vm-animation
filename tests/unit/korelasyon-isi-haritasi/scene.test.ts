@@ -247,6 +247,19 @@ describe('korelasyon scene', () => {
     expect(text(one(el, 'p.formula'))).toContain('r = 0,958');
   });
 
+  it('each Anscombe set keeps its own colour wherever its panel is drawn', () => {
+    const { el, player } = setup();
+    const fill = (id: string): string =>
+      (one(el, `g.panel[data-set=${id}] path.pts`) as SVGElement).style.fill.replace(/\s/g, '');
+    player.goto(4);
+    const quartet = { I: fill('I'), II: fill('II'), IV: fill('IV') };
+    player.goto(5);
+    expect(fill('IV')).toBe(quartet.IV);
+    player.goto(6);
+    expect(fill('II')).toBe(quartet.II);
+    expect(quartet.II).not.toBe(quartet.I);
+  });
+
   it('step 5 with set IV: no leverage handle and no data-drag (only step 6 drags the point)', () => {
     const { el, player } = setup();
     player.goto(4);

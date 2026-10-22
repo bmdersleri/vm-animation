@@ -23,6 +23,7 @@ const QUARTET: Domain = { x: [2, 20], y: [2, 14] };
 const LEVERAGE_DOMAIN: Domain = { x: [2, 20], y: [2, 21] };
 /** One colour per Anscombe panel (the spec asks colour + panel number). */
 const PANEL_COLORS = ['#0ea5a4', '#7c3aed', '#f08a00', '#14365c'];
+const ANSCOMBE_IDS: readonly string[] = ['I', 'II', 'III', 'IV'];
 /** Step 3's two claim cards: the observed relation against the missing proof. */
 const CLAIMS: readonly { title: string; body: string }[] = [
   { title: 'gözlem', body: 'ilişki var: r = −0,993' },
@@ -329,7 +330,8 @@ export class PanelsLayer {
         },
       }, ms, `${state.stepId}:${panel.id}`);
 
-      const color = PANEL_COLORS[i % PANEL_COLORS.length];
+      // the colour belongs to the set, not to the slot: set IV is navy alone or in the quartet; 004 panels keep the first
+      const color = PANEL_COLORS[Math.max(0, ANSCOMBE_IDS.indexOf(panel.id))];
       p.pts.style('fill', color).style('stroke', '#ffffff').style('stroke-width', 1.2);
       const dPts = circlesPath(pts.map((pt) => sc.x(pt.x)), pts.map((pt) => sc.y(pt.y)), dotR);
       if (ms > 0) tr(p.pts as AnySel, TN, ms).attr('d', dPts);
