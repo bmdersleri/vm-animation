@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pearson } from '../../../src/core/stats';
 import {
-  ANSCOMBE, LEVERAGE, anscombeR, spearman,
+  ANSCOMBE, LEVERAGE, anscombeR, anscombeWithoutLeverage, spearman,
 } from '../../../src/concepts/korelasyon-isi-haritasi/anscombe';
 import { ANSCOMBE_JSON } from '../../../src/concepts/korelasyon-isi-haritasi/data';
 
@@ -36,6 +36,7 @@ describe('Anscombe dörtlüsü', () => {
     const x = s.x.filter((_, i) => i !== 7);
     const y = s.y.filter((_, i) => i !== 7);
     expect(pearson(x, y)).toBeNaN();
+    expect(anscombeWithoutLeverage()).toBeNaN();
   });
 
   it('kaldıraç noktası set IV’te 7. indeks', () => {

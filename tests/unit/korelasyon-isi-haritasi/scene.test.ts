@@ -87,7 +87,7 @@ describe('korelasyon scene', () => {
     expect(text(one(el, 'p.formula'))).toContain('0,995');
   });
 
-  it('step 5: four g.panel I–IV and the same "r = 0,816" summary in every text.panel-stats', () => {
+  it('step 5: four g.panel I–IV and the same "r ≈ 0,816" summary in every text.panel-stats', () => {
     const { el, player } = setup();
     player.goto(4);
     const panels = all(el, 'g.panel');
@@ -96,8 +96,9 @@ describe('korelasyon scene', () => {
     const stats = all(el, 'text.panel-stats');
     expect(stats).toHaveLength(4);
     for (const s of stats) {
-      expect(text(s)).toContain('r = 0,816');
-      expect(text(s)).toContain('7,5009');
+      // the shared line is approximate from step 6's review: ≈ carries set III's variance and set IV's r
+      expect(text(s)).toContain('r ≈ 0,816');
+      expect(text(s)).toContain('ȳ ≈ 7,5');
     }
     // the four panels share one axes pair: every y axis starts at the same tick value
     expect(new Set(panels.map((p) => text(p.querySelector('g.axis.y g.tick text')))).size).toBe(1);

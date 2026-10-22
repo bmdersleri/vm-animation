@@ -40,7 +40,7 @@ export const korelasyonScenario: Scenario<KorelParams> = {
     {
       id: 'nedensellik',
       title: 'Nedensellik',
-      text: 'Eksenler yer değiştirir: yatayda not, dikeyde devamsızlık; not yükseldikçe devamsızlık düşer, r = −0,993. İlişki güçlü ama nedensellik (causation) kanıtı değildir: üçüncü değişken (motivasyon), ters nedensellik ya da rastlantı olabilir.',
+      text: 'Yatay eksen artık not, dikey eksen devamsızlık: not yükseldikçe devamsızlık düşer, r = −0,993. İlişki güçlü ama nedensellik (causation) kanıtı değildir: üçüncü değişken (motivasyon), ters nedensellik ya da rastlantı olabilir.',
       term: 'nedensellik (causation)',
     },
     {

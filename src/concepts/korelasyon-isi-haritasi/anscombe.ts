@@ -11,7 +11,7 @@ export const LEVERAGE: Leverage = ANSCOMBE_JSON.leverage;
 
 /**
  * Set `setIndex`'s leverage point moved to `y`, then Pearson of the whole set.
- * NaN when what remains leaves x constant — exactly set IV with the point dropped.
+ * Moving the point never empties x's spread, so the result stays defined for every y.
  */
 export function anscombeR(setIndex: number, y: number): number {
   const set = ANSCOMBE[setIndex];
@@ -19,6 +19,13 @@ export function anscombeR(setIndex: number, y: number): number {
   const ys = [...set.y];
   ys[LEVERAGE.index] = y;
   return pearson(set.x, ys);
+}
+
+/** Set IV without its leverage point: the remaining x is constant, so Pearson is NaN. */
+export function anscombeWithoutLeverage(): number {
+  const set = ANSCOMBE[LEVERAGE.set - 1];
+  const keep = set.x.map((_, i) => i).filter((i) => i !== LEVERAGE.index);
+  return pearson(keep.map((i) => set.x[i]), keep.map((i) => set.y[i]));
 }
 
 /** Average ranks, ties sharing their mean rank (scipy's spearmanr convention). */
