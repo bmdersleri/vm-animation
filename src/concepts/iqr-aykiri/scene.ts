@@ -10,7 +10,6 @@ import { LineLayer } from './scene-line';
 
 /** Base duration of a step's moves, before `durationScale`. */
 const MS_STEP = 450;
-/** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 

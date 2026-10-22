@@ -11,7 +11,6 @@ import { HeatLayer, MS_HEAT } from './scene-heat';
 import { PanelsLayer, MS_STEP, type PanelsState } from './scene-panels';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
-/** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
 /** What the strip says once the leverage point is dropped: set IV's remaining x is constant. */
 const DROPPED_R = anscombeWithoutLeverage();
 const DROPPED_STRIP = Number.isNaN(DROPPED_R)

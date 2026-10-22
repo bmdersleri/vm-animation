@@ -12,7 +12,6 @@ import { ScreeLayer } from './scene-scree';
 import { PanelsLayer } from './scene-panels';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
-/** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
 /** Room inside the scatter square for the tick labels and axis titles (left, bottom) and the top / right gap. */
 const MARGIN: Record<Mode, { left: number; bottom: number }> = {
   ders: { left: 118, bottom: 72 },

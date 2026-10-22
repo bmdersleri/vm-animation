@@ -13,7 +13,6 @@ const COLS = 50;
 const ROWS = 20;
 /** Opacity of the negatives once only the positives count (reveal 2). */
 const FADED = 0.15;
-/** Body font px when computed styles are unavailable (theme.css at 1280 px). */
 const SOFT_ORANGE = '#F4AA4F';
 const GREY = '#93A3B5';
 const MUTED = '#3F526A';

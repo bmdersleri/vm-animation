@@ -17,7 +17,6 @@ const NAMES = ['sr-row', 'sr-fade', 'sr-bar'];
 /** Golden-ratio step: a deterministic, even vertical spread for the dots. */
 const GOLDEN = 0.618034;
 const DOT_R: Record<Mode, number> = { ders: 3, lab: 2.5 };
-/** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
 const LEGEND_MODES: readonly SecimMode[] = ['strips', 'variance', 'split'];
 const KIDEM = COLUMNS.indexOf('musteriKidemAy');
 const GURULTU = COLUMNS.indexOf('gurultuluOznitelik');

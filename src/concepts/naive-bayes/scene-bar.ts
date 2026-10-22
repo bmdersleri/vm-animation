@@ -9,7 +9,6 @@ import { pct, type NbView } from './view';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 /** Transition name of the bar, trail and chips (interrupted on every update). */
 const BAR_T = 'bar';
-/** Body font px when computed styles are unavailable (theme.css at 1280 px). */
 const NULL_GREY = '#C9D5E3';
 const GHOST = '#6B7F95';
 /** The trail keeps room for the story's five points (prior + four words), so dots do not jump. */

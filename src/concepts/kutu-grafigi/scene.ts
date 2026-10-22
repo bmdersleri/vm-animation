@@ -8,8 +8,6 @@ import type { KutuParams } from './scenario';
 import { deriveKutuView, stripFor, withDrag } from './view';
 import { BoxLayer, DRAG_FROM, MS_STEP } from './scene-box';
 
-/** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
-
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 
 /**
