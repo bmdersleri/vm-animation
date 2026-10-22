@@ -20,21 +20,16 @@ describe('dbscan data', () => {
     expect(r.kind[examples.noise]).toBe('noise');
   });
 
-  it('kdist curves are sorted and match a direct computation for minSamples 5', () => {
+  it('kdist curves are sorted and match a direct computation for every minSamples', () => {
     expect(kdist.map((k) => k.minSamples)).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+    // each point's distances to all points (itself included), ascending
+    const dists = points.map((p) => points.map((q) => Math.hypot(p[0] - q[0], p[1] - q[1])).sort((a, b) => a - b));
     for (const k of kdist) {
       expect(k.sorted).toHaveLength(210);
       for (let i = 1; i < k.sorted.length; i++) expect(k.sorted[i]).toBeGreaterThanOrEqual(k.sorted[i - 1]);
+      const direct = dists.map((d) => d[k.minSamples - 1]).sort((a, b) => a - b);
+      k.sorted.forEach((v, i) => expect(Math.abs(v - direct[i]), `minSamples ${k.minSamples} #${i}`).toBeLessThan(2e-6));
     }
-    const direct = points
-      .map((p) =>
-        points
-          .map((q) => Math.hypot(p[0] - q[0], p[1] - q[1]))
-          .sort((a, b) => a - b)[4],
-      )
-      .sort((a, b) => a - b);
-    const stored = kdist.find((k) => k.minSamples === 5)!.sorted;
-    stored.forEach((v, i) => expect(Math.abs(v - direct[i])).toBeLessThan(2e-6));
   });
 
   it('knee is within 0.1 of 0.3', () => {

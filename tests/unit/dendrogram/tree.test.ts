@@ -34,6 +34,8 @@ describe('dendrogram tree', () => {
         expect(samePartition(got, c.labels), `${name} k=${c.k}`).toBe(true);
         expect(got, `${name} k=${c.k} numbering`).toEqual(c.labels);
         expect(new Set(got).size).toBe(c.k);
+        // the range's low bound is inclusive: the merge at exactly `low` is applied
+        expect(labelsAtHeight(ld, n, c.low), `${name} k=${c.k} at low`).toEqual(c.labels);
       }
     }
   });

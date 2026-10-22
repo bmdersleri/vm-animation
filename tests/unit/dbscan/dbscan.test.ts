@@ -27,11 +27,12 @@ describe('dbscan', () => {
       const amb = new Set(Object.keys(g.ambiguousBorder).map(Number));
       // Cluster partition (up to label permutation) over everything but the ambiguous borders.
       expect(partition(r.label, amb), `${tag} partition`).toEqual(partition(g.labels, amb));
-      // Ambiguous borders: any listed cluster is fine; map our labels onto sklearn's through a core member.
+      // Ambiguous borders: sklearn and our BFS both expand one cluster at a time, so the border goes
+      // to the lowest listed cluster; map our labels onto sklearn's through a core member.
       const toSk = new Map<number, number>();
       core.forEach((i) => toSk.set(r.label[i], g.labels[i]));
       for (const [idx, list] of Object.entries(g.ambiguousBorder)) {
-        expect(list as number[], `${tag} border ${idx}`).toContain(toSk.get(r.label[Number(idx)]));
+        expect(toSk.get(r.label[Number(idx)]), `${tag} border ${idx}`).toBe(Math.min(...(list as number[])));
       }
     }
   });
@@ -58,6 +59,7 @@ describe('dbscan', () => {
       const r = dbscan(points, eps, 2);
       const sizes = new Map<number, number>();
       r.label.forEach((l) => l >= 0 && sizes.set(l, (sizes.get(l) ?? 0) + 1));
+      expect(sizes.size, `eps ${eps}`).toBeGreaterThanOrEqual(1);
       for (const s of sizes.values()) expect(s).toBeGreaterThanOrEqual(2);
     }
   });
