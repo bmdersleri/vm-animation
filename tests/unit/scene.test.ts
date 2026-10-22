@@ -390,6 +390,58 @@ describe('mountKnnScene', () => {
     }
   });
 
+  /** Badge offset (px) from its own point, keyed by point index. */
+  const badgeOffsets = (el: Element): Map<number, [number, number]> => {
+    const out = new Map<number, [number, number]>();
+    for (const g of all(el, 'g.rank')) {
+      const i = (g as unknown as { __data__: { i: number } }).__data__.i;
+      const [px, py] = translate(el.querySelector(`.pt[data-i="${i}"]`)!);
+      const [bx, by] = translate(g);
+      out.set(i, [bx - px, by - py]);
+    }
+    return out;
+  };
+
+  it('rank badges stay on their points when the neighbour order swaps', () => {
+    const { el, player } = setup({ k: 3 }, 'lab');
+    player.goto(3);
+    const q0 = { ...player.state.params.query };
+    const nodes = new Map(all(el, 'g.rank').map((g) => [(g as unknown as { __data__: { i: number } }).__data__.i, g]));
+    const order = (): number[] => deriveKnnView(3, player.state.params).neighbors.map((n) => n.index);
+    const first = order();
+    // sweep the query along a line until the neighbour order changes
+    let swapped = false;
+    for (let step = 1; step <= 200 && !swapped; step++) {
+      player.setParam('query', { tenure: q0.tenure + step * 0.5, value: q0.value + step * 0.5 });
+      swapped = order().join() !== first.join() && new Set(order()).size === new Set(first).size
+        && order().every((i) => first.includes(i));
+    }
+    expect(swapped).toBe(true);
+    // the same badge nodes sit on the same points, only their number changed
+    for (const g of all(el, 'g.rank')) {
+      const i = (g as unknown as { __data__: { i: number } }).__data__.i;
+      if (nodes.has(i)) expect(g).toBe(nodes.get(i));
+    }
+    expect(all(el, 'g.rank').map((g) => Number(g.textContent)).sort()).toEqual([1, 2, 3]);
+  });
+
+  it('a 1 px query move keeps every badge offset', () => {
+    const { el, player } = setup({ k: 5 }, 'lab');
+    player.goto(3);
+    const before = badgeOffsets(el);
+    const tx = (): number => translate(el.querySelector('g.q')!)[0];
+    const x0 = tx();
+    const q = player.state.params.query;
+    player.setParam('query', { tenure: q.tenure + 0.2, value: q.value });
+    expect(Math.abs(tx() - x0)).toBeLessThan(3);
+    const after = badgeOffsets(el);
+    expect([...after.keys()].sort()).toEqual([...before.keys()].sort());
+    for (const [i, [dx, dy]] of before) {
+      expect(Math.abs(after.get(i)![0] - dx), `badge ${i}`).toBeLessThan(0.51);
+      expect(Math.abs(after.get(i)![1] - dy), `badge ${i}`).toBeLessThan(0.51);
+    }
+  });
+
   it('visibleDomain is null before the first draw and covers the data domain after', () => {
     const el = document.createElement('div');
     document.body.append(el);

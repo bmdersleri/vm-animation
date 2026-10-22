@@ -324,6 +324,23 @@ describe('lab threshold handles', () => {
     expect(leaves.join('|')).not.toContain('NaN');
   });
 
+  it('drag cards are built at step entry and reused on pointer down', () => {
+    for (const i of [6, 7, 8]) {
+      const { el, player } = setup('lab', [1000, 600]);
+      player.goto(i);
+      const nodes = (): Element[] => all(el, '.cards-layer .card, .cards-layer .branch, .cards-layer .card-score, .cards-layer .fill');
+      const before = nodes();
+      expect(before.length, `step ${i + 1}`).toBeGreaterThanOrEqual(2);
+      if (i !== 8) expect(el.querySelector<HTMLElement>('.cards-layer')!.hidden).toBe(true);
+      player.setParams({ userSplit: { feature: 0, threshold: 20 }, scan: -1 });
+      const after = nodes();
+      expect(el.querySelector<HTMLElement>('.cards-layer')!.hidden).toBe(false);
+      expect(all(el, '.cards-layer .card h3.card-title').map((t) => t.textContent?.slice(0, 6))).toEqual(['Senin ', 'Ağacın']);
+      expect(after).toHaveLength(before.length);
+      after.forEach((n, k) => expect(n).toBe(before[k]));
+    }
+  });
+
   it('no handles in Ders', () => {
     const { el, player } = setup('ders');
     for (const i of [6, 7, 8]) {

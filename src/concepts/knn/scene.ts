@@ -237,28 +237,38 @@ export function mountKnnScene(
   }
 
   /** Rank badge centres (px) for the k neighbours, placed away from the query and from each other. */
+  /** Offset (px, from its point) of each badge in the last frame, by point index. */
+  const badgeOffsets = new Map<number, P>();
+
   function rankBadges(v: KnnView, sc: Scales, L: Layout): Rank[] {
-    if (v.phase < 3) return [];
+    if (v.phase < 3) {
+      badgeOffsets.clear();
+      return [];
+    }
     const at = v.neighbors.map((n): P => ({ x: sc.x(pts[n.index].x), y: sc.y(pts[n.index].y) }));
     const q = { x: sc.x(v.query.x), y: sc.y(v.query.y) };
     const off = (L.ptR * 0.7 + L.badgeR * 0.75) * Math.SQRT2;
-    const pos = placeBadges(at, q, off, L.badgeR, (L.querySide * Math.SQRT2) / 2, L.ptR);
+    // each badge starts from the offset it had on its own point last frame (keyed by point, not by rank)
+    const pos = placeBadges(at, q, off, L.badgeR, (L.querySide * Math.SQRT2) / 2, L.ptR, v.neighbors.map((n) => badgeOffsets.get(n.index)));
+    badgeOffsets.clear();
+    v.neighbors.forEach((n, r) => badgeOffsets.set(n.index, { x: pos[r].x - at[r].x, y: pos[r].y - at[r].y }));
     return v.neighbors.map((n, r) => ({ r: r + 1, i: n.index, x: pos[r].x, y: pos[r].y }));
   }
 
   function drawRanks(data: Rank[], L: Layout, ms: number): void {
     const pos = (d: Rank): string => `translate(${r1(d.x)},${r1(d.y)})`;
-    const sel = gRanks.selectAll<SVGGElement, Rank>('g.rank').data(data, (d) => d.r).join(
+    const sel = gRanks.selectAll<SVGGElement, Rank>('g.rank').data(data, (d) => d.i).join(
       (enter) => {
         const g = enter.append('g').attr('class', 'rank').attr('opacity', 0).attr('transform', pos);
         g.append('circle').attr('fill', NAVY).attr('stroke', WHITE).attr('stroke-width', 1.5);
-        g.append('text').attr('text-anchor', 'middle').attr('dy', '0.35em').text((d) => d.r);
+        g.append('text').attr('text-anchor', 'middle').attr('dy', '0.35em');
         return g;
       },
       (update) => update,
       (exit) => { tr(exit, 'ranks', ms).attr('opacity', 0).remove(); },
     );
     sel.select('circle').attr('r', r1(L.badgeR));
+    sel.select('text').text((d) => d.r);
     const stagger = ms > 0 && lastPhase < 3 ? Math.min(60, 600 / Math.max(1, data.length)) * ds : 0;
     tr(sel, 'ranks', ms, stagger ? (d: Rank) => (d.r - 1) * stagger : undefined)
       .attr('transform', pos).attr('opacity', 1);

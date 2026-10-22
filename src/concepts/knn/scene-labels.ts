@@ -13,13 +13,19 @@ export interface Circle extends P { r: number }
  * out of the diamond and off the other neighbour points (radius `ptR`) while
  * keeping each badge next to its own point. Badges never stacking wins over
  * avoiding points: in a cluster too dense for both, the points are ignored.
+ *
+ * `start[i]` (optional) is the offset badge i had in the previous frame; a
+ * badge begins there instead of facing away from the query, so it changes
+ * side only when something (the diamond, another badge or point) forces it.
  */
-export function placeBadges(points: P[], q: P, off: number, badgeR: number, queryHalf: number, ptR = 0): P[] {
-  const out = relax(points, q, off, badgeR, queryHalf, ptR);
+export function placeBadges(
+  points: P[], q: P, off: number, badgeR: number, queryHalf: number, ptR = 0, start: (P | null | undefined)[] = [],
+): P[] {
+  const out = relax(points, q, off, badgeR, queryHalf, ptR, start);
   if (ptR <= 0) return out;
   const n = badgeOverlaps(out, badgeR);
   if (n === 0) return out;
-  const plain = relax(points, q, off, badgeR, queryHalf, 0);
+  const plain = relax(points, q, off, badgeR, queryHalf, 0, start);
   return badgeOverlaps(plain, badgeR) < n ? plain : out;
 }
 
@@ -31,8 +37,12 @@ function badgeOverlaps(out: P[], badgeR: number): number {
   return n;
 }
 
-function relax(points: P[], q: P, off: number, badgeR: number, queryHalf: number, ptR: number): P[] {
-  const out = points.map((p) => {
+function relax(
+  points: P[], q: P, off: number, badgeR: number, queryHalf: number, ptR: number, start: (P | null | undefined)[],
+): P[] {
+  const out = points.map((p, i) => {
+    const s0 = start[i];
+    if (s0) return { x: p.x + s0.x, y: p.y + s0.y };
     let dx = p.x - q.x;
     let dy = p.y - q.y;
     let len = Math.hypot(dx, dy);

@@ -17,7 +17,7 @@ import { deriveTreeView, pct, type TreeView } from './view';
 import { CardsLayer } from './scene-cards';
 import { TreeLayer, TREE_T } from './scene-tree';
 import {
-  CURVE_T, CurvePanel, LINES_T, curveModel, drawLines, linesModel, type CurveLayout, type LinesModel,
+  CURVE_T, CurvePanel, DRAG_STEPS, LINES_T, curveModel, drawLines, linesModel, type CurveLayout, type LinesModel,
 } from './scene-scan';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -250,7 +250,8 @@ export function mountTreeScene(
       else el.append(cardsHost);
     }
     if (part2) renderPart2(v, p, state.index, ms);
-    cards.update(v, ms);
+    // Lab steps 7-9 (the drag steps): build the two drag cards hidden now, not on the first pointer-down
+    cards.update(v, ms, mode === 'lab' && (DRAG_STEPS as readonly number[]).includes(state.index));
 
     lastParams = p;
     lastIndex = state.index;

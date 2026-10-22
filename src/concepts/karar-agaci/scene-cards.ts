@@ -21,6 +21,10 @@ const CLASSES: Record<'tennis' | 'churn', readonly [string, string]> = {
   churn: ['Kaldı', 'Ayrıldı'],
 };
 
+/** The Lab drag cards ("user", "tree"): two cards of two branches, keyed as view.ts keys them. */
+const DRAG_SHAPE: readonly number[] = [2, 2];
+const DRAG_KEY = 'user||tree';
+
 const pct = (x: number): string => `${Math.round(x * 1e6) / 1e4}%`;
 const total = (c: readonly number[]): number => c[0] + c[1];
 /** Writes text only when it changed: a drag frame leaves most of it as it was. */
@@ -71,21 +75,34 @@ export class CardsLayer {
     host.append(this.root);
   }
 
-  /** Renders `v`; `ms` (already scaled) animates the bar fills, 0 jumps. */
-  update(v: TreeView, ms: number): void {
+  /**
+   * Renders `v`; `ms` (already scaled) animates the bar fills, 0 jumps. With
+   * `reserveDrag` and no cards in the view (Lab, before the first press) the two
+   * drag cards are still built, hidden, so the first drag frame only fills them.
+   */
+  update(v: TreeView, ms: number, reserveDrag = false): void {
     // cancel running fills first so rapid step changes end in the final state
     select(this.root).selectAll('.fill').interrupt(T);
     if (v.cards.length === 0) {
       this.root.hidden = true;
-      this.key = ''; // shown again later: the cards fill afresh
+      if (reserveDrag && this.key !== DRAG_KEY) {
+        this.build(DRAG_SHAPE);
+        this.key = DRAG_KEY;
+      } else if (!reserveDrag) {
+        this.key = ''; // shown again later: the cards fill afresh
+      }
       this.fillRoot(null, 0);
       return;
     }
     this.root.hidden = false;
 
-    const key = v.cards.map((c) => [c.id ?? c.title, ...(c.id ? [] : c.branches.map((b) => b.label))].join('|')).join('||');
+    // in the drag steps the candidate cards (step 9) and the drag cards share one set of nodes: the press reuses them
+    const dragShaped = reserveDrag && v.cards.length === 2 && v.cards.every((c) => c.branches.length === 2);
+    const key = dragShaped
+      ? DRAG_KEY
+      : v.cards.map((c) => [c.id ?? c.title, ...(c.id ? [] : c.branches.map((b) => b.label))].join('|')).join('||');
     if (key !== this.key) {
-      this.build(v.cards);
+      this.build(v.cards.map((c) => c.branches.length));
       this.key = key;
     }
 
@@ -151,11 +168,12 @@ export class CardsLayer {
     return { line, measure, sep, gain };
   }
 
-  private build(cards: CardView[]): void {
-    this.cards = cards.map((c) => {
+  /** One card per entry, with that many branch rows. */
+  private build(shapes: readonly number[]): void {
+    this.cards = shapes.map((branchCount) => {
       const card = this.el('div', 'card');
       const title = this.el('h3', 'card-title');
-      const branches = c.branches.map((): BranchEls => {
+      const branches = Array.from({ length: branchCount }, (): BranchEls => {
         const row = this.el('div', 'branch');
         const label = this.el('span', 'branch-label');
         const { bar, fill, segs } = this.bar();
