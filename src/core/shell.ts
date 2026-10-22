@@ -1,4 +1,4 @@
-import { StepPlayer, type PlayerState, type Scenario } from './player';
+import { StepPlayer, type PlayerState, type Scenario, type Step } from './player';
 import { readMode, writeMode, type Mode } from './mode';
 import { bindKeys, isFormControl, type Shortcut } from './keyboard';
 
@@ -167,6 +167,10 @@ export function mountConceptPage<P extends object>(
 
   // ---- state rendering ----
   const showTerm = (): void => { stepTerm.hidden = mode !== 'ders' || !stepTerm.textContent; };
+  let shownStep: Step<P> | null = null;
+  const showText = (): void => {
+    stepText.textContent = (mode === 'lab' ? shownStep?.labText : undefined) ?? shownStep?.text ?? '';
+  };
   let shownIndex = -1;
   let shownPlaying: boolean | null = null;
   const render = (s: PlayerState<P>): void => {
@@ -176,7 +180,8 @@ export function mountConceptPage<P extends object>(
       dots[s.index].setAttribute('aria-current', 'step');
       stepCount.textContent = `Adım ${s.index + 1} / ${s.count}`;
       stepTitle.textContent = s.step.title;
-      stepText.textContent = s.step.text;
+      shownStep = s.step;
+      showText();
       stepTerm.textContent = s.step.term ?? '';
       showTerm();
       prevBtn.disabled = s.index === 0;
@@ -201,6 +206,7 @@ export function mountConceptPage<P extends object>(
     paramsToggle.setAttribute('aria-expanded', String(paramsOpen));
     params.hidden = ders && !paramsOpen;
     stepText.hidden = ders;
+    showText();
     showTerm();
     extra.hidden = ders;
   };

@@ -2,6 +2,8 @@ export interface Step<P> {
   id: string;
   title: string;
   text: string;
+  /** Lab step-card text, for a step whose lesson `text` states numbers or results the Lab controls change; Ders never shows it. */
+  readonly labText?: string;
   /** Term introduced by this step, e.g. "tembel öğrenme (lazy learning)"; Ders shows it beside the title. */
   term?: string;
   params?: Partial<P>;

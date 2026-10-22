@@ -59,7 +59,7 @@ function setup(search = '') {
       defaults: { k: 5 },
       steps: [
         { id: 'a', title: 'Birinci', text: 'Bir metni', term: 'tembel öğrenme (lazy learning)' },
-        { id: 'b', title: 'İkinci', text: 'İki metni' },
+        { id: 'b', title: 'İkinci', text: 'İki metni', labText: 'İki Lab metni' },
         { id: 'c', title: 'Üçüncü', text: 'Üç metni' },
       ],
     },
@@ -235,12 +235,33 @@ describe('shell', () => {
   });
 
   it('explain shows current step title and text', () => {
-    const { player, q } = setup();
+    const { player, q } = setup('?mod=ders');
     expect(q('.explain .step-title').textContent).toBe('Birinci');
     expect(q('.explain .step-text').textContent).toBe('Bir metni');
     player.goto(1);
     expect(q('.explain .step-title').textContent).toBe('İkinci');
     expect(q('.explain .step-text').textContent).toBe('İki metni');
+  });
+
+  it('lab step card shows labText when the step has one', () => {
+    const { player, q } = setup('?mod=lab');
+    player.goto(1);
+    expect(q('.step-text').textContent).toBe('İki Lab metni');
+  });
+
+  it('lab step card falls back to the lesson text', () => {
+    const { q } = setup('?mod=lab');
+    expect(q('.step-text').textContent).toBe('Bir metni');
+  });
+
+  it('switching to Lab rewrites the step card', () => {
+    const { player, q } = setup('?mod=ders');
+    player.goto(1);
+    expect(q('.step-text').textContent).toBe('İki metni');
+    q<HTMLButtonElement>('[data-mode-btn=lab]').click();
+    expect(q('.step-text').textContent).toBe('İki Lab metni');
+    q<HTMLButtonElement>('[data-mode-btn=ders]').click();
+    expect(q('.step-text').textContent).toBe('İki metni');
   });
 
   it('side column puts the explanation (and its table) before the params', () => {
