@@ -119,6 +119,7 @@ describe('dendrogram scene', () => {
     for (let i = 0; i < 10; i++) {
       player.goto(i);
       expect(root.dataset.view).toBe(i === 9 ? 'table' : 'trees');
+      expect(root.hasAttribute('data-step')).toBe(false);
     }
     fin(scene, player);
   });

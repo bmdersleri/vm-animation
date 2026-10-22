@@ -218,7 +218,6 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
     const k = params.k !== null && Number.isInteger(params.k) && params.k >= 1 && params.k <= ld.cuts.length ? params.k : null;
     const cut = k === null ? null : cutForK(ld, k);
     const labels = k === null ? null : ld.cuts[k - 1].labels;
-    root.dataset.step = String(index);
     root.dataset.view = index === STEP_TABLE ? 'table' : 'trees';
     treeCaption.hidden = index !== STEP_TABLE;
     treeCaption.dataset.treeLinkage = params.linkage;

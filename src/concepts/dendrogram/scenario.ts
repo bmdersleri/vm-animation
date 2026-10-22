@@ -38,7 +38,6 @@ const rows = linkageRows();
 
 // Step 4 stays where step 3's sweep ended, so the tree does not rewind.
 const SWEEP_END = 8;
-const ex8 = SWEEP_END;
 const values = (from: number, to: number): number[] => Array.from({ length: to - from + 1 }, (_v, i) => from + i);
 const base = { linkage: 'ward' as const, point: null, focusMerge: null };
 
@@ -71,7 +70,7 @@ export const dendrogramScenario: Scenario<DendrogramParams> = {
       title: 'İki kümenin uzaklığı ne demek?',
       text: `Ward'da "en yakın" şu demektir: birleşince küme içi kareler toplamı en az artan çift birleşir. Örnek, birleşme ${example.merge + 1} (${clusterName(exampleInfo.left)} ile ${clusterName(exampleInfo.right)}): kareler toplamı yalnızca ${formatNumber(example.increase, 3)} artar; dendrogramdaki yükseklik √(2 × ${formatNumber(example.increase, 3)}) = ${heightText(ex[example.merge].height)}.`,
       term: 'Ward bağlantısı (Ward linkage)',
-      params: { ...base, merges: ex8, k: null, focusMerge: example.merge },
+      params: { ...base, merges: SWEEP_END, k: null, focusMerge: example.merge },
     },
     {
       id: 'agac',
