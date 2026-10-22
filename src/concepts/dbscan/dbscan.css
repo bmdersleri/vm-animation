@@ -20,7 +20,7 @@
 }
 .db-plot-host { grid-area: plot; position: relative; min-width: 0; min-height: 0; }
 .db-panel { grid-area: panel; align-self: start; }
-.db-scene[data-step="9"] .db-panel { align-self: stretch; }
+.db-scene[data-view="kdist"] .db-panel { align-self: stretch; }
 .db-plot,
 .db-kd-host .kd-chart {
   position: absolute;
@@ -146,3 +146,6 @@
 .db-pick-hint { color: var(--muted); }
 .db-params :focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
 .db-plot g.pk-point { cursor: pointer; }
+
+/* No control on this Lab step (steps 1-2): the empty params card is hidden. */
+.params:has(.db-params):not(:has(.ctl:not([hidden]))) { display: none; }
