@@ -235,6 +235,14 @@ describe('korelasyon scene', () => {
     expect(text(one(el, 'p.formula'))).toContain('r = 0,958');
   });
 
+  it('step 5 with set IV: no leverage handle and no data-drag (only step 6 drags the point)', () => {
+    const { el, player } = setup();
+    player.goto(4);
+    player.setParam('set', 4);
+    expect(one(el, 'circle.leverage').getAttribute('display')).toBe('none');
+    expect(one(el, 'svg.kor-plot').hasAttribute('data-drag')).toBe(false);
+  });
+
   it('step 6: sets I–III keep the quartet axis, not the wide set-IV y axis', () => {
     const { el, player } = setup();
     player.goto(5);

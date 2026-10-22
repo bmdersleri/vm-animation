@@ -81,8 +81,8 @@ export function mountKorelasyonScene(
   }
 
   function panelState(view: KorelView): PanelsState {
-    // set IV is the only set with a leverage point; I–III draw their own scatter
-    const hasLever = view.set === 4 && view.panels.some((panel) => panel.id === 'IV');
+    // set IV on the leverage step is the only panel with a draggable point; step 5's quartet IV is not
+    const hasLever = view.stepId === 'kaldirac' && view.set === 4 && view.panels.some((panel) => panel.id === 'IV');
     return {
       stepId: view.stepId,
       set: view.set,
