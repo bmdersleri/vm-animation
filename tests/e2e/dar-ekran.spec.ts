@@ -11,12 +11,22 @@ async function checkStep(page: Page, label: string): Promise<void> {
   const box = await page.locator('.stage').boundingBox();
   expect(box, `${label}: stage box`).not.toBeNull();
   expect(box!.width, `${label}: stage width`).toBeLessThanOrEqual(390 + 1);
-  // scenes are SVG, canvas or HTML cards; some steps hide a layer, so any visible layer counts
-  const scene = page.locator('.stage :is(svg, canvas, div):visible').first();
-  await expect(scene, `${label}: scene visible`).toBeVisible();
-  const sb = await scene.boundingBox();
-  expect(sb!.width, `${label}: scene width`).toBeGreaterThan(0);
-  expect(sb!.height, `${label}: scene height`).toBeGreaterThan(0);
+  // the scene's own drawing element: the largest svg/canvas in the stage that is rendered
+  // (not hidden, so a collapsed one still counts and fails), or, when a step shows
+  // only HTML cards, the first rendered scene root in the stage
+  const drawn = await page.evaluate(() => {
+    const stage = document.querySelector('.stage')!;
+    const boxes = [...stage.querySelectorAll('svg, canvas')]
+      .filter((e) => e.checkVisibility({ checkVisibilityCSS: true, checkOpacity: true }))
+      .map((e) => e.getBoundingClientRect());
+    const biggest = boxes.sort((a, b) => b.width * b.height - a.width * a.height)[0];
+    const root = [...stage.children].find((e) => e.checkVisibility({ checkVisibilityCSS: true }));
+    const r = biggest ?? root?.getBoundingClientRect();
+    return r ? { w: r.width, h: r.height } : null;
+  });
+  expect(drawn, `${label}: scene element`).not.toBeNull();
+  expect(drawn!.w, `${label}: scene width`).toBeGreaterThan(100);
+  expect(drawn!.h, `${label}: scene height`).toBeGreaterThan(100);
 }
 
 test('every ready page fits 390 px in Ders and Lab', async ({ page }) => {
@@ -72,7 +82,7 @@ test('tall scenes are not cut at 390 px', async ({ page }) => {
   for (const c of cases) {
     await page.goto(`/${c.href}?mod=ders`);
     await page.locator('.step-dot').nth(c.step).click();
-    await page.waitForTimeout(500);
+    await expect(page.locator('.step-count')).toHaveText(new RegExp(`^Adım ${c.step + 1} / `));
     const r = await page.evaluate(() => {
       const stage = document.querySelector<HTMLElement>('.stage')!;
       stage.scrollTop = stage.scrollHeight;

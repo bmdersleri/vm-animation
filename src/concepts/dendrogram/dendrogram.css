@@ -167,12 +167,16 @@
     grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto;
     grid-template-areas: "scatter" "tree" "panel";
   }
-  .dg-scene[data-view="table"][data-mode="ders"] {
+  .dg-scene[data-view="table"] {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(200px, 1fr) auto;
     grid-template-areas: "tree" "panel";
+    /* grows with the table; the stage scrolls instead of squeezing the tree */
+    position: relative;
+    min-height: 100%;
   }
-  .dg-scene[data-view="table"][data-mode="ders"] .dg-panel { align-self: stretch; }
+  .dg-scene[data-view="table"] .dg-scatter-host { display: none; }
+  .dg-scene[data-view="table"] .dg-panel { align-self: stretch; }
 }
 
 /* Lab controls and click targets (Task 6) */

@@ -193,7 +193,13 @@
 @media (max-width: 900px) {
   .km-scene {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(260px, 1fr) auto;
+    /* grows with its content; the stage scrolls instead of clipping the panel */
+    position: relative;
+    min-height: 100%;
+  }
+  .km-panel {
+    overflow: visible;
   }
 }
 
