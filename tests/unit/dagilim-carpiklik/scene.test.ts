@@ -7,6 +7,7 @@ import { HistLayer, MS_STEP } from '../../../src/concepts/dagilim-carpiklik/scen
 import { mountDagilimParams } from '../../../src/concepts/dagilim-carpiklik/controls';
 import { deriveDagilimView } from '../../../src/concepts/dagilim-carpiklik/view';
 import { countSubpaths } from '../../../src/core/plot/dots-path';
+import { bindKeys } from '../../../src/core/keyboard';
 import type { Mode } from '../../../src/core/mode';
 
 // jsdom has no DOMMatrix, which d3-transition needs to tween CSS transforms
@@ -182,6 +183,52 @@ describe('dagilim scene', () => {
     player.goto(7);
     expect(el.querySelector('circle.drag-handle')).toBeNull();
     expect(one(el, 'svg.dag-plot').hasAttribute('data-drag')).toBe(false);
+  });
+
+  it('step 7: the outlier handle is a focusable slider that the arrow keys move', () => {
+    const { el, player } = setup();
+    cleanup.push(bindKeys(window, player, { toggleFullscreen() {}, toggleHelp() {} }, []));
+    player.goto(6);
+    const handle = one(el, 'circle.drag-handle');
+    expect(handle.getAttribute('tabindex')).toBe('0');
+    expect(handle.getAttribute('aria-orientation')).toBe('horizontal');
+    const press = (key: string, shift = false): void => {
+      one(el, 'circle.drag-handle').dispatchEvent(new KeyboardEvent('keydown', { key, shiftKey: shift, bubbles: true, cancelable: true }));
+    };
+    press('ArrowRight');
+    expect(player.state.params.extreme).toBe(29);
+    press('ArrowRight', true);
+    expect(player.state.params.extreme).toBe(34);
+    // the same clamp as the pointer drag: never below 28 or past 60
+    for (let i = 0; i < 3; i++) press('ArrowLeft', true);
+    expect(player.state.params.extreme).toBe(28);
+    for (let i = 0; i < 8; i++) press('ArrowRight', true);
+    expect(player.state.params.extreme).toBe(60);
+    // the handle owns its arrows: the step never moved
+    expect(player.state.index).toBe(6);
+  });
+
+  it('log step: the marks read two decimals (2,79 / 2,74); raw marks trim to one', () => {
+    const { el, player } = setup();
+    player.goto(5);
+    expect(labels(el)).toEqual(['2,79', '2,74']);
+    player.goto(7);
+    player.setParam('seri', 'simetrik');
+    expect(labels(el)).toEqual(['16', '16']);
+  });
+
+  it('bin ranges stay under the bars with ten bins and on the log axis', () => {
+    const { el, player } = setup();
+    player.goto(1);
+    player.setParam('bins', 10);
+    const ranges = all(el, 'text.bin-range').map(text);
+    expect(ranges).toHaveLength(10);
+    expect(ranges[0]).toBe('8–10,2');
+    player.goto(5);
+    player.setParam('bins', 5);
+    const logRanges = all(el, 'text.bin-range').map(text);
+    expect(logRanges).toHaveLength(5);
+    expect(logRanges[0]).toBe('2,2–2,44');
   });
 
   it('a step change stops an in-flight drag', () => {

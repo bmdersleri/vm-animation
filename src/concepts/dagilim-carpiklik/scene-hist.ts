@@ -57,6 +57,8 @@ const clamp = (v: number, a: number, b: number): number => Math.min(b, Math.max(
 
 /** Up to one decimal with trailing zeros trimmed: "12,4", "8". */
 const trim1 = (x: number): string => formatTrim(x, 1);
+/** A value on the drawn axis: two decimals on the log1p axis (2,79 / 2,74), one on the hour axis. */
+const axisText = (x: number, log: boolean): string => (log ? formatTrim(x, 2) : trim1(x));
 
 /**
  * The plot of the `dagilim-carpiklik` page: the reused core number line with the
@@ -204,8 +206,8 @@ export class HistLayer {
 
     // ---- mean and median marks: rows stagger when the two labels are close
     const marks: MarkD[] = [
-      { kind: 'mean', x: sc(v.mean), cx: 0, w: 0, ly: 0, label: formatNumber(v.mean, 1), show: v.showMean },
-      { kind: 'median', x: sc(v.median), cx: 0, w: 0, ly: 0, label: formatNumber(v.median, 1), show: v.showMedian },
+      { kind: 'mean', x: sc(v.mean), cx: 0, w: 0, ly: 0, label: axisText(v.mean, v.log), show: v.showMean },
+      { kind: 'median', x: sc(v.median), cx: 0, w: 0, ly: 0, label: axisText(v.median, v.log), show: v.showMedian },
     ];
     for (const m of marks) {
       m.w = this.measure.width(m.label, 'mark-label', L.tick);
@@ -266,8 +268,11 @@ export class HistLayer {
     cntEnter.merge(cntSel as never).text((b: BarD) => String(b.count))
       .attr('opacity', (b: BarD) => (b.count > 0 ? 1 : 0));
 
-    // ---- bin ranges under the baseline (five bins or fewer, raw units only)
-    const ranges = !v.log && bars.length <= 5 ? bars : [];
+    // ---- bin ranges under the baseline: every range or none, so a label never spills into its neighbour
+    const rangeText = (b: BarD): string => `${axisText(b.lo, v.log)}–${axisText(b.hi, v.log)}`;
+    const ranges = bars.every((b) => this.measure.width(rangeText(b), 'bin-range', L.tick) <= sc(b.hi) - sc(b.lo) - 4)
+      ? bars
+      : [];
     this.gBinRange.selectAll<SVGTextElement, BarD>('text.bin-range')
       .data(ranges, (_, i) => String(i))
       .join(
@@ -275,7 +280,7 @@ export class HistLayer {
         (update) => update,
         (exit) => exit.remove(),
       )
-      .text((b) => `${trim1(b.lo)}–${trim1(b.hi)}`)
+      .text(rangeText)
       .attr('x', (b) => r1(b.cx)).attr('y', r1(L.baseY + L.tick * 1.15));
 
     // ---- dots: one circle sub-path per value, stacked above the axis
@@ -307,6 +312,9 @@ export class HistLayer {
       .attr('aria-label', 'uç değer')
       .attr('aria-valuemin', DRAG_MIN)
       .attr('aria-valuemax', DRAG_MAX)
+      .attr('aria-orientation', 'horizontal')
+      .attr('tabindex', '0')
+      .on('keydown', (ev: KeyboardEvent) => this.dragKey(ev))
       .on('pointerdown', (ev: PointerEvent) => this.dragDown(ev))
       .on('pointermove', (ev: PointerEvent) => this.dragMove(ev))
       .on('pointerup', (ev: PointerEvent) => this.dragUp(ev))
@@ -424,6 +432,19 @@ export class HistLayer {
     lUpd.select('text.rule-link-text')
       .attr('x', (d) => r1(d.x)).attr('y', (d) => r1(d.y)).attr('text-anchor', 'middle')
       .text((d) => d.label);
+  }
+
+  /** ←/→ move the focused handle 1 h (Shift 5 h) through the same 28–60 clamp as the pointer. */
+  private dragKey(ev: KeyboardEvent): void {
+    const dir = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+    if (dir === 0 || !this.dragOn) return;
+    ev.preventDefault();
+    // the shell binds ←/→ to step navigation on window: the focused handle owns them
+    ev.stopPropagation();
+    const now = Number((ev.currentTarget as Element).getAttribute('aria-valuenow'));
+    if (!Number.isFinite(now)) return;
+    const next = clamp(now + dir * (ev.shiftKey ? 5 : 1), DRAG_MIN, DRAG_MAX);
+    if (next !== now) this.onDragCb?.(next);
   }
 
   // ------------------------------------------------------------- pointer drag
