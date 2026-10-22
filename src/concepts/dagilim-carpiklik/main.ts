@@ -8,7 +8,7 @@ import { mountDagilimExtra } from './extra';
 
 export const dagilimCarpiklikPage: ConceptPage<DagilimParams> = {
   title: 'Dağılım, ortalama–medyan ve çarpıklık',
-  chapter: 'Bölüm 2 · Betimsel İstatistikler',
+  chapter: 'Bölüm 2 · Keşifçi Veri Analizi (EDA)',
   scenario: dagilimScenario,
   mountScene: (el, player, mode) => mountDagilimScene(el, player, mode),
   mountParams: mountDagilimParams,

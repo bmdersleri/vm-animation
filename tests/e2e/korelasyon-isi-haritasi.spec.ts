@@ -77,6 +77,13 @@ for (const mode of ['ders', 'lab'] as const) {
   });
 }
 
+test('ders: step 2 draws the trend line and r = 0,995', async ({ page }) => {
+  await open(page, PAGE, 'ders', READY);
+  await gotoStep(page, 1, STEPS, 1200);
+  await expect(page.locator('.formula')).toContainText('0,995');
+  await expect(page.locator('svg.kor-plot path.trend')).toHaveCount(1);
+});
+
 test('ders: the quartet shows four panels under one shared summary', async ({ page }) => {
   await open(page, PAGE, 'ders', READY);
   await gotoStep(page, 4, STEPS, 1200);

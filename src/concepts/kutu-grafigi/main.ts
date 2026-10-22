@@ -8,7 +8,7 @@ import { mountKutuExtra } from './extra';
 
 export const kutuGrafigiPage: ConceptPage<KutuParams> = {
   title: 'Kutu grafiği: çeyrekler ve aykırı değerler',
-  chapter: 'Bölüm 2 · Betimsel İstatistikler',
+  chapter: 'Bölüm 2 · Keşifçi Veri Analizi (EDA)',
   scenario: kutuScenario,
   mountScene: (el, player, mode) => mountKutuScene(el, player, mode),
   mountParams: mountKutuParams,

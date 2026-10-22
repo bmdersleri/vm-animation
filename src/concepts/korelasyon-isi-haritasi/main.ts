@@ -8,7 +8,7 @@ import { mountKorelasyonExtra } from './extra';
 
 export const korelasyonIsiHaritasiPage: ConceptPage<KorelParams> = {
   title: 'Korelasyon, ısı haritası ve Anscombe Dörtlüsü',
-  chapter: 'Bölüm 2 · Betimsel İstatistikler',
+  chapter: 'Bölüm 2 · Keşifçi Veri Analizi (EDA)',
   scenario: korelasyonScenario,
   mountScene: (el, player, mode) => mountKorelasyonScene(el, player, mode),
   mountParams: mountKorelasyonParams,
