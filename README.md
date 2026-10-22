@@ -1,6 +1,6 @@
 # VM Animasyon
 
-Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme** ile **Özellik Seçimi (filtre ve sarmalayıcı)**.
+Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme** ile **Özellik Seçimi (filtre ve sarmalayıcı)**, **Dağılım, Ortalama–Medyan ve Çarpıklık**, **Korelasyon, Isı Haritası ve Anscombe Dörtlüsü** ile **Kutu Grafiği (çeyrekler ve aykırı değerler)**.
 
 İçerik, "Modern Veri Madenciliğine Giriş" kitabına (Prof. Dr. İsmail KIRBAŞ) dayanır.
 
@@ -15,6 +15,9 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - Ölçekleme: https://bmdersleri.github.io/vm-animation/olcekleme/
 - PCA ve t-SNE: https://bmdersleri.github.io/vm-animation/pca/
 - Özellik seçimi: https://bmdersleri.github.io/vm-animation/ozellik-secimi/
+- Dağılım, ortalama–medyan ve çarpıklık: https://bmdersleri.github.io/vm-animation/dagilim-carpiklik/
+- Korelasyon, ısı haritası ve Anscombe Dörtlüsü: https://bmdersleri.github.io/vm-animation/korelasyon-isi-haritasi/
+- Kutu grafiği (çeyrekler ve aykırı değerler): https://bmdersleri.github.io/vm-animation/kutu-grafigi/
 
 Site, GitHub Pages etkinleştirildiğinde (Settings > Pages > Source: GitHub Actions) `main` dalına her push ile yayına girer. GitHub Actions yalnızca derleyip yayınlar; testler yerelde çalışır. `npm ci` bir push öncesi kancası (`.githooks/pre-push`) kurar: `main`'e her push'tan önce `npm run check` kendiliğinden çalışır ve geçmezse push durur.
 
@@ -54,6 +57,16 @@ Herhangi bir kavram sayfasına `?mod=ders` eklemek, sınıfta projeksiyon için 
 | T | PCA: perplexity 5 / 30 / 50 |
 | V | Özellik seçimi: varyans eşiği 0 / 0,01 / 1 / 10 |
 | S | Özellik seçimi: ölçekleme yok / StandardScaler |
+| S | Dağılım: seri 002 / 003 / simetrik / sol |
+| K | Dağılım: kova sayısı 3 / 5 / 10 |
+| L | Dağılım: log1p aç / kapat |
+| E | Dağılım: uç değer 28 ↔ 60 |
+| K | Kutu grafiği: IQR katsayısı 1,5 ↔ 3,0 |
+| A | Kutu grafiği: 6. öğrenci kapalı / açık |
+| N | Kutu grafiği: noktalar görünür / gizli |
+| S | Korelasyon: set I / II / III / IV |
+| C | Korelasyon: churn sütunu kapalı / açık |
+| K | Korelasyon: kaldıraç noktası y 6 → 20 |
 
 ## Yerel geliştirme
 
@@ -75,6 +88,7 @@ python scripts/make_tree_data.py
 python scripts/make_nb_data.py
 python scripts/make_onisleme_data.py
 python scripts/make_boyut_data.py
+python scripts/make_eda_data.py
 ```
 
 - `make_knn_data.py`: Telco churn CSV'sinden k-NN örneğini ve scikit-learn referans değerlerini üretir.
@@ -82,6 +96,7 @@ python scripts/make_boyut_data.py
 - `make_nb_data.py`: Naive Bayes sayfasının spam sayımlarını ve Gauss eğitim kümesini (`src/concepts/naive-bayes/data/nb_data.json`) ve `tests/fixtures/naive-bayes_sklearn.json` referanslarını üretir; CSV gerekmez.
 - `make_onisleme_data.py`: IQR ve ölçekleme sayfalarının verisini üretir (kitabın 002, 003, 004 ve 006 örnekleri): `src/concepts/iqr-aykiri/data/iqr_data.json`, `src/concepts/olcekleme/data/olcekleme_data.json` ve `tests/fixtures/onisleme_sklearn.json` referansları; CSV gerekmez.
 - `make_boyut_data.py`: PCA ve özellik seçimi sayfalarının verisini üretir (kitabın 002, 003, 004 ve 005 örnekleri): `src/concepts/pca/data/pca_data.json`, `src/concepts/ozellik-secimi/data/secim_data.json` ve `tests/fixtures/boyut_sklearn.json` referansları; t-SNE altı kez koşar; CSV gerekmez.
+- `make_eda_data.py`: Bölüm 2 sayfalarının verisini üretir (kitabın 002, 003, 004, 005 ve 006 örnekleri ile Anscombe Dörtlüsü): `src/concepts/dagilim-carpiklik/data/dagilim_data.json`, `src/concepts/kutu-grafigi/data/kutu_data.json`, `src/concepts/korelasyon-isi-haritasi/data/korelasyon_data.json` ve `tests/fixtures/eda_pandas.json` referansları; CSV gerekmez.
 
 ## Yeni kavram ekleme
 

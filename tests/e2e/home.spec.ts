@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test('home lists 21 concepts and the k-NN card opens the k-NN page', async ({ page }) => {
+test('home lists 22 concepts and the k-NN card opens the k-NN page', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.card')).toHaveCount(21);
+  await expect(page.locator('.card')).toHaveCount(22);
   await page.locator('a.card.hazir[href$="knn/"]').click();
   await expect(page).toHaveURL(/\/knn\/$/);
   await expect(page.locator('.step-count')).toHaveText('Adım 1 / 12');
@@ -24,6 +24,30 @@ test('the chapter 3, 4 and 5 cards open their pages', async ({ page }) => {
     await expect(page).toHaveURL(new RegExp(`/${p.href}$`));
     await expect(page.locator('.step-count')).toHaveText(`Adım 1 / ${p.steps}`);
     await expect(page.locator(p.scene).first()).toBeVisible();
+  }
+});
+
+test('the chapter 2 cards open their pages and walk every Ders step', async ({ page }) => {
+  const pages = [
+    { href: 'dagilim-carpiklik/', steps: 9, scene: 'svg.dag-plot path.hist-bar', title: 'Dağılım, ortalama–medyan ve çarpıklık' },
+    { href: 'korelasyon-isi-haritasi/', steps: 10, scene: 'svg.kor-plot g.panel', title: 'Korelasyon, ısı haritası ve Anscombe Dörtlüsü' },
+    { href: 'kutu-grafigi/', steps: 8, scene: 'svg.kutu-plot rect.box', title: 'Kutu grafiği: çeyrekler ve aykırı değerler' },
+  ];
+  for (const p of pages) {
+    await page.goto('/');
+    await page.locator(`a.card.hazir[href$="${p.href}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`/${p.href}$`));
+    await page.locator('[data-mode-btn="ders"]').click();
+    await expect(page.locator('[data-mode="ders"]').first()).toBeVisible();
+    await expect(page.locator('h1.title')).toHaveText(p.title);
+    await expect(page.locator('.step-count')).toHaveText(`Adım 1 / ${p.steps}`);
+    await expect(page.locator(p.scene).first()).toBeAttached();
+    for (let i = 1; i < p.steps; i++) {
+      await page.keyboard.press('ArrowRight');
+      await expect(page.locator('.step-count')).toHaveText(`Adım ${i + 1} / ${p.steps}`);
+    }
+    await page.waitForTimeout(1200);
+    await expect(page.locator(p.scene).first()).toBeAttached();
   }
 });
 

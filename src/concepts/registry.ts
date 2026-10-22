@@ -27,8 +27,30 @@ function soon(id: string, chapter: number, title: string): ConceptEntry {
 }
 
 export const concepts: ConceptEntry[] = [
-  soon('dagilim-carpiklik', 2, 'Dağılım ve çarpıklık'),
-  soon('kutu-grafigi', 2, 'Kutu grafiği'),
+  {
+    id: 'dagilim-carpiklik',
+    chapter: 2,
+    chapterTitle: CH[2],
+    title: 'Dağılım, ortalama–medyan ve çarpıklık',
+    status: 'hazir',
+    href: 'dagilim-carpiklik/',
+  },
+  {
+    id: 'korelasyon-isi-haritasi',
+    chapter: 2,
+    chapterTitle: CH[2],
+    title: 'Korelasyon, ısı haritası ve Anscombe Dörtlüsü',
+    status: 'hazir',
+    href: 'korelasyon-isi-haritasi/',
+  },
+  {
+    id: 'kutu-grafigi',
+    chapter: 2,
+    chapterTitle: CH[2],
+    title: 'Kutu grafiği: çeyrekler ve aykırı değerler',
+    status: 'hazir',
+    href: 'kutu-grafigi/',
+  },
   {
     id: 'iqr-aykiri',
     chapter: 3,
