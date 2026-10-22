@@ -1,0 +1,41 @@
+import type { StepPlayer } from '../../core/player';
+import type { RocParams } from './scenario';
+import { html, thresholdText } from './ui';
+import { evaluationData } from '../degerlendirme/data';
+import { selectFinalThreshold } from './selection';
+let uid = 0;
+const share = (key: RocParams['dataset']): string => { const v = evaluationData.scoreSets[key].validation; return `${v.filter(s => s.actual === 1).length} / ${v.length} pozitif`; };
+export function mountRocParams(host: HTMLElement, player: StepPlayer<RocParams>): { destroy(): void } {
+  const id = `roc-${++uid}`; const cleanups: (() => void)[] = [];
+  const on = (el: HTMLElement, event: string, fn: () => void): void => { el.addEventListener(event,fn); cleanups.push(() => el.removeEventListener(event,fn)); };
+  const threshold = html('input',{ type:'range', id:`${id}-threshold`, name:'threshold', min:'0',max:'1',step:'.01' });
+  const output = html('output', { for:threshold.id });
+  const none = html('input',{ type:'checkbox', id:`${id}-none`,name:'nonePositive' });
+  const dataset = html('select',{ id:`${id}-dataset`,name:'dataset' },html('option',{value:'balanced'},`Dengeli · ${share('balanced')}`),html('option',{value:'imbalanced'},`Dengesiz · ${share('imbalanced')}`));
+  const fields = (['fpCost','fnCost'] as const).map(key => html('input',{ type:'number',name:key,id:`${id}-${key}`,min:'0',max:'100',step:'any' }));
+  const costs = html('fieldset',{ 'data-control':'costs' },html('legend',{},'Birim hata maliyeti'),...fields.map((el,i) => html('label',{for:el.id},i===0?'FP · Gereksiz teklif':'FN · Kaçırılan müşteri',el)));
+  const reset = html('button',{type:'button'},'Bu adımı sıfırla');
+  const thresholdControl=html('label',{for:threshold.id,'data-control':'threshold'},'Karar eşiği ',output,threshold);
+  const noneControl=html('label',{for:none.id,class:'roc-checkbox'},none,'Hiç pozitif tahmin yok');
+  const datasetControl=html('label',{for:dataset.id,'data-control':'dataset'},'Doğrulama örneği',dataset);
+  const hint=html('p',{},'Bu adımda yalnız sabit doğrulama skorlarını ve gerçek sınıfları inceleyin.');
+  const root = html('div',{class:'roc-params'},thresholdControl,noneControl,datasetControl,costs,hint,reset);
+  host.append(root);
+  on(threshold,'input',() => player.setParams({threshold:threshold.valueAsNumber,nonePositive:false}));
+  on(none,'change',() => player.setParam('nonePositive',none.checked));
+  on(dataset,'change',() => { if(dataset.value==='balanced'||dataset.value==='imbalanced') player.setParam('dataset',dataset.value); });
+  fields.forEach((el,i) => on(el,'input',() => { const v=el.valueAsNumber; const valid=Number.isFinite(v)&&v>=0&&v<=100; el.setAttribute('aria-invalid',String(!valid)); if(valid)player.setParam(i===0?'fpCost':'fnCost',v); }));
+  on(reset,'click',() => player.goto(player.state.index));
+  const sync = (): void => {
+    const {index,params:p}=player.state;
+    const value=index===9?selectFinalThreshold(evaluationData.scoreSets[p.dataset],p.fpCost,p.fnCost):p.nonePositive?'none':p.threshold;
+    threshold.value=String(value==='none'?p.threshold:value); threshold.disabled=value==='none'||index===9;
+    none.checked=value==='none'; none.disabled=index===9; dataset.value=p.dataset;dataset.disabled=index===9;reset.disabled=index===9;
+    output.textContent=thresholdText(value);
+    thresholdControl.hidden=index===0;noneControl.hidden=index===0||index===9;datasetControl.hidden=index<7;
+    hint.textContent=index===0?'Bu adımda yalnız sabit doğrulama skorlarını ve gerçek sınıfları inceleyin.':index===9?'Eşik doğrulamada seçildi ve donduruldu. Test yalnız son rapor içindir.':'0–1 skor; skor ≥ eşik pozitif. Maliyetler: 0–100. Test seçimde kullanılmaz.';
+    fields.forEach((el,i)=>{el.value=String(i===0?p.fpCost:p.fnCost);el.disabled=index===9;}); costs.hidden=index!==8;
+  };
+  sync(); const unsubscribe=player.subscribe(sync);
+  return {destroy(){unsubscribe();cleanups.forEach(fn=>fn());root.remove();}};
+}

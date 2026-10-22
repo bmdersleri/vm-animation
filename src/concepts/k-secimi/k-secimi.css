@@ -1,0 +1,178 @@
+/* k selection lesson. Text sizes come only from the --fs-* tokens; the SVGs have no viewBox. */
+.ks-scene {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "plot side" "plot panel";
+  column-gap: var(--gap);
+  row-gap: calc(var(--gap) * 0.6);
+  padding: 4px;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.ks-scene[data-mode="lab"] {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  grid-template-areas: "plot side" "panel side";
+}
+.ks-plot-host { grid-area: plot; }
+.ks-panel { grid-area: panel; }
+.ks-plot-host,
+.ks-chart-host {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+.ks-plot,
+.ks-chart-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  font-family: var(--font);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.ks-plot .tick text {
+  font-size: var(--fs-tick);
+  font-variant-numeric: tabular-nums;
+  fill: var(--muted);
+}
+.ks-plot .axis-title {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+  fill: var(--navy);
+}
+.ks-plot .ks-probe { font-size: var(--fs-tick); }
+.ks-plot .cs-center-label,
+.ks-plot .cs-ring-label { font-size: var(--fs-tick); }
+
+.ks-side {
+  min-width: 0;
+  min-height: 0;
+  grid-area: side;
+  display: grid;
+  grid-template-rows: minmax(100px, 1fr) minmax(100px, 1fr);
+  gap: calc(var(--gap) * 0.6);
+}
+.ks-chart {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.ks-chart-title {
+  margin: 0;
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.ks-chart-svg .kc-tick {
+  font-size: var(--fs-tick);
+  font-variant-numeric: tabular-nums;
+  fill: var(--muted);
+}
+.ks-chart-svg .kc-mark-label { font-size: var(--fs-tick); }
+
+.ks-panel {
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--gap) * 0.4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: calc(var(--gap) * 0.9) calc(var(--gap) * 1.2);
+  font-size: var(--fs-tick);
+  line-height: 1.2;
+}
+.ks-panel-title {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.ks-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 14px; }
+.ks-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 18px; }
+.ks-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.ks-label { margin: 0; color: var(--muted); }
+.ks-value { font-variant-numeric: tabular-nums; font-size: var(--fs-body); }
+.ks-note { margin: 0; color: var(--muted); }
+.ks-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ks-size { display: inline-flex; align-items: center; gap: 6px; }
+.ks-size-n { font-size: var(--fs-body); font-variant-numeric: tabular-nums; }
+.ks-chip {
+  display: inline-block;
+  min-width: 2.2em;
+  text-align: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 0 2px var(--navy), 0 0 2px var(--navy);
+}
+.ks-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.ks-point-box,
+.ks-decision {
+  display: grid;
+  gap: 2px;
+  padding: 4px 10px;
+  border-left: 4px solid var(--navy);
+  background: var(--navy-soft);
+}
+.ks-abs { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
+.ks-abs-name { font-size: var(--fs-body); }
+.ks-abs-cell { display: inline-flex; align-items: baseline; gap: 6px; }
+.ks-formula { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ks-decision-line { margin: 0; font-weight: 700; }
+.ks-drops { display: block; }
+.ks-drop-list { display: flex; flex-wrap: wrap; gap: 2px 14px; list-style: none; margin: 0; padding: 0; }
+.ks-drop { display: inline-flex; align-items: baseline; gap: 6px; }
+.ks-compare { display: grid; align-items: start; grid-template-columns: 1fr 1fr; gap: calc(var(--gap) * 1.2); }
+.ks-compare-col { display: grid; align-content: start; gap: 2px; }
+.ks-compare-title { margin: 0; font-size: var(--fs-body); }
+
+@media (max-width: 900px) {
+  .ks-scene,
+  .ks-scene[data-mode="lab"] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas: "plot" "side" "panel";
+  }
+  /* The two charts sit side by side, so the single column keeps its height for the scatter. */
+  .ks-side { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(130px, 1fr); }
+}
+
+/* Lab controls */
+.ks-params { display: grid; gap: 8px; font-size: var(--fs-tick); }
+.ks-params [hidden] { display: none; }
+.ks-params .ctl { display: grid; gap: 4px; }
+.ks-params label { font-weight: 600; }
+.ks-params .range { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; }
+.ks-k-out { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 4em; }
+.ks-pick input { font: inherit; width: 7em; padding: 2px 6px; }
+.ks-pick-hint { color: var(--muted); }
+.ks-params :focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.ks-plot circle.cs-point { cursor: pointer; }

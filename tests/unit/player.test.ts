@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { StepPlayer, type Scenario } from '../../src/core/player';
+import { StepPlayer, stepIndex, type Scenario } from '../../src/core/player';
 
 type P = { k: number; m: string };
 const base = (): Scenario<P> => ({
@@ -187,5 +187,12 @@ describe('StepPlayer', () => {
     p.setParams({ k: 9, m: 'q' });
     vi.advanceTimersByTime(1000);
     expect(p.state.params).toEqual({ k: 9, m: 'q' });
+  });
+});
+
+describe('stepIndex', () => {
+  it('gives the index of an existing step id and throws for a missing one', () => {
+    expect(stepIndex(base(), 's2')).toBe(2);
+    expect(() => stepIndex(base(), 'nope')).toThrow('scenario has no step "nope"');
   });
 });

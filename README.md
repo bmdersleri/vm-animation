@@ -1,6 +1,6 @@
 # VM Animasyon
 
-Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme** ile **Özellik Seçimi (filtre ve sarmalayıcı)**, **Dağılım, Ortalama–Medyan ve Çarpıklık**, **Korelasyon, Isı Haritası ve Anscombe Dörtlüsü** ile **Kutu Grafiği (çeyrekler ve aykırı değerler)**.
+Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme**, **Özellik Seçimi (filtre ve sarmalayıcı)**, **Karmaşıklık Matrisi ve Metrikler**, **ROC, PR ve Karar Eşiği**, **Çapraz Doğrulama ve Veri Sızıntısı**, **K-Means Döngüsü**, **k Sayısının Seçimi**, **DBSCAN**, **Hiyerarşik Kümeleme ve Dendrogram**, **Dağılım, Ortalama–Medyan ve Çarpıklık**, **Korelasyon, Isı Haritası ve Anscombe Dörtlüsü** ile **Kutu Grafiği (çeyrekler ve aykırı değerler)**.
 
 İçerik, "Modern Veri Madenciliğine Giriş" kitabına (Prof. Dr. İsmail KIRBAŞ) dayanır.
 
@@ -18,6 +18,13 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - Dağılım, ortalama–medyan ve çarpıklık: https://bmdersleri.github.io/vm-animation/dagilim-carpiklik/
 - Korelasyon, ısı haritası ve Anscombe Dörtlüsü: https://bmdersleri.github.io/vm-animation/korelasyon-isi-haritasi/
 - Kutu grafiği (çeyrekler ve aykırı değerler): https://bmdersleri.github.io/vm-animation/kutu-grafigi/
+- DBSCAN: https://bmdersleri.github.io/vm-animation/dbscan/
+- Hiyerarşik kümeleme ve dendrogram: https://bmdersleri.github.io/vm-animation/dendrogram/
+- Karmaşıklık matrisi: https://bmdersleri.github.io/vm-animation/karmasiklik-matrisi/
+- ROC ve karar eşiği: https://bmdersleri.github.io/vm-animation/roc-esik/
+- Çapraz doğrulama: https://bmdersleri.github.io/vm-animation/capraz-dogrulama/
+- K-Means döngüsü: https://bmdersleri.github.io/vm-animation/k-means/
+- k sayısının seçimi: https://bmdersleri.github.io/vm-animation/k-secimi/
 
 Site, GitHub Pages etkinleştirildiğinde (Settings > Pages > Source: GitHub Actions) `main` dalına her push ile yayına girer. GitHub Actions yalnızca derleyip yayınlar; testler yerelde çalışır. `npm ci` bir push öncesi kancası (`.githooks/pre-push`) kurar: `main`'e her push'tan önce `npm run check` kendiliğinden çalışır ve geçmezse push durur.
 
@@ -89,6 +96,10 @@ python scripts/make_nb_data.py
 python scripts/make_onisleme_data.py
 python scripts/make_boyut_data.py
 python scripts/make_eda_data.py
+python scripts/make_degerlendirme_data.py
+python scripts/make_kmeans_data.py
+python scripts/make_dbscan_data.py
+python scripts/make_dendrogram_data.py
 ```
 
 - `make_knn_data.py`: Telco churn CSV'sinden k-NN örneğini ve scikit-learn referans değerlerini üretir.
@@ -97,6 +108,10 @@ python scripts/make_eda_data.py
 - `make_onisleme_data.py`: IQR ve ölçekleme sayfalarının verisini üretir (kitabın 002, 003, 004 ve 006 örnekleri): `src/concepts/iqr-aykiri/data/iqr_data.json`, `src/concepts/olcekleme/data/olcekleme_data.json` ve `tests/fixtures/onisleme_sklearn.json` referansları; CSV gerekmez.
 - `make_boyut_data.py`: PCA ve özellik seçimi sayfalarının verisini üretir (kitabın 002, 003, 004 ve 005 örnekleri): `src/concepts/pca/data/pca_data.json`, `src/concepts/ozellik-secimi/data/secim_data.json` ve `tests/fixtures/boyut_sklearn.json` referansları; t-SNE altı kez koşar; CSV gerekmez.
 - `make_eda_data.py`: Bölüm 2 sayfalarının verisini üretir (kitabın 002, 003, 004, 005 ve 006 örnekleri ile Anscombe Dörtlüsü): `src/concepts/dagilim-carpiklik/data/dagilim_data.json`, `src/concepts/kutu-grafigi/data/kutu_data.json`, `src/concepts/korelasyon-isi-haritasi/data/korelasyon_data.json` ve `tests/fixtures/eda_pandas.json` referansları; CSV gerekmez.
+- `make_degerlendirme_data.py`: Bölüm 6 sayfalarının (karmaşıklık matrisi, ROC/PR ve çapraz doğrulama) ortak verisini (`src/concepts/degerlendirme/data/degerlendirme.json`) ve `tests/fixtures/degerlendirme_sklearn.json` referanslarını üretir; Python, NumPy ve scikit-learn sürümleri dosyaya yazılır; ikinci çalıştırma fark üretmez; CSV gerekmez.
+- `make_kmeans_data.py`: Bölüm 7 sayfalarının (K-Means döngüsü ve k sayısının seçimi) ortak Iris verisini ve scikit-learn referanslarını üretir (`src/concepts/kmeans/data/`); CSV gerekmez.
+- `make_dbscan_data.py`: DBSCAN sayfasının iki hilal verisini ve scikit-learn referanslarını üretir (`src/concepts/dbscan/data/`); CSV gerekmez.
+- `make_dendrogram_data.py`: Hiyerarşik kümeleme ve dendrogram sayfasının verisini ve SciPy/scikit-learn referanslarını üretir (`src/concepts/dendrogram/data/`); CSV gerekmez.
 
 ## Yeni kavram ekleme
 

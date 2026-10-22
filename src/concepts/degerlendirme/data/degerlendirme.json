@@ -1,0 +1,4486 @@
+{
+  "metadata": {
+    "seed": 42,
+    "versions": {
+      "python": "3.14.7",
+      "numpy": "2.5.2",
+      "sklearn": "1.9.0"
+    },
+    "scoreDescription": "Açıklanmış sentetik sıralama örnekleri; bağlı skorlar birlikte hareket eder. CV'den bağımsızdır.",
+    "zeroDivisionPolicy": "sklearn F1 referansı zero_division=0 kullanır. Arayüz sıfır paydalı oranları null (tanımsız) gösterir; F1=2TP/(2TP+FP+FN). PR boş pozitif uç precision=1 yalnız çizim konvansiyonudur. Pozitifsiz AP tanımsızdır.",
+    "cvParameters": {
+      "solver": "lbfgs",
+      "maxIter": 1000,
+      "shuffle": false
+    }
+  },
+  "matrix": {
+    "tn": 80,
+    "fp": 10,
+    "fn": 4,
+    "tp": 6
+  },
+  "scoreSets": {
+    "balanced": {
+      "validation": [
+        {
+          "id": "balanced-validation-01",
+          "actual": 1,
+          "score": 0.8
+        },
+        {
+          "id": "balanced-validation-02",
+          "actual": 0,
+          "score": 0.8
+        },
+        {
+          "id": "balanced-validation-03",
+          "actual": 1,
+          "score": 0.2
+        },
+        {
+          "id": "balanced-validation-04",
+          "actual": 0,
+          "score": 0.1
+        }
+      ],
+      "test": [
+        {
+          "id": "balanced-test-01",
+          "actual": 1,
+          "score": 0.9
+        },
+        {
+          "id": "balanced-test-02",
+          "actual": 0,
+          "score": 0.7
+        },
+        {
+          "id": "balanced-test-03",
+          "actual": 1,
+          "score": 0.7
+        },
+        {
+          "id": "balanced-test-04",
+          "actual": 0,
+          "score": 0.3
+        },
+        {
+          "id": "balanced-test-05",
+          "actual": 1,
+          "score": 0.2
+        },
+        {
+          "id": "balanced-test-06",
+          "actual": 0,
+          "score": 0.1
+        }
+      ]
+    },
+    "imbalanced": {
+      "validation": [
+        {
+          "id": "imbalanced-validation-01",
+          "actual": 0,
+          "score": 0.95
+        },
+        {
+          "id": "imbalanced-validation-02",
+          "actual": 1,
+          "score": 0.85
+        },
+        {
+          "id": "imbalanced-validation-03",
+          "actual": 0,
+          "score": 0.85
+        },
+        {
+          "id": "imbalanced-validation-04",
+          "actual": 0,
+          "score": 0.7
+        },
+        {
+          "id": "imbalanced-validation-05",
+          "actual": 0,
+          "score": 0.6
+        },
+        {
+          "id": "imbalanced-validation-06",
+          "actual": 1,
+          "score": 0.55
+        },
+        {
+          "id": "imbalanced-validation-07",
+          "actual": 0,
+          "score": 0.4
+        },
+        {
+          "id": "imbalanced-validation-08",
+          "actual": 0,
+          "score": 0.3
+        },
+        {
+          "id": "imbalanced-validation-09",
+          "actual": 0,
+          "score": 0.2
+        },
+        {
+          "id": "imbalanced-validation-10",
+          "actual": 0,
+          "score": 0.15
+        },
+        {
+          "id": "imbalanced-validation-11",
+          "actual": 0,
+          "score": 0.1
+        },
+        {
+          "id": "imbalanced-validation-12",
+          "actual": 0,
+          "score": 0.05
+        }
+      ],
+      "test": [
+        {
+          "id": "imbalanced-test-01",
+          "actual": 0,
+          "score": 0.9
+        },
+        {
+          "id": "imbalanced-test-02",
+          "actual": 1,
+          "score": 0.8
+        },
+        {
+          "id": "imbalanced-test-03",
+          "actual": 0,
+          "score": 0.8
+        },
+        {
+          "id": "imbalanced-test-04",
+          "actual": 0,
+          "score": 0.6
+        },
+        {
+          "id": "imbalanced-test-05",
+          "actual": 0,
+          "score": 0.5
+        },
+        {
+          "id": "imbalanced-test-06",
+          "actual": 0,
+          "score": 0.4
+        },
+        {
+          "id": "imbalanced-test-07",
+          "actual": 1,
+          "score": 0.3
+        },
+        {
+          "id": "imbalanced-test-08",
+          "actual": 0,
+          "score": 0.2
+        },
+        {
+          "id": "imbalanced-test-09",
+          "actual": 0,
+          "score": 0.1
+        },
+        {
+          "id": "imbalanced-test-10",
+          "actual": 0,
+          "score": 0
+        }
+      ]
+    }
+  },
+  "cv": {
+    "samples": [
+      {
+        "id": "development-01",
+        "x": [
+          0.30471707975443135,
+          -1.0399841062404955
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-02",
+        "x": [
+          0.7504511958064572,
+          0.9405647163912139
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-03",
+        "x": [
+          -1.9510351886538364,
+          -1.302179506862318
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-04",
+        "x": [
+          0.12784040316728537,
+          -0.3162425923435822
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-05",
+        "x": [
+          -0.016801157504288795,
+          -0.85304392757358
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-06",
+        "x": [
+          0.8793979748628286,
+          0.7777919354289483
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-07",
+        "x": [
+          0.06603069756121605,
+          1.1272412069680329
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-08",
+        "x": [
+          0.4675093422520456,
+          -0.8592924628832382
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-09",
+        "x": [
+          0.36875078408249884,
+          -0.9588826008289989
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-10",
+        "x": [
+          0.8784503013072725,
+          -0.049925910986252896
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-11",
+        "x": [
+          -0.18486236354526056,
+          -0.6809295444039414
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-12",
+        "x": [
+          1.2225413386740303,
+          -0.15452948206880215
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-13",
+        "x": [
+          -0.4283278221631072,
+          -0.3521335504882296
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-14",
+        "x": [
+          0.5323091855533487,
+          0.36544406436407834
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-15",
+        "x": [
+          0.4127326115959884,
+          0.43082100300788273
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-16",
+        "x": [
+          2.1416476008704612,
+          -0.4064150163846156
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-17",
+        "x": [
+          -0.5122427290715373,
+          -0.8137727282478777
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-18",
+        "x": [
+          0.6159794225754956,
+          1.1289722927208916
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-19",
+        "x": [
+          -0.11394745765487507,
+          -0.840156476962528
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-20",
+        "x": [
+          -0.8244812156912396,
+          0.6505927878247011
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-21",
+        "x": [
+          0.7432541712034423,
+          0.543154268305195
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-22",
+        "x": [
+          -0.6655097072886943,
+          0.23216132306671977
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-23",
+        "x": [
+          0.11668580914072822,
+          0.21868859672901295
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-24",
+        "x": [
+          0.8714287779481898,
+          0.22359554877468227
+        ],
+        "actual": 0,
+        "partition": "development"
+      },
+      {
+        "id": "development-25",
+        "x": [
+          1.928913563071895,
+          0.6675790694888915
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-26",
+        "x": [
+          1.539119398689984,
+          1.2312882258385405
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-27",
+        "x": [
+          -0.20715581985566645,
+          0.28032878364269864
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-28",
+        "x": [
+          0.7796273457072045,
+          -0.03887784824334195
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-29",
+        "x": [
+          0.9748577487733163,
+          2.094941311234396
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-30",
+        "x": [
+          0.3841688843067568,
+          1.568278354591481
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-31",
+        "x": [
+          -0.43286977161580475,
+          0.2651149700142251
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-32",
+        "x": [
+          1.4127530651050055,
+          1.1862223313592781
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-33",
+        "x": [
+          1.961226579792855,
+          1.3933472351999252
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-34",
+        "x": [
+          0.9012749277515624,
+          0.13764820733543282
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-35",
+        "x": [
+          2.107975881257154,
+          0.4086956751183851
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-36",
+        "x": [
+          -0.025686323337921868,
+          -0.5332872140034807
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-37",
+        "x": [
+          0.33054771399838867,
+          1.097160744053764
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-38",
+        "x": [
+          1.3924257360705652,
+          1.2904853540677683
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-39",
+        "x": [
+          0.8227473536634657,
+          0.7585396910767142
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "development-40",
+        "x": [
+          1.8755903939673368,
+          0.2906534602797616
+        ],
+        "actual": 1,
+        "partition": "development"
+      },
+      {
+        "id": "test-01",
+        "x": [
+          0.45677523755741145,
+          -0.6619259410666513
+        ],
+        "actual": 0,
+        "partition": "test"
+      },
+      {
+        "id": "test-02",
+        "x": [
+          -0.3630538465650718,
+          -0.3817378939983291
+        ],
+        "actual": 0,
+        "partition": "test"
+      },
+      {
+        "id": "test-03",
+        "x": [
+          -1.1958396455890397,
+          0.4869724807855818
+        ],
+        "actual": 0,
+        "partition": "test"
+      },
+      {
+        "id": "test-04",
+        "x": [
+          -0.46940234020272387,
+          0.01249411872768743
+        ],
+        "actual": 0,
+        "partition": "test"
+      },
+      {
+        "id": "test-05",
+        "x": [
+          0.48074665890590895,
+          0.4465311760299441
+        ],
+        "actual": 0,
+        "partition": "test"
+      },
+      {
+        "id": "test-06",
+        "x": [
+          0.6653851089727862,
+          -0.09848548450942361
+        ],
+        "actual": 0,
+        "partition": "test"
+      },
+      {
+        "id": "test-07",
+        "x": [
+          -0.42329831204415375,
+          -0.07971821090639905
+        ],
+        "actual": 0,
+        "partition": "test"
+      },
+      {
+        "id": "test-08",
+        "x": [
+          -1.6873344339580298,
+          -1.4471124724230873
+        ],
+        "actual": 0,
+        "partition": "test"
+      },
+      {
+        "id": "test-09",
+        "x": [
+          -1.3226996123544024,
+          -0.9972468276014818
+        ],
+        "actual": 0,
+        "partition": "test"
+      },
+      {
+        "id": "test-10",
+        "x": [
+          0.3997742267234366,
+          -0.9054790553600608
+        ],
+        "actual": 0,
+        "partition": "test"
+      },
+      {
+        "id": "test-11",
+        "x": [
+          0.8718374459606103,
+          1.8992282977860655
+        ],
+        "actual": 1,
+        "partition": "test"
+      },
+      {
+        "id": "test-12",
+        "x": [
+          0.8937360289385741,
+          1.3375155684670865
+        ],
+        "actual": 1,
+        "partition": "test"
+      },
+      {
+        "id": "test-13",
+        "x": [
+          0.316382319990123,
+          0.39456244213236996
+        ],
+        "actual": 1,
+        "partition": "test"
+      },
+      {
+        "id": "test-14",
+        "x": [
+          0.2999779450894188,
+          0.2609669240994375
+        ],
+        "actual": 1,
+        "partition": "test"
+      },
+      {
+        "id": "test-15",
+        "x": [
+          2.0903081374573955,
+          -1.1273204231923488
+        ],
+        "actual": 1,
+        "partition": "test"
+      }
+    ],
+    "runs": [
+      {
+        "k": 3,
+        "method": "kfold",
+        "c": 0.1,
+        "folds": [
+          {
+            "trainIds": [
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14"
+            ],
+            "mean": [
+              0.7127332292682329,
+              0.5179138442264809
+            ],
+            "scale": [
+              0.8774856792228504,
+              0.7124613503076276
+            ],
+            "predictions": [
+              {
+                "id": "development-01",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-02",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-03",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-04",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-05",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-06",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-07",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-08",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-09",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-10",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-11",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-12",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-13",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-14",
+                "actual": 0,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 8,
+              "fp": 6,
+              "fn": 0,
+              "tp": 0
+            },
+            "f1": 0.0
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27"
+            ],
+            "mean": [
+              0.574133752096104,
+              0.24306742631693118
+            ],
+            "scale": [
+              0.8325219112038946,
+              0.8911791312429616
+            ],
+            "predictions": [
+              {
+                "id": "development-15",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-16",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-17",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-18",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-19",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-20",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-21",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-22",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-23",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-24",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-25",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-26",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-27",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 6,
+              "fp": 4,
+              "fn": 1,
+              "tp": 2
+            },
+            "f1": 0.4444444444444444
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27"
+            ],
+            "validationIds": [
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "mean": [
+              0.33568134061811455,
+              0.007064293195445478
+            ],
+            "scale": [
+              0.8460960416909038,
+              0.7371886847636802
+            ],
+            "predictions": [
+              {
+                "id": "development-28",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-29",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-30",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-31",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-32",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-33",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-34",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-35",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-36",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-37",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-38",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-39",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-40",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 0,
+              "fp": 0,
+              "fn": 13,
+              "tp": 0
+            },
+            "f1": 0.0
+          }
+        ],
+        "meanF1": 0.14814814814814814,
+        "stdF1": 0.20951312035156963
+      },
+      {
+        "k": 3,
+        "method": "kfold",
+        "c": 1,
+        "folds": [
+          {
+            "trainIds": [
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14"
+            ],
+            "mean": [
+              0.7127332292682329,
+              0.5179138442264809
+            ],
+            "scale": [
+              0.8774856792228504,
+              0.7124613503076276
+            ],
+            "predictions": [
+              {
+                "id": "development-01",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-02",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-03",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-04",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-05",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-06",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-07",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-08",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-09",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-10",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-11",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-12",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-13",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-14",
+                "actual": 0,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 8,
+              "fp": 6,
+              "fn": 0,
+              "tp": 0
+            },
+            "f1": 0.0
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27"
+            ],
+            "mean": [
+              0.574133752096104,
+              0.24306742631693118
+            ],
+            "scale": [
+              0.8325219112038946,
+              0.8911791312429616
+            ],
+            "predictions": [
+              {
+                "id": "development-15",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-16",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-17",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-18",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-19",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-20",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-21",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-22",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-23",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-24",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-25",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-26",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-27",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 6,
+              "fp": 4,
+              "fn": 1,
+              "tp": 2
+            },
+            "f1": 0.4444444444444444
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27"
+            ],
+            "validationIds": [
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "mean": [
+              0.33568134061811455,
+              0.007064293195445478
+            ],
+            "scale": [
+              0.8460960416909038,
+              0.7371886847636802
+            ],
+            "predictions": [
+              {
+                "id": "development-28",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-29",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-30",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-31",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-32",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-33",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-34",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-35",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-36",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-37",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-38",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-39",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-40",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 0,
+              "fp": 0,
+              "fn": 11,
+              "tp": 2
+            },
+            "f1": 0.26666666666666666
+          }
+        ],
+        "meanF1": 0.23703703703703702,
+        "stdF1": 0.18264930379167335
+      },
+      {
+        "k": 3,
+        "method": "stratified",
+        "c": 0.1,
+        "folds": [
+          {
+            "trainIds": [
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30"
+            ],
+            "mean": [
+              0.5969382409303596,
+              0.22427942418937274
+            ],
+            "scale": [
+              0.8554685353279867,
+              0.6691221928562969
+            ],
+            "predictions": [
+              {
+                "id": "development-01",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-02",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-03",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-04",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-05",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-06",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-07",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-08",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-25",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-26",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-27",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-28",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-29",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-30",
+                "actual": 1,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 8,
+              "fp": 0,
+              "fn": 2,
+              "tp": 4
+            },
+            "f1": 0.8
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35"
+            ],
+            "mean": [
+              0.39460864494307313,
+              0.3157474373008508
+            ],
+            "scale": [
+              0.8267702228257242,
+              0.8740699902211402
+            ],
+            "predictions": [
+              {
+                "id": "development-09",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-10",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-11",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-12",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-13",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-14",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-15",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-16",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-31",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-32",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-33",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-34",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-35",
+                "actual": 1,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 7,
+              "fp": 1,
+              "fn": 2,
+              "tp": 3
+            },
+            "f1": 0.6666666666666666
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35"
+            ],
+            "validationIds": [
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "mean": [
+              0.6267127328372458,
+              0.21714335335837084
+            ],
+            "scale": [
+              0.8955596597104873,
+              0.8680172478596163
+            ],
+            "predictions": [
+              {
+                "id": "development-17",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-18",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-19",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-20",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-21",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-22",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-23",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-24",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-36",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-37",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-38",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-39",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-40",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 7,
+              "fp": 1,
+              "fn": 4,
+              "tp": 1
+            },
+            "f1": 0.2857142857142857
+          }
+        ],
+        "meanF1": 0.5841269841269842,
+        "stdF1": 0.21791748954578433
+      },
+      {
+        "k": 3,
+        "method": "stratified",
+        "c": 1,
+        "folds": [
+          {
+            "trainIds": [
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30"
+            ],
+            "mean": [
+              0.5969382409303596,
+              0.22427942418937274
+            ],
+            "scale": [
+              0.8554685353279867,
+              0.6691221928562969
+            ],
+            "predictions": [
+              {
+                "id": "development-01",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-02",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-03",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-04",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-05",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-06",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-07",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-08",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-25",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-26",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-27",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-28",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-29",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-30",
+                "actual": 1,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 5,
+              "fp": 3,
+              "fn": 2,
+              "tp": 4
+            },
+            "f1": 0.6153846153846154
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35"
+            ],
+            "mean": [
+              0.39460864494307313,
+              0.3157474373008508
+            ],
+            "scale": [
+              0.8267702228257242,
+              0.8740699902211402
+            ],
+            "predictions": [
+              {
+                "id": "development-09",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-10",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-11",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-12",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-13",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-14",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-15",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-16",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-31",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-32",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-33",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-34",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-35",
+                "actual": 1,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 6,
+              "fp": 2,
+              "fn": 2,
+              "tp": 3
+            },
+            "f1": 0.6
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35"
+            ],
+            "validationIds": [
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "mean": [
+              0.6267127328372458,
+              0.21714335335837084
+            ],
+            "scale": [
+              0.8955596597104873,
+              0.8680172478596163
+            ],
+            "predictions": [
+              {
+                "id": "development-17",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-18",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-19",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-20",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-21",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-22",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-23",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-24",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-36",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-37",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-38",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-39",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-40",
+                "actual": 1,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 7,
+              "fp": 1,
+              "fn": 1,
+              "tp": 4
+            },
+            "f1": 0.8
+          }
+        ],
+        "meanF1": 0.6717948717948717,
+        "stdF1": 0.09087202639317618
+      },
+      {
+        "k": 5,
+        "method": "kfold",
+        "c": 0.1,
+        "folds": [
+          {
+            "trainIds": [
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08"
+            ],
+            "mean": [
+              0.6537476682775886,
+              0.36358759142113617
+            ],
+            "scale": [
+              0.8376700004543473,
+              0.7417990028907332
+            ],
+            "predictions": [
+              {
+                "id": "development-01",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-02",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-03",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-04",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-05",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-06",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-07",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-08",
+                "actual": 0,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 5,
+              "fp": 3,
+              "fn": 0,
+              "tp": 0
+            },
+            "f1": 0.0
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16"
+            ],
+            "mean": [
+              0.5188998154923046,
+              0.37238153831719434
+            ],
+            "scale": [
+              0.8896882520477551,
+              0.8382867224471063
+            ],
+            "predictions": [
+              {
+                "id": "development-09",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-10",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-11",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-12",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-13",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-14",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-15",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-16",
+                "actual": 0,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 6,
+              "fp": 2,
+              "fn": 0,
+              "tp": 0
+            },
+            "f1": 0.0
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24"
+            ],
+            "mean": [
+              0.6661521456552334,
+              0.2739507055047044
+            ],
+            "scale": [
+              0.8714703181420941,
+              0.8483097802876663
+            ],
+            "predictions": [
+              {
+                "id": "development-17",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-18",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-19",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-20",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-21",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-22",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-23",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-24",
+                "actual": 0,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 5,
+              "fp": 3,
+              "fn": 0,
+              "tp": 0
+            },
+            "f1": 0.0
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32"
+            ],
+            "mean": [
+              0.47401941618582144,
+              0.089211968451099
+            ],
+            "scale": [
+              0.8731085671782512,
+              0.7566412232763846
+            ],
+            "predictions": [
+              {
+                "id": "development-25",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-26",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-27",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-28",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-29",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-30",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-31",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-32",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 0,
+              "fp": 0,
+              "fn": 8,
+              "tp": 0
+            },
+            "f1": 0.0
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32"
+            ],
+            "validationIds": [
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "mean": [
+              0.3806854209051741,
+              0.16457546985103333
+            ],
+            "scale": [
+              0.8220144455043581,
+              0.8316943337225925
+            ],
+            "predictions": [
+              {
+                "id": "development-33",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-34",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-35",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-36",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-37",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-38",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-39",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-40",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 0,
+              "fp": 0,
+              "fn": 8,
+              "tp": 0
+            },
+            "f1": 0.0
+          }
+        ],
+        "meanF1": 0.0,
+        "stdF1": 0.0
+      },
+      {
+        "k": 5,
+        "method": "kfold",
+        "c": 1,
+        "folds": [
+          {
+            "trainIds": [
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08"
+            ],
+            "mean": [
+              0.6537476682775886,
+              0.36358759142113617
+            ],
+            "scale": [
+              0.8376700004543473,
+              0.7417990028907332
+            ],
+            "predictions": [
+              {
+                "id": "development-01",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-02",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-03",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-04",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-05",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-06",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-07",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-08",
+                "actual": 0,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 5,
+              "fp": 3,
+              "fn": 0,
+              "tp": 0
+            },
+            "f1": 0.0
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16"
+            ],
+            "mean": [
+              0.5188998154923046,
+              0.37238153831719434
+            ],
+            "scale": [
+              0.8896882520477551,
+              0.8382867224471063
+            ],
+            "predictions": [
+              {
+                "id": "development-09",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-10",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-11",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-12",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-13",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-14",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-15",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-16",
+                "actual": 0,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 5,
+              "fp": 3,
+              "fn": 0,
+              "tp": 0
+            },
+            "f1": 0.0
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24"
+            ],
+            "mean": [
+              0.6661521456552334,
+              0.2739507055047044
+            ],
+            "scale": [
+              0.8714703181420941,
+              0.8483097802876663
+            ],
+            "predictions": [
+              {
+                "id": "development-17",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-18",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-19",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-20",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-21",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-22",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-23",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-24",
+                "actual": 0,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 6,
+              "fp": 2,
+              "fn": 0,
+              "tp": 0
+            },
+            "f1": 0.0
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32"
+            ],
+            "mean": [
+              0.47401941618582144,
+              0.089211968451099
+            ],
+            "scale": [
+              0.8731085671782512,
+              0.7566412232763846
+            ],
+            "predictions": [
+              {
+                "id": "development-25",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-26",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-27",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-28",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-29",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-30",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-31",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-32",
+                "actual": 1,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 0,
+              "fp": 0,
+              "fn": 4,
+              "tp": 4
+            },
+            "f1": 0.6666666666666666
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32"
+            ],
+            "validationIds": [
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "mean": [
+              0.3806854209051741,
+              0.16457546985103333
+            ],
+            "scale": [
+              0.8220144455043581,
+              0.8316943337225925
+            ],
+            "predictions": [
+              {
+                "id": "development-33",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-34",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-35",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-36",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-37",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-38",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-39",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-40",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 0,
+              "fp": 0,
+              "fn": 6,
+              "tp": 2
+            },
+            "f1": 0.4
+          }
+        ],
+        "meanF1": 0.21333333333333332,
+        "stdF1": 0.27455013709298665
+      },
+      {
+        "k": 5,
+        "method": "stratified",
+        "c": 0.1,
+        "folds": [
+          {
+            "trainIds": [
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-25",
+              "development-26",
+              "development-27"
+            ],
+            "mean": [
+              0.5959995705516474,
+              0.32816711018812406
+            ],
+            "scale": [
+              0.783169163086708,
+              0.7698676281903607
+            ],
+            "predictions": [
+              {
+                "id": "development-01",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-02",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-03",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-04",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-05",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-25",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-26",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-27",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 5,
+              "fp": 0,
+              "fn": 1,
+              "tp": 2
+            },
+            "f1": 0.8
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-28",
+              "development-29",
+              "development-30"
+            ],
+            "mean": [
+              0.52341383291487,
+              0.2015120063462597
+            ],
+            "scale": [
+              0.9557305633748304,
+              0.7343620779657939
+            ],
+            "predictions": [
+              {
+                "id": "development-06",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-07",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-08",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-09",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-10",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-28",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-29",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-30",
+                "actual": 1,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 4,
+              "fp": 1,
+              "fn": 1,
+              "tp": 2
+            },
+            "f1": 0.6666666666666666
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-31",
+              "development-32",
+              "development-33"
+            ],
+            "mean": [
+              0.5328916533978726,
+              0.23925941129302877
+            ],
+            "scale": [
+              0.8718365572591221,
+              0.8433752512729118
+            ],
+            "predictions": [
+              {
+                "id": "development-11",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-12",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-13",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-14",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-15",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-31",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-32",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-33",
+                "actual": 1,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 5,
+              "fp": 0,
+              "fn": 1,
+              "tp": 2
+            },
+            "f1": 0.8
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-34",
+              "development-35",
+              "development-36"
+            ],
+            "mean": [
+              0.5392973632946837,
+              0.32429314565501344
+            ],
+            "scale": [
+              0.8124277313619696,
+              0.8268083440021957
+            ],
+            "predictions": [
+              {
+                "id": "development-16",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-17",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-18",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-19",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-20",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-34",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-35",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-36",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 4,
+              "fp": 1,
+              "fn": 2,
+              "tp": 1
+            },
+            "f1": 0.4
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36"
+            ],
+            "validationIds": [
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "mean": [
+              0.5019020463570487,
+              0.1704756000627412
+            ],
+            "scale": [
+              0.8932690286717999,
+              0.86668714938738
+            ],
+            "predictions": [
+              {
+                "id": "development-21",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-22",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-23",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-24",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-37",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-38",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-39",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-40",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 4,
+              "fp": 0,
+              "fn": 3,
+              "tp": 1
+            },
+            "f1": 0.4
+          }
+        ],
+        "meanF1": 0.6133333333333333,
+        "stdF1": 0.1808621328833405
+      },
+      {
+        "k": 5,
+        "method": "stratified",
+        "c": 1,
+        "folds": [
+          {
+            "trainIds": [
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-25",
+              "development-26",
+              "development-27"
+            ],
+            "mean": [
+              0.5959995705516474,
+              0.32816711018812406
+            ],
+            "scale": [
+              0.783169163086708,
+              0.7698676281903607
+            ],
+            "predictions": [
+              {
+                "id": "development-01",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-02",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-03",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-04",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-05",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-25",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-26",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-27",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 4,
+              "fp": 1,
+              "fn": 1,
+              "tp": 2
+            },
+            "f1": 0.6666666666666666
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-28",
+              "development-29",
+              "development-30"
+            ],
+            "mean": [
+              0.52341383291487,
+              0.2015120063462597
+            ],
+            "scale": [
+              0.9557305633748304,
+              0.7343620779657939
+            ],
+            "predictions": [
+              {
+                "id": "development-06",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-07",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-08",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-09",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-10",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-28",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-29",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-30",
+                "actual": 1,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 3,
+              "fp": 2,
+              "fn": 1,
+              "tp": 2
+            },
+            "f1": 0.5714285714285714
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-34",
+              "development-35",
+              "development-36",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-31",
+              "development-32",
+              "development-33"
+            ],
+            "mean": [
+              0.5328916533978726,
+              0.23925941129302877
+            ],
+            "scale": [
+              0.8718365572591221,
+              0.8433752512729118
+            ],
+            "predictions": [
+              {
+                "id": "development-11",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-12",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-13",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-14",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-15",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-31",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-32",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-33",
+                "actual": 1,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 5,
+              "fp": 0,
+              "fn": 1,
+              "tp": 2
+            },
+            "f1": 0.8
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "validationIds": [
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-34",
+              "development-35",
+              "development-36"
+            ],
+            "mean": [
+              0.5392973632946837,
+              0.32429314565501344
+            ],
+            "scale": [
+              0.8124277313619696,
+              0.8268083440021957
+            ],
+            "predictions": [
+              {
+                "id": "development-16",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-17",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-18",
+                "actual": 0,
+                "predicted": 1
+              },
+              {
+                "id": "development-19",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-20",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-34",
+                "actual": 1,
+                "predicted": 0
+              },
+              {
+                "id": "development-35",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-36",
+                "actual": 1,
+                "predicted": 0
+              }
+            ],
+            "confusion": {
+              "tn": 4,
+              "fp": 1,
+              "fn": 2,
+              "tp": 1
+            },
+            "f1": 0.4
+          },
+          {
+            "trainIds": [
+              "development-01",
+              "development-02",
+              "development-03",
+              "development-04",
+              "development-05",
+              "development-06",
+              "development-07",
+              "development-08",
+              "development-09",
+              "development-10",
+              "development-11",
+              "development-12",
+              "development-13",
+              "development-14",
+              "development-15",
+              "development-16",
+              "development-17",
+              "development-18",
+              "development-19",
+              "development-20",
+              "development-25",
+              "development-26",
+              "development-27",
+              "development-28",
+              "development-29",
+              "development-30",
+              "development-31",
+              "development-32",
+              "development-33",
+              "development-34",
+              "development-35",
+              "development-36"
+            ],
+            "validationIds": [
+              "development-21",
+              "development-22",
+              "development-23",
+              "development-24",
+              "development-37",
+              "development-38",
+              "development-39",
+              "development-40"
+            ],
+            "mean": [
+              0.5019020463570487,
+              0.1704756000627412
+            ],
+            "scale": [
+              0.8932690286717999,
+              0.86668714938738
+            ],
+            "predictions": [
+              {
+                "id": "development-21",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-22",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-23",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-24",
+                "actual": 0,
+                "predicted": 0
+              },
+              {
+                "id": "development-37",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-38",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-39",
+                "actual": 1,
+                "predicted": 1
+              },
+              {
+                "id": "development-40",
+                "actual": 1,
+                "predicted": 1
+              }
+            ],
+            "confusion": {
+              "tn": 4,
+              "fp": 0,
+              "fn": 0,
+              "tp": 4
+            },
+            "f1": 1.0
+          }
+        ],
+        "meanF1": 0.6876190476190476,
+        "stdF1": 0.20340859541657133
+      }
+    ],
+    "selection": {
+      "k": 5,
+      "method": "stratified",
+      "c": 1,
+      "meanF1": 0.6876190476190476,
+      "fitMean": [
+        0.5387008933032245,
+        0.2527414547090335
+      ],
+      "fitScale": [
+        0.8659962237138676,
+        0.8122077148452609
+      ],
+      "finalTest": {
+        "predictions": [
+          {
+            "id": "test-01",
+            "actual": 0,
+            "predicted": 0
+          },
+          {
+            "id": "test-02",
+            "actual": 0,
+            "predicted": 0
+          },
+          {
+            "id": "test-03",
+            "actual": 0,
+            "predicted": 0
+          },
+          {
+            "id": "test-04",
+            "actual": 0,
+            "predicted": 0
+          },
+          {
+            "id": "test-05",
+            "actual": 0,
+            "predicted": 0
+          },
+          {
+            "id": "test-06",
+            "actual": 0,
+            "predicted": 0
+          },
+          {
+            "id": "test-07",
+            "actual": 0,
+            "predicted": 0
+          },
+          {
+            "id": "test-08",
+            "actual": 0,
+            "predicted": 0
+          },
+          {
+            "id": "test-09",
+            "actual": 0,
+            "predicted": 0
+          },
+          {
+            "id": "test-10",
+            "actual": 0,
+            "predicted": 0
+          },
+          {
+            "id": "test-11",
+            "actual": 1,
+            "predicted": 1
+          },
+          {
+            "id": "test-12",
+            "actual": 1,
+            "predicted": 1
+          },
+          {
+            "id": "test-13",
+            "actual": 1,
+            "predicted": 0
+          },
+          {
+            "id": "test-14",
+            "actual": 1,
+            "predicted": 0
+          },
+          {
+            "id": "test-15",
+            "actual": 1,
+            "predicted": 0
+          }
+        ],
+        "confusion": {
+          "tn": 10,
+          "fp": 0,
+          "fn": 3,
+          "tp": 2
+        },
+        "f1": 0.5714285714285714
+      }
+    }
+  }
+}

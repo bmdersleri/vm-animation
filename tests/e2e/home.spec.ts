@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test('home lists 22 concepts and the k-NN card opens the k-NN page', async ({ page }) => {
+test('home lists 23 concepts and the k-NN card opens the k-NN page', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.card')).toHaveCount(22);
+  await expect(page.locator('.card')).toHaveCount(23);
   await page.locator('a.card.hazir[href$="knn/"]').click();
   await expect(page).toHaveURL(/\/knn\/$/);
   await expect(page.locator('.step-count')).toHaveText('Adım 1 / 12');

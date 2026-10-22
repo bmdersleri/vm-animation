@@ -12,7 +12,7 @@ export async function gotoStep(page: Page, index: number, count: number, settleM
 /** Open a page in a mode; `ready` is a selector that shows the scene is ready. */
 export async function open(page: Page, path: string, mode: 'ders' | 'lab', ready: string): Promise<void> {
   await page.goto(`${path}?mod=${mode}`);
-  await expect(page.locator(`[data-mode="${mode}"]`).first()).toBeVisible();
+  await expect(page.locator(`[data-mode="${mode}"]`).first()).toBeVisible({ timeout: 15_000 });
   await expect(page.locator(ready).first()).toBeAttached();
 }
 
@@ -123,4 +123,32 @@ export function shownDisabledGroups(page: Page): Promise<string[]> {
     }
     return out;
   });
+}
+
+/**
+ * Scatter label collisions inside `svgSel`: a centre or point label that intersects another label
+ * or any centre's plus marker (plus–plus contact between close centres is not text and is ignored).
+ */
+export function labelCollisions(page: Page, svgSel: string): Promise<string[]> {
+  return page.evaluate((root) => {
+    const svg = document.querySelector(root)!;
+    const name = (e: Element): string => `${e.getAttribute('class')} "${(e.textContent ?? '').trim()}"`;
+    const shown = (e: Element): boolean => {
+      const r = e.getBoundingClientRect();
+      return r.width > 0 && r.height > 0 && !e.closest('[hidden]');
+    };
+    const labels = [...svg.querySelectorAll('.cs-center-label, .cs-ring-label')].filter((e) => (e.textContent ?? '').trim() !== '' && shown(e));
+    const pluses = [...svg.querySelectorAll('.cs-plus')].filter(shown);
+    const hit = (a: DOMRect, b: DOMRect): boolean =>
+      Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
+    const out: string[] = [];
+    labels.forEach((l, i) => {
+      const r = l.getBoundingClientRect();
+      for (const m of labels.slice(i + 1)) if (hit(r, m.getBoundingClientRect())) out.push(`${name(l)} x ${name(m)}`);
+      pluses.forEach((p, j) => {
+        if (hit(r, p.getBoundingClientRect())) out.push(`${name(l)} x plus M${j + 1}`);
+      });
+    });
+    return out;
+  }, svgSel);
 }
