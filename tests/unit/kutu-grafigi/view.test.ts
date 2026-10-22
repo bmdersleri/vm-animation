@@ -94,9 +94,12 @@ describe('kutu view', () => {
     expect([0, 1, 2, 3, 4, 5, 6, 7].map((i) => ids(i).length)).toEqual([2, 2, 2, 2, 2, 2, 3, 3]);
   });
 
-  it('üçüncü grup parametresi açınca da görünür', () => {
-    expect(ids(2, { third: true })).toEqual(['bilgisayar', 'elektrik', 'makine']);
-    expect(ids(0, { third: true })).toContain('makine');
+  it('üçüncü grup yalnız 7–8. adımlarda ve açıkken görünür', () => {
+    expect(ids(6, { third: true })).toEqual(['bilgisayar', 'elektrik', 'makine']);
+    expect(ids(6, { third: false })).toEqual(['bilgisayar', 'elektrik']);
+    // before step 7 the control is not offered, so the parameter cannot leak the group in
+    expect(ids(2, { third: true })).toEqual(['bilgisayar', 'elektrik']);
+    expect(V(6, { third: false }).strip).toContain('üçüncü grup kapalı');
   });
 
   it('noktalar kapalıyken aykırı bilgisi korunur', () => {

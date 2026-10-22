@@ -43,14 +43,12 @@ export const kutuScenario: Scenario<KutuParams> = {
       title: 'Çeyrekler',
       text: 'n = 5’te Q1 ve Q3 tam gözleme düşer: 0,25 × (5 − 1) = 1 ve 0,75 × 4 = 3. konumlar. Bilgisayar Q1 74 / Q3 82, Elektrik Q1 68 / Q3 76; iki grupta da IQR 8. Çeyrek (quartile) ve çeyrekler arası açıklık (IQR) verinin ortadaki yarısını çerçeveler.',
       term: 'çeyrek (quartile) · çeyrekler arası açıklık (IQR)',
-      params: { k: 1.5 },
     },
     {
       id: 'kutu',
       title: 'Kutu',
       text: 'Q1–Q3 arası kutu, içinde medyan çizgisi. Kutu grafiği (box plot) beş sayıyı tek simgeye sıkıştırır: kutunun yarısı verinin ortadaki %50’sidir.',
       term: 'kutu grafiği (box plot)',
-      params: { k: 1.5 },
     },
     {
       id: 'biyik',

@@ -2,7 +2,7 @@ import { formatNonZero, formatNumber } from '../../core/plot/format';
 import { mean } from '../../core/stats';
 import { GROUPS, GROUP_COLOR, type GroupData, type GroupId } from './data';
 import { boxStats, type BoxStats } from './kutu';
-import { kutuScenario, type KutuParams } from './scenario';
+import { kutuScenario, THIRD_STEPS, type KutuParams } from './scenario';
 
 export interface GroupView {
   id: GroupId;
@@ -105,6 +105,8 @@ function stripFor(stepId: string, p: KutuParams, groups: GroupView[]): string {
     case 'ucuncu-grup': {
       const elektrik = groups[1];
       const makine = groups[2];
+      // the third group's own switch is live from step 7: it can be closed again
+      if (!makine) return `üçüncü grup kapalı · elektrik IQR ${trim(elektrik.stats.iqr)}`;
       const be = elektrik.stats.median.value;
       const bm = makine.stats.median.value;
       const cmp = be === bm ? '=' : be < bm ? '<' : '>';
@@ -127,8 +129,9 @@ export function deriveKutuView(index: number, p: KutuParams): KutuView {
   const steps = kutuScenario.steps;
   const i = Math.max(0, Math.min(steps.length - 1, index));
   const stepId = steps[i].id;
+  const third = THIRD_STEPS.includes(i) && p.third;
   const groups = GROUPS
-    .filter((g) => g.id !== 'makine' || p.third || i >= 6)
+    .filter((g) => g.id !== 'makine' || third)
     .map((g) => groupView(g, p));
   return {
     stepId,
