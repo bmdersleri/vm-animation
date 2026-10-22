@@ -58,7 +58,8 @@ test('lab: a long cluster list is capped with a "more" chip and stays inside the
   await page.locator('input[data-param="eps"]').fill('0.11');
   await page.locator('input[data-param="minSamples"]').fill('2');
   await expect(page.locator('[data-more]')).toBeVisible();
-  await settled(() => page.locator('.db-sizes, .db-panel').evaluateAll((es) => es.map((e) => JSON.stringify(e.getBoundingClientRect()))));
+  // the SVG labels in TEXTS move too, so they are part of the read
+  await settled(() => page.locator(`${TEXTS}, .db-sizes, .db-panel`).evaluateAll((es) => es.map((e) => JSON.stringify(e.getBoundingClientRect()))));
   expect(await outsideStage(page, TEXTS)).toEqual([]);
   expect(await outsideStage(page, '.db-sizes, .db-panel')).toEqual([]);
 });

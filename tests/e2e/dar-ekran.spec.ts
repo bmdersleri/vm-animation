@@ -1,9 +1,17 @@
 import { test, expect, type Page } from '@playwright/test';
 import { concepts } from '../../src/concepts/registry';
+import { settled } from './helpers';
 
 test.use({ viewport: { width: 390, height: 844 } });
 
 const ready = concepts.filter((c) => c.status === 'hazir' && c.href);
+
+/** Boxes of the stage and every svg / canvas in it, read until they stop moving. */
+const stageSettled = (page: Page): Promise<void> => settled(() => page.evaluate(() =>
+  [...document.querySelectorAll('.stage, .stage svg, .stage canvas')].map((e) => {
+    const r = e.getBoundingClientRect();
+    return [r.x, r.y, r.width, r.height];
+  })));
 
 async function checkStep(page: Page, label: string): Promise<void> {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -42,7 +50,7 @@ test('every ready page fits 390 px in Ders and Lab', async ({ page }) => {
       await checkStep(page, `${c.id} ${mode} step 1`);
       await dots.nth(n - 1).click();
       await expect(page.locator('.step-count')).toHaveText(new RegExp(`Adım ${n} / ${n}`));
-      await page.waitForTimeout(300);
+      await stageSettled(page);
       await checkStep(page, `${c.id} ${mode} step ${n}`);
     }
   }
@@ -54,7 +62,8 @@ test('confusion matrix digits stay inside their cells at 390 px', async ({ page 
     await page.goto(`/karmasiklik-matrisi/?mod=${mode}`);
     await page.locator('.step-dot').nth(6).click();
     await expect(page.locator('.matrix-scene')).toHaveAttribute('data-step', '6');
-    await page.waitForTimeout(300);
+    await settled(() => page.locator('[data-cell] .matrix-cell-bg, [data-cell] .matrix-count')
+      .evaluateAll((es) => es.map((e) => JSON.stringify(e.getBoundingClientRect()))));
     const bad = await page.evaluate(() => {
       const out: string[] = [];
       for (const cell of document.querySelectorAll<SVGGElement>('[data-cell]')) {
