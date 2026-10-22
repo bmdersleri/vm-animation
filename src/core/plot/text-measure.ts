@@ -56,4 +56,19 @@ export class TextMeasure {
   maxWidth(texts: string[], cls: string, fontPx: number): number {
     return Math.max(0, ...texts.map((t) => this.width(t, cls, fontPx)));
   }
+
+  /** Greedy word wrap of `text` at `maxW` px, measured with class `cls`; a word is never split. */
+  wrap(text: string, maxW: number, cls: string, fontPx: number): string[] {
+    const lines: string[] = [];
+    let line = '';
+    for (const word of text.split(' ')) {
+      const next = line ? `${line} ${word}` : word;
+      if (line && this.width(next, cls, fontPx) > maxW) {
+        lines.push(line);
+        line = word;
+      } else line = next;
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
 }

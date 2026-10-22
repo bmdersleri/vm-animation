@@ -2,7 +2,7 @@ import { select, type Selection } from 'd3-selection';
 import 'd3-transition';
 import type { Mode } from '../../core/mode';
 import { diamondPath } from '../../core/plot/dots-path';
-import { formatNumber } from '../../core/plot/format';
+import { formatNumber, formatTrim } from '../../core/plot/format';
 import { r1 } from '../../core/plot/marks';
 import { lineScale, NumberLineLayer, stackLevels, type LineScale } from '../../core/plot/number-line';
 import { TextMeasure } from '../../core/plot/text-measure';
@@ -90,9 +90,7 @@ const extremeOf = (values: readonly number[], dir: DragSpec['dir']): number =>
   dir === 'max' ? Math.max(...values) : Math.min(...values);
 
 /** Up to two decimals with trailing zeros trimmed: "74", "63,5", "106". */
-function trim(x: number): string {
-  return formatNumber(x, 2).replace(/(,\d*?)0+$/, '$1').replace(/,$/, '');
-}
+const trim = (x: number): string => formatTrim(x, 2);
 
 /** Rows in view order, with the drag-applied groups the scene computed. */
 function rowsOf(v: KutuView, st: LayerState): RowD[] {

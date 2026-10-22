@@ -1,4 +1,4 @@
-import { formatNonZero, formatNumber } from '../../core/plot/format';
+import { formatNonZero, formatNumber, formatTrim } from '../../core/plot/format';
 import { mean } from '../../core/stats';
 import { GROUPS, GROUP_COLOR, type GroupData, type GroupId } from './data';
 import { boxStats, type BoxStats } from './kutu';
@@ -29,9 +29,7 @@ export interface KutuView {
 const f2 = (x: number): string => formatNonZero(x, 2);
 
 /** Up to two decimals with trailing zeros trimmed: "74", "63,5", "92,25". */
-function trim(x: number): string {
-  return f2(x).replace(/(,\d*?)0+$/, '$1').replace(/,$/, '');
-}
+const trim = (x: number): string => formatTrim(x, 2);
 
 /** The step's values: the group's five marks, the sixth student merged in when asked, sorted. */
 function valuesOf(g: GroupData, sixth: boolean): number[] {

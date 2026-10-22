@@ -1,4 +1,4 @@
-import { formatNonZero, formatNumber } from '../../core/plot/format';
+import { formatNonZero, formatNumber, formatTrim } from '../../core/plot/format';
 import { covariance2, mean, pearson } from '../../core/stats';
 import { ANSCOMBE, LEVERAGE, anscombeR, spearman } from './anscombe';
 import { HEATMAP, KORELASYON } from './data';
@@ -33,9 +33,7 @@ export interface KorelView {
 const f3 = (x: number): string => formatNonZero(x, 3);
 
 /** Up to two decimals with trailing zeros trimmed: "12,5", "6", "19". */
-function trim(x: number): string {
-  return formatNonZero(x, 2).replace(/(,\d*?)0+$/, '$1').replace(/,$/, '');
-}
+const trim = (x: number): string => formatTrim(x, 2);
 
 /** Ordinary least squares through the points: m = cov(x,y) / var(x), b = ȳ − m x̄. */
 function fit(points: { x: number; y: number }[]): { m: number; b: number } {

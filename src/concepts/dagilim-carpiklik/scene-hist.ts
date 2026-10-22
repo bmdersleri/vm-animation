@@ -2,7 +2,7 @@ import { select, type Selection } from 'd3-selection';
 import 'd3-transition';
 import type { Mode } from '../../core/mode';
 import { circlesPath, diamondPath } from '../../core/plot/dots-path';
-import { formatNumber } from '../../core/plot/format';
+import { formatNumber, formatTrim } from '../../core/plot/format';
 import { r1, trianglePath } from '../../core/plot/marks';
 import { lineScale, NumberLineLayer, staggerRows, stackLevels } from '../../core/plot/number-line';
 import { TextMeasure } from '../../core/plot/text-measure';
@@ -56,9 +56,7 @@ interface LinkD { href: string; label: string; x: number; y: number }
 const clamp = (v: number, a: number, b: number): number => Math.min(b, Math.max(a, v));
 
 /** Up to one decimal with trailing zeros trimmed: "12,4", "8". */
-function trim1(x: number): string {
-  return formatNumber(x, 1).replace(/(,\d*?)0+$/, '$1').replace(/,$/, '');
-}
+const trim1 = (x: number): string => formatTrim(x, 1);
 
 /**
  * The plot of the `dagilim-carpiklik` page: the reused core number line with the
@@ -379,7 +377,7 @@ export class HistLayer {
       pad,
       titlePx: L.axis,
       bodyPx,
-      lines: this.wrap(r.body, cardW - 2 * pad, bodyPx),
+      lines: this.measure.wrap(r.body, cardW - 2 * pad, 'rule-body', bodyPx),
     })) : [];
 
     const sel = this.gRule.selectAll<SVGGElement, RuleD>('g.rule').data(cards, (d) => d.title);
@@ -425,21 +423,6 @@ export class HistLayer {
     lUpd.select('text.rule-link-text')
       .attr('x', (d) => r1(d.x)).attr('y', (d) => r1(d.y)).attr('text-anchor', 'middle')
       .text((d) => d.label);
-  }
-
-  /** Greedy word wrap of a card body at `maxW` px, measured with the card's own font. */
-  private wrap(text: string, maxW: number, px: number): string[] {
-    const lines: string[] = [];
-    let line = '';
-    for (const word of text.split(' ')) {
-      const next = line ? `${line} ${word}` : word;
-      if (line && this.measure.width(next, 'rule-body', px) > maxW) {
-        lines.push(line);
-        line = word;
-      } else line = next;
-    }
-    if (line) lines.push(line);
-    return lines;
   }
 
   // ------------------------------------------------------------- pointer drag

@@ -38,3 +38,8 @@ export function formatNonZero(v: number, decimals = 2, max = 6): string {
   }
   return s;
 }
+
+/** formatNonZero(v, decimals) with trailing zeros and a bare comma dropped: "16,4", "8", "2,79". */
+export function formatTrim(v: number, decimals: number): string {
+  return formatNonZero(v, decimals).replace(/(,\d*?)0+$/, '$1').replace(/,$/, '');
+}

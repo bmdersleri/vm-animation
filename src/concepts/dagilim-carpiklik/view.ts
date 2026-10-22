@@ -1,4 +1,4 @@
-import { formatNumber, formatNonZero } from '../../core/plot/format';
+import { formatNumber, formatNonZero, formatTrim } from '../../core/plot/format';
 import { histCounts, mean, median, skewness } from '../../core/stats';
 import { SERIES, type Seri } from './data';
 import { dagilimScenario, EXTREME_STEPS, type DagilimParams } from './scenario';
@@ -28,9 +28,7 @@ const MARK_STEPS: readonly number[] = [2, 3, 4, 5, 6, 7];
 const f2 = (x: number): string => formatNonZero(x, 2);
 
 /** Up to two decimals with trailing zeros trimmed: "16,4", "2,79", "8". */
-function trim(x: number): string {
-  return f2(x).replace(/(,\d*?)0+$/, '$1').replace(/,$/, '');
-}
+const trim = (x: number): string => formatTrim(x, 2);
 
 /** Skewness text: an exact zero reads "0", every other value keeps two decimals. */
 const skewText = (x: number): string => (x === 0 ? '0' : f2(x));

@@ -434,7 +434,7 @@ export class PanelsLayer {
     const gap = Math.round(tick * 1.2);
     const cardW = (w - 2 * margin - gap) / 2;
     const pad = Math.max(8, Math.round(tick * 0.7));
-    const lines = Math.max(1, ...CLAIMS.map((c) => this.wrap(c.body, cardW - 2 * pad, tick).length));
+    const lines = Math.max(1, ...CLAIMS.map((c) => this.measure.wrap(c.body, cardW - 2 * pad, 'eda-body', tick).length));
     return Math.round(pad * 2 + axis * 1.7 + lines * tick * 1.35);
   }
 
@@ -456,7 +456,7 @@ export class PanelsLayer {
       w: cardW,
       h: band,
       pad,
-      lines: this.wrap(c.body, cardW - 2 * pad, tick),
+      lines: this.measure.wrap(c.body, cardW - 2 * pad, 'eda-body', tick),
     }));
     const sel = this.gClaims.selectAll<SVGGElement, CardD>('g.claim').data(cards, (d) => d.title);
     sel.exit().remove();
@@ -504,7 +504,7 @@ export class PanelsLayer {
       w: cardW,
       h: cardH,
       pad,
-      lines: this.wrap(c.body, cardW - 2 * pad, tick),
+      lines: this.measure.wrap(c.body, cardW - 2 * pad, 'eda-body', tick),
     }));
     const sel = this.gCards.selectAll<SVGGElement, CardD>('g.eda-box').data(cards, (d) => d.title);
     sel.exit().remove();
@@ -529,21 +529,6 @@ export class PanelsLayer {
       });
     if (ms > 0) tr(upd as AnySel, TN, ms).attr('opacity', 1);
     else upd.attr('opacity', 1);
-  }
-
-  /** Greedy word wrap of a card body at `maxW` px, measured with the card's own font. */
-  private wrap(text: string, maxW: number, px: number): string[] {
-    const lines: string[] = [];
-    let line = '';
-    for (const word of text.split(' ')) {
-      const next = line ? `${line} ${word}` : word;
-      if (line && this.measure.width(next, 'eda-body', px) > maxW) {
-        lines.push(line);
-        line = word;
-      } else line = next;
-    }
-    if (line) lines.push(line);
-    return lines;
   }
 
   // ------------------------------------------------------------- step 10 rule
