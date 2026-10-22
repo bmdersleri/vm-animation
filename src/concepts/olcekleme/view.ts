@@ -21,9 +21,9 @@ export interface ScatterView {
   box: Domain;
   /**
    * The domain the plot is fitted to. ham: the RAW box, widened from its
-   * minimum (no negative tenure or bill on the axes). Steps 4 and 5 share one
-   * frame holding both the raw and the centred cloud, so x − μ is a visible
-   * move. z: the z box, widened from its centre.
+   * minimum (no negative tenure or bill on the axes). Steps 1-5 share one
+   * frame holding both the raw and the centred cloud, so the scale never
+   * changes between them and x − μ is a visible move. z: the z box, widened from its centre.
    */
   frame: Domain;
   anchor: AspectAnchor;
@@ -96,8 +96,11 @@ function muLabels(unit: Unit): [string, string] {
 
 interface Geo { pt: (c: { t: number; f: number }) => Pt2; box: Domain; frame: Domain; anchor: AspectAnchor; ds: number[]; qp: Pt2 }
 
-/** Steps 4 and 5 (μ and x − μ): one shared frame, so the centring is a translation on screen. */
-const SHARED_FRAME_STEPS: readonly number[] = [3, 4];
+/**
+ * Steps 1-5 (data, distance, nearest, μ, x − μ): one shared frame, so the cloud keeps its size from step to step
+ * and the centring is a translation on screen.
+ */
+const SHARED_FRAME_STEPS: readonly number[] = [0, 1, 2, 3, 4];
 
 function geometry(index: number, p: OlcParams, space: Space): Geo {
   const k = UNIT_FACTOR[p.unit];

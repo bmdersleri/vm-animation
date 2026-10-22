@@ -110,6 +110,7 @@ export function mountKnnScene(
     if (key !== layoutKey || !layout) {
       layout = computeLayout(size.w, size.h, mode, v.space, v.weighting, measure);
       layoutKey = key;
+      badgeOffsets.clear(); // new layout, new badge distances: start fresh
     }
     const L = layout;
     const sc = fitViewport(v.space.domain, L.plot, v.space.scaled);
@@ -236,10 +237,10 @@ export function mountKnnScene(
     }
   }
 
-  /** Rank badge centres (px) for the k neighbours, placed away from the query and from each other. */
   /** Offset (px, from its point) of each badge in the last frame, by point index. */
   const badgeOffsets = new Map<number, P>();
 
+  /** Rank badge centres (px) for the k neighbours, placed away from the query and from each other. */
   function rankBadges(v: KnnView, sc: Scales, L: Layout): Rank[] {
     if (v.phase < 3) {
       badgeOffsets.clear();

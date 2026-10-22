@@ -406,21 +406,27 @@ describe('mountKnnScene', () => {
     const { el, player } = setup({ k: 3 }, 'lab');
     player.goto(3);
     const q0 = { ...player.state.params.query };
-    const nodes = new Map(all(el, 'g.rank').map((g) => [(g as unknown as { __data__: { i: number } }).__data__.i, g]));
+    const idOf = (g: Element): number => (g as unknown as { __data__: { i: number } }).__data__.i;
     const order = (): number[] => deriveKnnView(3, player.state.params).neighbors.map((n) => n.index);
     const first = order();
-    // sweep the query along a line until the neighbour order changes
+    // move the query along a line, one small step at a time, until the neighbour order swaps
+    let prev = badgeOffsets(el);
+    let nodes = new Map(all(el, 'g.rank').map((g) => [idOf(g), g]));
     let swapped = false;
     for (let step = 1; step <= 200 && !swapped; step++) {
       player.setParam('query', { tenure: q0.tenure + step * 0.5, value: q0.value + step * 0.5 });
-      swapped = order().join() !== first.join() && new Set(order()).size === new Set(first).size
-        && order().every((i) => first.includes(i));
+      const now = order();
+      swapped = now.join() !== first.join() && now.every((i) => first.includes(i));
+      if (!swapped) { prev = badgeOffsets(el); nodes = new Map(all(el, 'g.rank').map((g) => [idOf(g), g])); }
     }
     expect(swapped).toBe(true);
-    // the same badge nodes sit on the same points, only their number changed
+    const after = badgeOffsets(el);
     for (const g of all(el, 'g.rank')) {
-      const i = (g as unknown as { __data__: { i: number } }).__data__.i;
-      if (nodes.has(i)) expect(g).toBe(nodes.get(i));
+      // the same badge node sits on the same point, with (nearly) the same offset; only its number changed
+      expect(g).toBe(nodes.get(idOf(g)));
+      const [dx, dy] = after.get(idOf(g))!;
+      const [px, py] = prev.get(idOf(g))!;
+      expect(Math.hypot(dx - px, dy - py), `badge ${idOf(g)}`).toBeLessThan(4);
     }
     expect(all(el, 'g.rank').map((g) => Number(g.textContent)).sort()).toEqual([1, 2, 3]);
   });

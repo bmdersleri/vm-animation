@@ -306,7 +306,7 @@ describe('lab threshold handles', () => {
     player.goto(6);
     const col = el.querySelector('div.tree-col')!;
     const layer = () => col.querySelector<HTMLElement>('.cards-layer');
-    expect(layer()?.hidden ?? true).toBe(true);
+    expect(layer()?.classList.contains('reserved') ?? true).toBe(true); // built, laid out, but not seen
     player.setParams({ userSplit: { feature: 0, threshold: 20 }, scan: -1 });
     expect(layer()!.hidden).toBe(false);
     const titles = () => all(col, '.card h3.card-title').map((t) => t.textContent);
@@ -331,9 +331,10 @@ describe('lab threshold handles', () => {
       const nodes = (): Element[] => all(el, '.cards-layer .card, .cards-layer .branch, .cards-layer .card-score, .cards-layer .fill');
       const before = nodes();
       expect(before.length, `step ${i + 1}`).toBeGreaterThanOrEqual(2);
-      if (i !== 8) expect(el.querySelector<HTMLElement>('.cards-layer')!.hidden).toBe(true);
+      if (i !== 8) expect(el.querySelector<HTMLElement>('.cards-layer')!.classList.contains('reserved')).toBe(true);
       player.setParams({ userSplit: { feature: 0, threshold: 20 }, scan: -1 });
       const after = nodes();
+      expect(el.querySelector<HTMLElement>('.cards-layer')!.classList.contains('reserved')).toBe(false);
       expect(el.querySelector<HTMLElement>('.cards-layer')!.hidden).toBe(false);
       expect(all(el, '.cards-layer .card h3.card-title').map((t) => t.textContent?.slice(0, 6))).toEqual(['Senin ', 'Ağacın']);
       expect(after).toHaveLength(before.length);

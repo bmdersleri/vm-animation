@@ -32,6 +32,15 @@ test('threshold drag stays smooth', async ({ page }, info) => {
     w.__rec = true;
     w.__down = w.__up = NaN;
     window.addEventListener('pointerdown', () => { w.__down = performance.now(); }, { capture: true, once: true });
+    // cost of the press frame: frame start to the end of the scene's render plus a forced style + layout pass
+    const ww = w as unknown as { __press: number };
+    window.addEventListener('pointerdown', () => {
+      requestAnimationFrame((frameStart) => {
+        // the scene's render callback was queued first, so it has run by now; then force the style + layout pass
+        void document.body.offsetHeight;
+        ww.__press = performance.now() - frameStart;
+      });
+    }, { once: true });
     window.addEventListener('pointerup', () => { w.__up = performance.now(); }, { capture: true, once: true });
     const tick = (t: number) => {
       w.__ts.push(t);
@@ -67,6 +76,16 @@ test('threshold drag stays smooth', async ({ page }, info) => {
   const moved = await page.locator('svg.tree-plot line.scan').first().boundingBox();
   expect(moved).not.toBeNull();
   expect(Math.abs(moved!.x + moved!.width / 2 - end.x)).toBeLessThanOrEqual(2);
+  // the first frames after the press: the drag cards are laid out beforehand, so these must not hitch
+  // and how long the press itself took to reach the screen: pointer-down to the first frame after it
+  const pressLatency = ts.find((t) => t > down)! - down;
+  const press = await page.evaluate(() => (window as unknown as { __press: number }).__press);
+  const first = [pressLatency, ...during.slice(0, 2)];
+  console.log('press frame work (render + layout)', round(press), 'ms');
+  console.log('first frames after pointer-down (latency / frames)', first.map(round).join(' / '), 'ms');
+  info.annotations.push({ type: 'first-frames', description: first.map(round).join(' / ') });
+  expect(Math.max(...first)).toBeLessThan(25);
+  expect(press).toBeLessThan(20);
   const p = p95(during);
   const d = `frames=${during.length} p95=${round(p)} ms max=${round(Math.max(...during))} ms`;
   info.annotations.push({ type: 'drag', description: d });

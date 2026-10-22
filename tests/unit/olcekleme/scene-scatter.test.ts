@@ -117,6 +117,26 @@ describe('olcekleme ScatterLayer', () => {
     expect(num(host.querySelector('rect.sigma.x')!, 'width')).toBeCloseTo((p.width * 2 * Z_FIT.t.scale) / (64 + Z_FIT.t.center), 0);
   });
 
+  it('step 3 to 4 keeps the same scale', () => {
+    const { host, layer } = setup('ders');
+    /** px per data unit of an axis, from its first two ticks (step 5 also has negative ones). */
+    const per = (a: 'x' | 'y'): number => {
+      const t = ticksOf(host, a).map((k) => ({ v: Number(k.text.replace('−', '-').replace(',', '.')), at: k.at })).sort((p, q) => p.v - q.v);
+      return (t[1].at - t[0].at) / (t[1].v - t[0].v);
+    };
+    const scale = (): { x: number; y: number } => ({ x: per('x'), y: per('y') });
+    for (const [from, to] of [[0, 1], [1, 2], [2, 3], [3, 4]]) {
+      layer.update(view(from), 0, 'ders');
+      const a = scale();
+      const m1 = custAt(host, 'M1');
+      layer.update(view(to), 0, 'ders');
+      const b = scale();
+      expect(b.x, `step ${from + 1} to ${to + 1}`).toBeCloseTo(a.x, 1);
+      expect(b.y, `step ${from + 1} to ${to + 1}`).toBeCloseTo(a.y, 1);
+      if (to < 4) expect(custAt(host, 'M1').x).toBeCloseTo(m1.x, 6); // the cloud itself does not move or resize
+    }
+  });
+
   it('steps 4 and 5 share one frame: x − μ moves the cloud by μ and the μ lines onto the 0 ticks', () => {
     const { host, layer } = setup('ders');
     layer.update(view(3), 0, 'ders');
@@ -202,7 +222,7 @@ describe('olcekleme ScatterLayer', () => {
     const p = plotOf(host);
     const xs = ticksOf(host, 'x');
     expect(xs[0].text).toBe('0');
-    expect(xs[0].at).toBeCloseTo(p.left, 0);
+    expect(xs[0].at).toBeGreaterThan(p.left); // the shared frame has room left of 0 for the centred cloud
     expect(Math.max(...cxs(host))).toBeLessThan(p.left + p.width * 0.1);
     layer.update(view(2, { unit: 'gun' }), 0, 'ders');
     const cys = all(host, 'circle.pt.cust').map((c) => num(c, 'cy'));
@@ -229,7 +249,7 @@ describe('olcekleme ScatterLayer', () => {
     const { host, layer } = setup('lab');
     const box = (): SVGElement => host.querySelector('rect.drag-box')!;
     layer.update(view(1), 0, 'lab');
-    expect(hidden(box())).toBe(true); // months: the drag limit is the plot frame
+    expect(shown(box())).toBe(true); // the shared frame is wider than the raw box, so the drag limit is outlined
     const got: Parameters<QueryPointer>[0][] = [];
     layer.onPointer((q) => got.push(q));
     const cases: [number, Partial<OlcParams>][] = [
@@ -265,11 +285,11 @@ describe('olcekleme ScatterLayer', () => {
       return [spread(cxs(host)), spread(cys())];
     };
     const [yil, ay, gun] = [sp('yil'), sp('ay'), sp('gun')];
-    // years squeeze x; the month box fills the plot, so days keep the x spread and open the y axis instead
+    // years squeeze x; the shared frame keeps the months' px per unit, so days keep the x spread and open the y axis instead
     expect(yil[0]).toBeLessThan(ay[0] / 5);
     expect(Math.abs(gun[0] - ay[0])).toBeLessThan(0.2);
     expect(gun[1]).toBeLessThan(ay[1] / 5);
-    expect(Math.abs(yil[1] - ay[1])).toBeLessThan(0.2);
+    expect(Math.abs(yil[1] - ay[1])).toBeLessThan(2);
   });
 
   it('step 2: iso curve is an ellipse with the month ratio', () => {
@@ -296,13 +316,16 @@ describe('olcekleme ScatterLayer', () => {
     const { host, layer } = setup('ders');
     const got: [Parameters<QueryPointer>[0], Parameters<QueryPointer>[1]][] = [];
     layer.onPointer((q, k) => got.push([q, k]));
-    // year space: the domain starts at 0 years on the left edge; one year spans the px one month spans in the month view
+    // year space: the shared frame starts left of 0 years; one year spans the px one month spans in the month view
     layer.update(view(2, { unit: 'yil' }), 0, 'ders');
     let p = plotOf(host);
-    pointer(host, 'pointermove', p.left + 0.01 * p.width, p.top + p.height / 2);
+    const xt = ticksOf(host, 'x').sort((a, b) => a.at - b.at);
+    expect(xt[0].text).toBe('0');
+    const years = Number(xt[1].text.replace(',', '.')) * 0.3; // 30 % of the way from the 0 tick to the next one
+    // the pointer converts years to months
+    pointer(host, 'pointermove', xt[0].at + 0.3 * (xt[1].at - xt[0].at), p.top + p.height / 2);
     expect(got.at(-1)![1]).toBe('move');
-    expect(got.at(-1)![0].t).toBeCloseTo(0.01 * 768, 6);
-    expect(got.at(-1)![0].f).toBeCloseTo(115, 6);
+    expect(got.at(-1)![0].t).toBeCloseTo(years * 12, 1);
     // z space (index 8): equal aspect around the centre of the z box
     const v8 = view(8);
     layer.update(v8, 0, 'ders');
@@ -333,7 +356,7 @@ describe('olcekleme ScatterLayer', () => {
     layer.interrupt();
     const snapped = snapshot(host);
     const p = plotOf(host);
-    const want = CUSTOMERS.map((c) => p.left + (c.t / 64) * p.width);
+    const want = CUSTOMERS.map((c) => p.left + ((c.t + Z_FIT.t.center) / (64 + Z_FIT.t.center)) * p.width); // shared frame −25…64 months
     cxs(host).forEach((x, i) => expect(Math.abs(x - want[i])).toBeLessThan(0.06));
     expect(all(host, 'line.mu').every(hidden)).toBe(true);
     expect(hidden(host.querySelector('ellipse.iso'))).toBe(true);

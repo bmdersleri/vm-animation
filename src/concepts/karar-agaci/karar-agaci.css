@@ -261,6 +261,19 @@
   padding: 6px 10px;
 }
 
+/* drag cards of the Lab drag steps, laid out before the first press but not seen:
+   out of the flow so the tree column does not move when they appear */
+.cards-layer.reserved,
+.tree-col > .cards-host .cards-layer.reserved {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 4px;
+  inset-block-end: auto;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* ---------- parameter panel (controls.ts) ---------- */
 .tree-params {
   display: grid;

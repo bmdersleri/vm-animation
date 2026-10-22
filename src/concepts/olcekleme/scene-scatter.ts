@@ -14,8 +14,6 @@ import type { CustView, OlcView } from './view';
 const TN = 'olc-scatter';
 /** Unit / space change duration before `durationScale`; the caller passes `MOVE_MS * durationScale` as `ms`. */
 export const MOVE_MS = 900;
-/** Frame change between two steps of one space (step 3 <-> 4: the plot frame widens to hold the centred cloud). */
-export const FRAME_MS = 450;
 const SVGNS = 'http://www.w3.org/2000/svg';
 let uid = 0;
 

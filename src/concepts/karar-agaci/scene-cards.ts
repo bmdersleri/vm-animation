@@ -78,23 +78,29 @@ export class CardsLayer {
   /**
    * Renders `v`; `ms` (already scaled) animates the bar fills, 0 jumps. With
    * `reserveDrag` and no cards in the view (Lab, before the first press) the two
-   * drag cards are still built, hidden, so the first drag frame only fills them.
+   * drag cards are still built and laid out, invisibly (`.reserved`: visibility
+   * hidden, out of the flow, filled with placeholder text), so the first press
+   * only flips the class and updates text and widths.
    */
   update(v: TreeView, ms: number, reserveDrag = false): void {
     // cancel running fills first so rapid step changes end in the final state
     select(this.root).selectAll('.fill').interrupt(T);
     if (v.cards.length === 0) {
-      this.root.hidden = true;
+      this.root.hidden = !reserveDrag;
+      this.root.classList.toggle('reserved', reserveDrag);
       if (reserveDrag && this.key !== DRAG_KEY) {
         this.build(DRAG_SHAPE);
         this.key = DRAG_KEY;
+        this.fillPlaceholder();
       } else if (!reserveDrag) {
         this.key = ''; // shown again later: the cards fill afresh
       }
+      this.strip.hidden = true;
       this.fillRoot(null, 0);
       return;
     }
     this.root.hidden = false;
+    this.root.classList.remove('reserved');
 
     // in the drag steps the candidate cards (step 9) and the drag cards share one set of nodes: the press reuses them
     const dragShaped = reserveDrag && v.cards.length === 2 && v.cards.every((c) => c.branches.length === 2);
@@ -188,6 +194,20 @@ export class CardsLayer {
       return { card, title, branches, score, alt };
     });
     this.cardsEl.replaceChildren(...this.cards.map((c) => c.card));
+  }
+
+  /** Text of the reserved drag cards: as long as a real one, so fonts and boxes are resolved before the press. */
+  private fillPlaceholder(): void {
+    for (const c of this.cards) {
+      setText(c.title, 'Senin eşiğin: Sözleşme ≤ 20');
+      for (const b of c.branches) {
+        setText(b.label, 'Sözleşme');
+        setText(b.count, '00/00');
+        b.fill.style.width = '50%';
+        b.segs.forEach((sg) => { sg.style.width = '50%'; });
+      }
+      this.fillScore(c.score, SCORE.gini, 0, 0);
+    }
   }
 
   private fillRoot(r: RootView | null, ms: number): void {

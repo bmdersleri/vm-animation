@@ -4,16 +4,12 @@ import type { Mode } from '../../core/mode';
 import { renderStrip } from '../../core/plot/strip';
 import type { OlcParams } from './scenario';
 import { deriveOlcView } from './view';
-import { FRAME_MS, MOVE_MS, ScatterLayer, type QueryPointer } from './scene-scatter';
+import { MOVE_MS, ScatterLayer, type QueryPointer } from './scene-scatter';
 import { ScalersLayer } from './scene-scalers';
 import { SplitLayer } from './scene-split';
 
 /** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
 const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
-
-/** Zero-based steps 3 and 4: same space, different plot frame (see view.ts SHARED_FRAME_STEPS). */
-const FRAME_STEPS: readonly number[] = [2, 3];
-const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 
@@ -85,11 +81,7 @@ export function mountOlcScene(
       // dragging the new customer changes only `query`: follow the pointer without easing
       const queryOnly = cause === 'param' && !!before && before.index === state.index
         && before.params.unit === p.unit && before.params.scaling === p.scaling && before.params.fit === p.fit;
-      // steps 3 <-> 4 only widen or narrow the plot frame: a shorter ease, instant under reduced motion
-      const frameOnly = !!before && before.index !== state.index && before.params.unit === p.unit
-        && FRAME_STEPS.includes(before.index) && FRAME_STEPS.includes(state.index);
-      const base = frameOnly ? (reducedMotion() ? 0 : FRAME_MS) : MOVE_MS;
-      const ms = ds > 0 && !instant && !queryOnly ? base * ds : 0;
+      const ms = ds > 0 && !instant && !queryOnly ? MOVE_MS * ds : 0;
       prev = { index: state.index, params: p };
 
       scene.dataset.part = String(v.part);

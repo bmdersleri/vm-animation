@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
 import { olceklemeScenario, type OlcParams } from '../../../src/concepts/olcekleme/scenario';
 import { mountOlcScene } from '../../../src/concepts/olcekleme/scene';
-import { FRAME_MS, MOVE_MS, ScatterLayer } from '../../../src/concepts/olcekleme/scene-scatter';
+import { MOVE_MS, ScatterLayer } from '../../../src/concepts/olcekleme/scene-scatter';
 import { ScalersLayer } from '../../../src/concepts/olcekleme/scene-scalers';
 import { SplitLayer } from '../../../src/concepts/olcekleme/scene-split';
 import { deriveOlcView } from '../../../src/concepts/olcekleme/view';
@@ -270,53 +270,6 @@ describe('olcekleme scene', () => {
     const z = setup(0);
     z.player.goto(1);
     expect(spy.mock.calls.at(-1)![1]).toBe(0);
-  });
-
-  it('step 3 to 4 eases the frame instead of jumping', async () => {
-    // jsdom has no SVGGraphicsElement.transform.baseVal, which d3-interpolate needs to tween the axes' transform
-    const proto = SVGGElement.prototype as unknown as Record<string, unknown>;
-    if (!('transform' in proto)) {
-      Object.defineProperty(proto, 'transform', {
-        configurable: true,
-        get(this: SVGGElement) {
-          const t = /translate\(\s*(-?[\d.e+-]+)\s*(?:,|\s)\s*(-?[\d.e+-]+)/.exec(this.getAttribute('transform') ?? '');
-          return { baseVal: { consolidate: () => ({ matrix: { a: 1, b: 0, c: 0, d: 1, e: t ? Number(t[1]) : 0, f: t ? Number(t[2]) : 0 } }) } };
-        },
-      });
-    }
-    const { el, player } = setup(1);
-    const scale = (): number => {
-      const ticks = all(el, '.axes g.axis.x g.tick').map((g) => ({
-        t: text(g.querySelector('text')), x: Number(/translate\(([-\d.]+)/.exec(g.getAttribute('transform') ?? '')![1]),
-      }));
-      return ticks.find((k) => k.t === '20')!.x - ticks.find((k) => k.t === '0')!.x;
-    };
-    player.goto(2);
-    await frame(80);
-    const start = scale();
-    const spy = vi.spyOn(ScatterLayer.prototype, 'update');
-    player.goto(3);
-    await frame(20);
-    expect(spy.mock.calls.at(-1)![1]).toBe(FRAME_MS);
-    await frame(150);
-    const mid = scale();
-    await frame(500);
-    const end = scale();
-    expect(end).toBeLessThan(start - 20);
-    expect(mid).toBeLessThan(start - 1);
-    expect(mid).toBeGreaterThan(end + 1);
-    // back again, and instantly under reduced motion
-    spy.mockClear();
-    player.goto(2);
-    await frame(20);
-    expect(spy.mock.calls.at(-1)![1]).toBe(FRAME_MS);
-    await frame(500);
-    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce') }));
-    spy.mockClear();
-    player.goto(3);
-    await frame(20);
-    expect(spy.mock.calls.at(-1)![1]).toBe(0);
-    vi.unstubAllGlobals();
   });
 
   it('a query drag (param change of the query only) renders instantly', async () => {
