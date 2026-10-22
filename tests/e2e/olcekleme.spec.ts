@@ -217,13 +217,13 @@ test('lab drag stops at the axis bounds', async ({ page }) => {
   await page.mouse.up();
   await page.waitForTimeout(1000);
   const c = await centre(diamond);
-  // months: steps 1-5 share a frame wider than the data box, so the dashed drag box is the limit
-  await expect(page.locator('svg.scale-plot rect.drag-box')).toHaveAttribute('opacity', '1');
-  const f = (await page.locator('svg.scale-plot rect.drag-box').boundingBox())!;
+  const f = (await page.locator('svg.scale-plot rect.frame').boundingBox())!;
   expect(c.x).toBeGreaterThanOrEqual(f.x - 1);
   expect(c.x).toBeLessThanOrEqual(f.x + f.width + 1);
   expect(c.y).toBeGreaterThanOrEqual(f.y - 1);
   expect(c.y).toBeLessThanOrEqual(f.y + f.height + 1);
+  // months: the drag limit is the plot frame, so no extra outline
+  await expect(page.locator('svg.scale-plot rect.drag-box')).toHaveAttribute('opacity', '0');
 
   // z (step 9): the plot runs wider than the data box; the ◆ stops at the visible dashed drag box
   await gotoStep(page, 8, STEPS, 1200);

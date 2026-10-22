@@ -11,6 +11,10 @@ import { SplitLayer } from './scene-split';
 /** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
 const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
 
+/** Zero-based steps 3 and 4: same space, different plot frame. */
+const FRAME_STEPS: readonly number[] = [2, 3];
+const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 
 /**
@@ -81,7 +85,10 @@ export function mountOlcScene(
       // dragging the new customer changes only `query`: follow the pointer without easing
       const queryOnly = cause === 'param' && !!before && before.index === state.index
         && before.params.unit === p.unit && before.params.scaling === p.scaling && before.params.fit === p.fit;
-      const ms = ds > 0 && !instant && !queryOnly ? MOVE_MS * ds : 0;
+      // steps 3 <-> 4 only widen or narrow the plot frame (view.ts SHARED_FRAME_STEPS): under reduced motion that is instant
+      const frameOnly = !!before && before.index !== state.index && before.params.unit === p.unit
+        && FRAME_STEPS.includes(before.index) && FRAME_STEPS.includes(state.index);
+      const ms = ds > 0 && !instant && !queryOnly && !(frameOnly && reducedMotion()) ? MOVE_MS * ds : 0;
       prev = { index: state.index, params: p };
 
       scene.dataset.part = String(v.part);

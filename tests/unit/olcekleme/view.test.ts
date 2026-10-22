@@ -110,10 +110,10 @@ describe('olcekleme view', () => {
     expect(z.aspect).toBe('esit');
   });
 
-  it('plot frames: raw views widen from the box minimum, steps 1-5 share one frame, z keeps the centre', () => {
+  it('plot frames: raw views widen from the box minimum, steps 4 and 5 share one frame, z keeps the centre', () => {
     for (const i of [0, 1, 2]) {
       const s = V(i).scatter!;
-      expect(s.frame).toEqual(V(4).scatter!.frame);
+      expect(s.frame).toEqual(s.box);
       expect(s.anchor).toBe('min');
     }
     const s4 = V(3).scatter!;

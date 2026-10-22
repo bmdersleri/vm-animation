@@ -272,6 +272,59 @@ describe('olcekleme scene', () => {
     expect(spy.mock.calls.at(-1)![1]).toBe(0);
   });
 
+  describe('step 3 to 4 frame change', () => {
+    // jsdom has no SVGGraphicsElement.transform.baseVal, which d3-interpolate needs to tween the axes' transform
+    const proto = SVGGElement.prototype as unknown as Record<string, unknown>;
+    if (!('transform' in proto)) {
+      Object.defineProperty(proto, 'transform', {
+        configurable: true,
+        get(this: SVGGElement) {
+          const t = /translate\(\s*(-?[\d.e+-]+)\s*(?:,|\s)\s*(-?[\d.e+-]+)/.exec(this.getAttribute('transform') ?? '');
+          return { baseVal: { consolidate: () => ({ matrix: { a: 1, b: 0, c: 0, d: 1, e: t ? Number(t[1]) : 0, f: t ? Number(t[2]) : 0 } }) } };
+        },
+      });
+    }
+    /** Px between the x ticks 0 and 20 (the scale of the frame). */
+    const scale = (el: Element): number => {
+      const ticks = all(el, '.axes g.axis.x g.tick').map((g) => ({
+        t: text(g.querySelector('text')), x: Number(/translate\(([-\d.]+)/.exec(g.getAttribute('transform') ?? '')![1]),
+      }));
+      return ticks.find((k) => k.t === '20')!.x - ticks.find((k) => k.t === '0')!.x;
+    };
+
+    it('step 3 to 4 eases the frame instead of jumping', async () => {
+      const { el, player } = setup(0.4);
+      player.goto(2);
+      await frame(80);
+      const start = scale(el);
+      player.goto(3);
+      await frame(MOVE_MS * 0.4 * 0.5);
+      const mid = scale(el);
+      await frame(MOVE_MS * 0.4);
+      const end = scale(el);
+      expect(end).toBeLessThan(start - 20);
+      expect(mid).toBeLessThan(start - 1);
+      expect(mid).toBeGreaterThan(end + 1);
+    });
+
+    it('is instant under reduced motion, and only for the frame change', async () => {
+      const spy = vi.spyOn(ScatterLayer.prototype, 'update');
+      vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce') }));
+      const { player } = setup(1);
+      player.goto(2);
+      await frame(30);
+      spy.mockClear();
+      player.goto(3);
+      await frame(30);
+      expect(spy.mock.calls.at(-1)![1]).toBe(0);
+      spy.mockClear();
+      player.goto(5);
+      await frame(30);
+      expect(spy.mock.calls.at(-1)![1]).toBe(MOVE_MS);
+      vi.unstubAllGlobals();
+    });
+  });
+
   it('a query drag (param change of the query only) renders instantly', async () => {
     // the layer's own transitions are not under test (jsdom cannot tween SVG transforms)
     const spy = vi.spyOn(ScatterLayer.prototype, 'update').mockImplementation(() => {});
