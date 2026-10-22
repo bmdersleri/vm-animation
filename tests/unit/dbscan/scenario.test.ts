@@ -3,6 +3,8 @@ import { StepPlayer } from '../../../src/core/player';
 import { dbscanData } from '../../../src/concepts/dbscan/data';
 import { dbscanScenario } from '../../../src/concepts/dbscan/scenario';
 
+import { labTextTests } from '../lab-text';
+
 const steps = dbscanScenario.steps;
 
 describe('dbscan scenario', () => {
@@ -57,4 +59,6 @@ describe('dbscan scenario', () => {
     expect(p.state.params.point).toBeNull();
     p.destroy();
   });
+
+  labTextTests(steps as never, [3, 4, 5, 6, 7, 8, 9, 10]);
 });
