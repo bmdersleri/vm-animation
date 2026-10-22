@@ -22,6 +22,8 @@ test('apriori: page opens', async ({ page }) => {
 });
 
 test('screenshots: ders key steps stay inside the stage', async ({ page }) => {
+  // Reduced motion skips the basket-insertion sweep (step 9 shows all 18 baskets), so no sweep frame is captured.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   for (const step of [3, 5, 9, 10]) {
     await open(page, PAGE, 'ders', READY);
     await gotoStep(page, step - 1, STEPS, 0);

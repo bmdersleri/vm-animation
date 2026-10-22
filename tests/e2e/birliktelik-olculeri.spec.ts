@@ -6,12 +6,14 @@ const READY = 'td.bk-cell';
 const STEPS = 10;
 const TEXTS = '.bk-plot text, .bk-table th, .bk-table td, .stage p, .stage li';
 
-/** Boxes of the scene parts, read until the transitions come to rest. */
-const sceneSettled = (page: Page) => settled(() => page.evaluate(() =>
-  [...document.querySelectorAll('.bk-plot text, .bk-plot .bk-rule-pt, .bk-table, .bk-bar')].map((e) => {
+/** Boxes of the scene parts and the count-up state, read until they come to rest. */
+const sceneSettled = (page: Page) => settled(() => page.evaluate(() => [
+  document.querySelector('.bk-scene')?.getAttribute('data-counting'),
+  ...[...document.querySelectorAll('.bk-plot text, .bk-plot .bk-rule-pt, .bk-table, .bk-bar')].map((e) => {
     const r = e.getBoundingClientRect();
     return [r.x, r.y, r.width, r.height];
-  })));
+  }),
+]));
 
 test('birliktelik-olculeri: page opens', async ({ page }) => {
   await page.goto(PAGE);
@@ -20,6 +22,8 @@ test('birliktelik-olculeri: page opens', async ({ page }) => {
 });
 
 test('screenshots: ders key steps stay inside the stage', async ({ page }) => {
+  // Reduced motion draws the final count at once (step 5: 7 / 11), so the screenshot does not hit a count-up frame.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   for (const step of [2, 5, 7, 10]) {
     await open(page, PAGE, 'ders', READY);
     await gotoStep(page, step - 1, STEPS, 0);
