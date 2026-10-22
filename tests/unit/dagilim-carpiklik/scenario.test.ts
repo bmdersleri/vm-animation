@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
+import { labTextTests } from '../lab-text';
 import {
   dagilimScenario, dagilimShortcuts, SERIES_STEPS, BINS_STEPS, LOG_STEPS, EXTREME_STEPS,
   type DagilimParams,
@@ -145,4 +146,6 @@ describe('dagilimScenario', () => {
       [['e', 'E'], 'E', 'Uç değer: 28 ↔ 60'],
     ]);
   });
+
+  labTextTests(dagilimScenario.steps, [1, 2, 3, 4, 6, 7]);
 });

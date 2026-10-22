@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
+import { labTextTests } from '../lab-text';
 import {
   korelasyonScenario, korelasyonShortcuts, SET_STEPS, CHURN_STEPS, LEVERAGE_STEPS,
   type KorelParams,
@@ -143,4 +144,6 @@ describe('korelasyon senaryosu', () => {
       [['k', 'K'], 'K', 'Kaldıraç noktası y: 6 → 20'],
     ]);
   });
+
+  labTextTests(korelasyonScenario.steps, [4, 6, 7, 8]);
 });
