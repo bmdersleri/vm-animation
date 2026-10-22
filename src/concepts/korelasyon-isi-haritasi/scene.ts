@@ -1,6 +1,7 @@
 import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
 import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
+import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { formatNonZero } from '../../core/plot/format';
 import { renderStrip } from '../../core/plot/strip';
 import { anscombeWithoutLeverage, LEVERAGE } from './anscombe';
@@ -11,7 +12,6 @@ import { PanelsLayer, MS_STEP, type PanelsState } from './scene-panels';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 /** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
-const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
 /** What the strip says once the leverage point is dropped: set IV's remaining x is constant. */
 const DROPPED_R = anscombeWithoutLeverage();
 const DROPPED_STRIP = Number.isNaN(DROPPED_R)

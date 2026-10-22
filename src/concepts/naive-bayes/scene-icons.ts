@@ -2,7 +2,7 @@ import { select, type Selection } from 'd3-selection';
 import 'd3-transition';
 import type { Mode } from '../../core/mode';
 import { MARK, NAVY, TEXT, r1 } from '../../core/plot/marks';
-import { TextMeasure } from '../../core/plot/text-measure';
+import { BODY_FALLBACK, TextMeasure } from '../../core/plot/text-measure';
 import { tr } from '../../core/plot/transition';
 import type { Natural } from './bayes';
 
@@ -14,7 +14,6 @@ const ROWS = 20;
 /** Opacity of the negatives once only the positives count (reveal 2). */
 const FADED = 0.15;
 /** Body font px when computed styles are unavailable (theme.css at 1280 px). */
-const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
 const SOFT_ORANGE = '#F4AA4F';
 const GREY = '#93A3B5';
 const MUTED = '#3F526A';

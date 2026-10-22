@@ -152,3 +152,17 @@ export function labelCollisions(page: Page, svgSel: string): Promise<string[]> {
     return out;
   }, svgSel);
 }
+
+/**
+ * Wait until `read()` returns the same value on two consecutive polls (100 ms apart), i.e. the
+ * animation or layout it reads has come to rest. Replaces a fixed `waitForTimeout`.
+ */
+export async function settled(read: () => Promise<unknown>, timeout = 10_000): Promise<void> {
+  let last: string | undefined;
+  await expect.poll(async () => {
+    const now = JSON.stringify(await read());
+    const same = now === last;
+    last = now;
+    return same;
+  }, { intervals: [100], timeout }).toBe(true);
+}

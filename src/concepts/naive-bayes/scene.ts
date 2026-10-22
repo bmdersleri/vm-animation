@@ -1,6 +1,7 @@
 import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
 import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
+import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import type { NbParams } from './scenario';
 import { deriveNbView, type NbPart, type NbView } from './view';
 import { IconsLayer } from './scene-icons';
@@ -9,7 +10,6 @@ import { GaussLayer, type QueryPointer } from './scene-gauss';
 
 const MS_STEP = 450;
 /** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
-const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 

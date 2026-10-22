@@ -1,6 +1,7 @@
 import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
 import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
+import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { renderStrip } from '../../core/plot/strip';
 import type { Rect } from '../../core/plot/viewport';
 import { THETA_SWEEP, type PcaParams } from './scenario';
@@ -12,7 +13,6 @@ import { PanelsLayer } from './scene-panels';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 /** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
-const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
 /** Room inside the scatter square for the tick labels and axis titles (left, bottom) and the top / right gap. */
 const MARGIN: Record<Mode, { left: number; bottom: number }> = {
   ders: { left: 118, bottom: 72 },

@@ -1,6 +1,7 @@
 import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
 import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
+import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { renderStrip } from '../../core/plot/strip';
 import type { OlcParams } from './scenario';
 import { deriveOlcView } from './view';
@@ -9,7 +10,6 @@ import { ScalersLayer } from './scene-scalers';
 import { SplitLayer } from './scene-split';
 
 /** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
-const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
 
 /** Zero-based steps 3 and 4: same space, different plot frame. */
 const FRAME_STEPS: readonly number[] = [2, 3];

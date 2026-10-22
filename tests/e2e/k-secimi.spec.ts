@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { gotoStep, labelCollisions, open, outsideStage, overlaps, pageOverflow, stepCount } from './helpers';
+import { gotoStep, labelCollisions, open, outsideStage, overlaps, pageOverflow, settled, stepCount } from './helpers';
 
 const PAGE = '/k-secimi/';
 const READY = 'svg.ks-plot circle.cs-point';
@@ -77,7 +77,7 @@ test('lab: panel sits under the scatter and its labels stay on one line', async 
   await gotoStep(page, 5, STEPS);
   await page.locator('input[data-param="k"]').fill('4');
   await expect(page.locator('.ks-k-out')).toHaveText('k = 4');
-  await page.waitForTimeout(1500);
+  await settled(() => page.evaluate(() => [...document.querySelectorAll('.ks-plot-host, .ks-panel, .ks-plot, .ks-side')].map((e) => JSON.stringify(e.getBoundingClientRect()))));
   const m = await page.evaluate(() => {
     const host = document.querySelector('.ks-plot-host')!.getBoundingClientRect();
     const panel = document.querySelector('.ks-panel')!.getBoundingClientRect();

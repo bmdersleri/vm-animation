@@ -2,7 +2,7 @@ import { select, type Selection } from 'd3-selection';
 import 'd3-transition';
 import type { Mode } from '../../core/mode';
 import { GRID, MARK, NAVY, TEXT, WHITE, r1 } from '../../core/plot/marks';
-import { TextMeasure, type Fonts } from '../../core/plot/text-measure';
+import { BODY_FALLBACK, TextMeasure, type Fonts } from '../../core/plot/text-measure';
 import { tr } from '../../core/plot/transition';
 import { pct, type NbView } from './view';
 
@@ -10,7 +10,6 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 /** Transition name of the bar, trail and chips (interrupted on every update). */
 const BAR_T = 'bar';
 /** Body font px when computed styles are unavailable (theme.css at 1280 px). */
-const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
 const NULL_GREY = '#C9D5E3';
 const GHOST = '#6B7F95';
 /** The trail keeps room for the story's five points (prior + four words), so dots do not jump. */

@@ -5,7 +5,7 @@ import type { Mode } from '../../core/mode';
 import { AxesLayer, type AxesSpec } from '../../core/plot/axes';
 import { GridLayer, type GridSize } from '../../core/plot/grid-layer';
 import { MARK, NAVY, TEXT, WHITE, r1, trianglePath } from '../../core/plot/marks';
-import { TextMeasure, type Fonts } from '../../core/plot/text-measure';
+import { BODY_FALLBACK, TextMeasure, type Fonts } from '../../core/plot/text-measure';
 import { tr, type AnySel } from '../../core/plot/transition';
 import { fitViewport, type Rect, type Scales } from '../../core/plot/viewport';
 import { DOMAIN, FEATURES, gauss } from './data';
@@ -17,7 +17,6 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 /** Transition name of everything this layer animates in its SVG (interrupted on every update). */
 const GAUSS_T = 'gauss';
 /** Body font px when computed styles are unavailable (theme.css at 1280 px). */
-const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
 /** Tint opacity per mode: a projector washes light tints out, so Ders is stronger (as k-NN). */
 const REGION_ALPHA: Record<Mode, number> = { lab: 0.12, ders: 0.22 };
 /** The new customer's draggable range: contract 1-59 months, 0-5 complaints (continuous). */

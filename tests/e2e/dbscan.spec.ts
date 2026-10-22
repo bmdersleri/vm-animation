@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoStep, labelCollisions, open, outsideStage, overlaps, pageOverflow, stepCount } from './helpers';
+import { gotoStep, labelCollisions, open, outsideStage, overlaps, pageOverflow, settled, stepCount } from './helpers';
 
 const PAGE = '/dbscan/';
 const READY = 'svg.db-plot g.pk-point';
@@ -57,8 +57,8 @@ test('lab: a long cluster list is capped with a "more" chip and stays inside the
   await gotoStep(page, 6, STEPS);
   await page.locator('input[data-param="eps"]').fill('0.11');
   await page.locator('input[data-param="minSamples"]').fill('2');
-  await page.waitForTimeout(1500);
   await expect(page.locator('[data-more]')).toBeVisible();
+  await settled(() => page.locator('.db-sizes, .db-panel').evaluateAll((es) => es.map((e) => JSON.stringify(e.getBoundingClientRect()))));
   expect(await outsideStage(page, TEXTS)).toEqual([]);
   expect(await outsideStage(page, '.db-sizes, .db-panel')).toEqual([]);
 });

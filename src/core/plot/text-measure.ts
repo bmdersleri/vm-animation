@@ -2,6 +2,9 @@ import type { Mode } from '../mode';
 
 export interface Fonts { tick: number; axis: number; title: number }
 
+/** Body text size (px) assumed when computed styles are unavailable; shared by every scene's strip sizing. */
+export const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
+
 /** Used when computed styles are unavailable (jsdom, theme not loaded); matches theme.css at 1280 px. */
 const FALLBACK: Record<Mode, Fonts> = {
   lab: { tick: 13, axis: 14, title: 22 },

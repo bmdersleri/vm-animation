@@ -122,6 +122,43 @@ describe('StepPlayer', () => {
     expect(p.state.params.k).toBe(9);
   });
 
+  describe('sweep.count', () => {
+    const counted = (count?: (p: P) => number): Scenario<P> => ({
+      defaults: { k: 5, m: 'a' },
+      steps: [{ id: 'sw', title: '', text: '', params: { k: 7 }, sweep: { key: 'k', values: [1, 3, 5, 6], intervalMs: 100, count } }],
+    });
+    const run = (p: StepPlayer<P>, ticks: number): number[] => {
+      const seen: number[] = [];
+      p.subscribe((s, c) => { if (c === 'sweep') seen.push(s.params.k); });
+      seen.push(p.state.params.k);
+      for (let t = 0; t < ticks; t++) vi.advanceTimersByTime(100);
+      return seen;
+    };
+
+    it('shortens the sweep to the first count values, then ends at the step value', () => {
+      const p = new StepPlayer(counted(() => 2));
+      p.goto(0);
+      expect(run(p, 6)).toEqual([1, 3, 7]);
+    });
+
+    it('absent count keeps the full length', () => {
+      const p = new StepPlayer(counted());
+      p.goto(0);
+      expect(run(p, 6)).toEqual([1, 3, 5, 6, 7]);
+    });
+
+    it('is read on each tick, so a param changed mid-sweep applies', () => {
+      const p = new StepPlayer(counted((q) => (q.m === 'a' ? 4 : 2)));
+      p.goto(0);
+      const seen: number[] = [p.state.params.k];
+      p.subscribe((s, c) => { if (c === 'sweep') seen.push(s.params.k); });
+      vi.advanceTimersByTime(100);
+      p.setParam('m', 'b');
+      vi.advanceTimersByTime(600);
+      expect(seen).toEqual([1, 3, 7]);
+    });
+  });
+
   it('play stops at last step', () => {
     const p = new StepPlayer(base(), { autoplayMs: 1000 });
     p.play();

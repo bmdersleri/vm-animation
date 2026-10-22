@@ -90,22 +90,48 @@ describe('ozellikSecimiScenario', () => {
   });
 
   it('step 7 sweep covers every RFE round for each nSelect', () => {
-    // the Lab nSelect slider runs 1-7; 2-7 are tested here (1 follows the same rule)
-    for (let n = 2; n <= 7; n++) {
-      const cut = 8 - n;
+    // nSelect runs 1-7; rounds shown are 1 .. 7 - nSelect (round 1 is applied on arrival, before nSelect can change), then ROUNDS_ALL
+    for (let n = 1; n <= 7; n++) {
       const p = make();
       p.goto(6);
       p.setParam('nSelect', n);
-      const shown = [Math.min(p.state.params.rounds, cut)];
+      const shown = [p.state.params.rounds];
       for (let t = 0; t < 8; t++) {
         vi.advanceTimersByTime(RFE_SWEEP_MS);
-        shown.push(Math.min(p.state.params.rounds, cut));
+        shown.push(p.state.params.rounds);
       }
       const distinct = shown.filter((v, i) => i === 0 || v !== shown[i - 1]);
-      expect(distinct, `nSelect ${n}`).toEqual(Array.from({ length: cut }, (_, i) => i + 1));
-      expect(p.state.params.rounds).toBe(ROUNDS_ALL);
+      const expected = [...Array.from({ length: Math.max(1, 7 - n) }, (_, i) => i + 1), ROUNDS_ALL];
+      expect(distinct, `nSelect ${n}`).toEqual(expected);
+      expect(shown.at(-1)).toBe(ROUNDS_ALL);
       p.destroy();
     }
+  });
+
+  it('step 7 sweep: an nSelect set before arriving is reset by the step (it owns nSelect), so the default sweeps', () => {
+    const p = make();
+    p.setParam('nSelect', 6);
+    p.goto(6);
+    expect(p.state.params.nSelect).toBe(4);
+    const shown = [p.state.params.rounds];
+    for (let t = 0; t < 5; t++) { vi.advanceTimersByTime(RFE_SWEEP_MS); shown.push(p.state.params.rounds); }
+    expect(shown).toEqual([1, 2, 3, ROUNDS_ALL, ROUNDS_ALL, ROUNDS_ALL]);
+    p.destroy();
+  });
+
+  it('step 7 sweep follows an nSelect changed after several ticks', () => {
+    const p = make();
+    p.goto(6);
+    p.setParam('nSelect', 1); // 6 rounds then ALL
+    const shown = [p.state.params.rounds];
+    for (let t = 0; t < 3; t++) { vi.advanceTimersByTime(RFE_SWEEP_MS); shown.push(p.state.params.rounds); }
+    expect(shown).toEqual([1, 2, 3, 4]);
+    p.setParam('nSelect', 5); // only rounds 1-2 now: the sweep is already past them and ends
+    vi.advanceTimersByTime(RFE_SWEEP_MS);
+    expect(p.state.params.rounds).toBe(ROUNDS_ALL);
+    vi.advanceTimersByTime(RFE_SWEEP_MS * 5);
+    expect(p.state.params.rounds).toBe(ROUNDS_ALL);
+    p.destroy();
   });
 
   it('book scaling per step', () => {

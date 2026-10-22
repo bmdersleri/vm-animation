@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { fontSizes, gotoStep, open, outsideStage, overlaps, pageOverflow, paramsOutside, shownDisabledGroups, stepCount } from './helpers';
+import { fontSizes, gotoStep, open, outsideStage, overlaps, pageOverflow, settled, paramsOutside, shownDisabledGroups, stepCount } from './helpers';
 
 /*
  * The teacher's two red lines for the pca page, checked in a real browser at
@@ -294,8 +294,8 @@ test('lab: perplexity 5 and 50 switch the t-SNE map', async ({ page }) => {
   await expect(page.locator('g.panel.tsne')).toHaveAttribute('data-embed', 'p30');
   for (const [p, key] of [['5', 'p5'], ['50', 'p50']]) {
     await page.locator(`input[name=perplexity][value="${p}"]`).check();
-    await page.waitForTimeout(1500);
     await expect(page.locator('g.panel.tsne')).toHaveAttribute('data-embed', key);
+    await settled(() => attr(page.locator('g.panel.tsne'), 'data-first'));
     expect(await attr(page.locator('g.panel.pca path.pts.c0'), 'd')).toBe(pcaD);
   }
 });

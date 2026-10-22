@@ -3,7 +3,7 @@ import 'd3-transition';
 import type { Mode } from '../../core/mode';
 import { circlesPath, trianglesPath } from '../../core/plot/dots-path';
 import { r1 } from '../../core/plot/marks';
-import { TextMeasure } from '../../core/plot/text-measure';
+import { BODY_FALLBACK, TextMeasure } from '../../core/plot/text-measure';
 import { tr } from '../../core/plot/transition';
 import type { Rect } from '../../core/plot/viewport';
 import { CHURN, COLUMNS, VALUES } from './data';
@@ -18,7 +18,6 @@ const NAMES = ['sr-row', 'sr-fade', 'sr-bar'];
 const GOLDEN = 0.618034;
 const DOT_R: Record<Mode, number> = { ders: 3, lab: 2.5 };
 /** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
-const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
 const LEGEND_MODES: readonly SecimMode[] = ['strips', 'variance', 'split'];
 const KIDEM = COLUMNS.indexOf('musteriKidemAy');
 const GURULTU = COLUMNS.indexOf('gurultuluOznitelik');
