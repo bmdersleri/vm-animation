@@ -80,7 +80,8 @@ export function mountKorelasyonParams(host: HTMLElement, p: StepPlayer<KorelPara
     if (readout.textContent !== label) readout.textContent = label;
     if (box.checked !== s.churn) box.checked = s.churn;
     for (const r of rows) {
-      const off = !r.steps.includes(index);
+      // set IV is the only set with a leverage point, so the y slider idles on I–III
+      const off = !r.steps.includes(index) || (r.steps === LEVERAGE_STEPS && s.set !== 4);
       for (const c of r.controls) {
         if (c.disabled !== off) c.disabled = off;
       }

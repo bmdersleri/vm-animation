@@ -154,6 +154,21 @@ describe('mountKorelasyonParams', () => {
     expect(host.hasAttribute('data-off')).toBe(true);
   });
 
+  it('the leverage slider is gated by set IV on step 6', () => {
+    const { player, host } = make();
+    mountKorelasyonParams(host, player);
+    player.goto(5);
+    expect(range(host).disabled).toBe(false);
+    player.setParam('set', 2);
+    expect(range(host).disabled).toBe(true);
+    expect(row(host, 'noktaY').hasAttribute('data-off')).toBe(true);
+    // the stored value is kept; only the live picture stops responding
+    expect(text(host.querySelector('output'))).toBe('noktaY: 12,5');
+    player.setParam('set', 4);
+    expect(range(host).disabled).toBe(false);
+    expect(row(host, 'noktaY').hasAttribute('data-off')).toBe(false);
+  });
+
   it('a scene drag moves the range input to the dragged y', () => {
     const { player, host } = make();
     mountKorelasyonParams(host, player);

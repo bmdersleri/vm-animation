@@ -136,6 +136,26 @@
   fill: var(--orange);
 }
 
+/* ---------- step 3: observation vs proof ---------- */
+.kor-plot rect.claim-bg {
+  fill: var(--surface);
+  stroke: var(--navy);
+  stroke-width: 2;
+}
+.kor-plot g.claim:nth-child(2) rect.claim-bg { stroke: var(--orange); }
+.kor-plot text.claim-title {
+  font-size: var(--fs-axis);
+  font-weight: 700;
+  fill: var(--navy);
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+}
+.kor-plot g.claim:nth-child(2) text.claim-title { fill: var(--orange); }
+.kor-plot text.claim-body {
+  font-size: var(--fs-tick);
+  fill: var(--navy);
+}
+
 /* ---------- step 9: leakage boxes ---------- */
 .kor-plot rect.eda-card-bg {
   fill: var(--surface);

@@ -1,19 +1,25 @@
 import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
 import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
+import { formatNonZero } from '../../core/plot/format';
 import { renderStrip } from '../../core/plot/strip';
-import { LEVERAGE } from './anscombe';
+import { anscombeWithoutLeverage, LEVERAGE } from './anscombe';
 import type { KorelParams } from './scenario';
-import { deriveKorelView, type PanelView } from './view';
+import { deriveKorelView, type KorelView } from './view';
 import { HeatLayer, MS_HEAT } from './scene-heat';
 import { PanelsLayer, MS_STEP, type PanelsState } from './scene-panels';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 /** Body font px when layout is unavailable (jsdom); matches theme.css at 1280 px. */
 const BODY_FALLBACK: Record<Mode, number> = { ders: 23, lab: 16 };
-/** What the strip says once the leverage point is dropped: x is constant, so Pearson is undefined. */
-const DROPPED_STRIP = 'nokta çıkarıldı · r tanımsız (x sabit)';
-const DROPPED_STATS = 'nokta çıkarıldı · r tanımsız';
+/** What the strip says once the leverage point is dropped: set IV's remaining x is constant. */
+const DROPPED_R = anscombeWithoutLeverage();
+const DROPPED_STRIP = Number.isNaN(DROPPED_R)
+  ? 'nokta çıkarıldı · r tanımsız (x sabit)'
+  : `nokta çıkarıldı · r = ${formatNonZero(DROPPED_R, 3)}`;
+const DROPPED_STATS = Number.isNaN(DROPPED_R)
+  ? 'nokta çıkarıldı · r tanımsız'
+  : `nokta çıkarıldı · r = ${formatNonZero(DROPPED_R, 3)}`;
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 
@@ -63,6 +69,7 @@ export function mountKorelasyonScene(
   let rafId: number | null = null;
   let lastStrip = '';
   let shownIndex = -1;
+  let current: KorelView | null = null;
 
   /** Area of the plot host (estimated where layout is unavailable). */
   function area(): { w: number; h: number } {
@@ -73,13 +80,15 @@ export function mountKorelasyonScene(
     return { w: size!.w, h: Math.max(120, size!.h - stripH) };
   }
 
-  function panelState(p: PanelView[], stepId: string): PanelsState {
-    const hasLever = p.some((panel) => panel.id === 'IV');
+  function panelState(view: KorelView): PanelsState {
+    // set IV is the only set with a leverage point; I–III draw their own scatter
+    const hasLever = view.set === 4 && view.panels.some((panel) => panel.id === 'IV');
     return {
-      stepId,
+      stepId: view.stepId,
+      set: view.set,
       panels: dropped
-        ? p.map((panel) => (panel.id === 'IV' ? { ...panel, stats: DROPPED_STATS } : panel))
-        : p,
+        ? view.panels.map((panel) => (panel.id === 'IV' ? { ...panel, stats: DROPPED_STATS } : panel))
+        : view.panels,
       leverage: hasLever
         ? { x: LEVERAGE.x, y: player.state.params.noktaY, lab: mode === 'lab', dropped }
         : null,
@@ -96,15 +105,17 @@ export function mountKorelasyonScene(
       shownIndex = state.index;
     }
     const view = deriveKorelView(state.index, state.params);
+    current = view;
     // control changes are instant; steps animate
     const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
     const heatMs = ds > 0 && !instant && cause !== 'param' ? MS_HEAT * ds : 0;
-    lastStrip = view.stepId === 'kaldirac' && dropped ? DROPPED_STRIP : view.strip;
+    const dropping = view.stepId === 'kaldirac' && view.set === 4 && dropped;
+    lastStrip = dropping ? DROPPED_STRIP : view.strip;
     renderStrip(strip, lastStrip);
     const a = area();
     svgEl.setAttribute('width', String(Math.max(1, a.w)));
     svgEl.setAttribute('height', String(Math.max(1, a.h)));
-    panels.update(a.w, a.h, mode, panelState(view.panels, view.stepId), ms);
+    panels.update(a.w, a.h, mode, panelState(view), ms);
     heat.update(a.w, a.h, mode, view.heat, heatMs);
     rendered = true;
   }
@@ -128,10 +139,12 @@ export function mountKorelasyonScene(
     else if (rafId === null) rafId = raf(flush);
   });
 
-  // Lab-only drop: the circle hides while the scene prints "r tanımsız"; a
-  // second double-click anywhere on the plot brings the point back.
+  // Lab-only drop: only set IV on the leverage step has a point to drop; a
+  // second double-click anywhere on the plot brings it back.
   panels.onDrop(() => {
     if (mode !== 'lab') return;
+    const view = current;
+    if (!view || view.stepId !== 'kaldirac' || view.set !== 4) return;
     dropped = !dropped;
     render(player.state, 'param', true);
   });

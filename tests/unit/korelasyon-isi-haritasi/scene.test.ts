@@ -71,20 +71,32 @@ function yOf(el: Element, value: number): number {
 }
 
 describe('korelasyon scene', () => {
-  it('mounts .kor-scene, svg.kor-plot, the strip and one panel with points and a trend', () => {
+  it('mounts .kor-scene, svg.kor-plot, the strip and one panel with points and no trend', () => {
     const { el, player } = setup();
     expect(el.querySelector('.kor-scene')).not.toBeNull();
     one(el, '.kor-scene svg.kor-plot');
     one(el, 'p.formula');
     expect(all(el, 'g.panel')).toHaveLength(1);
     expect(all(el, 'g.panel[data-set=calisma-not] path.pts')).toHaveLength(1);
-    expect(all(el, 'g.panel[data-set=calisma-not] path.trend')).toHaveLength(1);
+    // step 1 shows the points only: the trend arrives with the coefficient on step 2
+    expect(all(el, 'g.panel[data-set=calisma-not] path.trend')).toHaveLength(0);
     for (let i = 0; i < korelasyonScenario.steps.length; i++) {
       player.goto(i);
       expect(text(one(el, 'p.formula')), `adım ${i + 1}`).toBe(deriveKorelView(i, player.state.params).strip);
     }
     player.goto(1);
     expect(text(one(el, 'p.formula'))).toContain('0,995');
+  });
+
+  it('step 1 has no trend; step 2 introduces one', () => {
+    const { el, player } = setup();
+    expect(all(el, 'g.panel path.trend')).toHaveLength(0);
+    expect(text(one(el, 'text.panel-stats'))).toBe('n = 7 öğrenci');
+    player.goto(1);
+    expect(all(el, 'g.panel path.trend')).toHaveLength(1);
+    expect(text(one(el, 'text.panel-stats'))).toContain('r = 0,995');
+    player.goto(0);
+    expect(all(el, 'g.panel path.trend')).toHaveLength(0);
   });
 
   it('step 5: four g.panel I–IV and the same "r ≈ 0,816" summary in every text.panel-stats', () => {
@@ -120,6 +132,26 @@ describe('korelasyon scene', () => {
     expect(all(el, 'g.panel')).toHaveLength(0);
   });
 
+  it('step 4: the churn switch adds and removes the fifth row/column', () => {
+    const { el, player } = setup();
+    player.goto(3);
+    expect(all(el, 'rect.cell')).toHaveLength(16);
+    expect(all(el, 'text.row-label[data-var="churn"]')).toHaveLength(0);
+    expect(all(el, 'text.col-label[data-var="churn"]')).toHaveLength(0);
+
+    player.setParam('churn', true);
+    expect(all(el, 'rect.cell')).toHaveLength(25);
+    expect(all(el, 'text.cell-text')).toHaveLength(25);
+    expect(text(one(el, 'text.row-label[data-var="churn"]'))).toBe('churn');
+    expect(text(one(el, 'text.col-label[data-var="churn"]'))).toBe('churn');
+
+    player.setParam('churn', false);
+    expect(all(el, 'rect.cell')).toHaveLength(16);
+    expect(all(el, 'text.cell-text')).toHaveLength(16);
+    expect(all(el, 'text.row-label[data-var="churn"]')).toHaveLength(0);
+    expect(all(el, 'text.col-label[data-var="churn"]')).toHaveLength(0);
+  });
+
   it('step 8: 25 cells and a churn row/column label', () => {
     const { el, player } = setup();
     player.goto(7);
@@ -129,6 +161,17 @@ describe('korelasyon scene', () => {
       expect(text(label)).toBe('churn');
     }
     expect(text(one(el, 'text.cell-text[data-row="4"][data-col="2"]'))).toBe('−0,363');
+  });
+
+  it('step 8: unchecking churn returns the 4 × 4 matrix', () => {
+    const { el, player } = setup();
+    player.goto(7);
+    expect(all(el, 'rect.cell')).toHaveLength(25);
+    player.setParam('churn', false);
+    expect(all(el, 'rect.cell')).toHaveLength(16);
+    expect(all(el, 'text.row-label[data-var="churn"]')).toHaveLength(0);
+    expect(all(el, 'text.col-label[data-var="churn"]')).toHaveLength(0);
+    expect(text(one(el, 'p.formula'))).toContain('churn kapalı');
   });
 
   it('step 6: circle.leverage, and dragging the point to y = 20 makes r 0,958', () => {
@@ -164,6 +207,64 @@ describe('korelasyon scene', () => {
     // the same clamp as the pointer: never past 6 or 20
     for (let i = 0; i < 8; i++) press('ArrowDown', true);
     expect(player.state.params.noktaY).toBe(6);
+  });
+
+  it('step 6: sets I–III hide the leverage handle and show their own r', () => {
+    const { el, player } = setup();
+    player.goto(5);
+    player.setParam('noktaY', 20);
+    expect(one(el, 'circle.leverage').getAttribute('display')).toBeNull();
+    expect(one(el, 'svg.kor-plot').getAttribute('data-drag')).toBe('20');
+
+    player.setParam('set', 2);
+    expect(all(el, 'g.panel')).toHaveLength(1);
+    expect(all(el, 'g.panel')[0].getAttribute('data-set')).toBe('II');
+    expect(text(one(el, 'p.formula'))).toBe('set II · kaldıraç yok · r = 0,816');
+    expect(one(el, 'circle.leverage').getAttribute('display')).toBe('none');
+    expect(one(el, 'svg.kor-plot').getAttribute('data-drag')).toBeNull();
+
+    // the hidden handle ignores the keyboard: the old drag value stays untouched
+    one(el, 'circle.leverage').dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', shiftKey: true, bubbles: true }),
+    );
+    expect(player.state.params.noktaY).toBe(20);
+
+    player.setParam('set', 4);
+    expect(one(el, 'circle.leverage').getAttribute('display')).toBeNull();
+    expect(one(el, 'svg.kor-plot').getAttribute('data-drag')).toBe('20');
+    expect(text(one(el, 'p.formula'))).toContain('r = 0,958');
+  });
+
+  it('step 6: sets I–III keep the quartet axis, not the wide set-IV y axis', () => {
+    const { el, player } = setup();
+    player.goto(5);
+    const iv = yTicks(el);
+    // set IV's domain leaves room for a dragged y up to 20
+    expect(iv[iv.length - 1].v).toBeGreaterThanOrEqual(18);
+    player.setParam('set', 2);
+    const ii = yTicks(el, 'g.panel[data-set=II]');
+    expect(ii[ii.length - 1].v).toBeLessThanOrEqual(14);
+    expect(ii[0].v).toBeGreaterThanOrEqual(2);
+  });
+
+  it('step 3: two g.claim cards, none on steps 2 and 4', () => {
+    const { el, player } = setup();
+    player.goto(2);
+    const claims = all(el, 'g.claim');
+    expect(claims).toHaveLength(2);
+    expect(text(claims[0])).toContain('gözlem');
+    expect(text(claims[0])).toContain('ilişki var');
+    expect(text(claims[1])).toContain('kanıt');
+    expect(text(claims[1])).toContain('üçüncü değişken');
+    expect(text(claims[1])).toContain('ters nedensellik');
+    expect(text(claims[1])).toContain('rastlantı');
+    // the panel stays above the claim band
+    expect(all(el, 'g.panel')).toHaveLength(1);
+
+    player.goto(1);
+    expect(all(el, 'g.claim')).toHaveLength(0);
+    player.goto(3);
+    expect(all(el, 'g.claim')).toHaveLength(0);
   });
 
   it('step 9: two g.eda-box cards with the two EDA sentences', () => {

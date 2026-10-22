@@ -23,6 +23,11 @@ const QUARTET: Domain = { x: [2, 20], y: [2, 14] };
 const LEVERAGE_DOMAIN: Domain = { x: [2, 20], y: [2, 21] };
 /** One colour per Anscombe panel (the spec asks colour + panel number). */
 const PANEL_COLORS = ['#0ea5a4', '#7c3aed', '#f08a00', '#14365c'];
+/** Step 3's two claim cards: the observed relation against the missing proof. */
+const CLAIMS: readonly { title: string; body: string }[] = [
+  { title: 'gözlem', body: 'ilişki var: r = −0,993' },
+  { title: 'kanıt', body: 'neden yok: üçüncü değişken · ters nedensellik · rastlantı' },
+];
 /** Step 9's two boxes: no numbers are invented, only the two EDA extents. */
 const CARDS: readonly { title: string; body: string }[] = [
   { title: 'tüm veri üzerinde EDA', body: 'Test kümesinin dağılımı da görülür; keşif, modelin göreceği satırları ele verir.' },
@@ -51,6 +56,8 @@ export interface LeverageState {
 /** Everything the panel layer draws: a step's panels, or the cards / rule of steps 9–10. */
 export interface PanelsState {
   stepId: string;
+  /** The chosen Anscombe set: set IV has the leverage point, I–III keep the quartet's own domain. */
+  set: number;
   panels: readonly PanelView[];
   leverage: LeverageState | null;
 }
@@ -60,8 +67,10 @@ interface PanelDrawn {
   g: G;
   clip: El<SVGRectElement>;
   axes: AxesLayer;
+  marks: G;
   pts: El<SVGPathElement>;
-  trend: El<SVGPathElement>;
+  /** Created only for a panel with a trend, removed when the view has none. */
+  trend: El<SVGPathElement> | null;
   title: El<SVGTextElement>;
   stats: El<SVGTextElement>;
   /** The last scales, so the leverage point can sit on the same mapping. */
@@ -85,9 +94,10 @@ function axesOf(stepId: string): { x: string; y: string } {
 }
 
 /** The quartet shares one domain; 004 computes its own from the step's points. */
-function domainOf(stepId: string, pts: readonly { x: number; y: number }[]): Domain {
+function domainOf(stepId: string, set: number, pts: readonly { x: number; y: number }[]): Domain {
   if (stepId === 'anscombe' || stepId === 'dogrusal-degil') return QUARTET;
-  if (stepId === 'kaldirac') return LEVERAGE_DOMAIN;
+  // only set IV's leverage point at x = 19 and y up to 20 needs the wide axis
+  if (stepId === 'kaldirac') return set === 4 ? LEVERAGE_DOMAIN : QUARTET;
   const xs = pts.map((p) => p.x);
   const ys = pts.map((p) => p.y);
   const x0 = Math.min(...xs);
@@ -112,6 +122,7 @@ export class PanelsLayer {
   private readonly svg: Selection<SVGSVGElement, unknown, null, undefined>;
   private readonly root: G;
   private readonly gGrid: G;
+  private readonly gClaims: G;
   private readonly gCards: G;
   private readonly gRule: G;
   private readonly gLev: G;
@@ -137,6 +148,7 @@ export class PanelsLayer {
     this.svg = select(svgEl);
     this.root = this.svg.append('g').attr('class', 'kor-panels');
     this.gGrid = this.root.append('g').attr('class', 'panel-grid');
+    this.gClaims = this.root.append('g').attr('class', 'claim-cards');
     this.gCards = this.root.append('g').attr('class', 'eda-cards');
     this.gRule = this.root.append('g').attr('class', 'rule-card');
     this.gLev = this.root.append('g').attr('class', 'leverage-layer');
@@ -183,6 +195,8 @@ export class PanelsLayer {
     this.root.style('display', '');
     if (state.panels.length > 0) this.drawPanels(w, h, mode, state, ms);
     else this.removePanels();
+    if (state.stepId === 'nedensellik') this.drawClaims(w, h, mode, ms);
+    else this.gClaims.selectAll('g.claim').remove();
     if (state.stepId === 'sizinti') this.drawCards(w, h, mode, ms);
     else this.gCards.selectAll('g.eda-box').remove();
     if (state.stepId === 'kural') this.drawRule(w, h, mode);
@@ -214,6 +228,7 @@ export class PanelsLayer {
   private clear(): void {
     this.root.style('display', 'none');
     this.removePanels();
+    this.gClaims.selectAll('g.claim').remove();
     this.gCards.selectAll('g.eda-box').remove();
     this.gRule.selectAll('a.kor-link').remove();
     this.ruleText.text('');
@@ -231,12 +246,11 @@ export class PanelsLayer {
     const axes = new AxesLayer(g.append('g').attr('class', 'axes'));
     const marks = g.append('g').attr('class', 'marks').attr('clip-path', `url(#${clipId})`);
     const pts = marks.append('path').attr('class', 'pts');
-    const trend = marks.append('path').attr('class', 'trend');
     const title = g.append('text').attr('class', 'panel-title');
     const stats = g.append('text').attr('class', 'panel-stats').attr('text-anchor', 'middle');
     const empty = fitViewport({ x: [0, 1], y: [0, 1] }, { left: 0, top: 0, width: 1, height: 1 }, false);
     const drawn: PanelDrawn = {
-      id, g, clip, axes, pts, trend, title, stats,
+      id, g, clip, axes, marks, pts, trend: null, title, stats,
       sc: empty, plot: { left: 0, top: 0, width: 1, height: 1 }, dotR: 4, tick: 18,
     };
     this.panels.set(id, drawn);
@@ -259,7 +273,9 @@ export class PanelsLayer {
     const gapX = Math.round(tick * 1.2);
     const gapY = Math.round(axis * 1.6);
     const cellW = (w - 2 * margin - gapX * (cols - 1)) / cols;
-    const cellH = (h - 2 * margin - gapY * (rows - 1)) / rows;
+    // step 3 reserves a bottom band for its two claim cards
+    const claimBand = state.stepId === 'nedensellik' ? this.claimBand(w, mode) : 0;
+    const cellH = (h - claimBand - 2 * margin - gapY * (rows - 1)) / rows;
     const titleH = Math.round(axis * 1.5);
     const statsH = Math.round(axis * 1.8);
     const yTickW = this.measure.width('−12,5', 'tick', tick);
@@ -282,7 +298,7 @@ export class PanelsLayer {
       };
       const dropped = state.leverage?.dropped === true && panel.id === 'IV';
       const pts = dropped ? panel.points.filter((_, k) => k !== LEVERAGE.index) : panel.points;
-      const dom = domainOf(state.stepId, panel.points);
+      const dom = domainOf(state.stepId, state.set, panel.points);
       const sc = fitViewport(dom, plot, false);
       p.sc = sc;
       p.plot = plot;
@@ -315,20 +331,24 @@ export class PanelsLayer {
 
       const color = PANEL_COLORS[i % PANEL_COLORS.length];
       p.pts.style('fill', color).style('stroke', '#ffffff').style('stroke-width', 1.2);
-      p.trend.style('stroke', color);
       const dPts = circlesPath(pts.map((pt) => sc.x(pt.x)), pts.map((pt) => sc.y(pt.y)), dotR);
       if (ms > 0) tr(p.pts as AnySel, TN, ms).attr('d', dPts);
       else p.pts.attr('d', dPts);
 
-      const trend = panel.trend;
-      let dTrend = '';
-      if (trend && !dropped) {
+      // step 1 has no trend: the node exists only while the view carries one
+      const trend = dropped ? null : panel.trend;
+      if (trend) {
+        if (!p.trend) p.trend = p.marks.append('path').attr('class', 'trend');
+        p.trend.style('stroke', color);
         const [x0, x1] = dom.x;
-        dTrend = `M${r1(sc.x(x0))},${r1(sc.y(trend.m * x0 + trend.b))}`
+        const dTrend = `M${r1(sc.x(x0))},${r1(sc.y(trend.m * x0 + trend.b))}`
           + `L${r1(sc.x(x1))},${r1(sc.y(trend.m * x1 + trend.b))}`;
+        if (ms > 0) tr(p.trend as AnySel, TN, ms).attr('d', dTrend).attr('opacity', 1);
+        else p.trend.attr('d', dTrend).attr('opacity', 1);
+      } else {
+        p.trend?.remove();
+        p.trend = null;
       }
-      if (ms > 0) tr(p.trend as AnySel, TN, ms).attr('d', dTrend).attr('opacity', trend && !dropped ? 1 : 0);
-      else p.trend.attr('d', dTrend).attr('opacity', trend && !dropped ? 1 : 0);
 
       p.title
         .attr('x', r1(plot.left))
@@ -353,7 +373,10 @@ export class PanelsLayer {
     const p = this.panels.get('IV');
     if (!lev || !p) {
       this.inv = null;
-      this.lever.attr('display', 'none');
+      // a handle that is gone must ignore keyboard and pointer even if focus lingers
+      this.dragOn = false;
+      this.dragging = false;
+      this.lever.attr('display', 'none').attr('tabindex', null);
       this.hint.text('');
       this.dropNote.text('');
       this.svg.attr('data-drag', null);
@@ -397,6 +420,67 @@ export class PanelsLayer {
     return lev.dropped
       ? 'çift tıkla: nokta geri gelir'
       : 'noktayı sürükle · çift tıkla: nokta düşer, r tanımsız';
+  }
+
+  // ------------------------------------------------------------- step 3 claims
+  /** Height of the claim band: title plus the wrapped body lines. */
+  private claimBand(w: number, mode: Mode): number {
+    const f = this.measure.fonts(mode);
+    const tick = f.tick;
+    const axis = f.axis;
+    const margin = Math.max(12, Math.round(tick * 0.8));
+    const gap = Math.round(tick * 1.2);
+    const cardW = (w - 2 * margin - gap) / 2;
+    const pad = Math.max(8, Math.round(tick * 0.7));
+    const lines = Math.max(1, ...CLAIMS.map((c) => this.wrap(c.body, cardW - 2 * pad, tick).length));
+    return Math.round(pad * 2 + axis * 1.3 + lines * tick * 1.35);
+  }
+
+  /** Step 3's two cards: the observed relation and the proof that is missing. */
+  private drawClaims(w: number, h: number, mode: Mode, ms: number): void {
+    const f = this.measure.fonts(mode);
+    const tick = f.tick;
+    const axis = f.axis;
+    const margin = Math.max(12, Math.round(tick * 0.8));
+    const gap = Math.round(tick * 1.2);
+    const cardW = (w - 2 * margin - gap) / 2;
+    const band = this.claimBand(w, mode);
+    const top = h - band;
+    const pad = Math.max(8, Math.round(tick * 0.7));
+    const cards: CardD[] = CLAIMS.map((c, i) => ({
+      ...c,
+      x: margin + i * (cardW + gap),
+      y: top,
+      w: cardW,
+      h: band,
+      pad,
+      lines: this.wrap(c.body, cardW - 2 * pad, tick),
+    }));
+    const sel = this.gClaims.selectAll<SVGGElement, CardD>('g.claim').data(cards, (d) => d.title);
+    sel.exit().remove();
+    const enter = sel.enter().append('g').attr('class', 'claim').attr('opacity', 0);
+    enter.append('rect').attr('class', 'claim-bg').attr('rx', 10);
+    enter.append('text').attr('class', 'claim-title');
+    enter.append('text').attr('class', 'claim-body');
+    const upd = enter.merge(sel);
+    upd.select('rect.claim-bg')
+      .attr('x', (d) => r1(d.x)).attr('y', (d) => r1(d.y))
+      .attr('width', (d) => r1(d.w)).attr('height', (d) => r1(d.h));
+    upd.select('text.claim-title')
+      .attr('x', (d) => r1(d.x + d.pad))
+      .attr('y', (d) => r1(d.y + d.pad + axis))
+      .text((d) => d.title);
+    upd.select<SVGTextElement>('text.claim-body')
+      .attr('x', (d) => r1(d.x + d.pad))
+      .attr('y', (d) => r1(d.y + d.pad + axis * 1.9))
+      .each(function (this: SVGTextElement, d: CardD) {
+        select(this).selectAll<SVGTSpanElement, string>('tspan').data(d.lines).join('tspan')
+          .attr('x', r1(d.x + d.pad))
+          .attr('dy', (_, i) => (i === 0 ? 0 : r1(tick * 1.35)))
+          .text((line) => line);
+      });
+    if (ms > 0) tr(upd as AnySel, TN, ms).attr('opacity', 1);
+    else upd.attr('opacity', 1);
   }
 
   // ------------------------------------------------------------- step 9 cards
