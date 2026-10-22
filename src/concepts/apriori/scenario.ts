@@ -64,7 +64,7 @@ export const aprioriScenario: Scenario<AprioriParams> = {
     {
       id: 'uzay',
       title: 'Arama uzayı',
-      text: `${LEVELS} ürün, 2${sup(LEVELS)} − 1 = ${TOTAL} olası öğe kümesi verir: her ürün bir sepette ya vardır ya yoktur. Kaba kuvvet bu ${TOTAL} kümenin hepsini sayar. Kafes, kümeleri büyüklüklerine göre satırlara dizer; henüz hiçbirine bakılmadı.`,
+      text: `${LEVELS} ürün 2${sup(LEVELS)} − 1 = ${TOTAL} olası öğe kümesi verir: her ürün bir kümede ya vardır ya yoktur (2${sup(LEVELS)}), boş küme sayılmaz (− 1). Kaba kuvvet bu ${TOTAL} kümenin hepsini sayar. Kafes, kümeleri büyüklüklerine göre satırlara dizer; henüz hiçbirine bakılmadı.`,
       term: 'öğe kümesi (itemset)',
       params: { level: 0 },
     },
@@ -125,7 +125,7 @@ export const aprioriScenario: Scenario<AprioriParams> = {
     {
       id: 'fp-agac',
       title: 'FP-ağacı kurulur',
-      text: `Fişler sıralanmış hâliyle tek tek eklenir. Fiş, ağaçtaki bir yolla aynı ürünlerle başlıyorsa o yolun sayaçları artar; başlamıyorsa yeni dal açılır. Sonunda ${n} fiş ${treeNodes} düğümde toplanır.`,
+      text: `Fişler sıralanmış hâliyle tek tek eklenir. Fişin baştaki ürünleri ağaçtaki bir yolla aynıysa bu ortak önekteki sayaçlar birer artar; önekten sonra kalan ürünler için yeni dal açılır. Sonunda ${n} fiş ${treeNodes} düğümde toplanır.`,
       labText: 'Fiş ekleme kaydırıcısını elle sürükle: ağaç fiş fiş büyür ya da küçülür. min_support kaydırıcısını değiştirince sıralama ve ağaç yeniden kurulur.',
       term: 'FP-ağacı',
       params: { baseItem: null },
@@ -143,7 +143,7 @@ export const aprioriScenario: Scenario<AprioriParams> = {
       id: 'karsilastir',
       title: 'Aynı sonuç, farklı yol',
       text: `Apriori ve FP-Growth ${sameSets ? 'aynı' : 'farklı'} ${trace.frequent.size} sık kümeyi bulur. Veri tarama sayısı: Apriori her seviyede bir kez tarar, burada ${trace.levels.length}; FP-Growth 2 kez. Aday üretimi: Apriori yapar, FP-Growth yapmaz. Kitabın ölçtüğü süreler: Apriori 0,75 ms, FP-Growth 0,49 ms; küçük veride fark küçüktür, büyük ve yoğun veride açılır.`,
-      labText: 'min_support kaydırıcısıyla eşiği değiştir: iki algoritmanın sık küme listeleri her eşikte aynı kalır. Tarama sayıları ve aday üretimi farkı eşiğe göre değişebilir.',
+      labText: "min_support kaydırıcısıyla eşiği değiştir: iki algoritmanın sık küme listeleri her eşikte aynı kalır. Apriori'nin veri tarama sayısı eşiğe göre değişir; FP-Growth her eşikte veriyi iki kez tarar.",
       params: { inserted: n, baseItem: null },
     },
   ],

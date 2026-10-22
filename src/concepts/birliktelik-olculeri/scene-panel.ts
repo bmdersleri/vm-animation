@@ -114,9 +114,9 @@ export function drawPanel(panel: HTMLElement, spec: PanelSpec): void {
     const r = spec.rules;
     panel.append(el('h3', 'bk-title', 'Kural saçılımı'));
     if (r) {
-      panel.append(row('Kural', String(r.total), { 'data-rules': String(r.total) }));
+      panel.append(row('Kural sayısı', String(r.total), { 'data-rules': String(r.total) }));
       if (r.total === 0) panel.append(el('p', 'bk-note', r.noSets ? 'Bu eşikte sık küme yok.' : 'Bu eşiklerde kural yok.'));
-      if (r.filtering) panel.append(row('Kalan', String(r.kept), { 'data-kept': String(r.kept) }), row('Soluk', String(r.total - r.kept), { 'data-faded': String(r.total - r.kept) }));
+      if (r.filtering) panel.append(row('Süzgeçten geçen', String(r.kept), { 'data-kept': String(r.kept) }), row('Soluklaşan', String(r.total - r.kept), { 'data-faded': String(r.total - r.kept) }));
       panel.append(...stackNotes(r.stacks));
     }
     if (xs.length > 0 && ys.length > 0) {
@@ -158,7 +158,7 @@ export function drawPanel(panel: HTMLElement, spec: PanelSpec): void {
   panel.append(
     el('h3', 'bk-title', `Kural: ${ruleText({ x: xs, y: ys })}`),
     row(`${side(xs)} içeren fiş`, String(m.cx), { 'data-of': String(m.cx) }),
-    row('Birlikte olan', String(spec.counted ?? m.cxy), { 'data-count': String(spec.counted ?? m.cxy) }),
+    row('Sonucu da içeren', String(spec.counted ?? m.cxy), { 'data-count': String(spec.counted ?? m.cxy) }),
   );
   panel.append(strip(confidenceStrip(tx, xs, ys), { 'data-strip-kind': 'confidence' }));
   if (kind === 'conf') {
