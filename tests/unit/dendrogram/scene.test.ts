@@ -154,6 +154,22 @@ describe('dendrogram scene', () => {
     fin(scene, player);
   });
 
+  it('the k = 1 cut line and its label sit inside the plot in every linkage', () => {
+    const { player, host, scene } = setup('lab');
+    player.goto(5);
+    const frame = host.querySelector('rect.dg-frame')!;
+    const top = Number(frame.getAttribute('y'));
+    for (const l of ['ward', 'complete', 'average', 'single'] as const) {
+      player.setParams({ linkage: l, k: 1 });
+      const line = Number(attr(host, 'line.dg-cut', 'y1'));
+      const label = Number(attr(host, 'text.dg-cut-label', 'y'));
+      expect(line, l).toBeGreaterThan(top);
+      // the label's baseline is at y; its glyphs reach about one font size (13 px fallback) above it
+      expect(label - 13, l).toBeGreaterThanOrEqual(top);
+    }
+    fin(scene, player);
+  });
+
   it('a linkage change keeps k and redraws the cut on the new axis', () => {
     const { player, host, scene } = setup('lab');
     player.goto(7);

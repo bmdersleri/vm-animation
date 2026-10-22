@@ -76,6 +76,17 @@ describe('DendrogramLayer', () => {
     expect(svg.querySelector('line.dg-cut')).toBeNull();
   });
 
+  it('the cut label sits above the line, or below it when the axis top leaves no room', () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ cut: cutForK(ld, 3) }), false);
+    expect(num(svg.querySelector('text.dg-cut-label'), 'y')).toBeLessThan(num(svg.querySelector('line.dg-cut'), 'y1'));
+    // a cut at the very top of the axis (maxHeight × 1,06)
+    layer.update(spec({ cut: maxH * 1.06 }), false);
+    const y = num(svg.querySelector('text.dg-cut-label'), 'y');
+    expect(y).toBeGreaterThan(num(svg.querySelector('line.dg-cut'), 'y1'));
+    expect(y - 13).toBeGreaterThanOrEqual(num(svg.querySelector('rect.dg-frame'), 'y'));
+  });
+
   it('branches above the cut are muted, clusters below take their colour', () => {
     const { svg, layer } = setup();
     const cut = cutForK(ld, 3);

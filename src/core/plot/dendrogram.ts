@@ -88,7 +88,10 @@ export class DendrogramLayer {
     this.gLeaves = sub('dg-leaves');
   }
 
-  /** Lays the plot out in `r`; the next `update` draws into it. `maxHeight` is the top of the height axis. */
+  /**
+   * Lays the plot out in `r`; the next `update` draws into it. `maxHeight` is the highest height the
+   * axis must show (the caller includes its highest cut), plus 6 % headroom.
+   */
   resize(r: Rect, maxHeight: number): void {
     this.area = r;
     this.maxHeight = Number.isFinite(maxHeight) && maxHeight > 0 ? maxHeight : 1;
@@ -195,7 +198,9 @@ export class DendrogramLayer {
     cl.exit().remove();
     const cBorn = cl.enter().append('g').attr('class', 'dg-cut-item');
     cBorn.append('line').attr('class', 'dg-cut').attr('y1', (d) => Y(d)).attr('y2', (d) => Y(d)).attr('stroke', NAVY).attr('stroke-width', 2.5).attr('stroke-dasharray', '8 5');
-    cBorn.append('text').attr('class', 'dg-cut-label').attr('y', (d) => r1(Y(d) - 5)).attr('text-anchor', 'end').attr('fill', NAVY).attr('font-weight', 700)
+    // The label sits just above the line; where the plot has no room above it (a cut near the axis top), below it.
+    const labelY = (c: number): number => (Y(c) - 5 - tick < plot.top ? r1(Y(c) + tick + 3) : r1(Y(c) - 5));
+    cBorn.append('text').attr('class', 'dg-cut-label').attr('y', labelY).attr('text-anchor', 'end').attr('fill', NAVY).attr('font-weight', 700)
       .attr('stroke', WHITE).attr('stroke-width', 3).attr('paint-order', 'stroke');
     const cAll = cBorn.merge(cl as never) as unknown as Sel<number>;
     const cutLine = cAll.select('line').attr('data-cut', (d) => d).attr('x1', plot.left).attr('x2', right);
@@ -213,7 +218,7 @@ export class DendrogramLayer {
       return r1(right - 6 - w);
     };
     const cutLabel = cAll.select<SVGTextElement>('text').attr('text-anchor', 'start').attr('x', (d) => labelX(d)).text((d) => cutText(d));
-    go(cutLabel as unknown as AnySel).attr('y', (d: number) => r1(Y(d) - 5));
+    go(cutLabel as unknown as AnySel).attr('y', labelY);
 
     // leaves
     const lf = this.gLeaves.selectAll<SVGGElement, number>('g.dg-leaf').data(s.leafX.map((_x, i) => i), (d) => d);

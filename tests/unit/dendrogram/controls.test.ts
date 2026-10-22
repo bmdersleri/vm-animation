@@ -7,7 +7,7 @@ import { dendrogramScenario, type DendrogramParams } from '../../../src/concepts
 import { mountDendrogramParams } from '../../../src/concepts/dendrogram/controls';
 import { mountDendrogramScene } from '../../../src/concepts/dendrogram/scene';
 import { cutForK, kAtHeight } from '../../../src/concepts/dendrogram/tree';
-import { maxHeightOf } from '../../../src/concepts/dendrogram/view';
+import { axisTopOf } from '../../../src/concepts/dendrogram/view';
 
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); document.body.replaceChildren(); });
 
@@ -74,7 +74,8 @@ describe('dendrogram controls', () => {
     const s = input(params, 'cut');
     const ld = D.linkages.ward;
     expect(Number(s.min)).toBe(0);
-    expect(Number(s.max)).toBeCloseTo(maxHeightOf('ward') * 1.05, 6);
+    expect(Number(s.max)).toBeCloseTo(axisTopOf('ward'), 6);
+    expect(Number(s.max)).toBeCloseTo(ld.merges[ld.merges.length - 1].height * 1.1, 5);
     move(s, cutForK(ld, 2));
     expect(player.state.params.k).toBe(2);
     const h = (ld.cuts[4].low + ld.cuts[4].high) / 2;
@@ -88,7 +89,7 @@ describe('dendrogram controls', () => {
     expect(player.state.params.k).toBe(6);
     // the slider range follows the linkage
     choose(linkageSel(params), 'single');
-    expect(Number(s.max)).toBeCloseTo(maxHeightOf('single') * 1.05, 6);
+    expect(Number(s.max)).toBeCloseTo(axisTopOf('single'), 6);
   });
 
   it('linkage change keeps k', () => {

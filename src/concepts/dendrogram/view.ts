@@ -18,8 +18,11 @@ export function treeOf(linkage: Linkage): readonly Branch[] {
 /** A merge height with a decimal comma: 0,23. */
 export const heightText = (h: number): string => formatNumber(h, 2);
 
-/** Highest merge of a linkage: the top of the height axis. */
-export const maxHeightOf = (linkage: Linkage): number => D.linkages[linkage].merges[N - 2].height;
+/**
+ * Top of the dendrogram height axis and of the Lab cut slider: the upper bound of the k = 1 range
+ * (last merge × 1,1). The k = 1 cut sits at its midpoint, so the cut line and its label fit in the plot.
+ */
+export const axisTopOf = (linkage: Linkage): number => D.linkages[linkage].cuts[0].high;
 
 /** A cluster by its 1-based point numbers: "Nokta 3", "{1, 4} kümesi" or "7 noktalı küme ({1, 2, 3, …})". */
 export function clusterName(members: readonly number[]): string {

@@ -12,7 +12,7 @@ import { ScatterLayer, type Hull, type ScatterSpec } from './scatter-layer';
 import { dendrogramScenario, type DendrogramParams } from './scenario';
 import { clustersAfter, cutForK, leafX, largestGap } from './tree';
 import {
-  LINKAGE_NAME, cutSizes, gapText, heightText, linkageRows, maxHeightOf, mergeInfo, sizesText, treeOf,
+  LINKAGE_NAME, cutSizes, gapText, heightText, linkageRows, axisTopOf, mergeInfo, sizesText, treeOf,
 } from './view';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -218,7 +218,7 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
     // Panel first: in the stacked layouts its height decides the plots' hosts, so they are measured after it.
     drawPanel(s, merges, k, cut);
     frame.layout(mode, size);
-    layoutTree(maxHeightOf(params.linkage));
+    layoutTree(axisTopOf(params.linkage));
 
     const newest = k === null && merges > 0 ? bs[merges - 1] : null;
     const hulls: Hull[] = [];

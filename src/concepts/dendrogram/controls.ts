@@ -4,12 +4,11 @@ import { formatNumber } from '../../core/plot/format';
 import { dendrogramData as D, type Linkage } from './data';
 import { dendrogramScenario, type DendrogramParams } from './scenario';
 import { cutForK, kAtHeight } from './tree';
-import { LINKAGE_NAME, maxHeightOf } from './view';
+import { LINKAGE_NAME, axisTopOf } from './view';
 
 const N = D.points.length;
 const MERGES = N - 1;
 const K_MAX = 6;
-const HEADROOM = 1.05;
 const LINKAGES: readonly Linkage[] = ['ward', 'complete', 'average', 'single'];
 /** Steps 1-5 (0-based 0..4) show the merge controls; from the cut step on, the cut controls. */
 const CUT_FIRST = stepIndex(dendrogramScenario, 'kesim');
@@ -116,7 +115,8 @@ export function mountDendrogramParams(host: HTMLElement, player: StepPlayer<Dend
     next.disabled = lastBtn.disabled = m >= MERGES;
     setText(mergeOut, `${m} / ${MERGES}`);
 
-    const max = Math.round(maxHeightOf(params.linkage) * HEADROOM * 1e6) / 1e6;
+    // the slider spans the dendrogram's height axis: its top is the upper bound of the k = 1 range
+    const max = Math.round(axisTopOf(params.linkage) * 1e6) / 1e6;
     if (Number(cut.max) !== max) cut.max = String(max);
     const k = params.k !== null && Number.isInteger(params.k) ? clamp(params.k, 1, K_MAX) : null;
     if (k !== null && kForHeight(params.linkage, Number(cut.value)) !== k) cut.value = String(cutForK(D.linkages[params.linkage], k));
