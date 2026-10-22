@@ -33,7 +33,7 @@ describe('apriori scenario', () => {
     for (const c of pairs.filter((q) => q.status === 'infrequent')) expect(text('seviye2')).toContain(`${setAbbr(c.set)} ${c.count}`);
     expect(text('seviye2')).toContain(`${pairs.length} çift aday`);
     expect(text('seviye2')).toContain('6 tanesi sık');
-    expect(text('seviye2')).toContain('4 tanesi değil');
+    expect(text('seviye2')).toContain('4 tanesi sık değil');
   });
 
   it('threshold sweep stops give 4, 7, 12, 16 sets', () => {
@@ -55,7 +55,7 @@ describe('apriori scenario', () => {
     expect(text('seviye1')).toContain('min_support 0,2 → en az 4 fiş');
     expect(text('ozellik')).toContain('(31 düğüm)');
     expect(text('budama')).toContain('EST (ST sık değil)');
-    expect(text('budama')).toContain('ESY 5 (sık), SYP 3 (değil)');
+    expect(text('budama')).toContain('ESY 5 (sık), SYP 3 (sık değil)');
     expect(text('dur')).toContain(`${trace.frequent.size} sık küme`);
     expect(text('dur')).toContain(`${trace.counted} aday sayıldı`);
     expect(text('dur')).toContain('63 küme sayardı');
@@ -66,14 +66,14 @@ describe('apriori scenario', () => {
   it('fp-growth steps read the tree and the conditional base', () => {
     expect(text('fp-sira')).toContain('Süt 12, Ekmek 11, Yumurta 10, Tereyağı 7, Peynir 5');
     expect(text('fp-sira')).toContain('Reçel 3 < 4');
-    expect(text('fp-agac')).toMatch(/18 fiş, \d+ düğüm/);
+    expect(text('fp-agac')).toMatch(/18 fiş \d+ düğümde toplanır/);
     expect(text('kosullu')).toContain('Süt 4, Ekmek 1, Yumurta 4');
     expect(text('kosullu')).toContain('{Süt, Peynir} 4 ≥ 4 sık');
     expect(text('kosullu')).toContain('{Yumurta, Peynir} 4 ≥ 4 sık');
-    expect(text('kosullu')).toContain('{Süt, Yumurta, Peynir} 3 < 4 değil');
+    expect(text('kosullu')).toContain('{Süt, Yumurta, Peynir} 3 < 4 sık değil');
     expect(text('karsilastir')).toContain('aynı 12 sık kümeyi');
     expect(fpGrowth(tx, 4).size).toBe(12);
-    expect(text('karsilastir')).toContain('0,75 ms ve 0,49 ms');
+    expect(text('karsilastir')).toContain('Apriori 0,75 ms, FP-Growth 0,49 ms');
   });
 
   it('steps paint the levels the spec names', () => {

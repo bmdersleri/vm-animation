@@ -124,7 +124,7 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
     const total = scanKeys(analyse(s.params.minCount), lv).length;
     if (total === 0) return;
     scanned = 0;
-    // The scan is silent for screen readers; the legend panel is announced once, when it ends.
+    // The scan is silent for screen readers.
     aside.setAttribute('aria-live', 'off');
     timer = setInterval(() => {
       scanned = (scanned ?? 0) + 1;
@@ -134,9 +134,9 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
   };
 
   const unsubscribe = player.subscribe((s: PlayerState<AprioriParams>, cause: ChangeCause) => {
-    if (cause === 'step') {
-      if (s.index !== lastIndex) startScan(s);
-    } else if (cause === 'param') stopScan();
+    // A jump onto a sweep step emits 'sweep', not 'step', so the index decides, whatever the cause.
+    if (s.index !== lastIndex) startScan(s);
+    else if (cause === 'param') stopScan();
     lastIndex = s.index;
     render(s);
   });

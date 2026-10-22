@@ -4,7 +4,7 @@ import { StepPlayer } from '../../../src/core/player';
 import { mountAprioriScene } from '../../../src/concepts/apriori/scene';
 import { aprioriScenario, type AprioriParams } from '../../../src/concepts/apriori/scenario';
 import { layoutLattice } from '../../../src/concepts/apriori/scene-lattice';
-import { LATTICE, counters, paintLattice } from '../../../src/concepts/apriori/view';
+import { LATTICE, counters, paintLattice, rareNotes } from '../../../src/concepts/apriori/view';
 
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); document.body.replaceChildren(); });
 
@@ -73,7 +73,7 @@ describe('apriori lattice scene', () => {
     const pruned = [...host.querySelectorAll<HTMLElement>('.ap-node[data-state="pruned"]')];
     expect(pruned).toHaveLength(31);
     expect(pruned.every((n) => n.dataset.abbr!.includes('R') && n.dataset.abbr !== 'R')).toBe(true);
-    expect(host.querySelector('.ap-notes')!.textContent).toContain('Reçel sık değil (3 < 4): içeren 31 küme budandı');
+    expect(host.querySelector('.ap-notes')!.textContent).toContain('Reçel sık değil (3 < 4): Reçel içeren 31 küme budandı');
     expect(counter(host, 'counted')).toBe('sayılan aday: 6 / 63');
     fin(scene, player);
   });
@@ -143,15 +143,15 @@ describe('apriori lattice scene', () => {
     fin(scene, player);
   });
 
-  it('level 3 row fits 1280 px without overlap', () => {
-    const layout = layoutLattice(1280, 440);
+  it('level 3 row fits the Ders stage width without overlap', () => {
+    const layout = layoutLattice(1026, 440);
     const row = layout.boxes.filter((b) => b.k === 3);
     expect(row).toHaveLength(20);
     expect(new Set(row.map((b) => b.y)).size).toBe(1);
     const sorted = [...row].sort((a, b) => a.x - b.x);
     for (let i = 1; i < sorted.length; i++) expect(sorted[i].x).toBeGreaterThanOrEqual(sorted[i - 1].x + sorted[i - 1].w);
     expect(sorted[0].x).toBeGreaterThanOrEqual(0);
-    expect(sorted[19].x + sorted[19].w).toBeLessThanOrEqual(1280);
+    expect(sorted[19].x + sorted[19].w).toBeLessThanOrEqual(1026);
     for (const b of layout.boxes) {
       for (const o of layout.boxes) {
         if (b === o) continue;
@@ -189,6 +189,48 @@ describe('apriori lattice scene', () => {
       const words = [...host.querySelectorAll('*')].filter((e) => e.children.length === 0).map((e) => e.textContent).join(' ');
       expect(words).not.toMatch(bad);
     }
+    fin(scene, player);
+  });
+
+  it('the scene hands the lattice the width left beside the aside: level 3 stays on one row', () => {
+    const { host, scene, player } = setup();
+    player.goto(STEP.dur);
+    const row = [...host.querySelectorAll<HTMLElement>('.ap-node[data-level="3"]')];
+    expect(new Set(row.map((n) => n.style.top)).size).toBe(1);
+    const spans = row.map((n) => [parseInt(n.style.left, 10), parseInt(n.style.left, 10) + parseInt(n.style.width, 10)]).sort((a, b) => a[0] - b[0]);
+    for (let i = 1; i < spans.length; i++) expect(spans[i][0]).toBeGreaterThanOrEqual(spans[i - 1][1]);
+    expect(spans[spans.length - 1][1]).toBeLessThanOrEqual(1280 - 230);
+    fin(scene, player);
+  });
+
+  it('one line names all infrequent products with the union of their pruned supersets', () => {
+    const four = rareNotes(4);
+    expect(four).toEqual(['Reçel sık değil (3 < 4): Reçel içeren 31 küme budandı']);
+    const nine = rareNotes(9);
+    expect(nine).toHaveLength(1);
+    expect(nine[0]).toBe('Tereyağı, Peynir ve Reçel sık değil (7, 5, 3 < 9): Tereyağı, Peynir veya Reçel içeren 53 küme budandı');
+    // the number is the pruned nodes (levels 2-6) that hold a rare letter, not 3 x 31
+    const painted = paintLattice({ minCount: 9, level: 6, pruneSingles: true, scan: null });
+    const rare = painted.filter((p) => p.node.k >= 2 && p.state === 'pruned' && /[TPR]/.test(p.node.abbr)).length;
+    expect(rare).toBe(53);
+    vi.useFakeTimers();
+    const { host, scene, player } = setup();
+    player.goto(STEP.esik);
+    const lines = [...host.querySelectorAll('.ap-note')].map((n) => n.textContent!).filter((t) => t.includes('içeren'));
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain('53 küme budandı');
+    fin(scene, player);
+  });
+
+  it('jumping from a scanning step straight to a sweep step stops the scan', () => {
+    vi.useFakeTimers();
+    const { host, scene, player } = setup(false);
+    player.goto(STEP.seviye2);
+    expect(host.querySelector('.ap-aside')!.getAttribute('aria-live')).toBe('off');
+    expect(host.querySelector<HTMLElement>('.ap-scene')!.dataset.counting).toBe('true');
+    player.goto(STEP.esik);
+    expect(host.querySelector('.ap-aside')!.getAttribute('aria-live')).toBe('polite');
+    expect(host.querySelector<HTMLElement>('.ap-scene')!.dataset.counting).toBe('false');
     fin(scene, player);
   });
 });

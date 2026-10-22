@@ -64,14 +64,14 @@ export const aprioriScenario: Scenario<AprioriParams> = {
     {
       id: 'uzay',
       title: 'Arama uzayı',
-      text: `${LEVELS} ürün, 2${sup(LEVELS)} − 1 = ${TOTAL} olası öğe kümesi verir: her ürün bir sepette ya vardır ya yoktur. Kaba kuvvet bu ${TOTAL} kümenin hepsini sayar. Kafes kümeleri büyüklüğüne göre satırlara dizer; henüz hiçbirine bakılmadı.`,
+      text: `${LEVELS} ürün, 2${sup(LEVELS)} − 1 = ${TOTAL} olası öğe kümesi verir: her ürün bir sepette ya vardır ya yoktur. Kaba kuvvet bu ${TOTAL} kümenin hepsini sayar. Kafes, kümeleri büyüklüklerine göre satırlara dizer; henüz hiçbirine bakılmadı.`,
       term: 'öğe kümesi (itemset)',
       params: { level: 0 },
     },
     {
       id: 'seviye1',
       title: 'Seviye 1: tek ürünler sayılır',
-      text: `${L1.length} aday, yani her ürün tek başına, fişler taranarak sayılır (${thresholdText(MIN)}). ${rare.map((c) => `${itemName(c.set[0])} ${c.count} < ${MIN}`).join(', ')} → sık değil; diğer ${ofStatus(L1, 'frequent').length} ürün sık.`,
+      text: `${L1.length} aday (her ürün tek başına) fişler taranarak sayılır; eşik: ${thresholdText(MIN)}. ${rare.map((c) => `${itemName(c.set[0])} ${c.count} < ${MIN}`).join(', ')} → sık değil; diğer ${ofStatus(L1, 'frequent').length} ürün sık.`,
       labText: 'Eşiği değiştir ve taramanın hangi ürünleri sık, hangilerini sık değil bıraktığına bak. Seviye düğmeleriyle kafesin kaçıncı seviyeye kadar boyandığını seç.',
       term: 'sık öğe kümesi',
       params: { level: 1 },
@@ -79,7 +79,7 @@ export const aprioriScenario: Scenario<AprioriParams> = {
     {
       id: 'ozellik',
       title: 'Apriori özelliği',
-      text: `${rareName} sık değil. ${rareName} içeren bütün üst kümeler (${rareSupersets} düğüm) de sık olamaz; bu yüzden hiç sayılmadan budanır. Sık olmayan bir kümenin üst kümesi de sık olamaz.`,
+      text: `${rareName} sık değil. ${rareName} içeren bütün üst kümeler (${rareSupersets} düğüm) de sık olamaz, bu yüzden hiç sayılmadan budanır. Kural: sık olmayan bir kümenin hiçbir üst kümesi sık olamaz.`,
       labText: 'Eşiği değiştir: sık olmayan ürünler, dolayısıyla budanan üst kümeler değişir. Seviye düğmeleriyle taramayı ilerlet.',
       term: 'Apriori özelliği (aşağı doğru kapanış)',
       params: { level: 1 },
@@ -87,14 +87,14 @@ export const aprioriScenario: Scenario<AprioriParams> = {
     {
       id: 'seviye2',
       title: 'Seviye 2 adayları',
-      text: `Sık ${ofStatus(L1, 'frequent').length} üründen ${L2.length} çift aday üretilir ve tek tek sayılır: ${ofStatus(L2, 'frequent').length} tanesi sık (${ofStatus(L2, 'frequent').map(withCount).join(', ')}), ${ofStatus(L2, 'infrequent').length} tanesi değil (${ofStatus(L2, 'infrequent').map(withCount).join(', ')}).`,
+      text: `Sık ${ofStatus(L1, 'frequent').length} üründen ${L2.length} çift aday üretilir ve tek tek sayılır: ${ofStatus(L2, 'frequent').length} tanesi sık (${ofStatus(L2, 'frequent').map(withCount).join(', ')}), ${ofStatus(L2, 'infrequent').length} tanesi sık değil (${ofStatus(L2, 'infrequent').map(withCount).join(', ')}).`,
       labText: 'Eşiği değiştir: çift adayların sayısı ve hangilerinin sık kaldığı değişir. Seviye düğmeleriyle önceki ve sonraki seviyeye geç.',
       params: { level: 2 },
     },
     {
       id: 'budama',
       title: 'Seviye 3: budama',
-      text: `Sık çiftlerin birleştirilmesinden ${L3.length} aday çıkar. Alt kümelerinden biri sık değilse aday sayılmadan budanır: ${pruned3.map((c) => `${setAbbr(c.set)} (${setAbbr(c.prunedBy ?? [])} sık değil)`).join(', ')}. Kalan ${counted3.length} aday sayılır: ${counted3.map((c) => `${withCount(c)} (${c.status === 'frequent' ? 'sık' : 'değil'})`).join(', ')}.`,
+      text: `Sık çiftlerin birleştirilmesinden ${L3.length} aday çıkar. Bir alt kümesi sık değilse aday sayılmadan budanır: ${pruned3.map((c) => `${setAbbr(c.set)} (${setAbbr(c.prunedBy ?? [])} sık değil)`).join(', ')}. Kalan ${counted3.length} aday sayılır: ${counted3.map((c) => `${withCount(c)} (${c.status === 'frequent' ? 'sık' : 'sık değil'})`).join(', ')}.`,
       labText: 'Eşiği değiştir: hangi adayların budandığı ve hangilerinin sayıldığı değişir. Bir düğüme tıklayınca gerekçesini oku.',
       term: 'budama (pruning)',
       params: { level: 3 },
@@ -117,7 +117,7 @@ export const aprioriScenario: Scenario<AprioriParams> = {
     {
       id: 'fp-sira',
       title: 'FP-Growth 1. tarama: sıklık sırası',
-      text: `Ürünler sayılır ve sıklığa göre dizilir (${fp.header.map((h) => `${itemName(h.item)} ${h.total}`).join(', ')}). ${dropped.map((i) => `${itemName(i)} ${count(tx, [i])} < ${MIN}`).join(', ')}: eşiğin altında, atılır. Her fiş bu sıraya göre dizilir.`,
+      text: `Ürünler sayılır ve sıklığa göre dizilir (${fp.header.map((h) => `${itemName(h.item)} ${h.total}`).join(', ')}). ${dropped.map((i) => `${itemName(i)} ${count(tx, [i])} < ${MIN}`).join(', ')}: eşiğin altında, atılır. Her fiş de bu sıraya göre yazılır.`,
       labText: 'Eşiği değiştir: hangi ürünlerin atıldığı ve sıklık sırası değişir. Fiş ekleme kaydırıcısıyla ağacın kuruluşuna şimdiden bakabilirsin.',
       term: 'FP-Growth',
       params: { minCount: MIN, level: LEVELS, inserted: 0, baseItem: null },
@@ -125,7 +125,7 @@ export const aprioriScenario: Scenario<AprioriParams> = {
     {
       id: 'fp-agac',
       title: 'FP-ağacı kurulur',
-      text: `Fişler sıralanmış hâliyle tek tek eklenir. Ortak önek paylaşılırsa sayaç artar, yoksa yeni dal açılır. Sonunda ${n} fiş, ${treeNodes} düğüm.`,
+      text: `Fişler sıralanmış hâliyle tek tek eklenir. Fiş, ağaçtaki bir yolla aynı ürünlerle başlıyorsa o yolun sayaçları artar; başlamıyorsa yeni dal açılır. Sonunda ${n} fiş ${treeNodes} düğümde toplanır.`,
       labText: 'Fiş ekleme kaydırıcısını elle sürükle: ağaç fiş fiş büyür ya da küçülür. Eşiği değiştirince sıralama ve ağaç yeniden kurulur.',
       term: 'FP-ağacı',
       params: { baseItem: null },
@@ -134,7 +134,7 @@ export const aprioriScenario: Scenario<AprioriParams> = {
     {
       id: 'kosullu',
       title: 'Koşullu örüntü tabanı',
-      text: `${itemName('peynir')} için ağaçtaki yollar (önek: sayaç): ${pathsText(cond.paths)}. Bu yollarda ${cond.local.map(itemCountText).join(', ')} kez geçer; eşik ${MIN} olduğundan ${cond.kept.map(itemName).join(' ve ')} sık. ${cond.sets.map((s) => setCountText(s, MIN)).join('; ')}. Aday üretmeden, yalnız ilgili dallara bakarak.`,
+      text: `${itemName('peynir')} düğümlerine inen yollar (önek: sayaç): ${pathsText(cond.paths)}. Bu yollarda ${cond.local.map(itemCountText).join(', ')} kez geçer; eşik ${MIN} olduğundan ${cond.kept.map(itemName).join(' ve ')} sık. ${cond.sets.map((s) => setCountText(s, MIN)).join('; ')}. Aday üretmeden, yalnız ilgili dallara bakılır.`,
       labText: 'Ürün seçiciyle başka bir ürünün koşullu tabanına bak. Eşiği değiştirince hangi ürünlerin sık kaldığı değişir.',
       term: 'koşullu örüntü tabanı',
       params: { inserted: n, baseItem: 'peynir' },
@@ -142,7 +142,7 @@ export const aprioriScenario: Scenario<AprioriParams> = {
     {
       id: 'karsilastir',
       title: 'Aynı sonuç, farklı yol',
-      text: `Apriori ve FP-Growth ${sameSets ? 'aynı' : 'farklı'} ${trace.frequent.size} sık kümeyi bulur. Veri tarama sayısı: Apriori seviye başına bir, burada ${trace.levels.length}; FP-Growth iki. Aday üretimi: Apriori yapar, FP-Growth yapmaz. Kitabın ölçtüğü süreler 0,75 ms ve 0,49 ms; küçük veride fark küçüktür, büyük ve yoğun veride açılır.`,
+      text: `Apriori ve FP-Growth ${sameSets ? 'aynı' : 'farklı'} ${trace.frequent.size} sık kümeyi bulur. Veri tarama sayısı: Apriori her seviyede bir kez tarar, burada ${trace.levels.length}; FP-Growth 2 kez. Aday üretimi: Apriori yapar, FP-Growth yapmaz. Kitabın ölçtüğü süreler: Apriori 0,75 ms, FP-Growth 0,49 ms; küçük veride fark küçüktür, büyük ve yoğun veride açılır.`,
       labText: 'Eşiği değiştir: iki algoritmanın sık küme listeleri her eşikte aynı kalır. Tarama sayıları ve aday üretimi farkı eşiğe göre değişebilir.',
       params: { inserted: n, baseItem: null },
     },

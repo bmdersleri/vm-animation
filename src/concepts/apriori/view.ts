@@ -170,13 +170,21 @@ export function pruneReasons(minCount: number, level: number): PruneReason[] {
   return out;
 }
 
-/** "Reçel sık değil (3 < 4): içeren 31 küme budandı" for each infrequent single product. */
+const joinNames = (names: readonly string[], last: string): string =>
+  names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} ${last} ${names[names.length - 1]}`;
+
+/**
+ * One line naming every infrequent single product: "Peynir ve Reçel sık değil (5, 3 < 9): Peynir veya Reçel
+ * içeren 53 küme budandı". The number is the union of pruned supersets, read from the lattice states.
+ */
 export function rareNotes(minCount: number): string[] {
   const a = analyse(minCount);
-  return ITEMS.filter((i) => a.states.get(i) === 'infrequent').map((i) => {
-    const supersets = LATTICE.filter((n) => n.k >= 2 && n.set.includes(i)).length;
-    return `${itemName(i)} sık değil (${count(tx, [i])} < ${minCount}): içeren ${supersets} küme budandı`;
-  });
+  const rare = ITEMS.filter((i) => a.states.get(i) === 'infrequent');
+  if (rare.length === 0) return [];
+  const names = rare.map(itemName);
+  const pruned = LATTICE.filter((n) => n.k >= 2 && a.states.get(n.key) === 'pruned' && n.set.some((i) => rare.includes(i))).length;
+  const counts = rare.map((i) => count(tx, [i])).join(', ');
+  return [`${joinNames(names, 've')} sık değil (${counts} < ${minCount}): ${joinNames(names, 'veya')} içeren ${pruned} küme budandı`];
 }
 
 // ---- FP-Growth text parts ----
@@ -212,4 +220,4 @@ export function conditionalSummary(minCount: number, item: string): ConditionalS
 export const pathsText = (paths: readonly PrefixPath[]): string => paths.map(pathText).join(' · ');
 export const itemCountText = (l: { item: string; count: number }): string => `${itemName(l.item)} ${l.count}`;
 export const setCountText = (s: { set: Itemset; count: number; frequent: boolean }, minCount: number): string =>
-  `${setBraces(s.set)} ${s.count} ${s.frequent ? `≥ ${minCount} sık` : `< ${minCount} değil`}`;
+  `${setBraces(s.set)} ${s.count} ${s.frequent ? `≥ ${minCount} sık` : `< ${minCount} sık değil`}`;
