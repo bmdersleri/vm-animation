@@ -1,0 +1,223 @@
+/* korelasyon-isi-haritasi: scene (scene.ts, scene-panels.ts, scene-heat.ts).
+   Text sizes come only from the --fs-* tokens; the svg has no viewBox. */
+.kor-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.kor-scene .kor-plot-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.kor-plot-host svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+.kor-scene .formula {
+  flex: none;
+  margin: 0 16px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 14px;
+  border-left: 4px solid var(--navy);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  min-height: calc(2 * 1.35em + 12px);
+}
+.kor-scene .formula .line {
+  display: block; /* inline terms wrap between the spaces renderStrip inserts */
+}
+.kor-scene .formula .term {
+  white-space: nowrap;
+}
+
+/* ---------- shared axes and text ---------- */
+.kor-plot .tick,
+.kor-plot .tick text { font-variant-numeric: tabular-nums; }
+.kor-plot .tick text,
+.kor-plot .axis-title,
+.kor-plot .panel-title,
+.kor-plot .panel-stats {
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.kor-plot .axis-title {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+  fill: var(--navy);
+}
+
+/* ---------- Anscombe / 004 panels ---------- */
+.kor-plot .panel-title {
+  font-size: var(--fs-axis);
+  font-weight: 700;
+  stroke: none;
+}
+.kor-plot .panel-stats {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+  fill: var(--navy);
+  font-variant-numeric: tabular-nums;
+}
+.kor-plot path.pts { stroke-width: 1.2; }
+.kor-plot path.trend {
+  fill: none;
+  stroke-width: 3;
+  stroke-dasharray: 9 6;
+  stroke-linecap: round;
+}
+
+/* ---------- heat matrix ---------- */
+.kor-plot rect.cell {
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+.kor-plot rect.cell.diag {
+  stroke: var(--navy);
+  stroke-width: 3;
+}
+.kor-plot text.cell-text {
+  font-size: var(--fs-tick);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.kor-plot text.row-label,
+.kor-plot text.col-label {
+  font-size: var(--fs-tick);
+  font-weight: 600;
+  fill: var(--navy);
+}
+.kor-plot rect.legend-strip {
+  stroke: var(--navy);
+  stroke-width: 1.5;
+}
+.kor-plot text.legend-label {
+  font-size: var(--fs-tick);
+  font-variant-numeric: tabular-nums;
+  fill: var(--muted);
+}
+
+/* ---------- set IV's leverage point ---------- */
+.kor-plot circle.leverage {
+  fill: var(--orange);
+  fill-opacity: 0.2;
+  stroke: var(--orange);
+  stroke-width: 2.5;
+  stroke-dasharray: 5 3;
+  cursor: grab;
+  touch-action: none;
+}
+.kor-plot circle.leverage:active { cursor: grabbing; stroke-dasharray: none; }
+.kor-plot circle.leverage:focus-visible {
+  outline: none;
+  stroke: var(--navy);
+  stroke-width: 4;
+}
+.kor-plot text.leverage-hint,
+.kor-plot text.drop-note {
+  font-size: var(--fs-tick);
+  fill: var(--muted);
+}
+.kor-plot text.drop-note {
+  font-weight: 700;
+  fill: var(--orange);
+}
+
+/* ---------- step 9: leakage boxes ---------- */
+.kor-plot rect.eda-card-bg {
+  fill: var(--surface);
+  stroke: var(--navy);
+  stroke-width: 2;
+}
+.kor-plot text.eda-title {
+  font-size: var(--fs-axis);
+  font-weight: 700;
+  fill: var(--navy);
+}
+.kor-plot text.eda-body {
+  font-size: var(--fs-tick);
+  fill: var(--navy);
+}
+
+/* ---------- step 10: the one-sentence rule and its links ---------- */
+.kor-plot text.kor-rule {
+  font-size: var(--fs-title);
+  font-weight: 700;
+  fill: var(--navy);
+}
+.kor-plot a.kor-link { cursor: pointer; }
+.kor-plot a.kor-link text.kor-link-text {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+  fill: var(--navy);
+  text-decoration: underline;
+}
+.kor-plot a.kor-link:hover .kor-link-text,
+.kor-plot a.kor-link:focus-visible .kor-link-text { fill: var(--orange); }
+.kor-plot a.kor-link:focus-visible { outline: none; }
+
+/* ---------- parameter panel (controls.ts) ---------- */
+.kor-params { display: grid; gap: 8px; }
+.kor-params .ctl { min-width: 0; }
+.kor-params .ctl.select {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.kor-params .ctl-label { font-weight: 600; }
+.kor-params select {
+  width: 100%;
+  min-height: var(--ctl);
+  padding: 0 8px;
+  border: 2px solid var(--navy);
+  border-radius: 8px;
+  background: var(--surface);
+  font: inherit;
+}
+.kor-params .ctl.check { display: flex; align-items: center; }
+.kor-params .opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--ctl);
+  font-weight: 400;
+}
+.kor-params input[type="checkbox"] { width: 1.25em; height: 1.25em; margin: 0; accent-color: var(--navy); }
+.kor-params .ctl.range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+}
+.kor-params .ctl.range .ctl-label { grid-column: 1 / -1; }
+.kor-params .ctl-value { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kor-params input[type="range"] { width: 100%; min-height: var(--ctl); margin: 0; accent-color: var(--navy); }
+
+/* ---------- Lab side panel (extra.ts) ---------- */
+.kor-extra p { margin: 0 0 8px; }
+.kor-extra .live-note { font-weight: 600; color: var(--navy); }
+
+/* ---------- Lab: compact params card that fits the side column at 720 px ---------- */
+/* Controls that do not apply to the current step are hidden, not greyed (controls.ts sets data-off). */
+[data-mode="lab"] .kor-params .ctl[data-off] { display: none; }
+/* a step with no control at all hides the card itself, not just its rows */
+[data-mode="lab"] .params[data-off] { display: none; }
+[data-mode="lab"] .kor-params { gap: 4px; }
+[data-mode="lab"] .kor-params .opt { min-height: 30px; }
+[data-mode="lab"] .kor-params input[type="range"] { min-height: 30px; }
+[data-mode="lab"] .side .params { flex: none; padding: 8px 14px; }
+/* a tall explain card scrolls inside itself so the params card stays fully visible below it */
+[data-mode="lab"] .side .explain { flex: 0 1 auto; min-height: 0; overflow: auto; }
