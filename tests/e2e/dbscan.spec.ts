@@ -43,6 +43,26 @@ test('lab: eps slider and point click', async ({ page }) => {
   await expect(page).toHaveScreenshot('dbscan-lab-eps-point.png');
 });
 
+test('lab: the params card is hidden while no control applies and shows the point picker at step 3', async ({ page }) => {
+  await open(page, PAGE, 'lab', READY);
+  await gotoStep(page, 0, STEPS);
+  await expect(page.locator('.params')).toBeHidden();
+  await gotoStep(page, 2, STEPS);
+  await expect(page.locator('.params')).toBeVisible();
+  await expect(page.locator('.params input[data-param="point"]')).toBeVisible();
+});
+
+test('lab: a long cluster list is capped with a "more" chip and stays inside the stage', async ({ page }) => {
+  await open(page, PAGE, 'lab', READY);
+  await gotoStep(page, 6, STEPS);
+  await page.locator('input[data-param="eps"]').fill('0.11');
+  await page.locator('input[data-param="minSamples"]').fill('2');
+  await page.waitForTimeout(1500);
+  await expect(page.locator('[data-more]')).toBeVisible();
+  expect(await outsideStage(page, TEXTS)).toEqual([]);
+  expect(await outsideStage(page, '.db-sizes, .db-panel')).toEqual([]);
+});
+
 test('narrow layout: the scatter keeps its height and the panel sits below it', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 900 });
   for (const mode of ['ders', 'lab'] as const) {

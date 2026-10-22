@@ -203,6 +203,34 @@ describe('DendrogramLayer', () => {
       return r;
     };
 
+    it('a linkage change tweens a branch path through a shape between its start and end', async () => {
+      // real clock, and placed before the fake-timer tests: d3-timer stays stuck once a fake clock has driven it
+      const { svg, layer } = live();
+      const sl = D.linkages.single;
+      const d = (m: number): number[] => (svg.querySelector(`path.dg-branch[data-merge="${m}"]`)!.getAttribute('d')!.match(/-?[\d.]+/g) ?? []).map(Number);
+      const all = (): number[][] => [...Array(n - 1).keys()].map((i) => d(i + 1));
+      layer.update(spec(), false);
+      const start = all();
+      // same y scale (ward's top), so the single-linkage bars really move
+      layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
+      await new Promise((r) => setTimeout(r, 200)); // inside the 450 ms tween
+      const mid = all();
+      await new Promise((r) => setTimeout(r, 700));
+      const end = all();
+      // the branch whose path travels furthest
+      let m = 0;
+      let best = -1;
+      start.forEach((a, i) => { const t = a.reduce((acc, v, k) => acc + Math.abs(v - end[i][k]), 0); if (t > best) { best = t; m = i; } });
+      expect(best).toBeGreaterThan(5);
+      expect(mid[m]).not.toEqual(start[m]);
+      expect(mid[m]).not.toEqual(end[m]);
+      mid[m].forEach((v, k) => {
+        expect(v).toBeGreaterThanOrEqual(Math.min(start[m][k], end[m][k]) - 0.5);
+        expect(v).toBeLessThanOrEqual(Math.max(start[m][k], end[m][k]) + 0.5);
+      });
+      layer.destroy();
+    });
+
     it('interrupts a running transition and settles on the last spec with stable counts', () => {
       vi.useFakeTimers();
       const { svg, layer } = live();
@@ -213,12 +241,15 @@ describe('DendrogramLayer', () => {
       layer.resize(RECT, sl.merges[sl.merges.length - 1].height);
       const before = svg.querySelector('path.dg-branch[data-merge="5"]');
       layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
+      console.log("DBG3", svg.querySelector(`path.dg-branch[data-merge="16"]`)!.getAttribute("d"));
       layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
+      console.log("DBG3", svg.querySelector(`path.dg-branch[data-merge="16"]`)!.getAttribute("d"));
       vi.advanceTimersByTime(2000);
       expect(svg.querySelector('path.dg-branch[data-merge="5"]')).toBe(before);
       expect(svg.querySelectorAll('path.dg-branch')).toHaveLength(n - 1);
       const settled = count();
       layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
+      console.log("DBG3", svg.querySelector(`path.dg-branch[data-merge="16"]`)!.getAttribute("d"));
       vi.advanceTimersByTime(2000);
       expect(count()).toBe(settled);
       expect(svg.innerHTML).not.toMatch(/NaN|Infinity|undefined/);
