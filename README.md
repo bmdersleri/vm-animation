@@ -15,6 +15,8 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - Ölçekleme: https://bmdersleri.github.io/vm-animation/olcekleme/
 - PCA ve t-SNE: https://bmdersleri.github.io/vm-animation/pca/
 - Özellik seçimi: https://bmdersleri.github.io/vm-animation/ozellik-secimi/
+- DBSCAN: https://bmdersleri.github.io/vm-animation/dbscan/
+- Hiyerarşik kümeleme ve dendrogram: https://bmdersleri.github.io/vm-animation/dendrogram/
 - Karmaşıklık matrisi: https://bmdersleri.github.io/vm-animation/karmasiklik-matrisi/
 - ROC ve karar eşiği: https://bmdersleri.github.io/vm-animation/roc-esik/
 - Çapraz doğrulama: https://bmdersleri.github.io/vm-animation/capraz-dogrulama/
@@ -82,6 +84,8 @@ python scripts/make_onisleme_data.py
 python scripts/make_boyut_data.py
 python scripts/make_degerlendirme_data.py
 python scripts/make_kmeans_data.py
+python scripts/make_dbscan_data.py
+python scripts/make_dendrogram_data.py
 ```
 
 - `make_knn_data.py`: Telco churn CSV'sinden k-NN örneğini ve scikit-learn referans değerlerini üretir.
@@ -91,6 +95,8 @@ python scripts/make_kmeans_data.py
 - `make_boyut_data.py`: PCA ve özellik seçimi sayfalarının verisini üretir (kitabın 002, 003, 004 ve 005 örnekleri): `src/concepts/pca/data/pca_data.json`, `src/concepts/ozellik-secimi/data/secim_data.json` ve `tests/fixtures/boyut_sklearn.json` referansları; t-SNE altı kez koşar; CSV gerekmez.
 - `make_degerlendirme_data.py`: Bölüm 6 sayfalarının (karmaşıklık matrisi, ROC/PR ve çapraz doğrulama) ortak verisini (`src/concepts/degerlendirme/data/degerlendirme.json`) ve `tests/fixtures/degerlendirme_sklearn.json` referanslarını üretir; Python, NumPy ve scikit-learn sürümleri dosyaya yazılır; ikinci çalıştırma fark üretmez; CSV gerekmez.
 - `make_kmeans_data.py`: Bölüm 7 sayfalarının (K-Means döngüsü ve k sayısının seçimi) ortak Iris verisini ve scikit-learn referanslarını üretir (`src/concepts/kmeans/data/`); CSV gerekmez.
+- `make_dbscan_data.py`: DBSCAN sayfasının iki hilal verisini ve scikit-learn referanslarını üretir (`src/concepts/dbscan/data/`); CSV gerekmez.
+- `make_dendrogram_data.py`: Hiyerarşik kümeleme ve dendrogram sayfasının verisini ve SciPy/scikit-learn referanslarını üretir (`src/concepts/dendrogram/data/`); CSV gerekmez.
 
 ## Yeni kavram ekleme
 

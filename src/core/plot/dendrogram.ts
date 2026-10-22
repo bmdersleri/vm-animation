@@ -144,7 +144,7 @@ export class DendrogramLayer {
       go(g as unknown as AnySel).attr('transform', (d: number) => `translate(0,${Y(d)})`).attr('opacity', 1);
     });
     const lines = this.titleLines;
-    const tx = this.area.left + axis * (lines.length === 1 ? 0.9 : 1.5);
+    const tx = this.area.left + axis * (lines.length === 1 ? 1.1 : 1.5);
     this.title.attr('transform', `translate(${r1(tx)},${r1(plot.top + plot.height / 2)}) rotate(-90)`);
     this.title.selectAll('tspan').data(lines).join('tspan')
       .attr('x', 0).attr('dy', (_d, i) => (i === 0 ? `${r1(-(lines.length - 1) * 0.6)}em` : '1.2em')).text((d) => d);
