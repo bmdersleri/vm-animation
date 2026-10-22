@@ -2,6 +2,7 @@ import '../../core/theme.css';
 import './apriori.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
 import { aprioriScenario, type AprioriParams } from './scenario';
+import { mountAprioriParams } from './controls';
 import { mountAprioriScene } from './scene';
 
 export const aprioriPage: ConceptPage<AprioriParams> = {
@@ -9,8 +10,7 @@ export const aprioriPage: ConceptPage<AprioriParams> = {
   chapter: 'Bölüm 8 · Birliktelik Kuralı Madenciliği',
   scenario: aprioriScenario,
   mountScene: mountAprioriScene,
-  // Lab controls come with the FP-tree and Lab task.
-  mountParams: () => {},
+  mountParams: mountAprioriParams,
 };
 
 const app = document.querySelector<HTMLElement>('#app');

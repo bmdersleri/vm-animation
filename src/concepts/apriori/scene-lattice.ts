@@ -81,6 +81,8 @@ export interface LatticeSpec {
   height: number;
   /** Compact level labels ("1") instead of "seviye 1". */
   compact: boolean;
+  /** Set key of the node picked in the Lab; null = none. */
+  selected?: string | null;
   options?: Partial<LayoutOptions>;
 }
 
@@ -108,7 +110,7 @@ interface NodeEls {
 }
 
 /** The 63 node boxes and level labels inside `host`; created once, repositioned and repainted by `update`. */
-export function mountLattice(host: HTMLElement): Lattice {
+export function mountLattice(host: HTMLElement, onPick: (key: string) => void = () => {}): Lattice {
   const root = el('div', 'ap-lattice');
   root.setAttribute('role', 'group');
   root.setAttribute('aria-label', 'Öğe kümesi kafesi');
@@ -123,6 +125,9 @@ export function mountLattice(host: HTMLElement): Lattice {
     box.dataset.key = n.key;
     box.dataset.abbr = n.abbr;
     box.dataset.level = String(n.k);
+    box.setAttribute('role', 'button');
+    box.setAttribute('aria-pressed', 'false');
+    box.tabIndex = n.key === LATTICE[0].key ? 0 : -1;
     const abbr = el('span', 'ap-abbr', n.abbr);
     const sub = el('span', 'ap-sub');
     box.append(abbr, sub);
@@ -130,6 +135,45 @@ export function mountLattice(host: HTMLElement): Lattice {
   }
   root.append(...labels, ...[...nodes.values()].map((e) => e.box));
   host.append(root);
+
+  const boxOf = (target: EventTarget | null): HTMLElement | null => (target instanceof Element ? target.closest<HTMLElement>('.ap-node') : null);
+  const focusNode = (key: string): void => {
+    for (const [k, e] of nodes) e.box.tabIndex = k === key ? 0 : -1;
+    nodes.get(key)?.box.focus();
+  };
+  root.addEventListener('click', (e) => {
+    const b = boxOf(e.target);
+    if (b?.dataset.key) onPick(b.dataset.key);
+  });
+  root.addEventListener('focusin', (e) => {
+    const b = boxOf(e.target);
+    if (b?.dataset.key) for (const [k, n] of nodes) n.box.tabIndex = k === b.dataset.key ? 0 : -1;
+  });
+  root.addEventListener('keydown', (e) => {
+    const b = boxOf(e.target);
+    if (!b?.dataset.key) return;
+    const k = Number(b.dataset.level);
+    const row = LATTICE.filter((n) => n.k === k);
+    const at = row.findIndex((n) => n.key === b.dataset.key);
+    // The page's step keys (arrows, Space) must not also fire while a node is focused.
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      e.stopPropagation();
+      onPick(b.dataset.key);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      e.stopPropagation();
+      const to = row[Math.max(0, Math.min(row.length - 1, at + (e.key === 'ArrowRight' ? 1 : -1)))];
+      focusNode(to.key);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      e.stopPropagation();
+      const other = LATTICE.filter((n) => n.k === k + (e.key === 'ArrowDown' ? 1 : -1));
+      if (other.length === 0) return;
+      const idx = row.length > 1 ? Math.round((at * (other.length - 1)) / (row.length - 1)) : Math.floor((other.length - 1) / 2);
+      focusNode(other[idx].key);
+    }
+  });
   let needed = 0;
 
   return {
@@ -160,6 +204,11 @@ export function mountLattice(host: HTMLElement): Lattice {
         e.box.dataset.count = p.count === null ? '' : String(p.count);
         setText(e.sub, p.count !== null ? String(p.count) : p.prunedBy ? `⊘${p.prunedBy}` : p.state === 'candidate' ? '…' : '');
         e.box.title = `${p.node.abbr}: ${STATE_NAME[p.state]}`;
+        e.box.setAttribute('aria-label', `${p.node.abbr}: ${STATE_NAME[p.state]}${p.count !== null ? `, ${p.count} fiş` : ''}`);
+        const on = spec.selected === p.node.key;
+        e.box.setAttribute('aria-pressed', String(on));
+        if (on) e.box.dataset.selected = 'true';
+        else delete e.box.dataset.selected;
       }
     },
     get needed(): number {

@@ -201,8 +201,19 @@ export interface ConditionalSummary {
   readonly sets: { set: Itemset; count: number; frequent: boolean }[];
 }
 
+const treeCache = new Map<number, FpTree>();
+/** The FP-tree at a threshold, memoised (the scene asks for it on every repaint). */
+export function fpFor(minCount: number): FpTree {
+  let t = treeCache.get(minCount);
+  if (!t) {
+    t = fpTree(tx, minCount);
+    treeCache.set(minCount, t);
+  }
+  return t;
+}
+
 export function conditionalSummary(minCount: number, item: string): ConditionalSummary {
-  const tree = fpTree(tx, minCount);
+  const tree = fpFor(minCount);
   const paths = conditionalBase(tree, item);
   const sums = new Map<string, number>();
   for (const p of paths) for (const i of p.path) sums.set(i, (sums.get(i) ?? 0) + p.count);
@@ -221,3 +232,35 @@ export const pathsText = (paths: readonly PrefixPath[]): string => paths.map(pat
 export const itemCountText = (l: { item: string; count: number }): string => `${itemName(l.item)} ${l.count}`;
 export const setCountText = (s: { set: Itemset; count: number; frequent: boolean }, minCount: number): string =>
   `${setBraces(s.set)} ${s.count} ${s.frequent ? `≥ ${minCount} sık` : `< ${minCount} sık değil`}`;
+
+// ---- Lab: the reason for one lattice node ----
+
+export const NO_FREQUENT = 'Bu eşikte sık küme yok.';
+
+/** Smallest infrequent subset of a pruned set, as letters ("ST"), when the trace does not list one. */
+function infrequentSubset(minCount: number, set: Itemset): Itemset | null {
+  const a = analyse(minCount);
+  const subs = LATTICE.filter((n) => n.k < set.length && n.set.every((i) => set.includes(i)) && a.states.get(n.key) === 'infrequent');
+  return subs.length ? subs[0].set : null;
+}
+
+/** What a lattice node is and why: "EST budandı: ST sık değil (3 < 4)". Follows the painted state, so it matches the colour on screen. */
+export function nodeReason(minCount: number, p: PaintedNode): string {
+  const abbr = p.node.abbr;
+  switch (p.state) {
+    case 'unseen':
+      return `${abbr}: henüz bakılmadı.`;
+    case 'candidate':
+      return `${abbr}: şimdi sayılıyor.`;
+    case 'frequent':
+      return `${abbr} sık: ${p.count} fiş ≥ ${minCount}.`;
+    case 'infrequent':
+      return `${abbr} sık değil: ${p.count} fiş < ${minCount}.`;
+    case 'pruned': {
+      const cause = analyse(minCount).listed.get(p.node.key)?.prunedBy ?? infrequentSubset(minCount, p.node.set);
+      return cause
+        ? `${abbr} budandı: ${setAbbr(cause)} sık değil (${count(tx, cause)} < ${minCount}), bu yüzden sayılmadı.`
+        : `${abbr} budandı: bir alt kümesi sık değil, bu yüzden sayılmadı.`;
+    }
+  }
+}

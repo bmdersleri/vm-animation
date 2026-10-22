@@ -4,13 +4,18 @@ import type { SceneHandle } from '../../core/shell';
 import { sepetData } from '../birliktelik/data';
 import { itemAbbr, itemName } from '../birliktelik/format';
 import { mountLattice, STATE_NAME, type Lattice } from './scene-lattice';
+import { mountFpTree, type FpScene, type FpView } from './scene-fptree';
 import { aprioriScenario as scenario, type AprioriParams } from './scenario';
-import { TOTAL, analyse, counters, paintLattice, pruneReasons, rareNotes, scanKeys, thresholdText, type NodeState } from './view';
+import { NO_FREQUENT, TOTAL, analyse, counters, nodeReason, paintLattice, pruneReasons, rareNotes, scanKeys, thresholdText, type NodeState } from './view';
 
 const STEP_L1 = stepIndex(scenario, 'seviye1');
 const STEP_PROPERTY = stepIndex(scenario, 'ozellik');
 const STEP_L2 = stepIndex(scenario, 'seviye2');
 const STEP_FP = stepIndex(scenario, 'fp-sira');
+const STEP_BUILD = stepIndex(scenario, 'fp-agac');
+const FP_VIEW = new Map<number, FpView>([
+  [STEP_FP, 'order'], [STEP_BUILD, 'build'], [stepIndex(scenario, 'kosullu'), 'base'], [stepIndex(scenario, 'karsilastir'), 'compare'],
+]);
 /** Steps whose level is counted candidate by candidate, and which level that is. */
 const SCAN_LEVEL = new Map<number, number>([[STEP_L1, 1], [STEP_L2, 2]]);
 const SCAN_MS = 260;
@@ -43,7 +48,10 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
   const frequent = el('span', 'ap-counter');
   frequent.dataset.counter = 'frequent';
   countersEl.append(counted, frequent);
-  head.append(threshold, countersEl);
+  const empty = el('p', 'ap-empty', NO_FREQUENT);
+  empty.setAttribute('role', 'status');
+  empty.hidden = true;
+  head.append(threshold, countersEl, empty);
 
   const latticeHost = el('div', 'ap-lattice-host');
   const fpSlot = el('div', 'ap-fp-slot');
@@ -62,11 +70,15 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
     key.append(li);
   }
   const notes = el('ul', 'ap-notes');
-  aside.append(letters, key, notes);
+  const nodeInfo = el('p', 'ap-node-info');
+  nodeInfo.hidden = true;
+  const fpSide = el('div', 'ap-fp-aside');
+  aside.append(nodeInfo, letters, key, notes, fpSide);
 
   root.append(head, latticeHost, fpSlot, aside);
   host.append(root);
-  const lattice: Lattice = mountLattice(latticeHost);
+  const lattice: Lattice = mountLattice(latticeHost, (k) => player.setParams({ node: k }));
+  const fp: FpScene = mountFpTree(fpSlot, fpSide);
   let size = { w: 900, h: 560 };
 
   let destroyed = false;
@@ -89,6 +101,7 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
     const fpView = s.index >= STEP_FP;
     const wide = size.w >= WIDE_FROM;
     root.dataset.view = fpView ? 'fptree' : 'lattice';
+    root.dataset.fp = FP_VIEW.get(s.index) ?? '';
     root.dataset.layout = wide ? 'wide' : 'narrow';
     root.style.setProperty('--ap-aside', `${ASIDE_WIDTH}px`);
     const scanLevel = SCAN_LEVEL.get(s.index);
@@ -109,11 +122,26 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
       notes.replaceChildren(...lines.map((t) => el('li', 'ap-note', t)));
     }
 
-    if (fpView) return;
+    const nothing = analyse(minCount).trace.frequent.size === 0;
+    empty.hidden = !(nothing && s.index > 0 && (fpView || (level >= 1 && scan === null)));
+
+    if (fpView) {
+      const view = FP_VIEW.get(s.index) as FpView;
+      const fw = Math.max(240, size.w - (wide ? ASIDE_WIDTH + 24 : 12));
+      const fh = Math.max(240, size.h - (wide ? 70 : 230));
+      fp.update({ view, minCount, inserted: s.params.inserted, baseItem: s.params.baseItem, width: fpSlot.clientWidth || fw, height: fpSlot.clientHeight || fh });
+      return;
+    }
+    const picked = s.params.node === null ? undefined : painted.find((p) => p.node.key === s.params.node);
+    nodeInfo.hidden = !picked;
+    if (picked) {
+      setText(nodeInfo, nodeReason(minCount, picked));
+      nodeInfo.dataset.key = picked.node.key;
+    }
     latticeHost.style.minHeight = '';
     const w = latticeHost.clientWidth || Math.max(240, size.w - (wide ? ASIDE_WIDTH + 24 : 12));
     const h = latticeHost.clientHeight || Math.max(240, size.h - (wide ? 70 : 230));
-    lattice.update({ painted, width: w, height: h, compact: w < 520 });
+    lattice.update({ painted, width: w, height: h, compact: w < 520, selected: s.params.node });
     if (lattice.needed > h + 1) latticeHost.style.minHeight = `${Math.ceil(lattice.needed)}px`;
   }
 
@@ -135,10 +163,13 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
 
   const unsubscribe = player.subscribe((s: PlayerState<AprioriParams>, cause: ChangeCause) => {
     // A jump onto a sweep step emits 'sweep', not 'step', so the index decides, whatever the cause.
-    if (s.index !== lastIndex) startScan(s);
+    const entered = s.index !== lastIndex;
+    if (entered) startScan(s);
     else if (cause === 'param') stopScan();
     lastIndex = s.index;
-    render(s);
+    // Reduced motion: the basket-insertion sweep is skipped. Setting the final value also ends the player's sweep.
+    if (entered && s.index === STEP_BUILD && reducedMotion()) player.setParams({ inserted: sepetData.transactions.length });
+    render(player.state);
   });
   startScan(player.state);
   render(player.state);
@@ -157,6 +188,7 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
       stopScan();
       unsubscribe();
       lattice.destroy();
+      fp.destroy();
       root.remove();
     },
   };
