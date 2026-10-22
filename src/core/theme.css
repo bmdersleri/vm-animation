@@ -351,26 +351,66 @@ body {
   gap: var(--gap);
 }
 
+/* Narrow screens: Ders and Lab are both one column (stage, then text/controls). */
 @media (max-width: 900px) {
-  [data-mode="lab"].concept-page {
+  .concept-page {
+    grid-template-columns: minmax(0, 1fr);
     height: auto;
     min-height: 100vh;
     overflow: visible;
   }
-  [data-mode="lab"] .workspace {
-    grid-template-columns: minmax(0, 1fr);
+  .top-bar {
+    flex-wrap: wrap;
+    gap: 8px 16px;
   }
-  [data-mode="lab"] .stage {
+  .top-bar .heading {
+    flex-basis: 100%;
+    order: 3;
+  }
+  [data-mode="lab"] .workspace,
+  [data-mode="ders"] .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+  .stage,
+  [data-mode="ders"] .stage {
+    grid-column: 1;
+    grid-row: auto;
     height: clamp(320px, 60vh, 640px);
+  }
+  [data-mode="ders"] .explain {
+    grid-row: auto;
+  }
+  [data-mode="ders"] .params {
+    grid-column: 1;
+    grid-row: auto;
+    width: auto;
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
   [data-mode="lab"] .side {
     overflow: visible;
   }
-  [data-mode="lab"] .player-bar {
+  .player-bar {
     position: sticky;
     bottom: 0;
     z-index: 5;
     flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+  /* dots stay on one row and scroll sideways; the step counter stays visible */
+  .player-bar .steps {
+    flex: 1 1 100%;
+    order: 3;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 4px 0;
+  }
+  .player-bar .step-dot {
+    flex: none;
+  }
+  .player-bar .step-count {
+    margin-left: auto;
   }
 }
 
