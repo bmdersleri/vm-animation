@@ -270,8 +270,12 @@ describe('DendrogramLayer', () => {
       const start = all();
       // same y scale (ward's top), so the single-linkage bars really move
       layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
-      await new Promise((r) => setTimeout(r, 200)); // inside the 450 ms tween
-      const mid = all();
+      // sample every 25 ms through the 450 ms tween, so a stalled event loop cannot skip the middle
+      const samples: number[][][] = [];
+      for (let i = 0; i < 20; i++) {
+        await new Promise((r) => setTimeout(r, 25));
+        samples.push(all());
+      }
       await new Promise((r) => setTimeout(r, 700));
       const end = all();
       // the branch whose path travels furthest
@@ -279,9 +283,12 @@ describe('DendrogramLayer', () => {
       let best = -1;
       start.forEach((a, i) => { const t = a.reduce((acc, v, k) => acc + Math.abs(v - end[i][k]), 0); if (t > best) { best = t; m = i; } });
       expect(best).toBeGreaterThan(5);
-      expect(mid[m]).not.toEqual(start[m]);
-      expect(mid[m]).not.toEqual(end[m]);
-      mid[m].forEach((v, k) => {
+      // the first sample that has left the start
+      const mid = samples.find((x) => x[m].some((v, k) => v !== start[m][k]));
+      expect(mid).toBeDefined();
+      expect(mid![m]).not.toEqual(start[m]);
+      expect(mid![m]).not.toEqual(end[m]);
+      mid![m].forEach((v, k) => {
         expect(v).toBeGreaterThanOrEqual(Math.min(start[m][k], end[m][k]) - 0.5);
         expect(v).toBeLessThanOrEqual(Math.max(start[m][k], end[m][k]) + 0.5);
       });
@@ -298,15 +305,12 @@ describe('DendrogramLayer', () => {
       layer.resize(RECT, sl.merges[sl.merges.length - 1].height);
       const before = svg.querySelector('path.dg-branch[data-merge="5"]');
       layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
-      console.log("DBG3", svg.querySelector(`path.dg-branch[data-merge="16"]`)!.getAttribute("d"));
       layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
-      console.log("DBG3", svg.querySelector(`path.dg-branch[data-merge="16"]`)!.getAttribute("d"));
       vi.advanceTimersByTime(2000);
       expect(svg.querySelector('path.dg-branch[data-merge="5"]')).toBe(before);
       expect(svg.querySelectorAll('path.dg-branch')).toHaveLength(n - 1);
       const settled = count();
       layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
-      console.log("DBG3", svg.querySelector(`path.dg-branch[data-merge="16"]`)!.getAttribute("d"));
       vi.advanceTimersByTime(2000);
       expect(count()).toBe(settled);
       expect(svg.innerHTML).not.toMatch(/NaN|Infinity|undefined/);
