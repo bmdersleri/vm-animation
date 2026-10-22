@@ -81,7 +81,13 @@ describe('PointKindsLayer', () => {
     expect(rings.map((r) => r.getAttribute('data-i'))).toEqual(['1', '3']);
     for (const r of rings) {
       expect(r.getAttribute('stroke')).toBe(NAVY);
-      expect(Number(r.getAttribute('stroke-width'))).toBeLessThan(2);
+      // light rings, so a dense neighbourhood does not bury the selected point
+      expect(Number(r.getAttribute('stroke-width'))).toBeLessThanOrEqual(1);
+      expect(Number(r.getAttribute('stroke-opacity'))).toBeLessThanOrEqual(0.6);
+      expect(Number(r.getAttribute('r'))).toBeLessThanOrEqual(6);
+      // drawn under the points: the selected point's dot is never covered by a ring
+      const dot = svg.querySelector('g.pk-point[data-i="0"]')!;
+      expect(r.compareDocumentPosition(dot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
     expect(svg.querySelector('circle.pk-sel')!.getAttribute('data-i')).toBe('0');
     expect(svg.querySelector('text.pk-sel-label')!.textContent).toBe('Nokta 1');

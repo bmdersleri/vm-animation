@@ -19,7 +19,7 @@ export interface PointKindsSpec {
   order?: readonly number[];
   /** Dashed circle of radius r (data units) around a point. */
   eps?: { center: number; r: number } | null;
-  /** Thin navy rings on these points (the selected point itself is skipped). */
+  /** Thin, light navy rings under these points (the selected point itself is skipped). */
   neighbours?: readonly number[];
   /** Dashed accent ring on one point, e.g. the core a border point hangs on. */
   via?: number | null;
@@ -61,8 +61,9 @@ export class PointKindsLayer {
     this.clip = this.root.append('clipPath').attr('id', id).append('rect');
     const sub = (c: string): G => this.root.append('g').attr('class', c) as unknown as G;
     this.gEps = sub('pk-eps-g').attr('clip-path', `url(#${id})`);
-    this.gPoints = sub('pk-points');
+    // Neighbour rings lie under the points, so in a dense neighbourhood they never cover the chosen point.
     this.gNbr = sub('pk-nbrs');
+    this.gPoints = sub('pk-points');
     this.gSel = sub('pk-sel-g');
     this.scales = fitEqualAspect(domain, this.rect);
   }
@@ -122,12 +123,12 @@ export class PointKindsLayer {
       .attr('r', (d) => r1(Math.abs(x((d as NonNullable<typeof e>).r) - x(0))))
       .attr('data-r', (d) => (d as NonNullable<typeof e>).r);
 
-    // neighbour rings
+    // neighbour rings: thin and light, just outside the dot
     const nbr = (s.neighbours ?? []).filter((i) => s.points[i] && i !== s.selected);
     const nb = this.gNbr.selectAll<SVGCircleElement, number>('circle.pk-nbr').data(nbr);
     nb.exit().remove();
     nb.enter().append('circle').attr('class', 'pk-nbr').attr('fill', 'none').attr('stroke', NAVY)
-      .attr('stroke-width', 1.2).attr('r', R + 3)
+      .attr('stroke-width', 1).attr('stroke-opacity', 0.55).attr('r', R + 2)
       .merge(nb as never)
       .attr('data-i', (d) => d as number)
       .attr('cx', (d) => px(s.points[d as number])).attr('cy', (d) => py(s.points[d as number]));
