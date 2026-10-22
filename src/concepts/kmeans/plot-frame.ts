@@ -58,6 +58,7 @@ export class ClusterPlotFrame<L extends FrameLayer = ClusterScatterLayer> {
     const svg = select(svgEl);
     this.axes = new AxesLayer(svg.append('g').attr('class', 'axes'));
     const marks = svg.append('g').attr('class', `${prefix}-marks`).node()!;
+    // Without makeLayer the layer is a ClusterScatterLayer: the default only holds for L = ClusterScatterLayer.
     this.layer = opts.makeLayer ? opts.makeLayer(marks, this.domain) : (new ClusterScatterLayer(marks, this.domain) as unknown as L);
     this.probe = svg.append('text').attr('class', `${prefix}-probe`)
       .attr('visibility', 'hidden').attr('aria-hidden', 'true').node()!;

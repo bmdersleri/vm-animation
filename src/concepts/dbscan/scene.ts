@@ -16,7 +16,6 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const STEP_KMEANS = stepIndex(dbscanScenario, 'kmeans');
 const STEP_EPS = stepIndex(dbscanScenario, 'eps');
 const STEP_CORE = stepIndex(dbscanScenario, 'cekirdek');
-const STEP_NOISE = stepIndex(dbscanScenario, 'gurultu');
 const STEP_KINDS = stepIndex(dbscanScenario, 'turler');
 const STEP_SPREAD = stepIndex(dbscanScenario, 'yayilma');
 const STEP_KDIST = stepIndex(dbscanScenario, 'k-uzaklik');
@@ -108,6 +107,7 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
     if (countTimer !== null) clearInterval(countTimer);
     countTimer = null;
     counted = null;
+    panel.setAttribute('aria-live', 'polite');
   };
 
   /** Neighbours of the selected point, nearest first, so the count-up ripples outwards. */
@@ -223,7 +223,8 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
       const reached = spreading ? Math.min(reachedCount(r.order.length + kindCounts(r).noise, params.spread), r.order.length) : r.order.length;
       if (spreading) {
         panel.append(row('Renklenen', `${reached} / ${r.order.length}`, { 'data-spread': String(params.spread) }));
-      } else {
+      }
+      if (!spreading || params.spread >= 1) {
         const counts = el('p', 'db-counts', countsText(r));
         counts.setAttribute('data-counts', '');
         panel.append(counts);
@@ -277,6 +278,8 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
     if (s.index !== STEP_EPS || p === null || reducedMotion()) return;
     const total = compute(s.params.eps, s.params.minSamples).neighbours[p].length;
     counted = 0;
+    // The count-up is silent for screen readers; the panel announces once, with the final count.
+    panel.setAttribute('aria-live', 'off');
     countTimer = setInterval(() => {
       counted = (counted ?? 0) + 1;
       if (counted >= total) stopCount();

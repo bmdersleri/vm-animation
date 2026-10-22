@@ -12,8 +12,8 @@ import { CLUSTER } from '../../../src/core/plot/marks';
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); document.body.replaceChildren(); });
 
 // jsdom cannot interpolate SVG transforms, so d3 transitions are switched off (reduced motion) for every test.
-const setup = (mode: 'ders' | 'lab' = 'ders') => {
-  vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q }));
+const setup = (mode: 'ders' | 'lab' = 'ders', reduce = true) => {
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: reduce && q.includes('reduce'), media: q }));
   const player = new StepPlayer<DbscanParams>(dbscanScenario);
   const host = document.createElement('div');
   document.body.append(host);
@@ -177,6 +177,57 @@ describe('dbscan scene', () => {
     const root = host.querySelector('.db-scene')!;
     expect(root.getAttribute('data-mode')).toBe('lab');
     expect([...root.children].map((c) => c.className)).toEqual(['db-plot-host', 'db-panel']);
+    fin(scene, player);
+  });
+
+  it('step 3 counts the neighbours nearest-first, a param change shows the new state, destroy leaves no timers', () => {
+    vi.useFakeTimers();
+    const { player, host, scene } = setup('ders', false);
+    player.goto(2);
+    const total = base.neighbours[A].length;
+    const shown = () => Number(attr(host, '[data-neighbours]', 'data-neighbours'));
+    const rings = () => [...host.querySelectorAll('circle.pk-nbr')].map((c) => Number(c.getAttribute('data-i')));
+    expect(shown()).toBe(0);
+    expect(host.querySelector('.db-panel')!.getAttribute('aria-live')).toBe('off');
+    vi.advanceTimersByTime(60 * 4);
+    expect(shown()).toBe(4);
+    const first = rings();
+    vi.advanceTimersByTime(60 * 3);
+    expect(shown()).toBe(7);
+    expect(rings().slice(0, first.length)).toEqual(first);
+    // nearest first: the rings drawn so far are never farther than the ones still to come
+    const dist = (i: number) => Math.hypot(d.points[i][0] - d.points[A][0], d.points[i][1] - d.points[A][1]);
+    const drawn = new Set(rings());
+    const farthestDrawn = Math.max(...[...drawn].map(dist));
+    for (const j of base.neighbours[A]) if (!drawn.has(j) && j !== A) expect(dist(j)).toBeGreaterThanOrEqual(farthestDrawn - 1e-12);
+    // a param change mid-count shows the new state at once and stops the timer
+    player.setParam('eps', 0.1);
+    const r = dbscan(d.points, 0.1, d.meta.minSamples);
+    expect(shown()).toBe(r.neighbours[A].length);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(host.querySelector('.db-panel')!.getAttribute('aria-live')).toBe('polite');
+    // a fresh visit counts all the way to the data's number
+    player.goto(0);
+    player.goto(2);
+    vi.advanceTimersByTime(60 * (total + 2));
+    expect(shown()).toBe(total);
+    expect(vi.getTimerCount()).toBe(0);
+    // destroy mid-count leaves nothing running
+    player.goto(0);
+    player.goto(2);
+    vi.advanceTimersByTime(120);
+    scene.destroy();
+    player.destroy();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('step 8 end state also shows the counts line', () => {
+    const { player, host, scene } = setup();
+    player.goto(7);
+    player.setParam('spread', 0.5);
+    expect(host.querySelector('[data-counts]')).toBeNull();
+    player.setParam('spread', 1);
+    expect(text(host, '[data-counts]')).toBe(countsText(base));
     fin(scene, player);
   });
 

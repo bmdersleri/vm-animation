@@ -134,6 +134,3 @@
   .db-kd-host { flex: none; height: clamp(120px, 22vh, 200px); min-height: 0; }
 }
 .db-scene[data-mode="lab"] .db-kd-host { flex: none; height: clamp(120px, 22vh, 200px); min-height: 0; }
-
-/* Lab controls (Task 4) */
-.db-plot circle.pk-point { cursor: pointer; }
