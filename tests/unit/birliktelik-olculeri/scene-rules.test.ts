@@ -5,7 +5,8 @@ import { mountBirliktelikOlculeriScene } from '../../../src/concepts/birliktelik
 import { birliktelikOlculeriScenario, type BirliktelikOlculeriParams } from '../../../src/concepts/birliktelik-olculeri/scenario';
 import { sepetData } from '../../../src/concepts/birliktelik/data';
 import { itemName } from '../../../src/concepts/birliktelik/format';
-import { rules } from '../../../src/concepts/birliktelik/rules';
+import { rules, type Rule } from '../../../src/concepts/birliktelik/rules';
+import { isKept } from '../../../src/concepts/birliktelik-olculeri/scene-rules';
 
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); document.body.replaceChildren(); });
 
@@ -71,6 +72,25 @@ describe('birliktelik-olculeri rule scatter', () => {
     expect(host.querySelectorAll('.bk-rule-label')).toHaveLength(2);
     expect(host.querySelector<SVGGElement>('g.bk-rule-pt[data-key="ekmek>sut"]')!.dataset.dim).toBe('true');
     fin(scene, player);
+  });
+
+  it('the top label sits beside its point, at the height of the point', () => {
+    const { player, host, scene } = setup();
+    // the 1280 x 720 stage: the plot is wide enough for a side label
+    scene.resize(1280, 720);
+    player.goto(9);
+    const top = host.querySelector('.bk-rule-label.top')!;
+    const g = pts(host)[0];
+    const [px, py] = g.getAttribute('transform')!.match(/-?[\d.]+/g)!.map(Number);
+    expect(Math.abs(Number(top.getAttribute('y')) - (py + 0.35 * 16))).toBeLessThanOrEqual(1);
+    // beside, not above or below: the text starts right of the marker or ends left of it
+    const x = Number(top.getAttribute('x'));
+    expect(top.getAttribute('text-anchor') === 'start' ? x > px : x < px).toBe(true);
+    fin(scene, player);
+  });
+
+  it('the lift filter at "kapalı" keeps even a lift below 0,5', () => {
+    expect(isKept({ lift: 0.3 } as Rule, 0)).toBe(true);
   });
 
   it('the two labels do not overlap', () => {

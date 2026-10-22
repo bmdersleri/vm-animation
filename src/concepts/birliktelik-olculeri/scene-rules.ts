@@ -236,7 +236,14 @@ export function mountRuleScatter(host: HTMLElement, onPick: (rule: Rule) => void
     for (const rule of labelled) {
       const p = pos.get(ruleKey(rule))!;
       const text = ruleText(rule);
-      const o = chooseOffset({ x: p.x, y: p.y, chars: text.length, cands: offsets(p.r + 4, 4, fs), fs, taken, area });
+      // Side placements at the point's own height come first: a label centred above or below a point can read
+      // as belonging to a neighbour at another height.
+      const cands = [
+        { dx: p.r + 6, dy: 0.35 * fs, anchor: 'start' as Anchor },
+        { dx: -(p.r + 6), dy: 0.35 * fs, anchor: 'end' as Anchor },
+        ...offsets(p.r + 4, 4, fs),
+      ];
+      const o = chooseOffset({ x: p.x, y: p.y, chars: text.length, cands, fs, taken, area });
       gLabels.append('text').attr('class', rule === topRule ? 'bk-rule-label top' : 'bk-rule-label')
         .attr('x', r1(p.x + o.dx)).attr('y', r1(p.y + o.dy)).attr('text-anchor', o.anchor)
         .attr('fill', NAVY).attr('font-weight', 700).attr('stroke', WHITE).attr('stroke-width', 3).attr('paint-order', 'stroke').text(text);
