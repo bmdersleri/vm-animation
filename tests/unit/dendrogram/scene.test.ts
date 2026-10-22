@@ -69,12 +69,68 @@ describe('dendrogram scene', () => {
     player.goto(3);
     expect(text(host, '[data-sse]')).toContain('0,085');
     expect(attr(host, '[data-sse]', 'data-sse')).toBe(String(D.wardExample.increase));
-    expect(host.querySelectorAll('path.dg-branch')).toHaveLength(D.wardExample.merge + 1);
+    // the tree is not rewound; the example merge is the highlighted one
+    expect(host.querySelectorAll('path.dg-branch')).toHaveLength(8);
     expect(host.querySelector('path.dg-branch[data-state="highlight"]')!.getAttribute('data-merge')).toBe(String(D.wardExample.merge + 1));
     // another linkage has no Ward sum of squares
     player.setParam('linkage', 'single');
     expect(host.querySelector('[data-sse]')).toBeNull();
     fin(scene, player);
+  });
+
+  it('step 4 highlights the example merge, not the newest', () => {
+    const { player, host, scene } = setup();
+    player.goto(3);
+    const m = D.wardExample.merge + 1;
+    expect(host.querySelectorAll('path.dg-branch[data-state="highlight"]')).toHaveLength(1);
+    expect(attr(host, 'path.dg-branch[data-state="highlight"]', 'data-merge')).toBe(String(m));
+    expect(attr(host, '[data-merges]', 'data-merges')).toBe('8');
+    expect(attr(host, '[data-k]', 'data-k')).toBe(String(n - 8));
+    expect(text(host, '[data-merge-text]')).toBe(mergeInfo('ward', m).text);
+    expect(attr(host, 'path.dg-hull[data-merge]', 'data-merge')).toBe(String(m));
+    // another linkage, or too few merges, falls back to the newest merge
+    player.setParam('linkage', 'single');
+    expect(attr(host, 'path.dg-branch[data-state="highlight"]', 'data-merge')).toBe('8');
+    expect(text(host, '[data-merge-text]')).toBe(mergeInfo('single', 8).text);
+    player.setParams({ linkage: 'ward', merges: D.wardExample.merge });
+    expect(attr(host, 'path.dg-branch[data-state="highlight"]', 'data-merge')).toBe(String(D.wardExample.merge));
+    fin(scene, player);
+  });
+
+  it('step 10 names the drawn tree and marks its row', () => {
+    const { player, host, scene } = setup();
+    player.goto(9);
+    const cap = host.querySelector('.dg-tree-caption[data-tree-linkage="ward"]') as HTMLElement;
+    expect(cap).not.toBeNull();
+    expect(cap.hidden).toBe(false);
+    expect(cap.textContent).toBe('Çizilen ağaç: Ward');
+    expect(host.querySelector('.dg-tree-host')!.contains(cap)).toBe(true);
+    const cur = host.querySelectorAll('.dg-table tr[aria-current="true"]');
+    expect(cur).toHaveLength(1);
+    expect(cur[0].getAttribute('data-row')).toBe('ward');
+    player.goto(7);
+    expect((host.querySelector('.dg-tree-caption') as HTMLElement).hidden).toBe(true);
+    fin(scene, player);
+  });
+
+  it('root view names the table step', () => {
+    const { player, host, scene } = setup();
+    const root = host.querySelector('.dg-scene') as HTMLElement;
+    for (let i = 0; i < 10; i++) {
+      player.goto(i);
+      expect(root.dataset.view).toBe(i === 9 ? 'table' : 'trees');
+    }
+    fin(scene, player);
+  });
+
+  it('destroy removes both click listeners', () => {
+    const { player, host, scene } = setup();
+    const svgs = [...host.querySelectorAll('svg.dg-scatter, svg.dg-tree')];
+    expect(svgs).toHaveLength(2);
+    const spies = svgs.map((s) => vi.spyOn(s, 'removeEventListener'));
+    scene.destroy();
+    for (const spy of spies) expect(spy.mock.calls.filter((c) => c[0] === 'click')).toHaveLength(1);
+    player.destroy();
   });
 
   it('step 5 completes the tree: one cluster', () => {

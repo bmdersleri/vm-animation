@@ -66,7 +66,9 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
   treeSvg.setAttribute('class', 'dg-tree');
   treeSvg.setAttribute('role', 'img');
   treeSvg.setAttribute('aria-label', 'Dendrogram: yapraklar nokta numaraları, yükseklik birleşme uzaklığı');
-  treeHost.append(treeSvg);
+  const treeCaption = el('div', 'dg-tree-caption');
+  treeCaption.hidden = true;
+  treeHost.append(treeSvg, treeCaption);
   const panel = el('aside', 'dg-panel');
   panel.setAttribute('aria-live', 'polite');
   root.append(scatterHost, treeHost, panel);
@@ -95,7 +97,7 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
     return box;
   }
 
-  function table(): HTMLElement {
+  function table(drawn: string): HTMLElement {
     const t = el('table', 'dg-table');
     const head = t.createTHead().insertRow();
     for (const h of ['Bağlantı', 'İki kümenin uzaklığı ve ne zaman', '3 kümede boylar']) head.append(el('th', 'dg-th', h));
@@ -104,6 +106,7 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
       const tr = body.insertRow();
       tr.setAttribute('data-row', r.linkage);
       tr.setAttribute('data-sizes', r.sizes.join(' '));
+      if (r.linkage === drawn) tr.setAttribute('aria-current', 'true');
       const name = el('th', 'dg-rowname', LINKAGE_NAME[r.linkage]);
       name.scope = 'row';
       const info = el('td', 'dg-def');
@@ -113,13 +116,13 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
     return t;
   }
 
-  function drawPanel(s: PlayerState<DendrogramParams>, merges: number, k: number | null, cut: number | null): void {
+  function drawPanel(s: PlayerState<DendrogramParams>, merges: number, k: number | null, cut: number | null, focus: number | null): void {
     const { index, params } = s;
     panel.replaceChildren();
     const ld = D.linkages[params.linkage];
     if (index === STEP_TABLE) {
       // the table and the book code fill the panel; the counters would only crowd it
-      panel.append(table());
+      panel.append(table(params.linkage));
       const code = el('code', 'dg-code');
       code.textContent = ['linkage(X, method="ward")', 'AgglomerativeClustering(n_clusters=3, linkage="ward")'].join('\n');
       panel.append(code);
@@ -138,7 +141,7 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
       panel.append(el('p', 'dg-note', 'Ölçekleme yok: iki özellik de aynı birimde, uzaklıklar doğrudan karşılaştırılır.'));
     }
     if (k === null && merges >= 1) {
-      const m = el('p', 'dg-merge-text', mergeInfo(params.linkage, merges).text);
+      const m = el('p', 'dg-merge-text', mergeInfo(params.linkage, focus !== null ? focus + 1 : merges).text);
       m.setAttribute('data-merge-text', '');
       panel.append(m);
     }
@@ -216,12 +219,20 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
     const cut = k === null ? null : cutForK(ld, k);
     const labels = k === null ? null : ld.cuts[k - 1].labels;
     root.dataset.step = String(index);
+    root.dataset.view = index === STEP_TABLE ? 'table' : 'trees';
+    treeCaption.hidden = index !== STEP_TABLE;
+    treeCaption.dataset.treeLinkage = params.linkage;
+    treeCaption.textContent = `Çizilen ağaç: ${LINKAGE_NAME[params.linkage]}`;
+    // A focused merge replaces "the newest merge" for the Ward example only, and only while it is drawn and no cut is.
+    const fm = params.focusMerge;
+    const focus = fm !== null && Number.isInteger(fm) && fm >= 0 && params.linkage === 'ward' && k === null && merges > fm ? fm : null;
     // Panel first: in the stacked layouts its height decides the plots' hosts, so they are measured after it.
-    drawPanel(s, merges, k, cut);
+    drawPanel(s, merges, k, cut, focus);
     frame.layout(mode, size);
     layoutTree(axisTopOf(params.linkage));
 
-    const newest = k === null && merges > 0 ? bs[merges - 1] : null;
+    const newest = focus !== null ? bs[focus] : k === null && merges > 0 ? bs[merges - 1] : null;
+    const newestMerge = focus !== null ? focus + 1 : merges;
     const hulls: Hull[] = [];
     if (labels) {
       const groups = new Map<number, number[]>();
@@ -231,7 +242,7 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
       for (const c of clustersAfter(ld, N, merges)) {
         if (c.length > 1 && !(newest && c.length === newest.members.length && c[0] === newest.members[0])) hulls.push({ members: c, kind: 'group', colour: NAVY });
       }
-      if (newest) hulls.push({ members: newest.members, kind: 'merge', colour: ACCENT, merge: merges });
+      if (newest) hulls.push({ members: newest.members, kind: 'merge', colour: ACCENT, merge: newestMerge });
     }
     const point = params.point !== null && params.point >= 0 && params.point < N ? params.point : null;
     if (picked && (picked.step !== index || picked.linkage !== params.linkage || picked.point !== point || picked.merge >= merges)) picked = null;
@@ -245,7 +256,7 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
       leafX: leafX(ld),
       leafLabels: LEAF_LABELS,
       shown: merges,
-      highlight: newest ? merges - 1 : picked ? picked.merge : null,
+      highlight: newest ? newestMerge - 1 : picked ? picked.merge : null,
       cut,
       colourOf: labels ? (p) => CLUSTER[labels[p] % CLUSTER.length] : undefined,
       selectedLeaf: point,
@@ -279,8 +290,12 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
     if (s.params.point !== null) player.setParams({ point: null });
     else render(s, false);
   };
+  const onTreeClick = (e: Event): void => {
+    if ((e.target as Element | null)?.closest('g.dg-leaf')) onPoint(e);
+    else onBranch(e);
+  };
   scatterSvg.addEventListener('click', onPoint);
-  treeSvg.addEventListener('click', (e) => { if ((e.target as Element | null)?.closest('g.dg-leaf')) onPoint(e); else onBranch(e); });
+  treeSvg.addEventListener('click', onTreeClick);
 
   const unsubscribe = player.subscribe((s, cause) => render(s, rendered && cause !== 'param'));
   render(player.state, false);
@@ -302,6 +317,8 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
     destroy(): void {
       destroyed = true;
       unsubscribe();
+      scatterSvg.removeEventListener('click', onPoint);
+      treeSvg.removeEventListener('click', onTreeClick);
       frame.destroy();
       tree.destroy();
       root.remove();
