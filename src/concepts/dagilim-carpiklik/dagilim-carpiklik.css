@@ -99,13 +99,48 @@
 .dag-plot .mark.mean .mark-label { fill: #a85a00; }
 .dag-plot .mark.median .mark-label { fill: var(--navy); }
 
-/* log axis note ("1p"): the ticks are log1p values */
+/* log axis note ("1p · log1p"): the ticks are log1p values */
 .dag-plot .log-note {
   font-size: var(--fs-tick);
   font-weight: 700;
   fill: #a85a00;
   font-variant-numeric: tabular-nums;
 }
+
+/* drag handle around the outlier dot at the tail step */
+.dag-plot .drag-handle {
+  fill: transparent;
+  stroke: var(--orange);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+  cursor: grab;
+  touch-action: none;
+}
+.dag-plot .drag-handle:active { cursor: grabbing; stroke-dasharray: none; }
+
+/* step 9: three rule cards in the histogram's place, links under them */
+.dag-plot .rule-box {
+  fill: var(--surface);
+  stroke: var(--navy);
+  stroke-width: 2;
+}
+.dag-plot .rule-title {
+  font-size: var(--fs-axis);
+  font-weight: 700;
+  fill: var(--navy);
+}
+.dag-plot .rule-body {
+  font-size: var(--fs-tick);
+  fill: var(--navy);
+}
+.dag-plot a.rule-link { cursor: pointer; }
+.dag-plot .rule-link-text {
+  font-size: var(--fs-axis);
+  font-weight: 600;
+  fill: var(--navy);
+  text-decoration: underline;
+}
+.dag-plot a.rule-link:hover .rule-link-text { fill: var(--orange); }
 
 /* ---------- parameter panel (controls.ts) ---------- */
 .dag-params { display: grid; gap: 8px; }

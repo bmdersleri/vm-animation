@@ -4,6 +4,7 @@ import { StepPlayer } from '../../../src/core/player';
 import { dagilimScenario, type DagilimParams } from '../../../src/concepts/dagilim-carpiklik/scenario';
 import { mountDagilimScene } from '../../../src/concepts/dagilim-carpiklik/scene';
 import { HistLayer, MS_STEP } from '../../../src/concepts/dagilim-carpiklik/scene-hist';
+import { mountDagilimParams } from '../../../src/concepts/dagilim-carpiklik/controls';
 import { deriveDagilimView } from '../../../src/concepts/dagilim-carpiklik/view';
 import { countSubpaths } from '../../../src/core/plot/dots-path';
 import type { Mode } from '../../../src/core/mode';
@@ -54,6 +55,18 @@ const labels = (el: Element): string[] => all(el, 'text.mark-label').map(text);
 const tickNumbers = (el: Element): number[] =>
   all(el, 'svg.dag-plot g.tick text').map((t) => Number(text(t).replace('−', '-').replace(',', '.')));
 const barPath = (el: Element): string => one(el, 'path.hist-bar').getAttribute('d') ?? '';
+const Ev = (): typeof MouseEvent => (window.PointerEvent ?? MouseEvent) as typeof MouseEvent;
+const fire = (target: Element, kind: string, x: number): void => {
+  const C = Ev();
+  target.dispatchEvent(new C(kind, { clientX: x, clientY: 60, bubbles: true }));
+};
+/** x of the tick whose label is `label`, read from the number line's own transform. */
+const tickX = (el: Element, label: string): number => {
+  const g = all(el, 'svg.dag-plot g.tick').find((t) => text(t.querySelector('text')) === label);
+  if (!g) throw new Error(`missing tick ${label}`);
+  const m = /translate\(\s*(-?[\d.]+)/.exec(g.getAttribute('transform') ?? '');
+  return Number(m![1]);
+};
 
 describe('dagilim scene', () => {
   it('mounts .dag-scene with svg.dag-plot, one dots path and the formula strip', () => {
@@ -73,6 +86,7 @@ describe('dagilim scene', () => {
   it('step 2: one path.hist-bar with five closed bars', () => {
     const { el, player } = setup();
     player.goto(1);
+    expect(all(el, 'path.hist-bar')).toHaveLength(1);
     const d = barPath(el);
     expect(countSubpaths(d)).toBe(5);
     // every subpath is closed: one "Z" per bar
@@ -80,6 +94,17 @@ describe('dagilim scene', () => {
     expect(view(1).bins.map((b) => b.count)).toEqual([4, 2, 2, 1, 1]);
     // the tallest bar belongs to the first bin
     expect(all(el, 'text.bar-count').map(text)).toEqual(['4', '2', '2', '1', '1']);
+  });
+
+  it('keeps exactly one hist-bar while the bin count is swept', () => {
+    const { el, player } = setup();
+    player.goto(1);
+    for (const b of [10, 3, 5] as const) {
+      player.setParam('bins', b);
+      expect(all(el, 'path.hist-bar')).toHaveLength(1);
+      expect(countSubpaths(barPath(el))).toBe(b);
+      expect(all(el, 'text.bar-count')).toHaveLength(b);
+    }
   });
 
   it('step 5: three bins give three bars', () => {
@@ -134,6 +159,52 @@ describe('dagilim scene', () => {
     expect(labels(el)).toEqual(['13,6', '8,5']);
   });
 
+  it('step 7: pointer-dragging the outlier along the number line writes the extreme', () => {
+    const { el, player } = setup();
+    const paramsHost = document.createElement('div');
+    document.body.append(paramsHost);
+    mountDagilimParams(paramsHost, player);
+    player.goto(6);
+    const handle = one(el, 'circle.drag-handle');
+    const x60 = tickX(el, '60');
+    fire(handle, 'pointerdown', tickX(el, '30'));
+    fire(handle, 'pointermove', tickX(el, '40'));
+    expect(player.state.params.extreme).toBe(40);
+    fire(handle, 'pointermove', x60);
+    fire(handle, 'pointerup', x60);
+    expect(player.state.params.extreme).toBe(60);
+    expect(labels(el)).toEqual(['13,6', '8,5']);
+    // the live value is published for the e2e and the range input follows the player state
+    expect(one(el, 'svg.dag-plot').getAttribute('data-drag')).toBe('60');
+    expect(paramsHost.querySelector<HTMLInputElement>('input[data-param=extreme]')!.value).toBe('60');
+    // step 8 has no draggable outlier
+    player.goto(7);
+    expect(el.querySelector('circle.drag-handle')).toBeNull();
+    expect(one(el, 'svg.dag-plot').hasAttribute('data-drag')).toBe(false);
+  });
+
+  it('a step change stops an in-flight drag', () => {
+    const { el, player } = setup();
+    player.goto(6);
+    const handle = one(el, 'circle.drag-handle');
+    fire(handle, 'pointerdown', tickX(el, '30'));
+    player.goto(7);
+    fire(handle, 'pointermove', 1200);
+    expect(player.state.params.extreme).toBe(28);
+  });
+
+  it('step 9: three rule cards and the two in-scene links, absent on step 8', () => {
+    const { el, player } = setup();
+    player.goto(8);
+    expect(all(el, 'g.rule')).toHaveLength(3);
+    expect(all(el, 'g.rule text.rule-title').map(text)).toHaveLength(3);
+    expect(all(el, 'g.rule text.rule-body').map(text).every((t) => t.length > 10)).toBe(true);
+    expect(all(el, 'a').map((a) => a.getAttribute('href'))).toEqual(['../kutu-grafigi/', '../iqr-aykiri/']);
+    player.goto(7);
+    expect(all(el, 'g.rule')).toHaveLength(0);
+    expect(all(el, 'a')).toHaveLength(0);
+  });
+
   it('log step: ticks are log1p values and the axis carries the 1p note', () => {
     const { el, player } = setup();
     player.goto(5);
@@ -144,7 +215,7 @@ describe('dagilim scene', () => {
       expect(t).toBeLessThan(4);
     }
     expect(text(one(el, 'svg.dag-plot text.axis-title'))).toContain('log1p');
-    expect(text(one(el, 'svg.dag-plot text.log-note'))).toBe('1p');
+    expect(text(one(el, 'svg.dag-plot text.log-note'))).toBe('1p · log1p');
     // raw step: hourly ticks, no note
     player.goto(1);
     expect(Math.max(...tickNumbers(el))).toBeGreaterThan(10);

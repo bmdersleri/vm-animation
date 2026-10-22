@@ -3,6 +3,7 @@ import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
 import { renderStrip } from '../../core/plot/strip';
 import type { DagilimParams } from './scenario';
+import { EXTREME_STEPS } from './scenario';
 import { deriveDagilimView } from './view';
 import { HistLayer, MS_STEP } from './scene-hist';
 
@@ -34,6 +35,8 @@ export function mountDagilimScene(
   el.append(scene);
 
   const layer = new HistLayer(plotHost);
+  // the outlier drag writes the same param the range input does, so both stay in sync
+  layer.onDrag((x) => player.setParam('extreme', x));
 
   let mode = initialMode;
   let size: { w: number; h: number } | null = null;
@@ -61,7 +64,7 @@ export function mountDagilimScene(
     renderStrip(strip, v.strip);
     const a = area();
     layer.resize(a.w, a.h, mode);
-    layer.update(v, ms);
+    layer.update(v, ms, EXTREME_STEPS.includes(state.index));
     rendered = true;
   }
 
