@@ -1,0 +1,110 @@
+/* Apriori and FP-Growth lesson. Text sizes come only from the --fs-* tokens. */
+.ap-scene {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--ap-aside, 230px);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "head head" "main aside";
+  gap: calc(var(--gap) * 0.6) var(--gap);
+  padding: 4px 8px;
+  font-family: var(--font);
+  color: var(--navy);
+}
+.ap-head { grid-area: head; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 24px; }
+.ap-threshold,
+.ap-counters { margin: 0; font-size: var(--fs-body); font-weight: 700; font-variant-numeric: tabular-nums; }
+.ap-counters { display: flex; flex-wrap: wrap; gap: 2px 20px; }
+.ap-lattice-host,
+.ap-fp-slot { grid-area: main; position: relative; min-width: 0; min-height: 0; }
+.ap-scene[data-view="fptree"] .ap-lattice-host,
+.ap-scene[data-view="fptree"] .ap-counters { display: none; }
+.ap-scene[data-view="lattice"] .ap-fp-slot { display: none; }
+.ap-scene[data-layout="narrow"] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "head" "main" "aside";
+}
+
+/* Lattice: boxes are placed by scene-lattice.ts. */
+.ap-lattice { position: absolute; top: 0; left: 0; width: 100%; font-variant-numeric: tabular-nums; }
+.ap-level { position: absolute; left: 0; display: flex; align-items: center; font-size: var(--fs-tick); color: var(--muted); white-space: nowrap; }
+.ap-node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 2px solid var(--navy);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--navy);
+  font-size: var(--fs-tick);
+  line-height: 1.05;
+}
+.ap-abbr { font-weight: 700; letter-spacing: 0; }
+.ap-sub { min-height: 1.05em; }
+.ap-node[data-state="unseen"],
+.ap-swatch[data-state="unseen"] { opacity: 0.38; border-style: dashed; border-color: var(--muted); }
+.ap-node[data-state="candidate"],
+.ap-swatch[data-state="candidate"] { border-width: 4px; border-color: #a85a00; background: #fbe5c8; color: #7a4300; }
+.ap-node[data-state="frequent"],
+.ap-swatch[data-state="frequent"] { background: var(--navy); color: #fff; }
+.ap-node[data-state="infrequent"],
+.ap-swatch[data-state="infrequent"] { background: var(--surface); color: var(--muted); }
+.ap-node[data-state="infrequent"] .ap-abbr { text-decoration: line-through; text-decoration-thickness: 2px; }
+.ap-node[data-state="pruned"],
+.ap-swatch[data-state="pruned"] {
+  border-color: var(--muted);
+  border-style: dotted;
+  color: var(--muted);
+  background: repeating-linear-gradient(135deg, #e8edf3 0, #e8edf3 4px, var(--surface) 4px, var(--surface) 8px);
+}
+
+/* Legend, letters and prune reasons. */
+.ap-aside {
+  grid-area: aside;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  align-self: start;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--gap) * 0.5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: calc(var(--gap) * 0.6) calc(var(--gap) * 0.9);
+  font-size: var(--fs-tick);
+  line-height: 1.2;
+}
+.ap-letters { margin: 0; display: flex; flex-wrap: wrap; gap: 0 12px; color: var(--muted); }
+.ap-letter { white-space: nowrap; }
+.ap-key,
+.ap-notes { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; }
+.ap-key-item { display: flex; align-items: center; gap: 8px; }
+.ap-swatch { flex: none; box-sizing: border-box; width: 1.6em; height: 1em; border: 2px solid var(--navy); border-radius: 4px; }
+.ap-notes:empty { display: none; }
+.ap-note { padding-left: 8px; border-left: 4px solid var(--muted); }
+.ap-scene[data-layout="narrow"] .ap-aside { flex-direction: row; flex-wrap: wrap; align-self: stretch; max-height: none; column-gap: 16px; }
+.ap-scene[data-layout="narrow"] .ap-key { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.ap-scene[data-layout="narrow"] .ap-notes { flex-basis: 100%; }
+
+@media (max-width: 900px) {
+  .ap-scene,
+  .ap-scene[data-layout] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    grid-template-areas: "head" "main" "aside";
+    /* grows with the lattice; the stage scrolls instead of squeezing the rows */
+    position: relative;
+    inset: auto;
+    min-height: 100%;
+    align-content: start;
+  }
+  .ap-lattice-host { min-height: 340px; }
+  .ap-aside { align-self: stretch; max-height: none; }
+}

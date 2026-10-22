@@ -29,6 +29,7 @@ export default defineConfig({
         'dbscan': resolve(root, 'dbscan/index.html'),
         'dendrogram': resolve(root, 'dendrogram/index.html'),
         'birliktelik-olculeri': resolve(root, 'birliktelik-olculeri/index.html'),
+        'apriori': resolve(root, 'apriori/index.html'),
       },
     },
   },
