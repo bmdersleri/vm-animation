@@ -65,7 +65,7 @@ def onehot():
     return pd.DataFrame(te.fit(TX).transform(TX), columns=te.columns_)
 
 
-def sets_of(df, count):
+def sets_of(df):
     return {key(s): int(round(sup * N)) for s, sup in zip(df["itemsets"], df["support"])}
 
 
@@ -89,8 +89,8 @@ def generate():
     frequent = {}
     for k in range(1, N + 1):
         ms = k / N
-        a = sets_of(apriori(df, min_support=ms, use_colnames=True), k)
-        f = sets_of(fpgrowth(df, min_support=ms, use_colnames=True), k)
+        a = sets_of(apriori(df, min_support=ms, use_colnames=True))
+        f = sets_of(fpgrowth(df, min_support=ms, use_colnames=True))
         if a != f:
             fail(f"apriori != fpgrowth at min count {k}")
         direct = {s for s, c in a.items() if c >= k}
@@ -99,7 +99,7 @@ def generate():
         frequent[str(k)] = a
     # min_support 0.5 / 0.3 / 0.2 / 0.15 -> min counts 9 / 6 / 4 / 3
     for ms, want in [(0.5, 4), (0.3, 7), (0.2, 12), (0.15, 16)]:
-        got = len(sets_of(apriori(df, min_support=ms, use_colnames=True), 0))
+        got = len(sets_of(apriori(df, min_support=ms, use_colnames=True)))
         if got != want:
             fail(f"min_support {ms}: {got} sets, book says {want}")
     rules = rules_of(df, 0.2, 0.5)

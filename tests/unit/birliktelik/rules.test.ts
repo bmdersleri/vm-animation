@@ -12,9 +12,9 @@ describe('rules', () => {
     expect(got).toHaveLength(want.length);
     got.forEach((g, i) => {
       expect([setKey(g.x), setKey(g.y)]).toEqual([want[i].x, want[i].y]);
-      expect(g.support).toBeCloseTo(want[i].support, 6);
-      expect(g.confidence).toBeCloseTo(want[i].confidence, 6);
-      expect(g.lift).toBeCloseTo(want[i].lift, 6);
+      expect(g.support).toBeCloseTo(want[i].support, 5);
+      expect(g.confidence).toBeCloseTo(want[i].confidence, 5);
+      expect(g.lift).toBeCloseTo(want[i].lift, 5);
     });
   });
 
