@@ -134,3 +134,15 @@
   .db-kd-host { flex: none; height: clamp(120px, 22vh, 200px); min-height: 0; }
 }
 .db-scene[data-mode="lab"] .db-kd-host { flex: none; height: clamp(120px, 22vh, 200px); min-height: 0; }
+
+/* Lab controls */
+.db-params { display: grid; gap: 8px; font-size: var(--fs-tick); }
+.db-params [hidden] { display: none; }
+.db-params .ctl { display: grid; gap: 4px; }
+.db-params label { font-weight: 600; }
+.db-params .range { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; }
+.db-out { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 8em; }
+.db-pick input { font: inherit; width: 7em; padding: 2px 6px; }
+.db-pick-hint { color: var(--muted); }
+.db-params :focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.db-plot g.pk-point { cursor: pointer; }

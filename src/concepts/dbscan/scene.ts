@@ -287,6 +287,16 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
     }, COUNT_MS);
   };
 
+  // Steps 3-8: a click on a point selects it (the Lab number input does the same).
+  const onClick = (e: Event): void => {
+    const t = (e.target as Element | null)?.closest('g.pk-point');
+    const s = player.state;
+    if (!t || s.index < STEP_EPS || s.index > STEP_SPREAD) return;
+    const i = Number(t.getAttribute('data-i'));
+    if (Number.isInteger(i) && i >= 0 && i < n) player.setParams({ point: i });
+  };
+  svgEl.addEventListener('click', onClick);
+
   const unsubscribe = player.subscribe((s: PlayerState<DbscanParams>, cause: ChangeCause) => {
     if (cause === 'step') startCount(s);
     else if (cause === 'param') stopCount();
@@ -313,6 +323,7 @@ export function mountDbscanScene(host: HTMLElement, player: StepPlayer<DbscanPar
       destroyed = true;
       stopCount();
       unsubscribe();
+      svgEl.removeEventListener('click', onClick);
       frame.destroy();
       kdChart.destroy();
       root.remove();

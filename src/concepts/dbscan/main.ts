@@ -2,6 +2,7 @@ import '../../core/theme.css';
 import './dbscan.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
 import { dbscanScenario, type DbscanParams } from './scenario';
+import { mountDbscanParams } from './controls';
 import { mountDbscanScene } from './scene';
 
 export const dbscanPage: ConceptPage<DbscanParams> = {
@@ -9,8 +10,7 @@ export const dbscanPage: ConceptPage<DbscanParams> = {
   chapter: 'Bölüm 7 · Kümeleme Analizi',
   scenario: dbscanScenario,
   mountScene: mountDbscanScene,
-  // Task 4 replaces this with the Lab controls (eps, min_samples, point picker).
-  mountParams: () => {},
+  mountParams: mountDbscanParams,
 };
 
 const app = document.querySelector<HTMLElement>('#app');
