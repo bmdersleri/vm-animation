@@ -240,11 +240,22 @@ describe('dagilim scene', () => {
     expect(labs.some((t) => t.includes('–'))).toBe(true);
     expect(labs.some((t) => !t.includes('–'))).toBe(true);
     expect(labs[0]).toBe('8–10,2');
-    expect(labs[1]).toBe('10,2');
+    expect(labs[1]).toBe('≥ 10,2');
     // one label per bar at most, in bar order, none repeated
     const xs = all(el, 'text.bin-range').map((l) => Number(l.getAttribute('x')));
     expect(xs).toEqual([...xs].sort((a, b) => a - b));
     expect(new Set(xs).size).toBe(xs.length);
+  });
+
+  it('a lone lower bound reads as a bound (≥ lo), not as the bar centre value', () => {
+    const { el, player } = setup(0, [900, 540]);
+    player.goto(1);
+    player.setParam('bins', 10);
+    const labs = all(el, 'text.bin-range').map(text);
+    const short = labs.filter((t) => !t.includes('–'));
+    expect(short.length).toBeGreaterThan(0);
+    for (const t of short) expect(t).toMatch(/^≥ \d/);
+    expect(labs[1]).toBe('≥ 10,2');
   });
 
   it('a step change stops an in-flight drag', () => {

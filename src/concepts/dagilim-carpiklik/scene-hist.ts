@@ -269,12 +269,13 @@ export class HistLayer {
       .attr('opacity', (b: BarD) => (b.count > 0 ? 1 : 0));
 
     // ---- bin ranges under the baseline, decided per bar: the full range if it fits inside its own bar,
-    // else the lower bound alone, else nothing; a label never leaves its bar, so none touch another
+    // else the lower bound alone, else nothing; a label never leaves its bar, so none touch another.
+    // The lone lower bound carries "≥" (thin space), so it reads as a boundary, not as the bar's centre value.
     const fits = (t: string, b: BarD): boolean => this.measure.width(t, 'bin-range', L.tick) <= sc(b.hi) - sc(b.lo) - 4;
     const rangeText = (b: BarD): string => {
       const full = `${axisText(b.lo, v.log)}–${axisText(b.hi, v.log)}`;
       if (fits(full, b)) return full;
-      const short = axisText(b.lo, v.log);
+      const short = `≥ ${axisText(b.lo, v.log)}`;
       return fits(short, b) ? short : '';
     };
     const ranges = bars.filter((b) => rangeText(b) !== '');
