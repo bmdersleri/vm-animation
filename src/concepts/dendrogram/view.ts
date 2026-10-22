@@ -3,7 +3,6 @@ import { dendrogramData as D, type Linkage } from './data';
 import { branches, largestGap, type Branch } from './tree';
 
 const N = D.points.length;
-const LINKAGES: readonly Linkage[] = ['ward', 'complete', 'average', 'single'];
 
 const treeCache = new Map<Linkage, readonly Branch[]>();
 /** Branches of a linkage, computed once. */
@@ -67,7 +66,7 @@ export function cutSizes(linkage: Linkage, k: number): number[] {
 export const sizesText = (sizes: readonly number[]): string => sizes.join(' · ');
 
 /** How a named group is spread over the clusters of the 3-cluster cut: sizes, largest first (C: [3] whole, [2, 1] split). */
-export function splitOfGroup(linkage: Linkage, group: 'A' | 'B' | 'C' | 'zincir', k = 3): number[] {
+export function splitOfGroup(linkage: Linkage, group: 'A' | 'B' | 'C' | 'zincir', k = D.naturalK): number[] {
   const labels = D.linkages[linkage].cuts.find((c) => c.k === k)?.labels ?? [];
   const per = new Map<number, number>();
   for (const i of D.meta.groups[group]) per.set(labels[i], (per.get(labels[i]) ?? 0) + 1);
@@ -113,4 +112,3 @@ export function linkageRows(): LinkageRow[] {
 }
 
 export const LINKAGE_NAME: Readonly<Record<Linkage, string>> = { ward: 'Ward', complete: 'complete', average: 'average', single: 'single' };
-export const LINKAGE_LIST = LINKAGES;

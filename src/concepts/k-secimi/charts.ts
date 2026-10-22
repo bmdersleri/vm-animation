@@ -1,6 +1,6 @@
 import { select, type Selection } from 'd3-selection';
 import { scaleLinear } from 'd3-scale';
-import { FRAME, GRID, NAVY, WHITE, r1 } from '../../core/plot/marks';
+import { ACCENT, FRAME, GRID, NAVY, WHITE, r1 } from '../../core/plot/marks';
 import { tickFormat } from '../../core/plot/format';
 import type { Rect } from '../../core/plot/viewport';
 
@@ -14,7 +14,6 @@ export interface KLineSpec {
 export type MarkKind = 'elbow' | 'peak';
 
 const MARK_TEXT: Record<MarkKind, string> = { elbow: 'dirsek', peak: 'zirve' };
-const ACCENT = '#A85A00';
 
 type G = Selection<SVGGElement, unknown, null, undefined>;
 

@@ -2,9 +2,9 @@ import { select } from 'd3-selection';
 import { stepIndex, type PlayerState, type StepPlayer } from '../../core/player';
 import type { Mode } from '../../core/mode';
 import type { SceneHandle } from '../../core/shell';
-import { DendrogramLayer, ACCENT, type DendrogramSpec } from '../../core/plot/dendrogram';
+import { DendrogramLayer, type DendrogramSpec } from '../../core/plot/dendrogram';
 import { formatNumber } from '../../core/plot/format';
-import { CLUSTER, NAVY } from '../../core/plot/marks';
+import { ACCENT, CLUSTER, NAVY } from '../../core/plot/marks';
 import type { Domain } from '../../core/plot/viewport';
 import { ClusterPlotFrame } from '../kmeans/plot-frame';
 import { dendrogramData as D } from './data';
@@ -114,7 +114,6 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
   function drawPanel(s: PlayerState<DendrogramParams>, merges: number, k: number | null, cut: number | null): void {
     const { index, params } = s;
     panel.replaceChildren();
-    root.dataset.step = String(index);
     const ld = D.linkages[params.linkage];
     if (index === STEP_TABLE) {
       // the table and the book code fill the panel; the counters would only crowd it
@@ -167,7 +166,7 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
       const ul = el('ul', 'dg-compare');
       for (const l of ['ward', 'single'] as const) {
         const li = el('li', 'dg-compare-item');
-        const sizes = cutSizes(l, 3);
+        const sizes = cutSizes(l, D.naturalK);
         li.setAttribute('data-linkage', l);
         li.setAttribute('data-sizes', sizes.join(' '));
         if (params.linkage === l) li.setAttribute('aria-current', 'true');
@@ -207,6 +206,7 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
     const k = params.k !== null && Number.isInteger(params.k) && params.k >= 1 && params.k <= ld.cuts.length ? params.k : null;
     const cut = k === null ? null : cutForK(ld, k);
     const labels = k === null ? null : ld.cuts[k - 1].labels;
+    root.dataset.step = String(index);
     // Panel first: in the stacked layouts its height decides the plots' hosts, so they are measured after it.
     drawPanel(s, merges, k, cut);
     frame.layout(mode, size);

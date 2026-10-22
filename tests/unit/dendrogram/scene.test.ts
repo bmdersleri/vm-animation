@@ -189,4 +189,27 @@ describe('dendrogram scene', () => {
     player.destroy();
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  it('step 8 to 9 with motion on morphs the same branch elements and ends on single linkage', () => {
+    vi.useFakeTimers();
+    const { player, host, scene } = setup();
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q }));
+    player.goto(7);
+    vi.advanceTimersByTime(2000);
+    const before = [...host.querySelectorAll('path.dg-branch')];
+    expect(before).toHaveLength(n - 1);
+    player.goto(8);
+    vi.advanceTimersByTime(100);
+    player.goto(8);
+    vi.advanceTimersByTime(3000);
+    const after = [...host.querySelectorAll('path.dg-branch')];
+    expect(after).toHaveLength(n - 1);
+    after.forEach((p, i) => expect(p).toBe(before[i]));
+    expect(clusterOf(host)).toEqual(D.linkages.single.cuts[2].labels.map(String));
+    expect(attr(host, 'line.dg-cut', 'data-cut')).toBe(String(cutForK(D.linkages.single, 3)));
+    expect(host.querySelectorAll('g.dg-leaf')).toHaveLength(n);
+    fin(scene, player);
+    vi.advanceTimersByTime(3000);
+    expect(vi.getTimerCount()).toBe(0);
+  });
 });

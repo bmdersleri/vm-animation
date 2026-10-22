@@ -1,7 +1,7 @@
 import { select, type Selection } from 'd3-selection';
 import { scaleLinear, type ScaleLinear } from 'd3-scale';
 import { tickFormat, formatNumber } from './format';
-import { FRAME, GRID, NAVY, UNASSIGNED, WHITE, r1 } from './marks';
+import { ACCENT, FRAME, GRID, NAVY, UNASSIGNED, WHITE, r1 } from './marks';
 import { tr, type AnySel } from './transition';
 import type { Rect } from './viewport';
 
@@ -42,7 +42,6 @@ export interface DendrogramSpec {
   gap?: { low: number; high: number } | null;
 }
 
-export const ACCENT = '#A85A00';
 const MS = 450;
 const TR = 'dg';
 const TITLE = 'birleşme uzaklığı';
@@ -201,7 +200,19 @@ export class DendrogramLayer {
     const cAll = cBorn.merge(cl as never) as unknown as Sel<number>;
     const cutLine = cAll.select('line').attr('data-cut', (d) => d).attr('x1', plot.left).attr('x2', right);
     go(cutLine as unknown as AnySel).attr('y1', (d: number) => Y(d)).attr('y2', (d: number) => Y(d));
-    const cutLabel = cAll.select<SVGTextElement>('text').attr('x', r1(right - 6)).text((d) => `kesim ${formatNumber(d, 2)}`);
+    const cutText = (c: number): string => `kesim ${formatNumber(c, 2)}`;
+    // The label takes the rightmost stretch of the cut line that no branch stem crosses.
+    const labelX = (c: number): number => {
+      const w = cutText(c).length * tick * 0.62 + 8;
+      const stems: number[] = [];
+      for (const b of shown) {
+        if (b.yl <= c && c <= b.height) stems.push(X(b.xl));
+        if (b.yr <= c && c <= b.height) stems.push(X(b.xr));
+      }
+      for (let x = right - 6 - w; x >= plot.left + 4; x -= 6) if (stems.every((sx) => sx < x - 4 || sx > x + w + 4)) return r1(x);
+      return r1(right - 6 - w);
+    };
+    const cutLabel = cAll.select<SVGTextElement>('text').attr('text-anchor', 'start').attr('x', (d) => labelX(d)).text((d) => cutText(d));
     go(cutLabel as unknown as AnySel).attr('y', (d: number) => r1(Y(d) - 5));
 
     // leaves

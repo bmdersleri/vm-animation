@@ -1,6 +1,6 @@
 import { select, type Selection } from 'd3-selection';
 import { LABEL_FALLBACK_PX, chooseOffset, labelArea, offsets, type Box } from './label-place';
-import { CLUSTER, NAVY, UNASSIGNED, WHITE, r1 } from './marks';
+import { ACCENT, CLUSTER, NAVY, UNASSIGNED, WHITE, r1 } from './marks';
 import { tr, type AnySel } from './transition';
 import { fitEqualAspect, type Domain, type Rect, type Scales } from './viewport';
 
@@ -31,7 +31,6 @@ const R = 4;
 const ARM = 4;
 const MS = 450;
 const TR = 'pk';
-const ACCENT = '#A85A00';
 const CROSS = `M${-ARM},${-ARM}L${ARM},${ARM}M${-ARM},${ARM}L${ARM},${-ARM}`;
 const colour = (c: number | undefined): string => (c === undefined || c < 0 ? UNASSIGNED : CLUSTER[c % CLUSTER.length]);
 let clipId = 0;

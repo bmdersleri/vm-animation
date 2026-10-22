@@ -132,4 +132,47 @@ describe('DendrogramLayer', () => {
     layer.destroy();
     expect(svg.querySelectorAll('*')).toHaveLength(1);
   });
+
+  describe('with motion on', () => {
+    const live = () => {
+      const r = setup();
+      vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q }));
+      return r;
+    };
+
+    it('interrupts a running transition and settles on the last spec with stable counts', () => {
+      vi.useFakeTimers();
+      const { svg, layer } = live();
+      layer.update(spec(), true);
+      const count = () => svg.querySelectorAll('*').length;
+      vi.advanceTimersByTime(100);
+      const sl = D.linkages.single;
+      layer.resize(RECT, sl.merges[sl.merges.length - 1].height);
+      const before = svg.querySelector('path.dg-branch[data-merge="5"]');
+      layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
+      layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
+      vi.advanceTimersByTime(2000);
+      expect(svg.querySelector('path.dg-branch[data-merge="5"]')).toBe(before);
+      expect(svg.querySelectorAll('path.dg-branch')).toHaveLength(n - 1);
+      const settled = count();
+      layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), true);
+      vi.advanceTimersByTime(2000);
+      expect(count()).toBe(settled);
+      expect(svg.innerHTML).not.toMatch(/NaN|Infinity|undefined/);
+      layer.destroy();
+      vi.useRealTimers();
+    });
+
+    it('destroy in the middle of a transition leaves nothing running', () => {
+      vi.useFakeTimers();
+      const { svg, layer } = live();
+      layer.update(spec(), true);
+      vi.advanceTimersByTime(150);
+      expect(() => layer.destroy()).not.toThrow();
+      expect(() => vi.advanceTimersByTime(3000)).not.toThrow();
+      expect(svg.querySelectorAll('*')).toHaveLength(1);
+      expect(vi.getTimerCount()).toBe(0);
+      vi.useRealTimers();
+    });
+  });
 });

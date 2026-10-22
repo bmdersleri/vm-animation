@@ -24,7 +24,7 @@ const gap = largestGap(ward);
 const natural = D.naturalK;
 const ex = D.linkages.ward.merges;
 const sizesOf = (l: Linkage, k: number): string => sizesText(cutSizes(l, k));
-const desc = (l: Linkage): number[] => cutSizes(l, 3).sort((a, b) => b - a);
+const desc = (l: Linkage): number[] => cutSizes(l, natural).sort((a, b) => b - a);
 const plus = (xs: readonly number[]): string => xs.join(' + ');
 const kStep = 4;
 const lengthOf = (g: 'A' | 'B' | 'zincir'): number => D.meta.groups[g].length;
@@ -97,16 +97,16 @@ export const dendrogramScenario: Scenario<DendrogramParams> = {
     {
       id: 'single',
       title: 'Bağlantı değişince ağaç değişir',
-      text: `Aynı veriye single bağlantı: iki kümenin uzaklığı en yakın iki noktasının uzaklığıdır. Zincirin ${lengthOf('zincir')} noktası iki yığını alçak yükseklikte birbirine bağlar; ${natural} kümeye kesince iki yığın ve zincir tek küme olur (${chainJoined} nokta), üstteki ${D.meta.groups.C.length} noktalık yığın ${plus(splitOfGroup('single', 'C'))} diye bölünür. Ward'da boylar ${sizesOf('ward', 3)}, single'da ${sizesOf('single', 3)}.`,
+      text: `Aynı veriye single bağlantı: iki kümenin uzaklığı en yakın iki noktasının uzaklığıdır. Zincirin ${lengthOf('zincir')} noktası iki yığını alçak yükseklikte birbirine bağlar; ${natural} kümeye kesince iki yığın ve zincir tek küme olur (${chainJoined} nokta), ayrı kalan ${D.meta.groups.C.length} noktalık yığın ${plus(splitOfGroup('single', 'C'))} diye bölünür. Ward'da boylar ${sizesOf('ward', natural)}, single'da ${sizesOf('single', natural)}.`,
       term: 'zincirleme (chaining)',
-      params: { linkage: 'single', merges: last, k: 3, point: null },
+      params: { linkage: 'single', merges: last, k: natural, point: null },
     },
     {
       id: 'tablo',
       title: 'Üç bağlantı, bir tablo',
-      text: `Aynı 17 nokta, üç bağlantı: ${natural} kümede boylar ${rows.map((r) => `${r.linkage === 'ward' ? 'Ward' : r.linkage} ${sizesText(r.sizes)}`).join(', ')}. Bağlantı, "iki kümenin uzaklığı"nı nasıl tanımladığınızdır; ağacı o belirler.`,
+      text: `Aynı ${n} nokta, üç bağlantı: ${natural} kümede boylar ${rows.map((r) => `${r.linkage === 'ward' ? 'Ward' : r.linkage} ${sizesText(r.sizes)}`).join(', ')}. Bağlantı, "iki kümenin uzaklığı"nı nasıl tanımladığınızdır; ağacı o belirler.`,
       term: 'bağlantı (linkage)',
-      params: { ...base, merges: last, k: 3 },
+      params: { ...base, merges: last, k: natural },
     },
   ],
 };

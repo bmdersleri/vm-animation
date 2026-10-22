@@ -1,7 +1,6 @@
 import { select, type Selection } from 'd3-selection';
-import { ACCENT } from '../../core/plot/dendrogram';
 import { LABEL_FALLBACK_PX, chooseOffset, labelArea, offsets, type Box } from '../../core/plot/label-place';
-import { CLUSTER, NAVY, UNASSIGNED, WHITE, r1 } from '../../core/plot/marks';
+import { ACCENT, CLUSTER, NAVY, UNASSIGNED, WHITE, r1 } from '../../core/plot/marks';
 import { tr, type AnySel } from '../../core/plot/transition';
 import { fitEqualAspect, type Domain, type Rect, type Scales } from '../../core/plot/viewport';
 import type { Pt } from './data';

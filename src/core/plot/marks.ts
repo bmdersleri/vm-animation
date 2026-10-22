@@ -2,6 +2,8 @@
 export const NAVY = '#14365C';
 export const MARK = ['#0EA5A4', '#F08A00'] as const; // Kaldı, Ayrıldı
 export const TEXT = ['#0B7473', '#A85A00'] as const;
+/** Accent for highlights (AA-safe on white). */
+export const ACCENT = '#A85A00';
 export const GRID = '#E3E9F0';
 export const FRAME = '#C9D5E3';
 export const WHITE = '#ffffff';

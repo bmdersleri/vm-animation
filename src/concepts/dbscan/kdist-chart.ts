@@ -1,6 +1,6 @@
 import { select, type Selection } from 'd3-selection';
 import { scaleLinear } from 'd3-scale';
-import { FRAME, GRID, NAVY, WHITE, r1 } from '../../core/plot/marks';
+import { ACCENT, FRAME, GRID, NAVY, WHITE, r1 } from '../../core/plot/marks';
 import { tickFormat, formatNumber } from '../../core/plot/format';
 import { epsText } from './view';
 import type { Rect } from '../../core/plot/viewport';
@@ -14,7 +14,6 @@ export interface KDistState {
   knee: number | null;
 }
 
-const ACCENT = '#A85A00';
 type G = Selection<SVGGElement, unknown, null, undefined>;
 
 /** The sorted k-distance curve with the eps line and the knee marked. Redrawn whole on every set(). */
