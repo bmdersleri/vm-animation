@@ -58,6 +58,11 @@ describe('dendrogram scenario', () => {
     expect(Math.sqrt(2 * D.wardExample.increase)).toBeCloseTo(D.linkages.ward.merges[D.wardExample.merge].height, 2);
     const sizes = [0, 1, 2].map((l) => D.linkages.single.cuts[2].labels.filter((x) => x === l).length).sort((a, b) => b - a);
     expect(steps[8].text).toContain(String(sizes[0]));
+    // step 9 lists the sizes largest first, the same order as the step 10 table
+    const desc = (l: 'ward' | 'single') => [0, 1, 2].map((c) => D.linkages[l].cuts[2].labels.filter((x) => x === c).length).sort((a, b) => b - a).join(' · ');
+    expect(steps[8].text).toContain(`Ward'da boylar ${desc('ward')}, single'da ${desc('single')}.`);
+    expect(steps[9].text).toContain(`Ward ${desc('ward')}`);
+    expect(steps[9].text).toContain(`single ${desc('single')}`);
     p.destroy();
   });
 });

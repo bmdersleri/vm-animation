@@ -1,7 +1,7 @@
 import type { Scenario } from '../../core/player';
 import { dendrogramData as D, type Linkage } from './data';
 import { cutForK, largestGap } from './tree';
-import { clusterName, cutSizes, heightText, linkageRows, mergeInfo, sizesText, splitOfGroup } from './view';
+import { clusterName, cutSizes, heightText, linkageRows, mergeInfo, sizesDesc, sizesText, splitOfGroup } from './view';
 import { formatNumber } from '../../core/plot/format';
 
 export interface DendrogramParams {
@@ -24,7 +24,7 @@ const gap = largestGap(ward);
 const natural = D.naturalK;
 const ex = D.linkages.ward.merges;
 const sizesOf = (l: Linkage, k: number): string => sizesText(cutSizes(l, k));
-const desc = (l: Linkage): number[] => cutSizes(l, natural).sort((a, b) => b - a);
+const desc = (l: Linkage): number[] => sizesDesc(l, natural);
 const plus = (xs: readonly number[]): string => xs.join(' + ');
 const kStep = 4;
 const lengthOf = (g: 'A' | 'B' | 'zincir'): number => D.meta.groups[g].length;
@@ -97,7 +97,7 @@ export const dendrogramScenario: Scenario<DendrogramParams> = {
     {
       id: 'single',
       title: 'Bağlantı değişince ağaç değişir',
-      text: `Aynı veriye single bağlantı: iki kümenin uzaklığı en yakın iki noktasının uzaklığıdır. Zincirin ${lengthOf('zincir')} noktası iki yığını alçak yükseklikte birbirine bağlar; ${natural} kümeye kesince iki yığın ve zincir tek küme olur (${chainJoined} nokta), ayrı kalan ${D.meta.groups.C.length} noktalık yığın ${plus(splitOfGroup('single', 'C'))} diye bölünür. Ward'da boylar ${sizesOf('ward', natural)}, single'da ${sizesOf('single', natural)}.`,
+      text: `Aynı veriye single bağlantı: iki kümenin uzaklığı en yakın iki noktasının uzaklığıdır. Zincirin ${lengthOf('zincir')} noktası iki yığını alçak yükseklikte birbirine bağlar; ${natural} kümeye kesince iki yığın ve zincir tek küme olur (${chainJoined} nokta), ayrı kalan ${D.meta.groups.C.length} noktalık yığın ${plus(splitOfGroup('single', 'C'))} diye bölünür. Ward'da boylar ${sizesText(desc('ward'))}, single'da ${sizesText(desc('single'))}.`,
       term: 'zincirleme (chaining)',
       params: { linkage: 'single', merges: last, k: natural, point: null },
     },

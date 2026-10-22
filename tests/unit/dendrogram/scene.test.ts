@@ -134,8 +134,13 @@ describe('dendrogram scene', () => {
     player.goto(8);
     expect(host.querySelectorAll('path.dg-branch')).toHaveLength(n - 1);
     expect(clusterOf(host)).toEqual(D.linkages.single.cuts[2].labels.map(String));
-    expect(attr(host, '[data-linkage="single"]', 'data-sizes')).toBe(cutSizes('single', 3).join(' '));
-    expect(attr(host, '[data-linkage="ward"]', 'data-sizes')).toBe(cutSizes('ward', 3).join(' '));
+    // the compare rows list sizes largest first, as the step 10 table does
+    const desc = (l: 'ward' | 'single') => cutSizes(l, 3).sort((a, b) => b - a);
+    expect(attr(host, '[data-linkage="single"]', 'data-sizes')).toBe(desc('single').join(' '));
+    expect(attr(host, '[data-linkage="ward"]', 'data-sizes')).toBe(desc('ward').join(' '));
+    const row = (l: string) => linkageRows().find((r) => r.linkage === l)!.sizes.join(' · ');
+    expect(text(host, '[data-linkage="single"] .dg-value')).toBe(row('single'));
+    expect(text(host, '[data-linkage="ward"] .dg-value')).toBe(row('ward'));
     const g = D.meta.groups;
     const lab = clusterOf(host);
     expect(new Set([...g.A, ...g.zincir, ...g.B].map((i) => lab[i])).size).toBe(1);

@@ -12,7 +12,7 @@ import { ScatterLayer, type Hull, type ScatterSpec } from './scatter-layer';
 import { dendrogramScenario, type DendrogramParams } from './scenario';
 import { clustersAfter, cutForK, leafX, largestGap } from './tree';
 import {
-  LINKAGE_NAME, cutSizes, gapText, heightText, linkageRows, axisTopOf, mergeInfo, sizesText, treeOf,
+  LINKAGE_NAME, cutSizes, gapText, heightText, linkageRows, axisTopOf, mergeInfo, sizesDesc, sizesText, treeOf,
 } from './view';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -166,9 +166,10 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
     }
     if (index === STEP_SINGLE) {
       const ul = el('ul', 'dg-compare');
+      // linkages are compared largest first, as in the step 10 table; the chips above stay in cluster order
       for (const l of ['ward', 'single'] as const) {
         const li = el('li', 'dg-compare-item');
-        const sizes = cutSizes(l, D.naturalK);
+        const sizes = sizesDesc(l, D.naturalK);
         li.setAttribute('data-linkage', l);
         li.setAttribute('data-sizes', sizes.join(' '));
         if (params.linkage === l) li.setAttribute('aria-current', 'true');

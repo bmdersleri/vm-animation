@@ -65,6 +65,9 @@ export function cutSizes(linkage: Linkage, k: number): number[] {
   return sizes;
 }
 
+/** Cluster sizes of the k-cluster cut, largest first: the order used when linkages are compared. */
+export const sizesDesc = (linkage: Linkage, k: number): number[] => cutSizes(linkage, k).sort((a, b) => b - a);
+
 /** "7 · 7 · 3". */
 export const sizesText = (sizes: readonly number[]): string => sizes.join(' · ');
 
@@ -110,7 +113,7 @@ export function linkageRows(): LinkageRow[] {
   return (['ward', 'complete', 'single'] as const).map((linkage) => ({
     linkage,
     ...ROW_TEXT[linkage],
-    sizes: cutSizes(linkage, 3).sort((a, b) => b - a),
+    sizes: sizesDesc(linkage, 3),
   }));
 }
 
