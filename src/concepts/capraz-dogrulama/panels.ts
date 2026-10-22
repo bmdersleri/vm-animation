@@ -44,7 +44,7 @@ export function classPanel(run:CvRun):HTMLElement{
     const n=positiveCount(fold.validationIds);
     return html('div',{class:'cv-positive-row','data-positive-fold':String(i),'data-count':String(n),...(n===0?{'data-recall-undefined':''}:{})},html('span',{},`K${i+1}`),html('div',{class:'cv-positive-track'},html('div',{class:'cv-positive-fill',style:`width:${100*n/fold.validationIds.length}%`}),...(n===0?[html('span',{class:'cv-undefined-flag'},'pozitif yok · recall tanımsız')]:[])),html('span',{},`${n} / ${fold.validationIds.length}`));
   });
-  return html('section',{class:'cv-classes'},html('h2',{},`${heading} · doğrulama pozitifleri`),html('div',{class:'cv-positive-rows'},...rows),html('p',{},'■ Ayrılan müşteri / tüm doğrulama müşterileri'),);
+  return html('section',{class:'cv-classes'},html('h2',{},`${heading} · doğrulama pozitifleri`),html('div',{class:'cv-positive-rows'},...rows),html('p',{},'◆ Ayrılan müşteri / tüm doğrulama müşterileri'),);
 }
 
 export function pipelinePanel(run:CvRun,index:number):HTMLElement{

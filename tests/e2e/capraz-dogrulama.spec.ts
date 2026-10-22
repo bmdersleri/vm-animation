@@ -1,13 +1,12 @@
 import { test, expect } from '@playwright/test';
-const SHOTS='.superpowers/sdd/2026-10-21-bolum6-model-degerlendirme/screenshots';
 const terms=['doğrulama kümesi (validation set)','kat (fold) · K-Fold','doğrulama katı (validation fold)','her turda yeniden fit (refit)','K katlı çapraz doğrulama (K-fold cross-validation)','ortalama ve standart sapma (mean, std)','düz K-Fold (KFold)','katmanlı K-Fold (StratifiedKFold)','Pipeline · veri sızıntısı (data leakage)','model seçimi ve dış test (held-out test)'];
 for(const mode of ['ders','lab'] as const){
-  test(`${mode}: ten visible moments, keyboard, reduced motion and no clipped content`,async({page})=>{
+  test(`${mode}: ten visible moments, keyboard, reduced motion and no clipped content`,async({page},testInfo)=>{
     await page.emulateMedia({reducedMotion:'reduce'});await page.goto(`/capraz-dogrulama/?mod=${mode}`);
     await expect(page.locator('h1.title')).toHaveText('Çapraz doğrulama ve veri sızıntısı');
     await expect(page.locator('[data-sample]')).toHaveCount(40);
     await expect(page.locator('[data-test-locked]')).toBeVisible();
-    await page.screenshot({path:`${SHOTS}/cv-${mode}-beginning.png`});
+    await page.screenshot({path:testInfo.outputPath(`cv-${mode}-beginning.png`)});
     for(let i=0;i<10;i++){
       await page.locator('.step-dot').nth(i).click();await expect(page.locator('.cv-scene')).toHaveAttribute('data-step',String(i));
       await expect(page.locator('[data-positive-key]'),`step ${i+1}`).toBeVisible();await expect(page.locator('[data-positive-key]')).toContainText('Pozitif: Ayrılan müşteri (churn=1)');
@@ -26,9 +25,9 @@ for(const mode of ['ders','lab'] as const){
           const a=lum(rgb(getComputedStyle(el).color)),b=lum(rgb(getComputedStyle(bg!).backgroundColor));return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);});
         expect(ratio).toBeGreaterThanOrEqual(4.5);}
       if(i===7)await expect(page.locator('[data-positive-fold="0"]')).toHaveAttribute('data-count','3');
-      if(i===8){await expect(page.locator('[data-pipeline="correct"]')).toBeVisible();await expect(page.locator('[data-pipeline="wrong"]')).toBeVisible();await page.screenshot({path:`${SHOTS}/cv-${mode}-pipeline.png`});}
-      if(i===9){await expect(page.locator('[data-test-f1]')).toHaveText('0,571');await expect(page.locator('[data-test-outcome]')).toHaveCount(15);await page.screenshot({path:`${SHOTS}/cv-${mode}-final.png`});}
-      if(i===6)await page.screenshot({path:`${SHOTS}/cv-${mode}-dense.png`});
+      if(i===8){await expect(page.locator('[data-pipeline="correct"]')).toBeVisible();await expect(page.locator('[data-pipeline="wrong"]')).toBeVisible();await page.screenshot({path:testInfo.outputPath(`cv-${mode}-pipeline.png`)});}
+      if(i===9){await expect(page.locator('[data-test-f1]')).toHaveText('0,571');await expect(page.locator('[data-test-outcome]')).toHaveCount(15);await page.screenshot({path:testInfo.outputPath(`cv-${mode}-final.png`)});}
+      if(i===6)await page.screenshot({path:testInfo.outputPath(`cv-${mode}-dense.png`)});
       const geometry=await page.evaluate(()=>{const b=document.querySelector('.stage')!.getBoundingClientRect();return {bad:[...document.querySelectorAll('.cv-scene p,.cv-scene h2,.cv-sample,.cv-score-plot text,.cv-positive-row,.cv-test-outcomes span')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&(r.left<b.left-1||r.right>b.right+1||r.top<b.top-1||r.bottom>b.bottom+1);}).map(el=>el.textContent),overflow:document.documentElement.scrollWidth-innerWidth,height:document.documentElement.scrollHeight-innerHeight};});
       expect(geometry.bad,`step ${i+1}`).toEqual([]);expect(geometry.overflow).toBeLessThanOrEqual(0);expect(geometry.height).toBeLessThanOrEqual(0);
     }
@@ -38,7 +37,7 @@ for(const mode of ['ders','lab'] as const){
     await page.locator(`[data-mode-btn="${mode==='ders'?'lab':'ders'}"]`).click();await expect(page.locator('#app')).toHaveAttribute('data-mode',mode==='ders'?'lab':'ders');
   });
 }
-test('lab: real K/method/fold/C values, atomic fold clamp, reset and fixed final protocol',async({page})=>{
+test('lab: real K/method/fold/C values, atomic fold clamp, reset and fixed final protocol',async({page},testInfo)=>{
   await page.goto('/capraz-dogrulama/?mod=lab');await page.locator('.step-dot').nth(8).click();
   await page.locator('[name="fold"]').selectOption('4');await page.locator('[name="k"]').selectOption('3');
   await expect(page.locator('[name="fold"]')).toHaveValue('2');await expect(page.locator('[name="fold"] option')).toHaveCount(3);
@@ -54,7 +53,7 @@ test('lab: real K/method/fold/C values, atomic fold clamp, reset and fixed final
   await expect(page.locator('[name="k"]')).toBeDisabled();await expect(page.locator('[name="method"]')).toBeDisabled();
   await expect(page.locator('[name="k"]')).toHaveValue('5');await expect(page.locator('[name="method"]')).toHaveValue('stratified');await expect(page.locator('[name="c"]')).toBeDisabled();
 });
-test('narrow ders and lab keep board, pipeline, score chart and final test readable',async({page})=>{
+test('narrow ders and lab keep board, pipeline, score chart and final test readable',async({page},testInfo)=>{
   await page.setViewportSize({width:390,height:844});
   for(const mode of ['ders','lab']){
     await page.goto(`/capraz-dogrulama/?mod=${mode}`);
@@ -62,6 +61,6 @@ test('narrow ders and lab keep board, pipeline, score chart and final test reada
       expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(0);
       const bad=await page.evaluate(()=>{const b=document.querySelector('.stage')!.getBoundingClientRect();return [...document.querySelectorAll('.cv-scene p,.cv-scene h2,.cv-sample,.cv-test-outcomes span')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&(r.left<b.left-1||r.right>b.right+1||r.bottom>b.bottom+1);}).map(el=>el.textContent);});expect(bad,`${mode} step ${i+1}`).toEqual([]);
     }
-    await page.screenshot({path:`${SHOTS}/cv-${mode}-narrow.png`,fullPage:true});
+    await page.screenshot({path:testInfo.outputPath(`cv-${mode}-narrow.png`),fullPage:true});
   }
 });

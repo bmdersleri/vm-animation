@@ -1,16 +1,15 @@
 import { test, expect } from '@playwright/test';
-const SHOTS = '.superpowers/sdd/2026-10-21-bolum6-model-degerlendirme/screenshots';
 const TITLE = 'Karmaşıklık matrisi ve metrikler';
 async function settle(page: import('@playwright/test').Page) { await page.waitForTimeout(750); }
 
 for (const mode of ['ders', 'lab'] as const) {
-  test(`${mode}: eight visible teaching moments, keyboard, reset and mode switch`, async ({ page }) => {
+  test(`${mode}: eight visible teaching moments, keyboard, reset and mode switch`, async({page},testInfo)=> {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(`/karmasiklik-matrisi/?mod=${mode}`);
     await expect(page.locator('h1.title')).toHaveText(TITLE);
     await expect(page.locator('.matrix-customer')).toHaveCount(100);
     await expect(page.locator('.matrix-key')).toContainText('Pozitif: Ayrılan müşteri (churn=1)');
-    await page.screenshot({ path: `${SHOTS}/matrix-${mode}-beginning.png` });
+    await page.screenshot({ path:testInfo.outputPath(`matrix-${mode}-beginning.png`) });
     const first = await page.locator('[data-customer="N1"]').getAttribute('transform');
     const expected = ['TN', 'TN', '%86', '%37,5', '%60', '%46,15', 'hiçbiri yakalanmıyor', '10 × 1 + 4 × 5 = 30'];
     for (let step = 1; step < 8; step++) {
@@ -33,7 +32,7 @@ for (const mode of ['ders', 'lab'] as const) {
       expect(geometry.overflow).toBeLessThanOrEqual(0);
       expect(geometry.height).toBeLessThanOrEqual(0);
     }
-    await page.screenshot({ path: `${SHOTS}/matrix-${mode}-dense.png` });
+    await page.screenshot({ path:testInfo.outputPath(`matrix-${mode}-dense.png`) });
     await page.keyboard.press('Home');
     await expect(page.locator('.step-count')).toHaveText('Adım 1 / 8');
     await page.keyboard.press('ArrowRight');
@@ -47,7 +46,7 @@ for (const mode of ['ders', 'lab'] as const) {
   });
 }
 
-test('lab: live counts, same-cohort costs, null ratios and navigation reset', async ({ page }) => {
+test('lab: live counts, same-cohort costs, null ratios and navigation reset', async({page},testInfo)=> {
   await page.goto('/karmasiklik-matrisi/?mod=lab');
   await page.locator('.step-dot').nth(7).click();
   for (const [key, value] of [['tn', '20'], ['fp', '3'], ['fn', '2'], ['tp', '5'], ['fpCost', '2'], ['fnCost', '7']]) await page.locator(`input[name="${key}"]`).fill(value);
@@ -71,7 +70,7 @@ test('lab: live counts, same-cohort costs, null ratios and navigation reset', as
   await expect(page.locator('.stage')).not.toContainText(/NaN|Infinity/);
 });
 
-test('ders panel and narrow lab keep the scene readable', async ({ page }) => {
+test('ders panel and narrow lab keep the scene readable', async({page},testInfo)=> {
   await page.goto('/karmasiklik-matrisi/?mod=ders');
   await page.locator('.step-dot').nth(7).click();
   await page.locator('.params-toggle').click();
@@ -90,7 +89,7 @@ test('ders panel and narrow lab keep the scene readable', async ({ page }) => {
 });
 
 for (const mode of ['ders', 'lab'] as const) {
-  test(`${mode} 390 px: customer marks never overlap; count-only cells when they do not fit`, async ({ page }) => {
+  test(`${mode} 390 px: customer marks never overlap; count-only cells when they do not fit`, async({page},testInfo)=> {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/karmasiklik-matrisi/?mod=${mode}`);
@@ -110,7 +109,7 @@ for (const mode of ['ders', 'lab'] as const) {
       expect(state.close, `${mode} step ${step + 1}: overlapping marks`).toBe(0);
       if (state.aggregate === 'true') { expect(state.marks).toBe(0); expect(state.note).toContain('tam sayım'); }
       if (step >= 1) expect(state.counts.every(c => /^\d+$/.test(c ?? ''))).toBe(true);
-      if (step === 2 || step === 6) await page.screenshot({ path: `${SHOTS}/matrix-${mode}-narrow-${step + 1}.png`, fullPage: true });
+      if (step === 2 || step === 6) await page.screenshot({ path:testInfo.outputPath(`matrix-${mode}-narrow-${step + 1}.png`), fullPage: true });
     }
   });
 }

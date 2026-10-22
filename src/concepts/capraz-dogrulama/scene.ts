@@ -11,8 +11,8 @@ export function mountCvScene(host:HTMLElement,player:StepPlayer<CvParams>,mode:M
   const heading=html('p',{class:'cv-run-heading'});
   const reserved=html('p',{class:'cv-reserved'});
   // The positive class stays named on every step; only the role key is dropped once the board is gone.
-  const positiveKey=html('span',{class:'cv-positive-key','data-positive-key':''},html('strong',{},'■ Pozitif: Ayrılan müşteri (churn=1)'),' · ● Kalan (0) · iç şekil: gerçek sınıf');
-  const roles=[html('span',{class:'cv-role-train'},'Düz çerçeve: eğitim'),html('span',{class:'cv-role-validation'},'Kesikli çerçeve: doğrulama')];
+  const positiveKey=html('span',{class:'cv-positive-key','data-positive-key':''},html('strong',{},'◆ Pozitif: Ayrılan müşteri (churn=1)'),' · ● Kalan (0) · iç şekil: gerçek sınıf');
+  const roles=[html('span',{class:'cv-role-train'},'Düz çerçeve: eğitim'),html('span',{class:'cv-role-validation'},'Kesikli lacivert çerçeve: doğrulama')];
   const legend=html('div',{class:'cv-legend'},positiveKey,...roles);
   const {board,update}=sampleBoard();const content=html('div',{class:'cv-main'},board);const aside=html('div',{class:'cv-aside'});content.append(aside);
   const special=html('div',{class:'cv-special'});
@@ -36,10 +36,14 @@ export function mountCvScene(host:HTMLElement,player:StepPlayer<CvParams>,mode:M
   const reduce=():boolean=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
   let turnDone=true;let turnTimer:ReturnType<typeof setTimeout>|null=null;
   const clearTurn=():void=>{if(turnTimer!==null)clearTimeout(turnTimer);turnTimer=null;};
-  const onChange=(s:{index:number},cause?:string):void=>{
+  let lastFold=player.state.params.fold;
+  const onChange=(s:{index:number;params:CvParams},cause?:string):void=>{
     clearTurn();
+    // A fold change is a manual pick (it also cancels the sweep); any other param change keeps the running sweep.
+    const sameFold=s.params.fold===lastFold;lastFold=s.params.fold;
     // Every sweep emission starts a turn; the sweep ends on its last turn without a closing emission.
-    if(s.index===3&&(cause==='step'||cause==='sweep')&&!reduce()){
+    // A parameter change while a turn is running restarts that turn; with no turn running it opens the score at once.
+    if(s.index===3&&(cause==='step'||cause==='sweep'||(cause==='param'&&!turnDone&&sameFold))&&!reduce()){
       turnDone=false;
       turnTimer=setTimeout(()=>{turnTimer=null;turnDone=true;render();},cvScenario.steps[3].sweep!.intervalMs);
     }else turnDone=true;

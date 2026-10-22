@@ -1,11 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { allNegative, cost, metrics } from '../../../src/concepts/degerlendirme/metrics';
+import reference from '../../fixtures/degerlendirme_sklearn.json';
 
 describe('evaluation metrics', () => {
   it('computes the teaching matrix directly from counts', () => {
     expect(metrics({ tn: 80, fp: 10, fn: 4, tp: 6 })).toEqual({
       accuracy: .86, precision: .375, recall: .6, f1: 12 / 26, specificity: 80 / 90,
     });
+  });
+  it('matrix matches sklearn', () => {
+    // The fixture stores sklearn's metrics for the teaching matrix tn=80, fp=10, fn=4, tp=6.
+    const m = metrics({ tn: 80, fp: 10, fn: 4, tp: 6 });
+    for (const key of ['accuracy', 'precision', 'recall', 'f1', 'specificity'] as const) {
+      expect(m[key]).toBeCloseTo(reference.matrix[key], 12);
+    }
   });
   it('preserves undefined ratios and defines zero F1 when there are errors', () => {
     expect(metrics({ tn: 0, fp: 0, fn: 0, tp: 0 })).toEqual({

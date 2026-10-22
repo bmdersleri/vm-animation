@@ -54,7 +54,7 @@ export function mountRocScene(host: HTMLElement, player: StepPlayer<RocParams>, 
     locked.hidden=index===9;
     thresholdLabel.textContent=`Eşik: ${thresholdText(threshold)}`;
     thresholdLabel.hidden=index===0;
-    matrix.hidden=index===0; metric.hidden=index<3||index===8;
+    matrix.hidden=index===0; metric.hidden=index<2||index===8;
     counts.forEach((el,i)=>el.querySelector('strong')!.textContent=String(c[(['tn','fp','fn','tp'] as const)[i]]));
     precision.textContent=`Precision ${percent(m.precision)} · Recall ${percent(m.recall)} · F1 ${percent(m.f1)}`;
     curves.hidden=index<4||index===9; rocPanel.hidden=index===6; prPanel.hidden=index<6||index===8;
