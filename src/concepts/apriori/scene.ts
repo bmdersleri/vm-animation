@@ -77,7 +77,7 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
 
   root.append(head, latticeHost, fpSlot, aside);
   host.append(root);
-  const lattice: Lattice = mountLattice(latticeHost, (k) => player.setParams({ node: k }));
+  const lattice: Lattice = mountLattice(latticeHost, (k) => player.setParams({ node: player.state.params.node === k ? null : k }));
   const fp: FpScene = mountFpTree(fpSlot, fpSide);
   let size = { w: 900, h: 560 };
 
@@ -132,7 +132,8 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
       fp.update({ view, minCount, inserted: s.params.inserted, baseItem: s.params.baseItem, width: fpSlot.clientWidth || fw, height: fpSlot.clientHeight || fh });
       return;
     }
-    const picked = s.params.node === null ? undefined : painted.find((p) => p.node.key === s.params.node);
+    const lab = root.dataset.mode === 'lab';
+    const picked = !lab || s.params.node === null ? undefined : painted.find((p) => p.node.key === s.params.node);
     nodeInfo.hidden = !picked;
     if (picked) {
       setText(nodeInfo, nodeReason(minCount, picked));
@@ -141,7 +142,7 @@ export function mountAprioriScene(host: HTMLElement, player: StepPlayer<AprioriP
     latticeHost.style.minHeight = '';
     const w = latticeHost.clientWidth || Math.max(240, size.w - (wide ? ASIDE_WIDTH + 24 : 12));
     const h = latticeHost.clientHeight || Math.max(240, size.h - (wide ? 70 : 230));
-    lattice.update({ painted, width: w, height: h, compact: w < 520, selected: s.params.node });
+    lattice.update({ painted, width: w, height: h, compact: w < 520, selected: s.params.node, interactive: lab });
     if (lattice.needed > h + 1) latticeHost.style.minHeight = `${Math.ceil(lattice.needed)}px`;
   }
 

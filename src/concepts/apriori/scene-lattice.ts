@@ -83,6 +83,8 @@ export interface LatticeSpec {
   compact: boolean;
   /** Set key of the node picked in the Lab; null = none. */
   selected?: string | null;
+  /** Lab only: nodes are focusable buttons. In Ders they are plain boxes, so the step keys keep working. */
+  interactive?: boolean;
   options?: Partial<LayoutOptions>;
 }
 
@@ -125,9 +127,6 @@ export function mountLattice(host: HTMLElement, onPick: (key: string) => void = 
     box.dataset.key = n.key;
     box.dataset.abbr = n.abbr;
     box.dataset.level = String(n.k);
-    box.setAttribute('role', 'button');
-    box.setAttribute('aria-pressed', 'false');
-    box.tabIndex = n.key === LATTICE[0].key ? 0 : -1;
     const abbr = el('span', 'ap-abbr', n.abbr);
     const sub = el('span', 'ap-sub');
     box.append(abbr, sub);
@@ -136,22 +135,26 @@ export function mountLattice(host: HTMLElement, onPick: (key: string) => void = 
   root.append(...labels, ...[...nodes.values()].map((e) => e.box));
   host.append(root);
 
+  let interactive = false;
+  let rover: string = LATTICE[0].key;
   const boxOf = (target: EventTarget | null): HTMLElement | null => (target instanceof Element ? target.closest<HTMLElement>('.ap-node') : null);
   const focusNode = (key: string): void => {
+    rover = key;
     for (const [k, e] of nodes) e.box.tabIndex = k === key ? 0 : -1;
     nodes.get(key)?.box.focus();
   };
   root.addEventListener('click', (e) => {
     const b = boxOf(e.target);
-    if (b?.dataset.key) onPick(b.dataset.key);
+    if (interactive && b?.dataset.key) onPick(b.dataset.key);
   });
   root.addEventListener('focusin', (e) => {
     const b = boxOf(e.target);
-    if (b?.dataset.key) for (const [k, n] of nodes) n.box.tabIndex = k === b.dataset.key ? 0 : -1;
+    if (interactive && b?.dataset.key) rover = b.dataset.key;
+    if (interactive) for (const [k, n] of nodes) n.box.tabIndex = k === rover ? 0 : -1;
   });
   root.addEventListener('keydown', (e) => {
     const b = boxOf(e.target);
-    if (!b?.dataset.key) return;
+    if (!interactive || !b?.dataset.key) return;
     const k = Number(b.dataset.level);
     const row = LATTICE.filter((n) => n.k === k);
     const at = row.findIndex((n) => n.key === b.dataset.key);
@@ -179,6 +182,8 @@ export function mountLattice(host: HTMLElement, onPick: (key: string) => void = 
   return {
     update(spec: LatticeSpec): void {
       const opts: LayoutOptions = { ...DEFAULT_LAYOUT, labelWidth: spec.compact ? 20 : DEFAULT_LAYOUT.labelWidth, ...spec.options };
+      interactive = spec.interactive === true;
+      if (!interactive && root.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
       const layout = layoutLattice(spec.width, spec.height, opts);
       needed = layout.height;
       root.style.height = `${Math.round(layout.height)}px`;
@@ -205,10 +210,18 @@ export function mountLattice(host: HTMLElement, onPick: (key: string) => void = 
         setText(e.sub, p.count !== null ? String(p.count) : p.prunedBy ? `⊘${p.prunedBy}` : p.state === 'candidate' ? '…' : '');
         e.box.title = `${p.node.abbr}: ${STATE_NAME[p.state]}`;
         e.box.setAttribute('aria-label', `${p.node.abbr}: ${STATE_NAME[p.state]}${p.count !== null ? `, ${p.count} fiş` : ''}`);
-        const on = spec.selected === p.node.key;
-        e.box.setAttribute('aria-pressed', String(on));
+        const on = interactive && spec.selected === p.node.key;
         if (on) e.box.dataset.selected = 'true';
         else delete e.box.dataset.selected;
+        if (interactive) {
+          e.box.setAttribute('role', 'button');
+          e.box.setAttribute('aria-pressed', String(on));
+          e.box.tabIndex = p.node.key === rover ? 0 : -1;
+        } else {
+          e.box.removeAttribute('role');
+          e.box.removeAttribute('aria-pressed');
+          e.box.removeAttribute('tabindex');
+        }
       }
     },
     get needed(): number {

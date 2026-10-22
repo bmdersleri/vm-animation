@@ -92,7 +92,11 @@ describe('apriori controls', () => {
     click('ST');
     expect(info.textContent).toBe('ST sık değil: 3 fiş < 4.');
     click('ESYTPR');
-    expect(info.textContent).toMatch(/^ESYTPR budandı: .+ sık değil \(\d+ < 4\)/);
+    expect(info.textContent).toBe('ESYTPR budandı: R sık değil (3 < 4), bu yüzden sayılmadı.');
+    // a second click on the picked node unpicks it
+    click('ESYTPR');
+    expect(player.state.params.node).toBeNull();
+    expect(info.hidden).toBe(true);
     // a node above the painted level is not yet looked at
     player.goto(STEP.seviye1);
     click('ESY');
@@ -117,6 +121,10 @@ describe('apriori controls', () => {
     expect(at('S').tabIndex).toBe(0);
     expect(first.tabIndex).toBe(-1);
     const bubbled = vi.fn();
+    const stray = key('ArrowRight');
+    at('S').dispatchEvent(stray);
+    expect(stray.defaultPrevented).toBe(true);
+    at('S').focus();
     window.addEventListener('keydown', bubbled);
     const down = key('ArrowDown');
     at('S').dispatchEvent(down);
@@ -127,6 +135,9 @@ describe('apriori controls', () => {
     expect(player.state.params.node).toBe((document.activeElement as HTMLElement).dataset.key);
     expect(player.state.index).toBe(STEP.budama);
     window.removeEventListener('keydown', bubbled);
+    // Enter on the picked node unpicks it, and once more picks it again
+    (document.activeElement as HTMLElement).dispatchEvent(key('Enter'));
+    expect(sceneHost.querySelector<HTMLElement>('.ap-node-info')!.hidden).toBe(true);
     (document.activeElement as HTMLElement).dispatchEvent(key('Enter'));
     expect(sceneHost.querySelector<HTMLElement>('.ap-node-info')!.hidden).toBe(false);
     scene.destroy();
@@ -148,10 +159,15 @@ describe('apriori controls', () => {
 
   it('every lab text names only controls visible on its step', () => {
     const { player, params, scene } = setup();
-    const named: [RegExp, string][] = [[/[Ss]eviye düğme|Sona git/, 'level'], [/Fiş ekleme/, 'inserted'], [/Ürün seçici/, 'baseItem'], [/[Ee]şik kaydırıcı/, 'minCount']];
+    const named: [RegExp, string][] = [[/[Ss]eviye düğme|Sona git/, 'level'], [/Fiş ekleme/, 'inserted'], [/Ürün seçici/, 'baseItem'], [/min_support/, 'minCount']];
     aprioriScenario.steps.forEach((step, i) => {
       player.goto(i);
       for (const [re, ctl] of named) if (re.test(step.labText ?? '')) expect(visible(params, ctl), `${step.id}: ${ctl}`).toBe(true);
+    });
+    // every Lab step with a threshold control names it
+    aprioriScenario.steps.forEach((step, i) => {
+      if (i === 0) return;
+      expect(step.labText, step.id).toMatch(/min_support/);
     });
     scene.destroy();
   });
@@ -192,6 +208,42 @@ describe('apriori controls', () => {
     move(params.querySelector<HTMLInputElement>('input[data-param="minCount"]')!, 4);
     expect(empty.hidden).toBe(true);
     scene.destroy();
+  });
+
+  it('in Ders a node is a plain box: a click picks nothing and ArrowRight still steps', () => {
+    const { player, sceneHost, scene } = setup();
+    const ders = document.createElement('div');
+    document.body.append(ders);
+    scene.destroy();
+    player.destroy();
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q }));
+    const p = new StepPlayer<AprioriParams>(aprioriScenario);
+    const sc = mountAprioriScene(ders, p, 'ders');
+    sc.resize(1280, 440);
+    p.goto(STEP.budama);
+    const node = ders.querySelector<HTMLElement>('.ap-node[data-abbr="ES"]')!;
+    expect(node.hasAttribute('role')).toBe(false);
+    expect(node.hasAttribute('tabindex')).toBe(false);
+    node.click();
+    expect(p.state.params.node).toBeNull();
+    const ev = key('ArrowRight');
+    const bubbled = vi.fn();
+    window.addEventListener('keydown', bubbled);
+    node.dispatchEvent(ev);
+    expect(bubbled).toHaveBeenCalled();
+    expect(ev.defaultPrevented).toBe(false);
+    window.removeEventListener('keydown', bubbled);
+    // Lab -> Ders drops the roving focus and the buttons
+    sc.setMode('lab');
+    const lab = ders.querySelector<HTMLElement>('.ap-node[data-abbr="E"]')!;
+    expect(lab.getAttribute('role')).toBe('button');
+    lab.focus();
+    sc.setMode('ders');
+    expect(document.activeElement).not.toBe(lab);
+    expect(lab.hasAttribute('role')).toBe(false);
+    sc.destroy();
+    p.destroy();
+    void sceneHost;
   });
 
   it('control labels and outputs carry no product-name suffix', () => {

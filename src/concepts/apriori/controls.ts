@@ -69,7 +69,7 @@ export function mountAprioriParams(host: HTMLElement, player: StepPlayer<Params>
   // ---- baskets inserted ----
   const insIn = el('input', { type: 'range', id: `${id}-ins`, 'data-param': 'inserted', min: '0', max: String(BASKETS), step: '1' });
   const insOut = el('output', { class: 'ap-out', for: insIn.id });
-  const inserted = el('div', { class: 'ctl range', 'data-ctl': 'inserted' }, el('label', { for: insIn.id }, 'Eklenen fiş'), insIn, insOut);
+  const inserted = el('div', { class: 'ctl range', 'data-ctl': 'inserted' }, el('label', { for: insIn.id }, 'Fiş ekleme'), insIn, insOut);
   insIn.addEventListener('input', () => {
     const v = Number(insIn.value);
     if (Number.isFinite(v)) player.setParams({ inserted: clampInt(v, 0, BASKETS) });
@@ -77,7 +77,7 @@ export function mountAprioriParams(host: HTMLElement, player: StepPlayer<Params>
 
   // ---- conditional-base product ----
   const chips = new Map<string, HTMLButtonElement>();
-  const baseTitle = el('span', { class: 'ap-ctl-title', id: `${id}-base` }, 'Koşullu taban ürünü');
+  const baseTitle = el('span', { class: 'ap-ctl-title', id: `${id}-base` }, 'Ürün seçici: koşullu taban');
   const box = el('div', { class: 'ap-chips', role: 'group', 'aria-labelledby': baseTitle.id });
   for (const item of ITEMS) {
     const b = el('button', { type: 'button', class: 'ap-chip', 'data-item': item, 'aria-pressed': 'false' }, itemName(item));

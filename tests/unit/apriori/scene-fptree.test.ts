@@ -124,6 +124,7 @@ describe('apriori FP-tree scene', () => {
     expect(lists[1]).toEqual(lists[0]);
     expect(host.querySelector('.ap-compare-verdict')!.textContent).toBe('Aynı 12 sık küme.');
     const rows = [...host.querySelectorAll('.ap-compare-table tbody tr')].map((r) => r.textContent);
+    expect(rows).toContain('Veri tarama sayısı32');
     expect(rows).toContain('Aday üretimivaryok');
     expect(rows).toContain('Süre (kitap)0,75 ms0,49 ms');
     expect([...host.querySelectorAll('.ap-code-line')].map((e) => e.textContent)).toEqual([

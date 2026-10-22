@@ -75,7 +75,7 @@ export function layoutFpTree(root: Node, width: number, height: number, o: FpLay
 
 // ---- text parts ----
 
-const DROP_NOTE = 'Eşiğin altındaki ürünler fişten atılır; ağaç değişmez.';
+const ALL_DROPPED = '(hepsi atıldı)';
 const names = (items: readonly string[], sep: string): string => items.map(itemName).join(sep);
 export const BOOK_LINES = [
   'apriori(islemMatrisi, min_support=0.2, use_colnames=True)',
@@ -271,13 +271,13 @@ export function mountFpTree(main: HTMLElement, side: HTMLElement): FpScene {
     note.hidden = false;
     countLine.hidden = view !== 'build';
     if (view === 'order') {
-      const lines = t.filtered.slice(0, 3).map((f, i) => `Fiş ${i + 1}: ${names(tx[i], ', ')} → ${f.length ? names(f, ' › ') : '(hepsi atıldı)'}`);
+      const lines = t.filtered.slice(0, 3).map((f, i) => `Fiş ${i + 1}: ${names(tx[i], ', ')} → ${f.length ? names(f, ' › ') : ALL_DROPPED}`);
       setText(note, [`Sıklık sırası: ${names(t.order, ' › ') || '—'}`, ...lines].join('\n'));
     } else if (view === 'build') {
       if (inserted === 0) setText(note, 'Henüz fiş eklenmedi; ağaçta yalnız kök var.');
       else {
         const f = t.filtered[inserted - 1];
-        setText(note, `Fiş ${inserted}: ${names(tx[inserted - 1], ', ')} → ${f.length ? names(f, ' › ') : `(boş) ${DROP_NOTE}`}`);
+        setText(note, `Fiş ${inserted}: ${names(tx[inserted - 1], ', ')} → ${f.length ? names(f, ' › ') : `${ALL_DROPPED}: fişteki ürünlerin hiçbiri eşiği geçmiyor, ağaç değişmez.`}`);
       }
       setText(countLine, `${inserted} fiş, ${nodeCount} düğüm`);
     } else setText(note, '');
@@ -327,6 +327,7 @@ export function mountFpTree(main: HTMLElement, side: HTMLElement): FpScene {
     const same = a.frequent.size === fp.size && [...fp].every(([k, v]) => a.frequent.get(k) === v);
     const rows: [string, string, string][] = [
       ['Sık küme', String(a.frequent.size), String(fp.size)],
+      // FP-Growth always reads the data twice (count, then build); with no frequent item the Apriori scan count is the only one that varies.
       ['Veri tarama sayısı', String(a.levels.length), '2'],
       ['Aday üretimi', 'var', 'yok'],
       ['Süre (kitap)', `${formatNumber(0.75, 2)} ms`, `${formatNumber(0.49, 2)} ms`],
