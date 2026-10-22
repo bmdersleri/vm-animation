@@ -108,7 +108,7 @@ export function deriveKorelView(index: number, p: KorelParams): KorelView {
   const study = KORELASYON.rows.map((row) => row[0]);
   const absence = KORELASYON.rows.map((row) => row[1]);
   const grade = KORELASYON.rows.map((row) => row[2]);
-  // the set selector (S) is live on steps 5–7: the chosen set is the enlarged panel
+  // the set selector (S) is live on steps 6–7: the chosen set is the enlarged panel
   const set: KorelParams['set'] = p.set;
 
   let panels: PanelView[] = [];

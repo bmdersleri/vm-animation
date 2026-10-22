@@ -76,7 +76,7 @@ export function mountKorelasyonParams(host: HTMLElement, p: StepPlayer<KorelPara
     if (setSelect.value !== setValue) setSelect.value = setValue;
     const rangeValue = String(s.noktaY);
     if (rangeInput.value !== rangeValue) rangeInput.value = rangeValue;
-    const label = `noktaY: ${formatNumber(s.noktaY, 1)}`;
+    const label = `y = ${formatNumber(s.noktaY, 1)}`;
     if (readout.textContent !== label) readout.textContent = label;
     if (box.checked !== s.churn) box.checked = s.churn;
     for (const r of rows) {

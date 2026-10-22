@@ -61,7 +61,7 @@ describe('korelasyon senaryosu', () => {
     expect(p.state.params.noktaY).toBe(12.5);
   });
 
-  it('S seti I → II → III → IV → I döngüsünde gezdirir, yalnız 5–7. adımlarda', () => {
+  it('S seti I → II → III → IV → I döngüsünde gezdirir, yalnız 6–7. adımlarda', () => {
     const p = make();
     p.goto(0);
     press(p, 's');
@@ -69,17 +69,24 @@ describe('korelasyon senaryosu', () => {
     p.goto(3);
     press(p, 'S');
     expect(p.state.params.set).toBe(1);
-
+    // step 5 always draws the four panels: S does nothing there
     p.goto(4);
+    press(p, 'S');
     expect(p.state.params.set).toBe(1);
+
+    p.goto(5);
+    expect(p.state.params.set).toBe(4);
     press(p, 's');
+    expect(p.state.params.set).toBe(1);
+    press(p, 'S');
     expect(p.state.params.set).toBe(2);
+    press(p, 's');
+    expect(p.state.params.set).toBe(3);
+    press(p, 'S');
+    expect(p.state.params.set).toBe(4);
+    p.goto(6);
     press(p, 'S');
     expect(p.state.params.set).toBe(3);
-    press(p, 's');
-    expect(p.state.params.set).toBe(4);
-    press(p, 'S');
-    expect(p.state.params.set).toBe(1);
   });
 
   it('C churn’ü yalnız 4 ve 8. adımlarda açar', () => {
@@ -124,7 +131,7 @@ describe('korelasyon senaryosu', () => {
   });
 
   it('adım aralıkları spec ile aynı', () => {
-    expect(SET_STEPS).toEqual([4, 5, 6]);
+    expect(SET_STEPS).toEqual([5, 6]);
     expect(CHURN_STEPS).toEqual([3, 7]);
     expect(LEVERAGE_STEPS).toEqual([5]);
   });

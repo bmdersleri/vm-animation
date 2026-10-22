@@ -82,7 +82,7 @@ describe('mountKorelasyonParams', () => {
     expect(y.max).toBe('20');
     expect(y.step).toBe('0.5');
     expect(y.value).toBe('12.5');
-    expect(text(host.querySelector('output'))).toBe('noktaY: 12,5');
+    expect(text(host.querySelector('output'))).toBe('y = 12,5');
     expect(box(host).type).toBe('checkbox');
     expect(box(host).checked).toBe(false);
   });
@@ -90,7 +90,7 @@ describe('mountKorelasyonParams', () => {
   it('the set select writes the param with the right type', () => {
     const { player, host } = make();
     mountKorelasyonParams(host, player);
-    player.goto(4);
+    player.goto(6);
     const spy = vi.spyOn(player, 'setParam');
     const set = select(host);
     set.value = '3';
@@ -138,11 +138,15 @@ describe('mountKorelasyonParams', () => {
     const { player, host } = make();
     mountKorelasyonParams(host, player);
     player.goto(4);
-    expect(select(host).value).toBe('1');
-    expect(select(host).disabled).toBe(false);
-    expect(range(host).disabled).toBe(true);
-    player.setParam('set', 4);
+    // step 5 always draws the four panels: its set select is dead, so it is off
+    expect(select(host).disabled).toBe(true);
+    player.goto(5);
     expect(select(host).value).toBe('4');
+    expect(select(host).disabled).toBe(false);
+    expect(range(host).disabled).toBe(false);
+    player.setParam('set', 1);
+    expect(select(host).value).toBe('1');
+    expect(range(host).disabled).toBe(true);
     player.goto(6);
     expect(select(host).value).toBe('2');
     player.goto(7);
@@ -163,7 +167,7 @@ describe('mountKorelasyonParams', () => {
     expect(range(host).disabled).toBe(true);
     expect(row(host, 'noktaY').hasAttribute('data-off')).toBe(true);
     // the stored value is kept; only the live picture stops responding
-    expect(text(host.querySelector('output'))).toBe('noktaY: 12,5');
+    expect(text(host.querySelector('output'))).toBe('y = 12,5');
     player.setParam('set', 4);
     expect(range(host).disabled).toBe(false);
     expect(row(host, 'noktaY').hasAttribute('data-off')).toBe(false);
@@ -190,7 +194,7 @@ describe('mountKorelasyonParams', () => {
     at('pointerup', yOf(stage, 18));
     expect(player.state.params.noktaY).toBe(18);
     expect(range(host).value).toBe('18');
-    expect(text(host.querySelector('output'))).toBe('noktaY: 18,0');
+    expect(text(host.querySelector('output'))).toBe('y = 18,0');
   });
 });
 

@@ -14,8 +14,8 @@ const SET_ORDER: readonly KorelParams['set'][] = [1, 2, 3, 4];
 /** The drag table's y values; the K shortcut walks the same list (make_eda_data.py). */
 const LEVERAGE_YS: readonly number[] = [6, 8, 10, 12.5, 15, 18, 20];
 
-/** Steps with the set selector: 5–7. */
-export const SET_STEPS: readonly number[] = [4, 5, 6];
+/** Steps with the set selector: 6–7 (step 5 always draws the four panels). */
+export const SET_STEPS: readonly number[] = [5, 6];
 /** Steps with the `churn` switch: 4 and 8. */
 export const CHURN_STEPS: readonly number[] = [3, 7];
 /** Steps where the leverage point can be moved: 6. */
