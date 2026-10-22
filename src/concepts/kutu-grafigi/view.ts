@@ -76,7 +76,7 @@ function outlierStrip(groups: GroupView[], k: KutuParams['k']): string {
     if (above.length > 0) parts.push(`${trim(above[above.length - 1])} > ${trim(g.stats.hi)}`);
     if (below.length > 0) parts.push(`${trim(below[0])} < ${trim(g.stats.lo)}`);
   }
-  if (parts.length === 0) return `hiçbir gözlem sınır dışında değil · k = ${trim(k)}`;
+  if (parts.length === 0) return `bu kuralda aykırı yok · k = ${trim(k)}`;
   return `${parts.join(' · ')} → aykırı`;
 }
 

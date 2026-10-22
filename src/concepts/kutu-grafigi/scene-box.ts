@@ -391,8 +391,11 @@ export class BoxLayer {
     };
     placeDot(dot.enter);
     placeDot(tr(dot.upd, TN, ms));
-    if (ms > 0) tr(dot.all, TN, ms).attr('opacity', (d: DotD) => (d.row.dots ? 1 : 0));
-    else dot.all.attr('opacity', (d: DotD) => (d.row.dots ? 1 : 0));
+    // from step 6 an outlier is only its hollow diamond: the filled dot under it would make it read as filled
+    const dotOpacity = (d: DotD): number =>
+      (d.row.dots && !(showOutliers && d.row.stats.outliers.includes(d.value)) ? 1 : 0);
+    if (ms > 0) tr(dot.all, TN, ms).attr('opacity', dotOpacity);
+    else dot.all.attr('opacity', dotOpacity);
 
     // ---- outliers: a hollow diamond per observation outside the fences (dots off keeps them)
     const outliers: OutD[] = showOutliers
@@ -402,7 +405,7 @@ export class BoxLayer {
     out.all.attr('data-group', (d: OutD) => d.row.id)
       .attr('data-value', (d: OutD) => d.value)
       .attr('data-x', (d: OutD) => r1(d.x))
-      .style('stroke', (d: OutD) => d.row.color);
+      .style('stroke', 'var(--orange)');
     const placeOut = (s: AnySel): void => {
       s.attr('d', (d: OutD) => diamondPath(d.x, d.row.y, L.dotR * 1.25));
     };

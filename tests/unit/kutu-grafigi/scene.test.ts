@@ -140,6 +140,19 @@ describe('kutu scene', () => {
     expect(valueAt(el, Number(one(el, 'path.outlier[data-group=elektrik]').getAttribute('data-x')))).toBeCloseTo(55, 1);
   });
 
+  it('step 6: the outlier is an orange hollow diamond with no filled dot under it', () => {
+    const { el, player } = setup();
+    player.goto(5);
+    for (const d of all(el, 'path.outlier[data-group]')) expect(d.style.stroke).toBe('var(--orange)');
+    const dot = (g: string, v: number): SVGElement => one(el, `circle.dot[data-group=${g}][data-value="${v}"]`);
+    expect(opacity(dot('bilgisayar', 98))).toBe('0');
+    expect(opacity(dot('elektrik', 55))).toBe('0');
+    expect(opacity(dot('bilgisayar', 82))).toBe('1');
+    // before step 6 the same observation is an ordinary dot
+    player.goto(4);
+    expect(opacity(dot('bilgisayar', 98))).toBe('1');
+  });
+
   it('step 7: three groups, three boxes and no machine outlier', () => {
     const { el, player } = setup();
     player.goto(6);

@@ -65,7 +65,7 @@ describe('kutu view', () => {
   it('adım 6 şeridi canlı: k = 3 aykırı bırakmaz', () => {
     const v = V(5, { k: 3 });
     expect(v.groups.every((g) => g.outlierIndexes.length === 0)).toBe(true);
-    expect(v.strip).toBe('hiçbir gözlem sınır dışında değil · k = 3');
+    expect(v.strip).toBe('bu kuralda aykırı yok · k = 3');
   });
 
   it('adım 7 üç grup ve Makine IQR 12', () => {
