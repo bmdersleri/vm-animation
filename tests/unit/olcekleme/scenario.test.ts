@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
+import { labTextTests } from '../lab-text';
 import {
   olceklemeScenario, olcShortcuts, UNIT_SWEEP_MS, SCATTER_STEPS, FIT_STEPS, type OlcParams,
 } from '../../../src/concepts/olcekleme/scenario';
@@ -111,4 +112,6 @@ describe('olceklemeScenario', () => {
       [['t', 'T'], 'T', 'fit kapsamı: yalnız eğitim / tüm veri'],
     ]);
   });
+
+  labTextTests(olceklemeScenario.steps, [1, 2, 3, 4, 5, 6, 7, 9, 11, 12]);
 });

@@ -5,6 +5,7 @@ import {
   VT_STEPS, K_STEPS, RFE_STEPS, type SecimParams,
 } from '../../../src/concepts/ozellik-secimi/scenario';
 import { CHURN, COLUMNS, VALUES } from '../../../src/concepts/ozellik-secimi/data';
+import { labTextTests } from '../lab-text';
 
 const make = (): StepPlayer<SecimParams> => new StepPlayer<SecimParams>(sc);
 
@@ -132,4 +133,6 @@ describe('ozellikSecimiScenario', () => {
     press(p, 'S');
     expect(p.state.params.scaling).toBe('yok');
   });
+
+  labTextTests(sc.steps, [2, 4, 6, 7, 8, 9, 10]);
 });
