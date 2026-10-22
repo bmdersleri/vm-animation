@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
+import { labTextTests } from '../lab-text';
 import {
   iqrAykiriScenario, iqrShortcuts, PART1_LAST, type IqrParams,
 } from '../../../src/concepts/iqr-aykiri/scenario';
@@ -99,4 +100,6 @@ describe('iqrAykiriScenario', () => {
       [['c', 'C'], 'C', 'Müdahale: yok / sil / kırp'],
     ]);
   });
+
+  labTextTests(iqrAykiriScenario.steps, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
+import { labTextTests } from '../lab-text';
 import {
   kutuScenario, kutuShortcuts, K_STEPS, SIXTH_STEPS, THIRD_STEPS, DOTS_STEPS, type KutuParams,
 } from '../../../src/concepts/kutu-grafigi/scenario';
@@ -103,4 +104,6 @@ describe('kutuScenario', () => {
       [['n', 'N'], 'N', 'Noktalar: görünür / gizli'],
     ]);
   });
+
+  labTextTests(kutuScenario.steps, [2, 3, 5, 6, 7, 8]);
 });
