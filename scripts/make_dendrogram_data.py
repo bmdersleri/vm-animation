@@ -13,12 +13,16 @@ Data: 17 two-feature points (no scaling), 2 decimals: A = 0..4, B = 5..9, C = 10
   4. scipy fcluster(maxclust, 3) equals sklearn AgglomerativeClustering(3, linkage)
      up to label permutation, in all four linkages.
 Nudge rule (used only when the start fails criteria 1-3; deterministic): simulated
-  annealing with RandomState(0), 150000 steps at most. A step moves one coordinate of
-  one point by one of +-0.01, 0.02, 0.05, 0.10 (result rounded to 2 decimals) and is
-  rejected if any coordinate would end up more than 0.20 from the start. The cost is
-  the sum over the four linkages of max(0, 0.055 - gap) over consecutive merge
-  heights, plus 10 per failed criterion 2 or 3; temperature falls linearly from
-  0.02 to 1e-4. The first state with cost 0 is kept. If no run succeeds: exit 1.
+  annealing in up to 10 runs, seeds 0..9 in order (run s uses RandomState(s) and starts
+  again from the start coordinates), each of at most 60000 steps. A step moves one
+  coordinate of one point by one of +-0.01, 0.02, 0.05, 0.10 (result rounded to 2
+  decimals) and is skipped if any coordinate would end up more than 0.20 from the start.
+  The cost is the sum over the four linkages of max(0, 0.055 - gap) over consecutive
+  merge heights, plus 10 per failed criterion 2 or 3. A step is taken if it does not
+  raise the cost, else with probability exp(-increase / temperature); the temperature
+  falls linearly from 0.02 + 1e-4 to 1e-4 over the run's steps. The first state with
+  cost 0 is kept and its seed and step count are written to meta.nudge. If no run
+  reaches cost 0: exit 1.
 Per linkage: scipy linkage (rows a, b, height, size; ids >= n are earlier merges),
   dendrogram(no_plot=True) leaf order, and for k = 1..6 the cut range
   [Z[n-k-1, 2], Z[n-k, 2]) (merges with height <= t applied; k = 1 has no upper
