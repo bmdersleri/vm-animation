@@ -132,11 +132,23 @@
   overflow-wrap: anywhere;
 }
 
-/* Lab has a narrow stage (about 740 px at 1280x720): the scatter keeps its aspect, so its width sets its height,
-   and the tree needs about 16 px per leaf label. The split gives the scatter what the tree can spare. */
-.dg-scene[data-mode="lab"] {
-  grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
-  column-gap: calc(var(--gap) * 0.5);
+/* Lab (stage about 736 x 576 at 1280x720): scatter and panel share the top row, the tree takes the full width
+   below, so its 17 leaf labels get about 39 px each and the equal-aspect scatter grows to about 343 x 284. */
+@media (min-width: 901px) {
+  .dg-scene[data-mode="lab"] {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr);
+    grid-template-areas: "scatter panel" "tree tree";
+    column-gap: var(--gap);
+  }
+  .dg-scene[data-mode="lab"] .dg-panel { align-self: start; max-height: 100%; }
+  /* Step 10's table needs the full width: the tree above it, the scatter hidden (as in Ders). */
+  .dg-scene[data-view="table"][data-mode="lab"] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "tree" "panel";
+  }
+  .dg-scene[data-view="table"][data-mode="lab"] .dg-scatter-host { display: none; }
 }
 /* Step 10 is a table: the tree stays as context, the scatter makes room for it. */
 .dg-scene[data-view="table"][data-mode="ders"] {

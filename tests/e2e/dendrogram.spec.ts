@@ -141,41 +141,58 @@ test('narrow layout: the k = 1 cut label sits inside the tree and does not cross
   expect(await outsideStage(page, '.dg-tree text')).toEqual([]);
 });
 
+/** Branch segments ("M x1,y1 V yb H x2 V y2": two stems and the bar) whose box meets the cut label's box. */
+const cutLabelHits = (page: import('@playwright/test').Page) => page.evaluate(() => {
+  const t = document.querySelector('text.dg-cut-label')!.getBoundingClientRect();
+  const out: string[] = [];
+  for (const p of document.querySelectorAll<SVGPathElement>('path.dg-branch')) {
+    const [, x1, y1, yb, x2, y2] = /M(-?[\d.]+),(-?[\d.]+)V(-?[\d.]+)H(-?[\d.]+)V(-?[\d.]+)/.exec(p.getAttribute('d')!)!.map(Number);
+    const m = p.getScreenCTM()!;
+    const pt = (x: number, y: number) => new DOMPoint(x, y).matrixTransform(m);
+    const segs: [DOMPoint, DOMPoint][] = [[pt(x1, y1), pt(x1, yb)], [pt(x1, yb), pt(x2, yb)], [pt(x2, yb), pt(x2, y2)]];
+    for (const [a, b] of segs) {
+      const dx = Math.min(t.right, Math.max(a.x, b.x)) - Math.max(t.left, Math.min(a.x, b.x));
+      const dy = Math.min(t.bottom, Math.max(a.y, b.y)) - Math.max(t.top, Math.min(a.y, b.y));
+      if (dx >= 0 && dy >= 0) out.push(`merge ${p.getAttribute('data-merge')}`);
+    }
+  }
+  return out;
+});
+
 test('ders step 9: the cut label stays clear of the branch bars at its height', async ({ page }) => {
   await open(page, PAGE, 'ders', READY);
   await gotoStep(page, 8, STEPS, 2500);
-  const hits = await page.evaluate(() => {
-    const t = document.querySelector('text.dg-cut-label')!.getBoundingClientRect();
-    const out: string[] = [];
-    for (const p of document.querySelectorAll<SVGPathElement>('path.dg-branch')) {
-      // "M x1,y1 V yb H x2 V y2": the bar is the segment at y = yb from x1 to x2, the stems are vertical
-      const [, x1, y1, yb, x2, y2] = /M(-?[\d.]+),(-?[\d.]+)V(-?[\d.]+)H(-?[\d.]+)V(-?[\d.]+)/.exec(p.getAttribute('d')!)!.map(Number);
-      const m = p.getScreenCTM()!;
-      const pt = (x: number, y: number) => new DOMPoint(x, y).matrixTransform(m);
-      const segs: [DOMPoint, DOMPoint][] = [[pt(x1, y1), pt(x1, yb)], [pt(x1, yb), pt(x2, yb)], [pt(x2, yb), pt(x2, y2)]];
-      for (const [a, b] of segs) {
-        const dx = Math.min(t.right, Math.max(a.x, b.x)) - Math.max(t.left, Math.min(a.x, b.x));
-        const dy = Math.min(t.bottom, Math.max(a.y, b.y)) - Math.max(t.top, Math.min(a.y, b.y));
-        if (dx >= 0 && dy >= 0) out.push(`merge ${p.getAttribute('data-merge')}`);
-      }
-    }
-    return out;
-  });
-  expect(hits).toEqual([]);
+  expect(await cutLabelHits(page)).toEqual([]);
 });
 
-test('lab 1280x720: the scatter keeps its height and the tree leaf labels stay apart', async ({ page }) => {
+test('lab 1280x720: a larger scatter, a full-width tree with leaf labels 4 px apart, the cut label off the branches', async ({ page }) => {
   await open(page, PAGE, 'lab', READY);
   await gotoStep(page, 5, STEPS);
   for (const l of ['ward', 'single']) {
     await page.locator('select[data-param="linkage"]').selectOption(l);
     await page.waitForTimeout(800);
-    const h = await page.evaluate(() => ({
-      scatter: document.querySelector('svg.dg-scatter')!.getBoundingClientRect().height,
-      tree: document.querySelector('svg.dg-tree')!.getBoundingClientRect().height,
-    }));
-    expect(h.scatter, l).toBeGreaterThanOrEqual(300);
-    expect(h.tree, l).toBeGreaterThanOrEqual(260);
-    expect(await overlaps(page, '.dg-tree g.dg-leaf text'), l).toEqual([]);
+    const m = await page.evaluate(() => {
+      const leaves = [...document.querySelectorAll('.dg-tree g.dg-leaf text')].map((t) => t.getBoundingClientRect()).sort((a, b) => a.left - b.left);
+      const panel = document.querySelector('.dg-panel')!;
+      return {
+        plotH: document.querySelector('svg.dg-scatter rect.frame')!.getBoundingClientRect().height,
+        treeH: document.querySelector('svg.dg-tree')!.getBoundingClientRect().height,
+        minGap: Math.min(...leaves.slice(1).map((b, i) => b.left - leaves[i].right)),
+        clipped: panel.scrollHeight > panel.clientHeight + 1,
+      };
+    });
+    expect(m.plotH, l).toBeGreaterThanOrEqual(275); // side by side: 254
+    expect(m.treeH, l).toBeGreaterThanOrEqual(220);
+    expect(m.minGap, l).toBeGreaterThanOrEqual(4); // side by side: 1,1
+    expect(m.clipped, l).toBe(false);
+    expect(await cutLabelHits(page), l).toEqual([]);
+    expect(await labelCollisions(page, 'svg.dg-scatter'), l).toEqual([]);
   }
+  // no Lab step clips the panel; step 10 shows the table under a full-width tree
+  for (let i = 0; i < STEPS; i++) {
+    await gotoStep(page, i, STEPS, 700);
+    expect(await page.evaluate(() => { const p = document.querySelector('.dg-panel')!; return p.scrollHeight > p.clientHeight + 1; }), `step ${i + 1}`).toBe(false);
+    expect(await outsideStage(page, TEXTS), `step ${i + 1}`).toEqual([]);
+  }
+  expect(await page.locator('.dg-scatter-host').isVisible()).toBe(false);
 });

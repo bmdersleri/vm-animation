@@ -45,6 +45,8 @@ export interface DendrogramSpec {
 const MS = 450;
 /** Width of the transparent click band along each branch's bar. */
 const HIT_WIDTH = 12;
+/** Narrowest band: about the visible stroke. */
+const MIN_HIT = 3;
 /** Least gap between the cut label and any branch bar. */
 const CLEAR = 4;
 const TR = 'dg';
@@ -201,13 +203,23 @@ export class DendrogramLayer {
 
     // Click targets: one wide transparent band per bar, over the branches and the cut line. Children come
     // last, so where a child's bar meets its parent's leg (the bar's centre) the child is picked.
+    // A band is at most as wide as the gap to the nearest bar sharing its x stretch, so it never covers that bar.
     const hitPath = (b: Branch): string => `M${X(b.xl)},${Y(b.height)}H${X(b.xr)}`;
+    const hitWidth = (b: Branch): number => {
+      let w = HIT_WIDTH;
+      for (const o of shown) {
+        if (o === b || Math.min(X(b.xr), X(o.xr)) - Math.max(X(b.xl), X(o.xl)) <= 0.5) continue;
+        w = Math.min(w, Math.abs(Y(b.height) - Y(o.height)));
+      }
+      return r1(Math.max(MIN_HIT, w));
+    };
     const hits = this.gHits.selectAll<SVGPathElement, Branch>('path.dg-hit').data([...shown].reverse(), (b) => b.id);
     hits.exit().remove();
     hits.enter().append('path').attr('class', 'dg-hit').attr('fill', 'none').attr('stroke', 'transparent')
-      .attr('stroke-width', HIT_WIDTH).attr('stroke-linecap', 'butt').attr('pointer-events', 'stroke')
+      .attr('stroke-linecap', 'butt').attr('pointer-events', 'stroke')
       .merge(hits as never)
       .attr('data-merge', (b) => (b as Branch).id - n + 1)
+      .attr('stroke-width', (b) => hitWidth(b as Branch))
       .attr('d', (b) => hitPath(b as Branch))
       .order();
 

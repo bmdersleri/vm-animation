@@ -153,11 +153,14 @@ describe('DendrogramLayer', () => {
     const last = [...svg.querySelectorAll('path.dg-branch, line.dg-cut')].pop()!;
     expect(last.compareDocumentPosition(hits[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const pos = new Map(hits.map((h, i) => [Number(h.getAttribute('data-merge')), i]));
+    expect(Math.max(...hits.map((h) => num(h, 'stroke-width')))).toBe(12);
     bs.forEach((b, i) => {
       const hit = hits[pos.get(i + 1)!];
       expect(hit.getAttribute('stroke')).toBe('transparent');
       expect(hit.getAttribute('pointer-events')).toBe('stroke');
-      expect(num(hit, 'stroke-width')).toBeGreaterThanOrEqual(12);
+      // 12 px wide, narrower only where another bar over the same x stretch is closer (next test)
+      expect(num(hit, 'stroke-width')).toBeGreaterThanOrEqual(3);
+      expect(num(hit, 'stroke-width')).toBeLessThanOrEqual(12);
       // the bar only: from the left child's x to the right child's x at the merge height
       const v = svg.querySelector(`path.dg-branch[data-merge="${i + 1}"]`)!.getAttribute('d')!;
       const [, x1, , yb, x2] = /M(-?[\d.]+),(-?[\d.]+)V(-?[\d.]+)H(-?[\d.]+)/.exec(v)!;
@@ -167,6 +170,30 @@ describe('DendrogramLayer', () => {
     });
     layer.update(spec({ shown: 2 }), false);
     expect(svg.querySelectorAll('path.dg-hit')).toHaveLength(2);
+  });
+
+  it('hit bands never cover another bar: in a short tree they narrow to the gap between close bars', () => {
+    // the 1280x720 Lab tree (736x228): single-linkage merges 10 and 12 lie about 5,6 px apart
+    const { svg, layer } = setup();
+    const sl = D.linkages.single;
+    layer.resize({ left: 0, top: 0, width: 736, height: 228 }, axisTopOf('single'));
+    layer.update(spec({ branches: branches(sl, n), leafX: leafX(sl) }), false);
+    const bands = [...svg.querySelectorAll('path.dg-hit')].map((h) => {
+      const [x1, y, x2] = /M(-?[\d.]+),(-?[\d.]+)H(-?[\d.]+)/.exec(h.getAttribute('d')!)!.slice(1).map(Number);
+      return { m: h.getAttribute('data-merge'), x1, x2, y, w: num(h, 'stroke-width') };
+    });
+    let narrowed = 0;
+    for (const a of bands) {
+      if (a.w < 12) narrowed++;
+      for (const b of bands) {
+        // bars that share an x stretch (a child's centre touching its parent's end is no stretch)
+        if (a === b || Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1) <= 0.5) continue;
+        // a's band reaches w/2 from its bar; it must stop short of b's bar
+        expect(a.w / 2, `merge ${a.m} vs ${b.m}`).toBeLessThan(Math.abs(a.y - b.y));
+      }
+    }
+    expect(narrowed).toBeGreaterThan(0);
+    expect(Math.max(...bands.map((b) => b.w))).toBe(12);
   });
 
   it('branches above the cut are muted, clusters below take their colour', () => {
