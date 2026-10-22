@@ -87,6 +87,33 @@ describe('DendrogramLayer', () => {
     expect(y - 13).toBeGreaterThanOrEqual(num(svg.querySelector('rect.dg-frame'), 'y'));
   });
 
+  it('each shown branch has a wide transparent hit path on its bar, above the branches, children over parents', () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ shown: 6 }), false);
+    expect(svg.querySelectorAll('path.dg-hit')).toHaveLength(6);
+    layer.update(spec({ cut: cutForK(ld, 3) }), false);
+    const hits = [...svg.querySelectorAll('path.dg-hit')];
+    expect(hits).toHaveLength(n - 1);
+    // drawn after (over) every visible branch and the cut line
+    const last = [...svg.querySelectorAll('path.dg-branch, line.dg-cut')].pop()!;
+    expect(last.compareDocumentPosition(hits[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const pos = new Map(hits.map((h, i) => [Number(h.getAttribute('data-merge')), i]));
+    bs.forEach((b, i) => {
+      const hit = hits[pos.get(i + 1)!];
+      expect(hit.getAttribute('stroke')).toBe('transparent');
+      expect(hit.getAttribute('pointer-events')).toBe('stroke');
+      expect(num(hit, 'stroke-width')).toBeGreaterThanOrEqual(12);
+      // the bar only: from the left child's x to the right child's x at the merge height
+      const v = svg.querySelector(`path.dg-branch[data-merge="${i + 1}"]`)!.getAttribute('d')!;
+      const [, x1, , yb, x2] = /M(-?[\d.]+),(-?[\d.]+)V(-?[\d.]+)H(-?[\d.]+)/.exec(v)!;
+      expect(hit.getAttribute('d')).toBe(`M${x1},${yb}H${x2}`);
+      // a child's hit path comes after (is drawn over) its parent's
+      for (const c of [b.left, b.right]) if (c >= n) expect(pos.get(c - n + 1)!).toBeGreaterThan(pos.get(i + 1)!);
+    });
+    layer.update(spec({ shown: 2 }), false);
+    expect(svg.querySelectorAll('path.dg-hit')).toHaveLength(2);
+  });
+
   it('branches above the cut are muted, clusters below take their colour', () => {
     const { svg, layer } = setup();
     const cut = cutForK(ld, 3);

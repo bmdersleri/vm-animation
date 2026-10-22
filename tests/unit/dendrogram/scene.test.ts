@@ -185,6 +185,17 @@ describe('dendrogram scene', () => {
     fin(scene, player);
   });
 
+  it('a click on a branch hit band picks that branch', () => {
+    const { player, host, scene } = setup('lab');
+    player.goto(7);
+    player.setParam('linkage', 'single');
+    host.querySelector('path.dg-hit[data-merge="14"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(text(host, '.dg-picked-title')).toBe('Dal 14');
+    expect(attr(host, 'path.dg-branch[data-merge="14"]', 'data-picked')).toBe('true');
+    expect(host.querySelectorAll('path.dg-branch[data-picked="true"]')).toHaveLength(1);
+    fin(scene, player);
+  });
+
   it('a selected point rings the scatter and marks the leaf', () => {
     const { player, host, scene } = setup('lab');
     player.goto(7);

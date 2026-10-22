@@ -58,6 +58,27 @@ test('lab: k = 1 cut label stays inside the plot in every linkage', async ({ pag
   }
 });
 
+test('lab: a click on the centre of a branch bar picks that branch, not its parent', async ({ page }) => {
+  await open(page, PAGE, 'lab', READY);
+  await gotoStep(page, 5, STEPS);
+  for (const l of ['single', 'ward']) {
+    await page.locator('select[data-param="linkage"]').selectOption(l);
+    await page.waitForTimeout(800);
+    for (let m = 1; m <= 16; m++) {
+      // centre of the bar in page coordinates, from the visible path "M x1,y1 V yb H x2 V y2"
+      const c = await page.evaluate((merge) => {
+        const p = document.querySelector<SVGPathElement>(`path.dg-branch[data-merge="${merge}"]`)!;
+        const [, x1, , yb, x2] = /M(-?[\d.]+),(-?[\d.]+)V(-?[\d.]+)H(-?[\d.]+)/.exec(p.getAttribute('d')!)!.map(Number);
+        const pt = new DOMPoint((x1 + x2) / 2, yb).matrixTransform(p.getScreenCTM()!);
+        return { x: pt.x, y: pt.y };
+      }, m);
+      await page.mouse.click(c.x, c.y);
+      await expect(page.locator('.dg-picked-title'), `${l} merge ${m}`).toHaveText(`Dal ${m}`);
+      await expect(page.locator(`path.dg-branch[data-merge="${m}"]`)).toHaveAttribute('data-picked', 'true');
+    }
+  }
+});
+
 test('lab: single linkage, cut at k = 3 and point click', async ({ page }) => {
   await open(page, PAGE, 'lab', READY);
   await gotoStep(page, 5, STEPS);

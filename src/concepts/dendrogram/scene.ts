@@ -268,7 +268,8 @@ export function mountDendrogramScene(host: HTMLElement, player: StepPlayer<Dendr
     player.setParams({ point: player.state.params.point === i ? null : i });
   };
   const onBranch = (e: Event): void => {
-    const b = (e.target as Element | null)?.closest('path.dg-branch');
+    // the wide hit band over a bar, or the visible branch stroke itself
+    const b = (e.target as Element | null)?.closest('path.dg-hit, path.dg-branch');
     if (!b) return;
     const m = Number(b.getAttribute('data-merge')) - 1;
     if (!Number.isInteger(m) || m < 0 || m >= N - 1) return;

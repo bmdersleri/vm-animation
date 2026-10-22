@@ -146,6 +146,7 @@
 /* Lab controls and click targets (Task 6) */
 .dg-scatter g.dg-point { cursor: pointer; }
 .dg-tree path.dg-branch,
+.dg-tree path.dg-hit,
 .dg-tree g.dg-leaf { cursor: pointer; }
 .dg-tree path.dg-branch[data-picked="true"] { stroke-width: 4.5; }
 

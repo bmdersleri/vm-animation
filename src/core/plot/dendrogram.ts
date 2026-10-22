@@ -43,6 +43,8 @@ export interface DendrogramSpec {
 }
 
 const MS = 450;
+/** Width of the transparent click band along each branch's bar. */
+const HIT_WIDTH = 12;
 const TR = 'dg';
 const TITLE = 'birleşme uzaklığı';
 const TITLE_LINES = ['birleşme', 'uzaklığı'];
@@ -65,6 +67,7 @@ export class DendrogramLayer {
   private readonly gAxis: G;
   private readonly gBranches: G;
   private readonly gCut: G;
+  private readonly gHits: G;
   private readonly gLeaves: G;
   private readonly frame: Selection<SVGRectElement, unknown, null, undefined>;
   private readonly title: Selection<SVGTextElement, unknown, null, undefined>;
@@ -85,6 +88,7 @@ export class DendrogramLayer {
     this.title = this.root.append('text').attr('class', 'dg-axis-title').attr('text-anchor', 'middle');
     this.gBranches = sub('dg-branches');
     this.gCut = sub('dg-cut-g');
+    this.gHits = sub('dg-hits');
     this.gLeaves = sub('dg-leaves');
   }
 
@@ -192,6 +196,18 @@ export class DendrogramLayer {
       .attr('stroke-width', (b) => (stateOf(b) === 'highlight' ? 4 : 2.5));
     go(bAll as unknown as AnySel).attr('d', path).attr('stroke', stroke).attr('opacity', 1);
     bAll.order();
+
+    // Click targets: one wide transparent band per bar, over the branches and the cut line. Children come
+    // last, so where a child's bar meets its parent's leg (the bar's centre) the child is picked.
+    const hitPath = (b: Branch): string => `M${X(b.xl)},${Y(b.height)}H${X(b.xr)}`;
+    const hits = this.gHits.selectAll<SVGPathElement, Branch>('path.dg-hit').data([...shown].reverse(), (b) => b.id);
+    hits.exit().remove();
+    hits.enter().append('path').attr('class', 'dg-hit').attr('fill', 'none').attr('stroke', 'transparent')
+      .attr('stroke-width', HIT_WIDTH).attr('stroke-linecap', 'butt').attr('pointer-events', 'stroke')
+      .merge(hits as never)
+      .attr('data-merge', (b) => (b as Branch).id - n + 1)
+      .attr('d', (b) => hitPath(b as Branch))
+      .order();
 
     // cut line + label
     const cl = this.gCut.selectAll<SVGGElement, number>('g.dg-cut-item').data(cut === null ? [] : [cut]);
