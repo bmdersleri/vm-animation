@@ -167,7 +167,9 @@
     grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto;
     grid-template-areas: "scatter" "tree" "panel";
   }
-  .dg-scene[data-view="table"] {
+  /* both modes are spelled out so these outrank the unscoped-by-media Ders rule above (0,3,0) */
+  .dg-scene[data-view="table"][data-mode="ders"],
+  .dg-scene[data-view="table"][data-mode="lab"] {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(200px, 1fr) auto;
     grid-template-areas: "tree" "panel";
@@ -175,8 +177,10 @@
     position: relative;
     min-height: 100%;
   }
-  .dg-scene[data-view="table"] .dg-scatter-host { display: none; }
-  .dg-scene[data-view="table"] .dg-panel { align-self: stretch; }
+  .dg-scene[data-view="table"][data-mode="ders"] .dg-scatter-host,
+  .dg-scene[data-view="table"][data-mode="lab"] .dg-scatter-host { display: none; }
+  .dg-scene[data-view="table"][data-mode="ders"] .dg-panel,
+  .dg-scene[data-view="table"][data-mode="lab"] .dg-panel { align-self: stretch; }
 }
 
 /* Lab controls and click targets (Task 6) */

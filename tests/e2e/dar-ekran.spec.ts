@@ -107,3 +107,23 @@ test('tall scenes are not cut at 390 px', async ({ page }) => {
     expect(r.pageOverflow, c.href).toBeLessThanOrEqual(1);
   }
 });
+
+test('dendrogram table step stacks tree above panel at 390 px in Ders and Lab', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  for (const mode of ['ders', 'lab'] as const) {
+    await page.goto(`/dendrogram/?mod=${mode}`);
+    const n = await page.locator('.step-dot').count();
+    await page.locator('.step-dot').nth(n - 1).click();
+    await expect(page.locator('.step-count')).toHaveText(`Adım ${n} / ${n}`);
+    await expect(page.locator('.dg-scene')).toHaveAttribute('data-view', 'table');
+    const g = await page.evaluate(() => {
+      const stage = document.querySelector('.stage')!.getBoundingClientRect();
+      const tree = document.querySelector('.dg-tree')!.getBoundingClientRect();
+      const panel = document.querySelector('.dg-panel')!.getBoundingClientRect();
+      return { stageW: stage.width, treeW: tree.width, treeH: tree.height, treeBottom: tree.bottom, panelTop: panel.top };
+    });
+    expect(g.treeW, mode).toBeGreaterThanOrEqual(g.stageW * 0.9);
+    expect(g.treeH, mode).toBeGreaterThanOrEqual(190);
+    expect(g.treeBottom, mode).toBeLessThanOrEqual(g.panelTop + 1);
+  }
+});
