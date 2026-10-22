@@ -8,6 +8,7 @@ import { DOMAIN, train } from '../../../src/concepts/karar-agaci/data';
 import { deriveTreeView } from '../../../src/concepts/karar-agaci/view';
 import { ATTRS, candidates, winner } from '../../../src/concepts/karar-agaci/tennis';
 import { formatNumber } from '../../../src/core/plot/format';
+import { labTextTests } from '../lab-text';
 
 function make(): StepPlayer<TreeParams> {
   return new StepPlayer<TreeParams>(treeScenario);
@@ -198,4 +199,6 @@ describe('treeShortcuts', () => {
     expect(pl.state.params.showTest).toBe(false);
     pl.destroy();
   });
+
+  labTextTests(treeScenario.steps, [2, 5, 6, 7, 10, 11]);
 });

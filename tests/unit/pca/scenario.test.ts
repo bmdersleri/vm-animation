@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StepPlayer } from '../../../src/core/player';
+import { labTextTests } from '../lab-text';
 import {
   pcaScenario, pcaShortcuts, animateTheta, THETA_SWEEP, THETA_SWEEP_MS,
   THETA_STEPS, BIRIM_STEPS, THRESHOLD_STEPS, PERPLEXITY_STEPS, type PcaParams,
@@ -283,4 +284,8 @@ describe('pcaScenario', () => {
       [['t', 'T'], 'T', 'perplexity: 5 / 30 / 50'],
     ]);
   });
+
+  labTextTests(pcaScenario.steps, [2, 4, 5, 6, 7, 10]);
+  // step 8: the 9th feature's id and the x1000 unit option are fixed labels, not results
+  labTextTests(pcaScenario.steps, [8], ['9', '1000']);
 });
