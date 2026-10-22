@@ -1,0 +1,196 @@
+// @vitest-environment jsdom
+import '../svg-stubs';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { StepPlayer } from '../../../src/core/player';
+import { dbscanData as d } from '../../../src/concepts/dbscan/data';
+import { dbscan } from '../../../src/concepts/dbscan/dbscan';
+import { dbscanScenario, type DbscanParams } from '../../../src/concepts/dbscan/scenario';
+import { mountDbscanScene } from '../../../src/concepts/dbscan/scene';
+import { clusterSizes, countsText, kindCounts, verdictFor } from '../../../src/concepts/dbscan/view';
+import { CLUSTER } from '../../../src/core/plot/marks';
+
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); document.body.replaceChildren(); });
+
+// jsdom cannot interpolate SVG transforms, so d3 transitions are switched off (reduced motion) for every test.
+const setup = (mode: 'ders' | 'lab' = 'ders') => {
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q }));
+  const player = new StepPlayer<DbscanParams>(dbscanScenario);
+  const host = document.createElement('div');
+  document.body.append(host);
+  const scene = mountDbscanScene(host, player, mode);
+  scene.resize(1000, 600);
+  return { player, host, scene };
+};
+const text = (host: HTMLElement, sel: string) => host.querySelector(sel)?.textContent ?? '';
+const attr = (host: HTMLElement, sel: string, a: string) => host.querySelector(sel)?.getAttribute(a);
+const kinds = (host: HTMLElement) => [...host.querySelectorAll('g.pk-point')].map((g) => g.getAttribute('data-kind'));
+const count = (host: HTMLElement, k: string) => kinds(host).filter((v) => v === k).length;
+const fin = (scene: { destroy(): void }, player: StepPlayer<DbscanParams>) => { scene.destroy(); player.destroy(); };
+const base = dbscan(d.points, d.meta.eps, d.meta.minSamples);
+const { core: A, border: B, noise: C } = d.examples;
+
+describe('dbscan scene', () => {
+  it('step 1 draws every point grey with no kinds', () => {
+    const { player, host, scene } = setup();
+    expect(host.querySelectorAll('g.pk-point')).toHaveLength(d.points.length);
+    expect(new Set(kinds(host))).toEqual(new Set(['-']));
+    expect(host.querySelector('circle.pk-eps')).toBeNull();
+    expect(host.textContent).not.toMatch(/NaN|Infinity|undefined/);
+    fin(scene, player);
+  });
+
+  it('step 2 colours by kmeansLabels with no kinds', () => {
+    const { player, host, scene } = setup();
+    player.goto(1);
+    expect(new Set(kinds(host))).toEqual(new Set(['-']));
+    const fills = [...host.querySelectorAll('g.pk-point')].map((g) => g.querySelector('circle')!.getAttribute('fill'));
+    expect(fills).toEqual(d.kmeansLabels.map((l) => CLUSTER[l]));
+    fin(scene, player);
+  });
+
+  it('step 3 draws the eps circle of A with its neighbour count', () => {
+    const { player, host, scene } = setup();
+    player.goto(2);
+    expect(host.querySelectorAll('circle.pk-eps')).toHaveLength(1);
+    expect(Number(attr(host, 'circle.pk-eps', 'data-r'))).toBe(d.meta.eps);
+    expect(text(host, '[data-neighbours]')).toBe(String(base.neighbours[A].length));
+    expect(host.querySelectorAll('circle.pk-nbr')).toHaveLength(base.neighbours[A].length - 1);
+    expect(text(host, 'text.pk-sel-label')).toBe(`Nokta ${A + 1}`);
+    expect(host.querySelector('[data-verdict]')).toBeNull();
+    expect(new Set(kinds(host))).toEqual(new Set(['-']));
+    fin(scene, player);
+  });
+
+  it('steps 4-6 show core, border and noise verdicts', () => {
+    const { player, host, scene } = setup();
+    for (const [step, i, kind] of [[3, A, 'core'], [4, B, 'border'], [5, C, 'noise']] as const) {
+      player.goto(step);
+      const v = verdictFor(base, i, d.meta.minSamples);
+      expect(attr(host, '[data-verdict]', 'data-verdict')).toBe(kind);
+      expect(text(host, '[data-verdict]')).toContain(v.text);
+      expect(text(host, '[data-neighbours]')).toBe(String(v.neighbours));
+      // the chosen point's kind is revealed; a border point also reveals the core it hangs on
+      const shown = kinds(host).filter((k) => k !== '-').sort();
+      expect(shown).toEqual(kind === 'border' ? ['border', 'core'] : [kind]);
+      expect(host.querySelector(`g.pk-point[data-i="${i}"]`)!.getAttribute('data-kind')).toBe(kind);
+    }
+    player.goto(4);
+    expect(host.querySelector('circle.pk-via')).not.toBeNull();
+    player.goto(3);
+    expect(host.querySelector('circle.pk-via')).toBeNull();
+    fin(scene, player);
+  });
+
+  it('step 7 counts match the data', () => {
+    const { player, host, scene } = setup();
+    player.goto(6);
+    const k = kindCounts(base);
+    expect([count(host, 'core'), count(host, 'border'), count(host, 'noise')]).toEqual([k.core, k.border, k.noise]);
+    expect(text(host, '[data-counts]')).toBe(countsText(base));
+    expect(host.querySelector('circle.pk-eps')).toBeNull();
+    fin(scene, player);
+  });
+
+  it('step 8 sweep ends with every cluster coloured', () => {
+    vi.useFakeTimers();
+    const { player, host, scene } = setup();
+    player.goto(7);
+    expect(Number(attr(host, '[data-spread]', 'data-spread'))).toBe(0);
+    expect(count(host, 'core') + count(host, 'border')).toBe(0);
+    vi.advanceTimersByTime(150 * 30);
+    expect(player.state.params.spread).toBe(1);
+    const k = kindCounts(base);
+    expect([count(host, 'core'), count(host, 'border'), count(host, 'noise')]).toEqual([k.core, k.border, k.noise]);
+    const sizes = [...host.querySelectorAll('[data-clusters] [data-size]')].map((e) => Number(e.getAttribute('data-size')));
+    expect(sizes).toEqual(clusterSizes(base));
+    expect(text(host, '[data-clusters]')).toContain('Küme 1');
+    fin(scene, player);
+  });
+
+  it('step 8 colours the points in expansion order while it spreads', () => {
+    vi.useFakeTimers();
+    const { player, host, scene } = setup();
+    player.goto(7);
+    vi.advanceTimersByTime(150 * 10);
+    const sp = player.state.params.spread;
+    expect(sp).toBeGreaterThan(0);
+    expect(sp).toBeLessThan(1);
+    const coloured = kinds(host).filter((v) => v !== '-').length;
+    expect(coloured).toBe(Math.round(sp * (base.order.length + kindCounts(base).noise)));
+    const first = base.order[0];
+    expect(host.querySelector(`g.pk-point[data-i="${first}"]`)!.getAttribute('data-kind')).not.toBe('-');
+    fin(scene, player);
+  });
+
+  it('step 9 sweeps eps and ends on the last stop with the live counts', () => {
+    vi.useFakeTimers();
+    const { player, host, scene } = setup();
+    player.goto(8);
+    expect(player.state.params.eps).toBe(d.epsSweep[0]);
+    vi.advanceTimersByTime(1800 * 5);
+    expect(player.state.params.eps).toBe(d.epsSweep[2]);
+    const r = dbscan(d.points, d.epsSweep[2], d.meta.minSamples);
+    expect(text(host, '[data-counts]')).toBe(countsText(r));
+    expect(count(host, 'noise')).toBe(kindCounts(r).noise);
+    fin(scene, player);
+  });
+
+  it('step 10 marks the knee and eps', () => {
+    const { player, host, scene } = setup();
+    player.goto(9);
+    expect(host.querySelector('svg.kd-chart')).not.toBeNull();
+    expect(Number(attr(host, '[data-knee]', 'data-knee'))).toBe(d.knee);
+    expect(Number(attr(host, '[data-eps-line]', 'data-eps-line'))).toBe(d.meta.eps);
+    expect(text(host, '.db-code')).toBe('DBSCAN(eps=0.3, min_samples=5)');
+    expect(host.querySelectorAll('.kd-line')).toHaveLength(1);
+    expect(host.textContent).not.toMatch(/NaN|Infinity|undefined/);
+    // another min_samples has no stored knee
+    player.setParam('minSamples', 9);
+    expect(host.querySelector('[data-knee]')).toBeNull();
+    expect(text(host, '.db-code')).toBe('DBSCAN(eps=0.3, min_samples=9)');
+    fin(scene, player);
+  });
+
+  it('the panel verdict follows a live eps change', () => {
+    const { player, host, scene } = setup('lab');
+    player.goto(3);
+    player.setParam('eps', 0.05);
+    const r = dbscan(d.points, 0.05, d.meta.minSamples);
+    expect(attr(host, '[data-verdict]', 'data-verdict')).toBe(r.kind[A]);
+    expect(text(host, '[data-verdict]')).toContain(verdictFor(r, A, d.meta.minSamples).text);
+    expect(text(host, '[data-neighbours]')).toBe(String(r.neighbours[A].length));
+    expect(Number(attr(host, 'circle.pk-eps', 'data-r'))).toBe(0.05);
+    fin(scene, player);
+  });
+
+  it('no core point says so', () => {
+    const { player, host, scene } = setup('lab');
+    player.goto(6);
+    player.setParams({ eps: 0.05, minSamples: 15 });
+    expect(text(host, '.db-panel')).toContain('Çekirdek yok: bütün noktalar gürültü.');
+    expect(count(host, 'noise')).toBe(d.points.length);
+    fin(scene, player);
+  });
+
+  it('panel is a direct child of the scene and follows the plot', () => {
+    const { player, host, scene } = setup('lab');
+    const root = host.querySelector('.db-scene')!;
+    expect(root.getAttribute('data-mode')).toBe('lab');
+    expect([...root.children].map((c) => c.className)).toEqual(['db-plot-host', 'db-panel']);
+    fin(scene, player);
+  });
+
+  it('destroy stops timers and removes listeners', () => {
+    vi.useFakeTimers();
+    const { player, host, scene } = setup();
+    player.goto(7);
+    vi.advanceTimersByTime(300);
+    scene.destroy();
+    expect(host.children).toHaveLength(0);
+    const before = host.innerHTML;
+    vi.advanceTimersByTime(150 * 40);
+    expect(host.innerHTML).toBe(before);
+    player.destroy();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});

@@ -23,6 +23,7 @@ export default defineConfig({
         'capraz-dogrulama': resolve(root, 'capraz-dogrulama/index.html'),
         'k-means': resolve(root, 'k-means/index.html'),
         'k-secimi': resolve(root, 'k-secimi/index.html'),
+        'dbscan': resolve(root, 'dbscan/index.html'),
       },
     },
   },
