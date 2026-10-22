@@ -74,7 +74,7 @@ export const birliktelikOlculeriScenario: Scenario<BirliktelikOlculeriParams> = 
     {
       id: 'guven',
       title: 'Güven: Ekmek → Süt',
-      text: `Kural ${setNames([EKMEK])} → ${setNames([SUT])}. Yalnız ${setNames([EKMEK])} içeren ${ES.cx} fiş öne çıkar; bunların ${ES.cxy} tanesinde ${setNames([SUT])} de var: güven = ${ES.cxy} / ${ES.cx} = ${ratioText(ES.confidence)}. ${setNames([EKMEK])} içeren fişlerde ${setNames([SUT])} de bulunma oranı ${percentText(ES.confidence ?? 0)}.`,
+      text: `Kural ${setNames([EKMEK])} → ${setNames([SUT])}. Yalnız ${setNames([EKMEK])} içeren ${ES.cx} fiş öne çıkar; bunların ${ES.cxy} tanesinde ${setNames([SUT])} de var: güven = ${ES.cxy} / ${ES.cx} = ${ratioText(ES.confidence)}. ${setNames([EKMEK])} içeren fişlerde ${setNames([SUT])} görülme oranı ${percentText(ES.confidence ?? 0)}.`,
       labText: 'Öncül ve sonuç ürünlerini değiştir: yalnız öncülü içeren fişler öne çıkar, bunların kaçında sonuç da var sayılır. Sepeti düzenleyince oran değişir.',
       term: 'güven (confidence)',
       params: { x: [EKMEK], y: [SUT] },
