@@ -1,0 +1,68 @@
+/* Random Forest, OOB and feature importance page; every text size is a theme token. */
+.rf-scene { --rf-green:#2A9D58; --rf-green-text:#1B6B3C; --rf-orange-text:#A85A00; width:100%; height:100%; min-height:0; display:flex; flex-direction:column; gap:10px; font-family:var(--font); color:var(--navy); }
+.rf-stage { position:relative; flex:1 1 0; min-height:0; overflow:hidden; }
+.rf-host { position:absolute; inset:0; overflow:hidden; }
+.rf-host[hidden] { display:none; }
+.rf-oob-host { overflow-x:hidden; overflow-y:auto; }
+.rf-plot { display:block; overflow:visible; }
+.rf-scene .formula { margin:0; padding:6px 14px; border-left:4px solid var(--navy); border-radius:6px; background:var(--bg); font-size:var(--fs-body); line-height:1.35; font-variant-numeric:tabular-nums; min-height:calc(2 * 1.35em + 12px); }
+.rf-scene .formula .line { display:block; }
+.rf-scene .formula .term { display:inline; white-space:nowrap; }
+@media (max-width:900px) {
+  .rf-scene .formula .term { white-space:normal; overflow-wrap:anywhere; }
+}
+
+/* text and ticks */
+.rf-plot text { font-size:var(--fs-tick); fill:var(--navy); font-variant-numeric:tabular-nums; }
+.rf-plot .axis-title { font-size:var(--fs-axis); font-weight:600; }
+
+/* legend keys: bars and chart series share the colour of their class */
+.rf-plot .legend-key { stroke-width:7; stroke-linecap:butt; }
+.rf-plot .legend-key.bagging, .rf-plot .legend-key.tree { stroke:var(--navy); }
+.rf-plot .legend-key.forest, .rf-plot .legend-key.test { stroke:var(--rf-green); }
+.rf-plot .legend-key.rho { stroke:var(--orange); }
+.rf-plot .legend-key.tree { stroke-dasharray:7 4; }
+
+/* root bars */
+.rf-plot .root-bar.bagging rect.bar { fill:var(--navy); }
+.rf-plot .root-bar.forest rect.bar { fill:var(--rf-green); }
+.rf-plot .bar-value { font-weight:700; }
+
+/* node card */
+.rf-plot .node-chip rect { fill:var(--surface); stroke:var(--navy); stroke-opacity:.35; stroke-width:2; stroke-dasharray:4 4; }
+.rf-plot .node-chip text { opacity:.55; }
+.rf-plot .node-chip.drawn rect { fill:var(--navy-soft); stroke:var(--navy); stroke-opacity:1; stroke-dasharray:none; }
+.rf-plot .node-chip.drawn text { opacity:1; font-weight:600; }
+.rf-plot .node-chip.winner rect { stroke:var(--orange); stroke-width:4; }
+.rf-plot .node-note { fill:var(--muted); }
+
+/* line charts: the shared line-chart classes and this page's series */
+.rf-plot .lc-series { fill:none; stroke:var(--navy); stroke-width:3; }
+.rf-plot .lc-series.var-bagging, .rf-plot .lc-series.sweep-tree { stroke:var(--navy); }
+.rf-plot .lc-series.sweep-tree { stroke-dasharray:7 5; }
+.rf-plot .lc-series.var-forest, .rf-plot .lc-series.sweep-test { stroke:var(--rf-green); }
+.rf-plot .lc-series.sweep-rho { stroke:var(--orange); }
+.rf-plot .lc-ref { stroke-width:2; }
+.rf-plot .lc-ref.floor-bagging { stroke:var(--navy); }
+.rf-plot .lc-ref.floor-forest { stroke:var(--rf-green); }
+.rf-plot .lc-ref-label, .rf-plot .lc-label { font-weight:600; paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
+.rf-plot .lc-ref-label.floor-bagging { fill:var(--navy); }
+.rf-plot .lc-ref-label.floor-forest { fill:var(--rf-green-text); }
+.rf-plot .lc-marker { fill:var(--orange); stroke:var(--navy); stroke-width:2; }
+
+/* OOB matrix */
+.rf-plot .tree-head, .rf-plot .col-head { font-weight:700; }
+.rf-plot .oob-row { cursor:pointer; outline:none; }
+.rf-plot .oob-row .row-bg { fill:transparent; }
+.rf-plot .oob-row:hover .row-bg { fill:var(--navy-soft); fill-opacity:.5; }
+.rf-plot .oob-row.picked .row-bg { fill:var(--navy-soft); stroke:var(--orange); stroke-width:3; }
+.rf-plot .oob-row:focus-visible .row-bg { stroke:var(--navy); stroke-width:2.5; }
+.rf-plot .oob-cell.seen .cell-box { fill:var(--navy-soft); stroke:none; }
+.rf-plot .oob-cell.oob .cell-box { fill:var(--surface); stroke:var(--navy); stroke-opacity:.6; stroke-width:1.5; stroke-dasharray:3 3; }
+.rf-plot .cell-count { font-weight:700; }
+.rf-plot .verdict { font-weight:800; }
+.rf-plot .oob-row.right .verdict { fill:var(--rf-green-text); }
+.rf-plot .oob-row.wrong .verdict { fill:#B3261E; }
+.rf-plot .oob-row.none .verdict { fill:var(--muted); }
+.rf-plot .oob-score { font-weight:800; }
+.rf-plot .oob-legend { fill:var(--muted); }

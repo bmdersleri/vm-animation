@@ -32,6 +32,7 @@ export default defineConfig({
         'apriori': resolve(root, 'apriori/index.html'),
         'normal-dagilim': resolve(root, 'normal-dagilim/index.html'),
         'bagging': resolve(root, 'bagging/index.html'),
+        'random-forest': resolve(root, 'random-forest/index.html'),
       },
     },
   },
