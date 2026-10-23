@@ -101,6 +101,30 @@ describe('normal scene', () => {
     ghostLabels(el);
   });
 
+  it('ghost labels keep finite positions in a scene too short for the label lane', () => {
+    // The Ders theme's 18 px ticks (jsdom reports 16 px) leave no room between the mark lane and the axis.
+    const real = window.getComputedStyle.bind(window);
+    vi.stubGlobal('getComputedStyle', (e: Element) => {
+      const style = real(e);
+      return new Proxy(style, {
+        get: (t, k) => {
+          if (k === 'fontSize') return '18px';
+          const v: unknown = Reflect.get(t, k, t);
+          return typeof v === 'function' ? v.bind(t) : v;
+        },
+      });
+    });
+    const { el, player, scene } = setup();
+    player.goto(2);
+    scene.resize(1280, 200);
+    const spans = [...el.querySelectorAll('text.ghost-label tspan')];
+    expect(spans).toHaveLength(2);
+    for (const t of spans) {
+      expect(Number.isFinite(Number(t.getAttribute('x')))).toBe(true);
+      expect(Number.isFinite(Number(t.getAttribute('y')))).toBe(true);
+    }
+  });
+
   it('step 4 shades area', () => {
     const { el, player } = setup();
     player.goto(3);

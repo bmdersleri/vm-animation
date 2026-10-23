@@ -278,10 +278,13 @@ export class CurveLayer {
       const text = `σ = ${formatTrim(g.sigma, 0)}`;
       const width = this.measure.width(text, 'ghost-label', tick);
       // Anchor distance in sigmas: where the curve falls to the floor density, never inside the inflection point.
+      // A plot too short for the lane (floor <= 0) keeps the inflection point and the clamped y below.
       const ratio = floor * g.sigma * Math.sqrt(2 * Math.PI);
-      const d = ratio < 1 ? Math.max(1, Math.sqrt(-2 * Math.log(ratio))) : 1;
+      const d = ratio > 0 && ratio < 1 ? Math.max(1, Math.sqrt(-2 * Math.log(ratio))) : 1;
       const right = sx(mu + d * g.sigma) + 6;
       const left = sx(mu - d * g.sigma) - 6;
+      // The domain margin (max(24, 2 tick)) is narrower than a label plus its 6 px gap, so an anchor past either end
+      // of the domain always fails this room test; a label with room on neither side is clamped off its curve.
       const onRight = right + width <= this.w - pad || left - width < pad;
       const x = onRight ? Math.max(pad, Math.min(this.w - pad - width, right)) : left;
       const y = Math.max(ghostTop, sy(normPdf(mu + d * g.sigma, mu, g.sigma)) - 4);
