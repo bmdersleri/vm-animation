@@ -36,6 +36,14 @@ export const concepts: ConceptEntry[] = [
     href: 'dagilim-carpiklik/',
   },
   {
+    id: 'normal-dagilim',
+    chapter: 2,
+    chapterTitle: CH[2],
+    title: 'Normal dağılım ve standart sapma',
+    status: 'hazir',
+    href: 'normal-dagilim/',
+  },
+  {
     id: 'korelasyon-isi-haritasi',
     chapter: 2,
     chapterTitle: CH[2],

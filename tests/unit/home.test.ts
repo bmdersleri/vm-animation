@@ -13,20 +13,20 @@ describe('home page', () => {
   it('one card per concept', () => {
     const root = render();
     expect(root.querySelectorAll('.card').length).toBe(concepts.length);
-    expect(concepts.length).toBe(24);
+    expect(concepts.length).toBe(25);
   });
 
-  it('only hazir cards are links: the three chapter 2 pages, iqr-aykiri/, olcekleme/, pca/, ozellik-secimi/, karar-agaci/, knn/, naive-bayes/, the three chapter 6 pages and the four chapter 7 pages and the two chapter 8 pages', () => {
+  it('only hazir cards are links: the four chapter 2 pages, iqr-aykiri/, olcekleme/, pca/, ozellik-secimi/, karar-agaci/, knn/, naive-bayes/, the three chapter 6 pages and the four chapter 7 pages and the two chapter 8 pages', () => {
     const root = render();
     const links = [...root.querySelectorAll<HTMLAnchorElement>('a.card')];
-    expect(links.length).toBe(19);
+    expect(links.length).toBe(20);
     expect(links.map((l) => l.getAttribute('href'))).toEqual([
-      'dagilim-carpiklik/', 'korelasyon-isi-haritasi/', 'kutu-grafigi/',
+      'dagilim-carpiklik/', 'normal-dagilim/', 'korelasyon-isi-haritasi/', 'kutu-grafigi/',
       'iqr-aykiri/', 'olcekleme/', 'pca/', 'ozellik-secimi/', 'karar-agaci/', 'knn/', 'naive-bayes/',
       'karmasiklik-matrisi/', 'roc-esik/', 'capraz-dogrulama/', 'k-means/', 'k-secimi/', 'dbscan/', 'dendrogram/',
       'birliktelik-olculeri/', 'apriori/',
     ]);
-    expect(links[8].textContent).toContain('k-En Yakın Komşu (k-NN)');
+    expect(links[9].textContent).toContain('k-En Yakın Komşu (k-NN)');
     const ders = root.querySelector<HTMLAnchorElement>('a.card-ders[href="knn/?mod=ders"]');
     expect(ders?.getAttribute('href')).toBe('knn/?mod=ders');
     expect(ders?.textContent).toBe('Ders modunda aç');
@@ -52,6 +52,7 @@ describe('home page', () => {
     const sec2 = [...root.querySelectorAll('section')][0];
     expect([...sec2.querySelectorAll('h3')].map((h) => h.textContent)).toEqual([
       'Dağılım, ortalama–medyan ve çarpıklık',
+      'Normal dağılım ve standart sapma',
       'Korelasyon, ısı haritası ve Anscombe Dörtlüsü',
       'Kutu grafiği: çeyrekler ve aykırı değerler',
     ]);

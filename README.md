@@ -1,6 +1,6 @@
 # VM Animasyon
 
-Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme**, **Özellik Seçimi (filtre ve sarmalayıcı)**, **Karmaşıklık Matrisi ve Metrikler**, **ROC, PR ve Karar Eşiği**, **Çapraz Doğrulama ve Veri Sızıntısı**, **K-Means Döngüsü**, **k Sayısının Seçimi**, **DBSCAN**, **Hiyerarşik Kümeleme ve Dendrogram**, **Destek, Güven ve Kaldıraç**, **Apriori ve FP-Growth**, **Dağılım, Ortalama–Medyan ve Çarpıklık**, **Korelasyon, Isı Haritası ve Anscombe Dörtlüsü** ile **Kutu Grafiği (çeyrekler ve aykırı değerler)**.
+Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme**, **Özellik Seçimi (filtre ve sarmalayıcı)**, **Karmaşıklık Matrisi ve Metrikler**, **ROC, PR ve Karar Eşiği**, **Çapraz Doğrulama ve Veri Sızıntısı**, **K-Means Döngüsü**, **k Sayısının Seçimi**, **DBSCAN**, **Hiyerarşik Kümeleme ve Dendrogram**, **Destek, Güven ve Kaldıraç**, **Apriori ve FP-Growth**, **Dağılım, Ortalama–Medyan ve Çarpıklık**, **Normal Dağılım ve Standart Sapma**, **Korelasyon, Isı Haritası ve Anscombe Dörtlüsü** ile **Kutu Grafiği (çeyrekler ve aykırı değerler)**.
 
 İçerik, "Modern Veri Madenciliğine Giriş" kitabına (Prof. Dr. İsmail KIRBAŞ) dayanır.
 
@@ -16,6 +16,7 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - PCA ve t-SNE: https://bmdersleri.github.io/vm-animation/pca/
 - Özellik seçimi: https://bmdersleri.github.io/vm-animation/ozellik-secimi/
 - Dağılım, ortalama–medyan ve çarpıklık: https://bmdersleri.github.io/vm-animation/dagilim-carpiklik/
+- Normal dağılım ve standart sapma: https://bmdersleri.github.io/vm-animation/normal-dagilim/
 - Korelasyon, ısı haritası ve Anscombe Dörtlüsü: https://bmdersleri.github.io/vm-animation/korelasyon-isi-haritasi/
 - Kutu grafiği (çeyrekler ve aykırı değerler): https://bmdersleri.github.io/vm-animation/kutu-grafigi/
 - DBSCAN: https://bmdersleri.github.io/vm-animation/dbscan/

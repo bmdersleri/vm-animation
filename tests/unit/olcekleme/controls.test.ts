@@ -170,3 +170,11 @@ describe('mountOlcExtra', () => {
     }
   });
 });
+
+ it('Lab note links to the normal distribution chapter', () => {
+  const host = document.createElement('div');
+  mountOlcExtra(host, new StepPlayer(olceklemeScenario));
+  const link = host.querySelector<HTMLAnchorElement>('a[href="../normal-dagilim/"]');
+  expect(link?.textContent).toBe('Normal dağılım ve standart sapma');
+  expect(link?.parentElement?.textContent).toContain('Bölüm 2');
+});

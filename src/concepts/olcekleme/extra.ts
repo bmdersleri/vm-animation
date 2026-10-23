@@ -48,6 +48,13 @@ export function mountOlcExtra(host: HTMLElement, p: StepPlayer<OlcParams>): void
     errors.append(li);
   }
   wrap.append(tableWrap, tree, errors);
+  const normalNote = doc.createElement('p');
+  normalNote.className = 'normal-note';
+  const normalLink = doc.createElement('a');
+  normalLink.href = '../normal-dagilim/';
+  normalLink.textContent = 'Normal dağılım ve standart sapma';
+  normalNote.append('Z-skoru ve 68–95–99,7 kuralı için ', normalLink, ' sayfasına bakın (Bölüm 2).');
+  wrap.append(normalNote);
   host.append(wrap);
 
   const drawTable = (t: TableView): void => {

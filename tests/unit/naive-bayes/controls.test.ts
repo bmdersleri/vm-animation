@@ -170,3 +170,11 @@ describe('createNbPointer', () => {
     expect(player.state.params.query).toEqual({ t: 40, c: 3 });
   });
 });
+
+ it('Lab note links to the normal distribution chapter', () => {
+  const host = document.createElement('div');
+  mountNbExtra(host, new StepPlayer(nbScenario));
+  const link = host.querySelector<HTMLAnchorElement>('a[href="../normal-dagilim/"]');
+  expect(link?.textContent).toBe('Normal dağılım ve standart sapma');
+  expect(link?.parentElement?.textContent).toContain('Bölüm 2');
+});

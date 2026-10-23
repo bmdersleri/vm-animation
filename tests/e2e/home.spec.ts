@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test('home lists 24 concepts and the k-NN card opens the k-NN page', async ({ page }) => {
+test('home lists 25 concepts and the k-NN card opens the k-NN page', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.card')).toHaveCount(24);
+  await expect(page.locator('.card')).toHaveCount(25);
   await page.locator('a.card.hazir[href$="knn/"]').click();
   await expect(page).toHaveURL(/\/knn\/$/);
   await expect(page.locator('.step-count')).toHaveText('Adım 1 / 12');
@@ -30,6 +30,7 @@ test('the chapter 3, 4 and 5 cards open their pages', async ({ page }) => {
 test('the chapter 2 cards open their pages and walk every Ders step', async ({ page }) => {
   const pages = [
     { href: 'dagilim-carpiklik/', steps: 9, scene: 'svg.dag-plot path.hist-bar', title: 'Dağılım, ortalama–medyan ve çarpıklık' },
+    { href: 'normal-dagilim/', steps: 8, scene: '.normal-scene svg', title: 'Normal dağılım ve standart sapma' },
     { href: 'korelasyon-isi-haritasi/', steps: 10, scene: 'svg.kor-plot g.panel', last: 'svg.kor-plot', title: 'Korelasyon, ısı haritası ve Anscombe Dörtlüsü' },
     { href: 'kutu-grafigi/', steps: 8, scene: 'svg.kutu-plot rect.box', title: 'Kutu grafiği: çeyrekler ve aykırı değerler' },
   ];

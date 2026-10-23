@@ -65,6 +65,13 @@ export function mountNbExtra(host: HTMLElement, p: StepPlayer<NbParams>): void {
   });
 
   wrap.append(exact, words, ...hatas);
+  const normalNote = doc.createElement('p');
+  normalNote.className = 'normal-note';
+  const normalLink = doc.createElement('a');
+  normalLink.href = '../normal-dagilim/';
+  normalLink.textContent = 'Normal dağılım ve standart sapma';
+  normalNote.append('Gauss (çan) eğrisinin kendisi için ', normalLink, ' sayfasına bakın (Bölüm 2).');
+  wrap.append(normalNote);
   host.append(wrap);
 
   const render = (s: PlayerState<NbParams>): void => {
