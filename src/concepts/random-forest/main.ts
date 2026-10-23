@@ -2,6 +2,8 @@ import '../../core/theme.css';
 import './random-forest.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
 import { randomForestScenario, type RfParams } from './scenario';
+import { mountRfParams } from './controls';
+import { mountRfExtra } from './extra';
 import { mountRfScene } from './scene';
 
 const randomForestPage: ConceptPage<RfParams> = {
@@ -9,8 +11,8 @@ const randomForestPage: ConceptPage<RfParams> = {
   chapter: 'Bölüm 9 · Topluluk öğrenmesi',
   scenario: randomForestScenario,
   mountScene: mountRfScene,
-  // the Lab controls come with the Lab task
-  mountParams: () => {},
+  mountParams: mountRfParams,
+  mountExplainExtra: mountRfExtra,
 };
 
 const app = document.querySelector<HTMLElement>('#app');

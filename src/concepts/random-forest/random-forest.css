@@ -3,7 +3,7 @@
 .rf-stage { position:relative; flex:1 1 0; min-height:0; overflow:hidden; }
 .rf-host { position:absolute; inset:0; overflow:hidden; }
 .rf-host[hidden] { display:none; }
-.rf-oob-host { overflow-x:hidden; overflow-y:auto; }
+.rf-oob-host, .rf-importance-host { overflow-x:hidden; overflow-y:auto; }
 .rf-plot { display:block; overflow:visible; }
 .rf-scene .formula { margin:0; padding:6px 14px; border-left:4px solid var(--navy); border-radius:6px; background:var(--bg); font-size:var(--fs-body); line-height:1.35; font-variant-numeric:tabular-nums; min-height:calc(2 * 1.35em + 12px); }
 .rf-scene .formula .line { display:block; }
@@ -93,3 +93,18 @@
 .rf-plot .scene-link text { fill:var(--navy); font-size:var(--fs-axis); text-decoration:underline; text-underline-offset:3px; }
 .rf-plot .scene-link:hover text { fill:var(--rf-orange-text); }
 .rf-plot .scene-link:focus-visible { outline:2px solid var(--navy); outline-offset:4px; }
+
+/* Lab controls */
+.rf-params { display:grid; gap:8px; }
+.rf-params .ctl { min-width:0; }
+.rf-params .ctl.range { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 8px; }
+.rf-params .ctl.pick { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.rf-params .ctl.check { display:flex; align-items:center; gap:8px; }
+.rf-params .ctl-label, .rf-params label { font-weight:600; }
+.rf-params .rf-value { font-weight:700; font-variant-numeric:tabular-nums; }
+.rf-params input[type='range'] { grid-column:1 / -1; width:100%; min-height:var(--ctl); margin:0; accent-color:var(--navy); }
+.rf-params select { min-height:var(--ctl); padding:0 0.5em; border:2px solid var(--navy); border-radius:8px; background:var(--surface); }
+.rf-extra p { margin:0 0 8px; }
+[data-mode='lab'] .rf-params .ctl[data-off], [data-mode='lab'] .rf-params[data-off] { display:none; }
+[data-mode='lab'] .rf-params { gap:4px; }
+[data-mode='lab'] .rf-params input[type='range'] { min-height:30px; }

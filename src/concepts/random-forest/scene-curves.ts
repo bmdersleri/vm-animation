@@ -82,7 +82,7 @@ export class CurvesScene {
   private drawCompare(cmp: NonNullable<NonNullable<RfView['curves']>['compare']>, ms: number): void {
     const f = this.measure.fonts(this.mode);
     const noteLines = this.measure.wrap(cmp.sentence, this.w - 2 * PAD, 'axis-title', f.axis);
-    const noteH = noteLines.length * f.axis * 1.4 + PAD;
+    const noteH = noteLines.length * f.axis * 1.4 + f.tick * 1.6 + 2 * PAD;
     const barsH = Math.max(80, Math.min(this.h - noteH, 260));
     const data: HBar[] = cmp.bars.map((b, row) => ({
       id: b.id,
@@ -105,10 +105,10 @@ export class CurvesScene {
       barK: 2.4,
       ms,
     });
-    // the CV folds ride on the CV bar
+    // the CV folds sit in a thin row just under the CV bar, on the bar's value scale
     const cvRow = cmp.bars.findIndex((b) => b.id === 'cv');
-    const cy = geo.yOf(cvRow, 0) + geo.barH / 2;
     const r = Math.max(3.5, f.tick * 0.3);
+    const cy = geo.yOf(cvRow, 0) + geo.barH + r + 4;
     this.dotsG
       .selectAll<SVGCircleElement, number>('circle.fold-dot')
       .data(cmp.folds)

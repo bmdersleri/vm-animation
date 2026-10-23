@@ -106,12 +106,14 @@ export const randomForestScenario: Scenario<RfParams> = {
     },
     {
       id: 'alt-kume',
+      labText: 'Kaydırıcı düğümün kaç öznitelik arasından seçeceğini değiştirir; Random Forest çubukları yeni değere göre yeniden boyanır.',
       term: 'max_features (düğümdeki aday öznitelik sayısı)',
       title: 'Her düğümde rastgele alt küme',
       text: `Düğüm kartında ${FEATURES} çipten ${NODE_DEMO.drawn.length} tanesi çekilir, en iyi bölünme yalnız bunlar arasında aranır (çekilen çift üreticinin seçtiği sabit bir örnektir; gerçekte her düğümde yeniden çekilir). Kökler dağılır: en sık iki öznitelik köklerin ${sumOf(forest.roots, topForest)} tanesini alır, bagging'de ${sumOf(BAGGING_ROW.roots, topBagging)} tanesini alıyordu.`,
     },
     {
       id: 'varyans',
+      labText: 'İki kaydırıcı korelasyonu ve ağaç sayısını değiştirir; formül şeridi ve işaretli nokta onlarla birlikte güncellenir.',
       term: 'topluluk varyansı',
       title: 'Neden işe yarar?',
       text: `Topluluk varyansı = ρσ² + (1 − ρ)σ²/M. Ağaç sayısı M yalnız ikinci terimi küçültür; ilk terim ρ ile kalır. Ölçülen ρ: bagging ${f(BAGGING_ROW.rho, 3)}, Random Forest ${f(forest.rho, 3)}. İki eğri M = 1–${rootsTotal}, σ² = 1.`,
@@ -136,6 +138,7 @@ export const randomForestScenario: Scenario<RfParams> = {
     },
     {
       id: 'oob-skor',
+      labText: 'Ağaç sayısı kaydırıcısı oy veren ağaçları değiştirir; OOB skoru ve doğru / yanlış işaretleri yeniden hesaplanır.',
       title: 'OOB skoru',
       text: `${TREES} ağaçla her müşteri yalnız onu görmeyen ağaçların çoğunluğuyla tahmin edilir; doğru olanlar ✓: OOB skoru = ${score.correct} / ${score.total} = ${f(score.correct / score.total, 3)}. Ayrı bir test kümesi ayırmadan.`,
     },

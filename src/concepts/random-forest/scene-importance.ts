@@ -26,6 +26,8 @@ export class ImportanceScene {
   private readonly measure: TextMeasure;
   private w = 1;
   private h = 1;
+  /** Height the host gives; the drawing may be taller (the host then scrolls). */
+  private baseH = 1;
   private mode: Mode = 'ders';
 
   constructor(host: HTMLElement) {
@@ -48,7 +50,8 @@ export class ImportanceScene {
 
   resize(w: number, h: number, mode: Mode): void {
     this.w = Math.max(1, w);
-    this.h = Math.max(1, h);
+    this.baseH = Math.max(1, h);
+    this.h = this.baseH;
     this.mode = mode;
     this.svg.attr('width', this.w).attr('height', this.h);
   }
@@ -68,6 +71,14 @@ export class ImportanceScene {
     if (!imp) return;
     this.interrupt();
     const f = this.measure.fonts(this.mode);
+    // stacked columns need a readable row height; when the host is shorter than that it scrolls
+    const stacked = imp.columns.length > 1 && this.w < SIDE_BY_SIDE;
+    const rowsNeeded = imp.columns.reduce((s, c) => s + c.rows.length, 0);
+    const minRow = f.tick * 2.1;
+    const footNeed = this.footHeight(imp, f);
+    const need = stacked ? rowsNeeded * minRow + imp.columns.length * f.axis * 1.7 + footNeed : 0;
+    this.h = Math.max(this.baseH, Math.ceil(need));
+    this.svg.attr('height', this.h);
     const foot = this.drawFoot(imp, f);
     const areaH = Math.max(80, this.h - foot);
     const n = imp.columns.length;
@@ -138,6 +149,14 @@ export class ImportanceScene {
       valueSample: '0,000',
       ms,
     });
+  }
+
+  /** Height of the causality sentence and the links. */
+  private footHeight(imp: ImportanceView, f: { axis: number }): number {
+    const lines = imp.causal ? this.measure.wrap(imp.causal, this.w - 2 * PAD, 'axis-title', f.axis) : [];
+    const causalH = lines.length === 0 ? 0 : lines.length * f.axis * 1.4 + PAD;
+    const linksH = imp.links.length === 0 ? 0 : imp.links.length * f.axis * 1.5 + PAD / 2;
+    return causalH + linksH;
   }
 
   /** Causality sentence and links at the bottom (step 10); returns the height they take. */
