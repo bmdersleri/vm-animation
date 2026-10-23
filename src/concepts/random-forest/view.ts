@@ -43,7 +43,7 @@ export interface OobRow {
   /** True class (1 = Ayrıldı). */
   y: 0 | 1;
   /** Per tree column: times drawn (0 = OOB) and, for an OOB cell, that tree's vote. */
-  cells: { count: number; vote: 0 | 1 | null }[];
+  cells: { count: number; vote: 0 | 1 | null; voting: boolean }[];
   /** OOB majority over all `m` voting trees, or null when none of them left the customer out. */
   verdict: 0 | 1 | null;
   /** Correct (✓), wrong (✗) or no OOB vote at all. */
@@ -110,6 +110,7 @@ function sweepSpec(mf: number): LineChartSpec {
   return {
     x: [1, RF.byMf.length],
     y: [0.3, 1],
+    xTicks: RF.byMf.map((r) => r.mf),
     xTitle: 'max_features',
     yTitle: 'ρ ve doğruluk',
     series: [
@@ -124,9 +125,11 @@ function sweepSpec(mf: number): LineChartSpec {
 /** Rows of the OOB matrix for the first `m` trees. */
 function oobRows(m: number): OobRow[] {
   return CUSTOMERS.map((c, i) => {
-    const cells = BOOTS.slice(0, MATRIX_COLS).map((b) => {
+    // columns beyond the `m` voting trees stay in place (stable layout) but cast no vote
+    const cells = BOOTS.slice(0, MATRIX_COLS).map((b, k) => {
       const count = b.counts[i];
-      return { count, vote: count === 0 ? predictTree(b.tree, [c.t, c.c]) : null };
+      const voting = k < m;
+      return { count, vote: voting && count === 0 ? predictTree(b.tree, [c.t, c.c]) : null, voting };
     });
     const { ayrildi, kaldi } = oobVotes(i, m);
     const verdict = oobVerdict(ayrildi, kaldi);

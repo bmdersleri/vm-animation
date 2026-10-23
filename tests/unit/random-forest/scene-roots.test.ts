@@ -68,4 +68,11 @@ describe('roots scene', () => {
     expect(label).toContain(RF.byMf[7].rho.toFixed(3).replace('.', ','));
     expect(el.querySelectorAll('.rf-roots-host path.lc-series').length).toBeGreaterThanOrEqual(2);
   });
+
+  it('step 4 x axis ticks are the integers 1 to 8', () => {
+    const { el, player } = setup();
+    player.goto(step('max-features'));
+    const labels = [...el.querySelectorAll('.rf-roots-host g.axis.x g.tick text')].map((t) => t.textContent);
+    expect(labels).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
+  });
 });

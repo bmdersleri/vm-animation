@@ -21,6 +21,7 @@
   --fs-title: 22px;
   --fs-axis: 14px;
   --fs-tick: 13px;
+  --fs-cell: 12px; /* dense table cells (OOB matrix): 25 rows must fit on one screen */
   --gap: 12px;
   --ctl: 40px; /* control height */
   --dot: 18px;
@@ -33,6 +34,7 @@
   --fs-title: clamp(32px, 2.6vw, 50px);
   --fs-axis: clamp(18px, 1.45vw, 28px);
   --fs-tick: clamp(18px, 1.4vw, 26px);
+  --fs-cell: 15px;
   --gap: 10px;
   --ctl: 48px;
   --dot: 26px;
@@ -42,6 +44,7 @@
   --fs-title: 22px;
   --fs-axis: 14px;
   --fs-tick: 13px;
+  --fs-cell: 12px;
 }
 
 /* ---------- base ---------- */

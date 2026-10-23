@@ -14,6 +14,7 @@
 
 /* text and ticks */
 .rf-plot text { font-size:var(--fs-tick); fill:var(--navy); font-variant-numeric:tabular-nums; }
+.rf-plot text.cell { font-size:var(--fs-cell); }
 .rf-plot .axis-title { font-size:var(--fs-axis); font-weight:600; }
 
 /* legend keys: bars and chart series share the colour of their class */
@@ -66,3 +67,5 @@
 .rf-plot .oob-row.none .verdict { fill:var(--muted); }
 .rf-plot .oob-score { font-weight:800; }
 .rf-plot .oob-legend { fill:var(--muted); }
+.rf-plot .oob-cell.idle { opacity:.35; }
+.rf-plot .tree-head.idle { opacity:.35; }

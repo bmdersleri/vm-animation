@@ -66,4 +66,33 @@ describe('LineChartLayer', () => {
       expect(ly).toBeLessThan(plot.top + plot.height + 0.5);
     }
   });
+
+  it('explicit ticks replace the d3 choice', () => {
+    const { svg, layer } = setup();
+    const spec: LineChartSpec = { ...base, x: [1, 8], xTicks: [1, 2, 3, 4, 5, 6, 7, 8], refs: [], marker: null };
+    layer.draw(spec, layer.plotRect(900, 400, spec), 0);
+    const labels = [...svg.querySelectorAll('g.axis.x g.tick text')].map((t) => t.textContent);
+    expect(labels).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
+  });
+
+  it('a ref label moves to the side of its line that the curve does not occupy', () => {
+    const { svg, layer } = setup();
+    // the curve runs just above the ref line at the right end: the label must go below the line
+    const spec: LineChartSpec = {
+      ...base,
+      x: [1, 100],
+      y: [0, 1],
+      series: [{ id: 'a', cls: 'curve', pts: [[1, 0.9], [20, 0.56], [100, 0.5]] }],
+      refs: [{ y: 0.48, label: 'taban', cls: 'floor' }],
+      marker: null,
+    };
+    layer.draw(spec, layer.plotRect(900, 400, spec), 0);
+    const line = Number(svg.querySelector('line.lc-ref')!.getAttribute('y1'));
+    expect(Number(svg.querySelector('text.lc-ref-label')!.getAttribute('y'))).toBeGreaterThan(line);
+    // a curve far below leaves the label above, as before
+    const far: LineChartSpec = { ...spec, series: [{ id: 'a', cls: 'curve', pts: [[1, 0.1], [100, 0.1]] }] };
+    layer.draw(far, layer.plotRect(900, 400, far), 0);
+    const line2 = Number(svg.querySelector('line.lc-ref')!.getAttribute('y1'));
+    expect(Number(svg.querySelector('text.lc-ref-label')!.getAttribute('y'))).toBeLessThan(line2);
+  });
 });

@@ -101,4 +101,27 @@ describe('oob matrix scene', () => {
     const verdictRight = [...host(el).querySelectorAll('text.verdict')].map((t) => Number(t.getAttribute('x')));
     expect(Math.max(...verdictRight)).toBeLessThan(390);
   });
+
+  it('columns beyond the voting trees cast no vote', () => {
+    const { el, player } = setup();
+    player.goto(step('oob-matris'));
+    player.setParam('trees', 5);
+    expect(host(el).querySelectorAll('g.oob-cell')).toHaveLength(25 * 12);
+    expect(host(el).querySelectorAll('g.oob-cell.oob:not(.idle) .vote-mark').length).toBeGreaterThan(0);
+    for (let k = 5; k < 12; k++) {
+      const cells = host(el).querySelectorAll(`g.oob-cell[data-tree="${k}"]`);
+      expect([...cells].every((c) => c.classList.contains('idle') && c.querySelector('.vote-mark') === null)).toBe(true);
+    }
+    for (let k = 0; k < 5; k++) {
+      const oobCells = host(el).querySelectorAll(`g.oob-cell.oob[data-tree="${k}"]`);
+      expect([...oobCells].every((c) => c.querySelector('.vote-mark') !== null && !c.classList.contains('idle'))).toBe(true);
+    }
+    // the verdict column counts the same 5 trees
+    const row = host(el).querySelector(`g.oob-row[data-row="${PICKS.oob}"]`)!;
+    const votes = [...row.querySelectorAll('g.oob-cell .vote-mark')].map((m) => m.classList.contains('ayrildi'));
+    const yes = votes.filter(Boolean).length;
+    const mark = row.querySelector('.verdict-mark');
+    if (votes.length === 0) expect(mark).toBeNull();
+    else expect(mark!.classList.contains('ayrildi')).toBe(yes * 2 > votes.length);
+  });
 });

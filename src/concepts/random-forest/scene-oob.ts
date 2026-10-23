@@ -7,12 +7,12 @@ import type { OobRow, OobView, RfView } from './view';
 
 const NS = 'http://www.w3.org/2000/svg';
 const PAD = 8;
-/** Row height (x tick font) the legend may cost; below it the legend is dropped and the rows may shrink to MIN_ROW. */
+/** Row height (x cell font) the legend may cost; below it the legend is dropped and the rows may shrink to MIN_ROW. */
 const LEGEND_ROW = 1.15;
-/** Smallest row height as a multiple of the tick font (a digit is about 0.75 em tall). */
+/** Smallest row height as a multiple of the cell font (a digit is about 0.75 em tall). */
 const MIN_ROW = 0.9;
 
-type Cell = { row: OobRow; tree: number; count: number; vote: 0 | 1 | null };
+type Cell = { row: OobRow; tree: number; count: number; vote: 0 | 1 | null; voting: boolean };
 
 /** A class mark: turquoise circle for Kaldı (0), orange triangle for Ayrıldı (1). */
 function mark(parent: Selection<SVGGElement, any, any, any>, cls: string, y: 0 | 1, r: number, x: number, yy: number): void {
@@ -78,17 +78,19 @@ export class OobScene {
     if (!o) return;
     const f = this.measure.fonts(this.mode);
     const tick = f.tick;
+    // the matrix text has its own (smaller) token so that 25 rows fit one screen
+    const cell = this.measure.fontPx('cell', this.mode === 'ders' ? 15 : 12);
     const lines = this.legendLines(o, tick);
     const scoreH = o.score ? f.axis * 1.3 : 0;
     // 25 rows must stay on screen: when the legend would squeeze the rows, the step text explains the cells instead
     const legendH = lines.length * tick * 1.4;
-    const roomy = (this.h - PAD - legendH - scoreH - 8) / (o.rows.length + 1) >= tick * LEGEND_ROW;
+    const roomy = (this.h - PAD - legendH - scoreH - 8) / (o.rows.length + 1) >= cell * LEGEND_ROW;
     const legendLines = roomy ? lines : [];
     const footH = (roomy ? legendH : 0) + scoreH + 8;
-    const rowH = Math.max(tick * MIN_ROW, Math.floor((this.h - footH - PAD) / (o.rows.length + 1)));
+    const rowH = Math.max(cell * MIN_ROW, Math.floor((this.h - footH - PAD) / (o.rows.length + 1)));
     const headH = rowH;
-    const labelW = this.measure.width('24', 'tick', tick) + tick * 1.5 + 6;
-    const verdictW = tick * 3.4;
+    const labelW = this.measure.width('24', 'cell', cell) + cell * 1.5 + 6;
+    const verdictW = cell * 3.4;
     const gap = 6;
     const left = PAD + labelW;
     const cellW = Math.max(8, Math.floor((this.w - 2 * PAD - labelW - verdictW - gap) / o.cols));
@@ -106,7 +108,7 @@ export class OobScene {
       .selectAll<SVGTextElement, number>('text.tree-head')
       .data(heads)
       .join('text')
-      .attr('class', 'tree-head tick')
+      .attr('class', (k) => `tree-head cell${k < o.m ? '' : ' idle'}`)
       .attr('text-anchor', 'middle')
       .attr('x', (k) => r1(colX(k) + cellW / 2))
       .attr('y', r1(PAD + headH / 2))
@@ -116,7 +118,7 @@ export class OobScene {
       .selectAll<SVGTextElement, string>('text.col-head')
       .data(['no', 'OOB'])
       .join('text')
-      .attr('class', 'col-head tick')
+      .attr('class', 'col-head cell')
       .attr('text-anchor', (_, i) => (i === 0 ? 'start' : 'middle'))
       .attr('x', (_, i) => r1(i === 0 ? PAD : right + gap + verdictW / 2))
       .attr('y', r1(PAD + headH / 2))
@@ -130,10 +132,10 @@ export class OobScene {
       .join((enter) => {
         const g = enter.append('g').attr('tabindex', 0).attr('role', 'button');
         g.append('rect').attr('class', 'row-bg');
-        g.append('text').attr('class', 'row-no tick');
+        g.append('text').attr('class', 'row-no cell');
         g.append('g').attr('class', 'row-class');
         g.append('g').attr('class', 'row-cells');
-        g.append('text').attr('class', 'verdict tick').attr('text-anchor', 'middle');
+        g.append('text').attr('class', 'verdict cell').attr('text-anchor', 'middle');
         g.append('g').attr('class', 'verdict-g');
         g.on('click', function (_, d) {
           self.onPick?.(d.index);
@@ -171,17 +173,17 @@ export class OobScene {
     });
 
     rows.select<SVGGElement>('g.row-cells').each(function (d) {
-      const cells: Cell[] = d.cells.map((c, tree) => ({ row: d, tree, count: c.count, vote: c.vote }));
+      const cells: Cell[] = d.cells.map((c, tree) => ({ row: d, tree, count: c.count, vote: c.vote, voting: c.voting }));
       const g = select(this)
         .selectAll<SVGGElement, Cell>('g.oob-cell')
         .data(cells, (c) => c.tree)
         .join((enter) => {
           const e = enter.append('g');
           e.append('rect').attr('class', 'cell-box').attr('rx', 3);
-          e.append('text').attr('class', 'cell-count tick').attr('text-anchor', 'middle');
+          e.append('text').attr('class', 'cell-count cell').attr('text-anchor', 'middle');
           return e;
         })
-        .attr('class', (c) => `oob-cell ${c.count === 0 ? 'oob' : 'seen'}`)
+        .attr('class', (c) => `oob-cell ${c.count === 0 ? 'oob' : 'seen'}${c.voting ? '' : ' idle'}`)
         .attr('data-row', (c) => c.row.index)
         .attr('data-tree', (c) => c.tree)
         .attr('data-vote', (c) => (c.vote === null ? null : c.vote));
@@ -213,7 +215,7 @@ export class OobScene {
     });
     rows
       .select('text.verdict')
-      .attr('x', r1(right + gap + verdictW - tick * 0.9))
+      .attr('x', r1(right + gap + verdictW - cell * 0.9))
       .attr('y', (d) => r1(rowY(d.index) + rowH / 2))
       .attr('dy', '0.35em')
       .text((d) => (d.outcome === 'none' ? '–' : d.outcome === 'right' ? '✓' : '✗'));
@@ -243,7 +245,8 @@ export class OobScene {
 
   /** The legend sentence wrapped to the width of the scene. */
   private legendLines(o: OobView, tick: number): string[] {
-    const text = `${o.cols} ağaç sütunu · dolu hücre: ağaç müşteriyi gördü (sayı = tekrar) · kesikli hücre: OOB, ağaç oy verir (● Kaldı, ▲ Ayrıldı) · sağda ${o.m} ağacın OOB çoğunluğu ve ✓ / ✗`;
+    const idle = o.m < o.cols ? ` · soluk sütunlar oy vermez (${o.m} ağaç oy verir)` : '';
+    const text = `${o.cols} ağaç sütunu${idle} · dolu hücre: ağaç müşteriyi gördü (sayı = tekrar) · kesikli hücre: OOB, ağaç oy verir (● Kaldı, ▲ Ayrıldı) · sağda ${o.m} ağacın OOB çoğunluğu ve ✓ / ✗`;
     return this.measure.wrap(text, this.w - 2 * PAD, 'tick', tick);
   }
 }

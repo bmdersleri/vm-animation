@@ -2,7 +2,7 @@ import type { Selection } from 'd3-selection';
 import { scaleLinear } from 'd3-scale';
 import { AxesLayer } from './axes';
 import { tickFormat } from './format';
-import { chooseOffset, labelArea, labelBox, offsets, type Box } from './label-place';
+import { chooseOffset, labelArea, labelBox, offsets, overlap, type Box } from './label-place';
 import { NAVY, r1 } from './marks';
 import { tr } from './transition';
 import type { TextMeasure } from './text-measure';
@@ -34,6 +34,9 @@ export interface LineChartSpec {
   series: LineSeries[];
   refs?: LineRef[];
   marker?: { x: number; y: number; label: string } | null;
+  /** Explicit tick values (e.g. the integers 1-8); default is the d3 tick choice. */
+  xTicks?: number[];
+  yTicks?: number[];
 }
 
 /** Outer padding (px) around the axis titles. */
@@ -101,6 +104,8 @@ export class LineChartLayer {
       {
         xTickCount: Math.max(2, Math.round(plot.width / (m.tick * 6))),
         yTickCount: Y_TICKS,
+        xTicks: spec.xTicks,
+        yTicks: spec.yTicks,
         xTickY,
         yTickX: plot.left - m.gap,
         xTitle: { x: plot.left + plot.width / 2, y: xTickY + m.tick * 0.3 + m.gap + m.axis * 0.95, text: spec.xTitle },
@@ -130,37 +135,7 @@ export class LineChartLayer {
 
     const taken: Box[] = [];
     const refs = spec.refs ?? [];
-    this.refsG
-      .selectAll<SVGLineElement, LineRef>('line.lc-ref')
-      .data(refs)
-      .join('line')
-      .attr('class', (d) => `lc-ref ${d.cls}`)
-      .attr('stroke', NAVY)
-      .attr('stroke-width', 2)
-      .attr('stroke-dasharray', '8 5')
-      .attr('x1', plot.left)
-      .attr('x2', right)
-      .attr('y1', (d) => r1(sc.y(d.y)))
-      .attr('y2', (d) => r1(sc.y(d.y)));
-    const refY = (d: LineRef): number => {
-      const above = sc.y(d.y) - 4;
-      return above - m.tick < plot.top ? sc.y(d.y) + m.tick + 2 : above;
-    };
-    this.refsG
-      .selectAll<SVGTextElement, LineRef>('text.lc-ref-label')
-      .data(refs)
-      .join('text')
-      .attr('class', (d) => `lc-ref-label tick ${d.cls}`)
-      .attr('text-anchor', 'end')
-      .attr('x', r1(right - 4))
-      .attr('y', (d) => r1(refY(d)))
-      .text((d) => d.label);
-    for (const d of refs) {
-      taken.push(labelBox(right - 4, refY(d), d.label.length, 'end', m.tick));
-      const y = sc.y(d.y);
-      taken.push({ l: plot.left, t: y - 2, r: right, b: y + 2 });
-    }
-    // the polylines and reference lines count as occupied, so the marker label sits beside them
+    // the polylines count as occupied: ref labels and the marker label sit beside them
     const step = Math.max(3, m.tick * 0.3);
     for (const sr of spec.series) {
       for (let i = 1; i < sr.pts.length; i++) {
@@ -176,6 +151,41 @@ export class LineChartLayer {
         }
       }
     }
+    this.refsG
+      .selectAll<SVGLineElement, LineRef>('line.lc-ref')
+      .data(refs)
+      .join('line')
+      .attr('class', (d) => `lc-ref ${d.cls}`)
+      .attr('stroke', NAVY)
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', '8 5')
+      .attr('x1', plot.left)
+      .attr('x2', right)
+      .attr('y1', (d) => r1(sc.y(d.y)))
+      .attr('y2', (d) => r1(sc.y(d.y)));
+    // each label goes above or below its line, whichever side is clearer of the curves and of earlier labels
+    const refYs = new Map<LineRef, number>();
+    for (const d of refs) {
+      const y = sc.y(d.y);
+      const cands = [y - 4, y + m.tick + 2].filter((c) => c - m.tick >= plot.top - 1 && c <= bottom);
+      const score = (c: number): number => {
+        const box = labelBox(right - 4, c, d.label.length, 'end', m.tick);
+        return taken.reduce((n, t) => n + (overlap(box, t) > 0 ? 1 : 0), 0);
+      };
+      const best = cands.length === 0 ? y - 4 : cands.reduce((a, c) => (score(c) < score(a) ? c : a));
+      refYs.set(d, best);
+      taken.push(labelBox(right - 4, best, d.label.length, 'end', m.tick));
+      taken.push({ l: plot.left, t: y - 2, r: right, b: y + 2 });
+    }
+    this.refsG
+      .selectAll<SVGTextElement, LineRef>('text.lc-ref-label')
+      .data(refs)
+      .join('text')
+      .attr('class', (d) => `lc-ref-label tick ${d.cls}`)
+      .attr('text-anchor', 'end')
+      .attr('x', r1(right - 4))
+      .attr('y', (d) => r1(refYs.get(d)!))
+      .text((d) => d.label);
 
     const marker = spec.marker ?? null;
     const mx = marker ? sc.x(marker.x) : 0;
