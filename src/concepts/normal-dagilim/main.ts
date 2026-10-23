@@ -5,7 +5,7 @@ import { normalDagilimScenario, type NormalDagilimParams } from './scenario';
 
 const normalDagilimPage: ConceptPage<NormalDagilimParams> = {
   title: 'Normal dağılım ve standart sapma',
-  chapter: 'Bölüm ? · …',
+  chapter: 'Bölüm 2 · Keşifsel veri analizi',
   scenario: normalDagilimScenario,
   mountScene: () => ({ resize() {}, setMode() {}, destroy() {} }),
   mountParams: () => {},
