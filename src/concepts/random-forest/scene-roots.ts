@@ -1,6 +1,7 @@
 import { select, type Selection } from 'd3-selection';
 import 'd3-transition';
 import type { Mode } from '../../core/mode';
+import { HBarsLayer, type HBar } from '../../core/plot/hbars';
 import { LineChartLayer } from '../../core/plot/line-chart';
 import { r1 } from '../../core/plot/marks';
 import { TextMeasure } from '../../core/plot/text-measure';
@@ -13,7 +14,6 @@ export const MS_STEP = 450;
 const NS = 'http://www.w3.org/2000/svg';
 type G = Selection<SVGGElement, unknown, null, undefined>;
 type Rect = { x: number; y: number; w: number; h: number };
-type Bar = { feature: number; group: 'bagging' | 'forest'; count: number; first: boolean };
 
 /** Below this width the node card stacks under the bars instead of sitting beside them. */
 const SIDE_BY_SIDE = 700;
@@ -31,6 +31,7 @@ export class RootsScene {
   private readonly chartG: G;
   private readonly measure: TextMeasure;
   private readonly chart: LineChartLayer;
+  private readonly bars: HBarsLayer;
   private w = 1;
   private h = 1;
   private mode: Mode = 'ders';
@@ -49,6 +50,7 @@ export class RootsScene {
     const probe = this.svg.append('text').attr('class', 'probe').attr('visibility', 'hidden').attr('aria-hidden', 'true');
     this.measure = new TextMeasure(probe.node()!);
     this.chart = new LineChartLayer(this.chartG, this.measure);
+    this.bars = new HBarsLayer(this.barsG, this.measure);
   }
 
   resize(w: number, h: number, mode: Mode): void {
@@ -145,62 +147,35 @@ export class RootsScene {
   }
 
   private drawBars(r: RootsView, rect: Rect, tick: number, ms: number): void {
-    const groups: Bar['group'][] = [];
+    const groups: ('bagging' | 'forest')[] = [];
     if (r.bagging) groups.push('bagging');
     if (r.forest) groups.push('forest');
-    const data: Bar[] = [];
-    r.names.forEach((_, feature) => {
+    const data: HBar[] = [];
+    r.names.forEach((name, feature) => {
       groups.forEach((group, k) => {
-        const counts = group === 'bagging' ? r.bagging! : r.forest!;
-        data.push({ feature, group, count: counts[feature], first: k === 0 });
+        const count = (group === 'bagging' ? r.bagging! : r.forest!)[feature];
+        data.push({
+          id: `${group}-${feature}`,
+          row: feature,
+          slot: k,
+          cls: group,
+          value: count,
+          text: String(count),
+          label: k === 0 ? name : '',
+          attrs: { count, feature },
+        });
       });
     });
-    const nameW = this.measure.maxWidth(r.names, 'tick', tick) + 10;
-    const valueW = this.measure.width('000', 'tick', tick) + 8;
-    const x0 = rect.x + PAD + nameW;
-    const xMax = Math.max(x0 + 20, rect.x + rect.w - PAD - valueW);
-    const rows = r.names.length;
-    const groupH = rect.h / rows;
-    const gapIn = 2;
-    const barH = Math.max(6, Math.min(tick * 1.5, (groupH - 6 - gapIn * (groups.length - 1)) / groups.length));
-    const blockH = barH * groups.length + gapIn * (groups.length - 1);
-    const len = (c: number): number => (c / r.maxCount) * (xMax - x0);
-    const yOf = (d: Bar): number => {
-      const k = groups.indexOf(d.group);
-      return rect.y + d.feature * groupH + (groupH - blockH) / 2 + k * (barH + gapIn);
-    };
-
-    const sel = this.barsG
-      .selectAll<SVGGElement, Bar>('g.root-bar')
-      .data(data, (d) => `${d.group}-${d.feature}`)
-      .join((enter) => {
-        const g = enter.append('g');
-        g.append('rect').attr('class', 'bar').attr('rx', 3).attr('width', 0);
-        g.append('text').attr('class', 'bar-name tick').attr('text-anchor', 'end');
-        g.append('text').attr('class', 'bar-value tick');
-        return g;
-      })
-      .attr('class', (d) => `root-bar ${d.group}`)
-      .attr('data-count', (d) => d.count)
-      .attr('data-feature', (d) => d.feature)
-      .attr('transform', (d) => `translate(0,${r1(yOf(d))})`);
-    sel
-      .select('rect.bar')
-      .attr('x', r1(x0))
-      .attr('height', r1(barH))
-      .call((s) => tr(s, 'bars', ms).attr('width', (d) => r1(Math.max(1, len(d.count)))));
-    sel
-      .select('text.bar-name')
-      .attr('x', r1(x0 - 8))
-      .attr('y', r1(barH / 2))
-      .attr('dy', '0.35em')
-      .text((d) => (d.first ? r.names[d.feature] : ''));
-    sel
-      .select('text.bar-value')
-      .attr('x', (d) => r1(x0 + len(d.count) + 6))
-      .attr('y', r1(barH / 2))
-      .attr('dy', '0.35em')
-      .text((d) => String(d.count));
+    this.bars.draw(data, {
+      rect,
+      tick,
+      rows: r.names.length,
+      slots: groups.length,
+      max: r.maxCount,
+      itemCls: 'root-bar',
+      valueSample: '000',
+      ms,
+    });
   }
 
   /** Height of the node card at its smallest chip size: title, 4 chip rows, note. */
