@@ -21,6 +21,12 @@ export interface BaggingParams {
   pick: number | null;
 }
 
+/** Exponent digits as Unicode superscripts: 10 -> "¹⁰". */
+export function superscript(n: number): string {
+  const sup = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+  return String(n).replace(/\d/g, (d) => sup[Number(d)]);
+}
+
 /** Unit of the root split, as the panels and texts name it. */
 const FEATURE_LABEL = ['sözleşme', 'şikâyet'] as const;
 
@@ -40,10 +46,12 @@ const repeated = idsWith((c) => c >= 2)
 const once = idsWith((c) => c === 1);
 const never = BOOK_BOOT.oob;
 
+/** Trees of the bagging ensemble (the book's experiment uses the same count). */
+const TREES = BOOTS.length;
 const pickIndex = PICKS.vote;
 const pickPoint: [number, number] = [CUSTOMERS[pickIndex].t, CUSTOMERS[pickIndex].c];
-const pickYes = votes(pickPoint, 50);
-const pickClass = majority(pickYes, 50) === 1 ? 'Ayrıldı' : 'Kaldı';
+const pickYes = votes(pickPoint, TREES);
+const pickClass = majority(pickYes, TREES) === 1 ? 'Ayrıldı' : 'Kaldı';
 
 const P0 = 0.8;
 const M0 = 3;
@@ -55,7 +63,7 @@ const roots = [0, 1, 2].map((i) => rootLabel(BOOTS[i].tree));
 
 /** The step scenario of the bootstrap and bagging page (Ders steps 1-10). */
 export const baggingScenario: Scenario<BaggingParams> = {
-  defaults: { n: n0, draw: 0, shown: 20, tree: 1, trees: 50, p: P0, m: M0, pick: pickIndex },
+  defaults: { n: n0, draw: 0, shown: 20, tree: 1, trees: TREES, p: P0, m: M0, pick: pickIndex },
   steps: [
     {
       id: 'torba',
@@ -84,7 +92,7 @@ export const baggingScenario: Scenario<BaggingParams> = {
     },
     {
       id: 'yuzde',
-      title: 'Neden %36,8?',
+      title: `Neden ${pct(1 / Math.E)}?`,
       text: `Bir müşterinin n çekilişte hiç seçilmeme olasılığı (1 − 1/n)ⁿ: n = ${n0}'da ${f(oobChance(n0), 3)}, n büyüdükçe 1/e ≈ ${f(1 / Math.E, 3)}. Bir müşteri en az bir kez ${f(1 - oobChance(n0), 3)} olasılıkla seçilir; her bootstrap verinin ≈ ${pct(1 - 1 / Math.E)}'sini görür.`,
     },
     {
@@ -101,10 +109,10 @@ export const baggingScenario: Scenario<BaggingParams> = {
       id: 'oylama',
       title: 'Oylama',
       term: 'bagging (bootstrap aggregating)',
-      text: `Ağaç sayısı M = 1'den 50'ye çıkarken oy haritası her durakta yeniden boyanır ve çoğunluk sınırı durulur. İşaretli müşteri: ${f(50, 0)} ağaçtan ${pickYes} tanesi Ayrıldı oyu veriyor → ${pickClass}.`,
+      text: `Ağaç sayısı M = 1'den ${TREES}'e çıkarken oy haritası her durakta yeniden boyanır ve çoğunluk sınırı durulur. İşaretli müşteri: ${TREES} ağaçtan ${pickYes} tanesi Ayrıldı oyu veriyor → ${pickClass}.`,
       sweep: {
         key: 'trees',
-        values: Array.from({ length: 50 }, (_, i) => i + 1),
+        values: Array.from({ length: TREES }, (_, i) => i + 1),
         intervalMs: 120,
       },
     },
@@ -117,7 +125,7 @@ export const baggingScenario: Scenario<BaggingParams> = {
     {
       id: 'deney',
       title: 'Kitabın deneyi',
-      text: `10 farklı eğitim/test bölünmesi (500 gözlem, 10 öznitelik): tek ağaç ortalama ${f(tree.mean, 3)}, std ${f(tree.std, 3)}; bagging (50 ağaç) ortalama ${f(bag.mean, 3)}, std ${f(bag.std, 3)}. Bagging hem daha doğru hem daha kararlı.`,
+      text: `${EXPERIMENT.tree.length} farklı eğitim/test bölünmesi (500 gözlem, 10 öznitelik): tek ağaç ortalama ${f(tree.mean, 3)}, std ${f(tree.std, 3)}; bagging (${TREES} ağaç) ortalama ${f(bag.mean, 3)}, std ${f(bag.std, 3)}. Bagging hem daha doğru hem daha kararlı.`,
     },
     {
       id: 'sinir',

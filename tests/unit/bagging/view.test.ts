@@ -27,11 +27,13 @@ describe('deriveBaggingView', () => {
   it('oob chance strip at n 10', () => {
     expect(at('oob').strip).toBe('OOB = 4 / 10 = %40,0');
     const v = at('yuzde');
-    expect(v.strip).toContain('(1 − 1/10)^10 = 0,349');
+    expect(v.strip).toContain('(1 − 1/10)¹⁰ = 0,349');
     expect(v.strip).toContain('1/e = 0,368');
     expect(v.curve!.marker).toMatchObject({ x: 10, y: oobChance(10) });
     expect(v.curve!.series[0].pts).toHaveLength(100);
     expect(v.bag).toBeNull();
+    expect(v.strip).not.toContain('^');
+    expect(at('yuzde', { n: 100 }).strip).toContain('(1 − 1/100)¹⁰⁰ =');
   });
 
   it('the sweep shows only the draws played so far and names no OOB yet', () => {

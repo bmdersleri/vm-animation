@@ -4,7 +4,7 @@ import { BOOK_BOOT, BOOTS, CUSTOMERS, EXPERIMENT, SINGLE } from '../topluluk/dat
 import { labBootstrap, majorityAccuracy, meanStd, oobChance } from '../topluluk/math';
 import { leafCount, predictTree } from '../topluluk/tree';
 import { majority, votes } from '../topluluk/vote';
-import { baggingScenario, rootLabel, type BaggingParams } from './scenario';
+import { baggingScenario, rootLabel, superscript, type BaggingParams } from './scenario';
 
 /** Bag scene data (steps 1-3): the cards, the draws played so far and what they imply. */
 export interface BagView {
@@ -99,7 +99,7 @@ export function deriveBaggingView(index: number, p: BaggingParams): BaggingView 
   const oob = tally ? ids.filter((id) => counts[id] === 0) : [];
   const badges = tally ? ids.filter((id) => counts[id] >= 2).map((id) => ({ id, count: counts[id] })) : [];
 
-  const m = Math.max(1, Math.min(50, Math.round(p.trees)));
+  const m = Math.max(1, Math.min(BOOTS.length, Math.round(p.trees)));
   const treeAt = Math.max(0, Math.min(BOOTS.length - 3, Math.round(p.tree) - 1));
   const picked = p.pick === null ? null : CUSTOMERS[p.pick];
   const pickYes = picked ? votes([picked.t, picked.c], m) : 0;
@@ -122,7 +122,7 @@ export function deriveBaggingView(index: number, p: BaggingParams): BaggingView 
       strip = `OOB = ${oob.length} / ${n} = ${pct(oob.length / n)}`;
       break;
     case 'yuzde':
-      strip = `(1 − 1/${n})^${n} = ${f(oobChance(n), 3)} · n → ∞: 1/e = ${f(1 / Math.E, 3)} · bootstrap verinin ≈ ${pct(1 - 1 / Math.E)}'sini görür`;
+      strip = `(1 − 1/${n})${superscript(n)} = ${f(oobChance(n), 3)} · n → ∞: 1/e = ${f(1 / Math.E, 3)} · bootstrap verinin ≈ ${pct(1 - 1 / Math.E)}'sini görür`;
       break;
     case 'tek-agac':
       strip = `eğitimde ${trainOk} / ${CUSTOMERS.length} doğru · ${leafCount(SINGLE)} yaprak · yanlılık düşük, varyans yüksek`;
@@ -171,7 +171,7 @@ export function deriveBaggingView(index: number, p: BaggingParams): BaggingView 
           majority: majoritySpec(p.p, p.m),
           experiment: [
             { id: 'tree', label: 'tek ağaç', values: EXPERIMENT.tree, ...tree },
-            { id: 'bagging', label: 'bagging (50 ağaç)', values: EXPERIMENT.bagging, ...bagging },
+            { id: 'bagging', label: `bagging (${BOOTS.length} ağaç)`, values: EXPERIMENT.bagging, ...bagging },
           ],
         }
       : null,
