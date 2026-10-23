@@ -13,9 +13,15 @@ const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
  * controls render without interpolation and every update interrupts the reveal.
  */
 export function mountNormalScene(
-  el: HTMLElement, player: StepPlayer<NormalParams>, initialMode: Mode, opts: { durationScale?: number } = {},
+  el: HTMLElement,
+  player: StepPlayer<NormalParams>,
+  initialMode: Mode,
+  opts: { durationScale?: number } = {},
 ): SceneHandle {
-  const ds = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : opts.durationScale ?? 1;
+  const ds =
+    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 0
+      : (opts.durationScale ?? 1);
   const doc = el.ownerDocument;
   const scene = doc.createElement('div');
   scene.className = 'normal-scene';

@@ -1,7 +1,9 @@
 import raw from './data/normal_data.json';
 
+/** Generated series ids (exam scores, call durations). */
 export type Seri = 'sinav' | 'cagri';
 
+/** One generated series with its values and summary statistics. */
 export interface Series {
   id: Seri;
   label: string;
@@ -20,9 +22,14 @@ export interface Series {
   seed: number;
 }
 
+/** All generated series, keyed by id. */
 export const SERIES = raw.series as Record<Seri, Series>;
+
+/** Standard-normal reference values generated alongside the series. */
 export const NORM = raw.norm as {
   bands: [number, number][];
   points: { x: number; mu: number; sigma: number; pdf: number; cdf: number }[];
 };
+
+/** Fixed exam-score sample used by the demonstration steps. */
 export const SINAV_FIXED = raw.sinavFixed;
