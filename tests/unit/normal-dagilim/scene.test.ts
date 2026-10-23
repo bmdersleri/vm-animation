@@ -43,6 +43,34 @@ describe('normal scene', () => {
     expect(el.textContent).toContain('σ = 5');
     expect(el.textContent).toContain('σ = 15');
   });
+  it('ghost labels sit on their own curves', () => {
+    const { el, player } = setup();
+    player.goto(2);
+    const paths = [...el.querySelectorAll('path.ghost')].map((p) =>
+      p
+        .getAttribute('d')!
+        .slice(1)
+        .split('L')
+        .map((pt) => pt.split(',').map(Number)),
+    );
+    const labels = [...el.querySelectorAll('text.ghost-label')];
+    expect(labels).toHaveLength(2);
+    const sigmas = [5, 15];
+    labels.forEach((label, i) => {
+      const tspan = label.querySelector('tspan')!;
+      const x = Number(tspan.getAttribute('x')),
+        y = Number(tspan.getAttribute('y'));
+      // The anchor is the curve point at mu + sigma (the inflection); the text starts 6px to its right.
+      const anchorX = x - 6;
+      const nearest = paths[i].reduce((best, pt) =>
+        Math.abs(pt[0] - anchorX) < Math.abs(best[0] - anchorX) ? pt : best,
+      );
+      expect(Math.abs(nearest[0] - anchorX)).toBeLessThan(8);
+      expect(Math.abs(y - nearest[1])).toBeLessThanOrEqual(16);
+      expect(label.getAttribute('text-anchor')).toBe('start');
+      expect(label.textContent).toContain(`σ = ${sigmas[i]}`);
+    });
+  });
   it('step 4 shades area', () => {
     const { el, player } = setup();
     player.goto(3);

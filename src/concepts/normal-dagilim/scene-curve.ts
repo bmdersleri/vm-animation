@@ -174,8 +174,6 @@ export class CurveLayer {
     }
     this.labels.selectAll('*').remove();
     const labels: { x: number; y: number; text: string; cls: string }[] = [];
-    for (const g of v.ghosts)
-      labels.push({ x: sx(v.curve!.mu + g.sigma), y: top, text: `σ = ${formatTrim(g.sigma, 0)}`, cls: 'ghost-label' });
     for (const b of visibleBands)
       labels.push({
         x: sx(v.mean),
@@ -248,7 +246,7 @@ export class CurveLayer {
           .text(m.text);
       }
     });
-    // Ghost/band rows reserve their own header lane, away from mean/median/marker labels.
+    // Band rows reserve their own header lane, away from mean/median/marker labels.
     const headerOffset = Math.max(...rows) + 3;
     const labelRows = staggerRows(
       labels.map((l) => ({ x: l.x, w: this.measure.width(l.text, l.cls, tick) })),
@@ -269,6 +267,25 @@ export class CurveLayer {
           .text(line),
       );
     });
+    // Each ghost label sits on its own curve: anchored at the inflection point (mu + sigma), text just outside it.
+    // Clamped to the SVG width and kept below the mean / median / marker lane.
+    const ghostTop = top + (Math.max(...rows) + 1) * tick * 1.5 + tick;
+    for (const g of v.ghosts) {
+      const mu = v.curve!.mu;
+      const text = `σ = ${formatTrim(g.sigma, 0)}`;
+      const width = this.measure.width(text, 'ghost-label', tick);
+      const anchorX = sx(mu + g.sigma);
+      const x = Math.max(pad, Math.min(this.w - pad - width, anchorX + 6));
+      const y = Math.max(ghostTop, sy(normPdf(mu + g.sigma, mu, g.sigma)) - 4);
+      this.labels
+        .append('text')
+        .attr('class', 'ghost-label')
+        .attr('text-anchor', 'start')
+        .append('tspan')
+        .attr('x', r1(x))
+        .attr('y', r1(y))
+        .text(text);
+    }
     if (v.links.length) {
       let y = base + tick * 4.2;
       const total = linkWidths.reduce((a, b) => a + b, 0) + tick * 3 * (v.links.length - 1);
