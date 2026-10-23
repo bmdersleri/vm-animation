@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { randomForestScenario } from '../../../src/concepts/random-forest/scenario';
+import { CAUSAL, randomForestScenario } from '../../../src/concepts/random-forest/scenario';
 import { deriveRfView } from '../../../src/concepts/random-forest/view';
 import { BOOTS, CUSTOMERS, PICKS, RF } from '../../../src/concepts/topluluk/data';
 import { predictTree } from '../../../src/concepts/topluluk/tree';
@@ -49,5 +49,18 @@ describe('deriveRfView', () => {
     expect(at('tuzak').view).toBe('importance');
     expect(at('varyans').roots!.kind).toBe('variance');
     expect(at('max-features').roots!.kind).toBe('sweep');
+  });
+
+  it('step 10 strip names musteriNo under both methods, whatever the method', () => {
+    for (const method of ['mdi', 'perm'] as const) {
+      const strip = at('tuzak', { method }).strip;
+      expect(strip).toContain('musteriNo: MDI 0,044 (sıra 9 / 9) · permütasyon 0,001');
+    }
+  });
+
+  it('the causality sentence is one constant shared by the text and the scene', () => {
+    const step = randomForestScenario.steps.find((s) => s.id === 'tuzak')!;
+    expect(step.text.endsWith(CAUSAL)).toBe(true);
+    expect(at('tuzak').importance!.causal).toBe(CAUSAL);
   });
 });

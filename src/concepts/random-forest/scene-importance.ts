@@ -111,7 +111,8 @@ export class ImportanceScene {
   ): void {
     const col = this.cols[id];
     const head = f.axis * 1.7;
-    col.g.classed('muted', !c.active);
+    // Ders has no toggle and both columns carry the lesson, so only the Lab's explicit choice mutes one
+    col.g.classed('muted', !c.active && this.mode === 'lab');
     col.g
       .selectAll<SVGTextElement, string>('text.imp-title')
       .data([c.title])

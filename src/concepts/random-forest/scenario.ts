@@ -87,6 +87,10 @@ const idAt = RF.withId.names.length - 1;
 const sozlesme = RF.withId.names.indexOf('sozlesmeTipi');
 const permTop = rankDesc(RF.withId.perm)[0];
 
+/** The closing sentence of step 10, shared by the lesson text and the scene. */
+export const CAUSAL =
+  "Önem, modelin neye dayandığını söyler; nedeni değil: destek çağrısı churn'e yol açmaz, churn'e yatkın müşteri daha çok arar.";
+
 /** The step scenario of the Random Forest page (Ders steps 1-10). */
 export const randomForestScenario: Scenario<RfParams> = {
   defaults: {
@@ -169,7 +173,7 @@ export const randomForestScenario: Scenario<RfParams> = {
       id: 'tuzak',
       labText: 'Anahtar iki sütundan hangisinin öne çıkacağını seçer: MDI ağaçların Gini azalımından, permütasyon test kümesinden okunur.',
       title: 'Önem tuzakları',
-      text: `Veriye anlamsız ${RF.withId.names[idAt]} eklenir: MDI ona ${f(RF.withId.mdi[idAt], 3)} verir (${RF.withId.names[sozlesme]} ${f(RF.withId.mdi[sozlesme], 3)} ile neredeyse eşit), test kümesinde permütasyon önemi ${f(RF.withId.perm[idAt], 3)}. Sıralama da değişebilir: permütasyonda ${RF.withId.names[permTop]} birinci. Önem, modelin neye dayandığını söyler; nedeni değil: destek çağrısı churn'e yol açmaz, churn'e yatkın müşteri daha çok arar.`,
+      text: `Veriye anlamsız ${RF.withId.names[idAt]} eklenir: MDI ona ${f(RF.withId.mdi[idAt], 3)} verir (${RF.withId.names[sozlesme]} ${f(RF.withId.mdi[sozlesme], 3)} ile neredeyse eşit), test kümesinde permütasyon önemi ${f(RF.withId.perm[idAt], 3)}. Sıralama da değişebilir: permütasyonda ${RF.withId.names[permTop]} birinci. ${CAUSAL}`,
     },
   ],
 };

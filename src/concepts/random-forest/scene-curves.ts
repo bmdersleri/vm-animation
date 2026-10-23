@@ -4,6 +4,7 @@ import type { Mode } from '../../core/mode';
 import { HBarsLayer, type HBar } from '../../core/plot/hbars';
 import { LineChartLayer } from '../../core/plot/line-chart';
 import { r1 } from '../../core/plot/marks';
+import { stackLevels } from '../../core/plot/number-line';
 import { TextMeasure } from '../../core/plot/text-measure';
 import type { RfView } from './view';
 
@@ -108,15 +109,18 @@ export class CurvesScene {
     // the CV folds sit in a thin row just under the CV bar, on the bar's value scale
     const cvRow = cmp.bars.findIndex((b) => b.id === 'cv');
     const r = Math.max(3.5, f.tick * 0.3);
-    const cy = geo.yOf(cvRow, 0) + geo.barH + r + 4;
+    const top = geo.yOf(cvRow, 0) + geo.barH + r + 4;
+    const px = cmp.folds.map((d) => geo.xOf(d));
+    // folds that would touch stack into a second row, so all five stay visible
+    const levels = stackLevels(px, r * 2 + 1);
     this.dotsG
       .selectAll<SVGCircleElement, number>('circle.fold-dot')
       .data(cmp.folds)
       .join('circle')
       .attr('class', 'fold-dot')
       .attr('r', r)
-      .attr('cx', (d) => r1(geo.xOf(d)))
-      .attr('cy', r1(cy));
+      .attr('cx', (_, i) => r1(px[i]))
+      .attr('cy', (_, i) => r1(top + levels[i] * (r * 2 + 1)));
     const dotNote = `noktalar: ${cmp.folds.length} katın ayrı skorları`;
     this.noteG
       .selectAll<SVGTextElement, string[]>('text.time-note')

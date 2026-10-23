@@ -126,7 +126,7 @@ it('method and id toggles switch the bars', () => {
   expect(player.state.params.method).toBe('perm');
   expect(col('mdi').classList.contains('muted')).toBe(true);
   expect(col('perm').classList.contains('muted')).toBe(false);
-  expect(el.querySelector('.formula')!.textContent).toContain('permütasyon: musteriNo');
+  expect(el.querySelector('.formula')!.textContent).toContain('musteriNo: MDI 0,044 (sıra 9 / 9) · permütasyon 0,001');
   expect(bars(col('perm'))).toHaveLength(9);
   expect(bars(col('mdi'))).toHaveLength(9);
 });

@@ -6,6 +6,7 @@ import { oobScore, oobVotes } from '../topluluk/vote';
 import { predictTree } from '../topluluk/tree';
 import {
   BAGGING_ROW,
+  CAUSAL,
   MATRIX_COLS,
   oobBreakdown,
   oobVerdict,
@@ -183,9 +184,6 @@ function oobRows(m: number): OobRow[] {
   });
 }
 
-const CAUSAL =
-  "Önem, modelin neye dayandığını söyler; nedeni değil: destek çağrısı churn'e yol açmaz, churn'e yatkın müşteri daha çok arar.";
-
 /** The OOB - tree count curve point nearest to `n` trees. */
 function curveAt(n: number): { n: number; oob: number } {
   return OOB_CURVE.reduce((a, b) => (Math.abs(b.n - n) < Math.abs(a.n - n) ? b : a));
@@ -314,12 +312,11 @@ ${names.length} öznitelik · en önemlisi ${names[top]} ${f(mdi[top], 3)} · to
       break;
     }
     case 'tuzak': {
-      const vals = p.method === 'mdi' ? RF.withId.mdi : RF.withId.perm;
-      const order = rankDesc(vals);
       const idAt = RF.withId.names.indexOf(ID_NAME);
-      const label = p.method === 'mdi' ? 'MDI' : 'permütasyon';
+      const rank = (vals: readonly number[]): string => `sıra ${rankDesc(vals).indexOf(idAt) + 1} / ${vals.length}`;
+      const permTopName = RF.withId.names[rankDesc(RF.withId.perm)[0]];
       strip = `rf.feature_importances_ (MDI) · permutation_importance (test kümesi)
-${label}: ${ID_NAME} ${f(vals[idAt], 3)}, sıra ${order.indexOf(idAt) + 1} / ${vals.length} · birinci ${RF.withId.names[order[0]]}`;
+${ID_NAME}: MDI ${f(RF.withId.mdi[idAt], 3)} (${rank(RF.withId.mdi)}) · permütasyon ${f(RF.withId.perm[idAt], 3)} (${rank(RF.withId.perm)}) · permütasyonda birinci ${permTopName}`;
       break;
     }
     default:

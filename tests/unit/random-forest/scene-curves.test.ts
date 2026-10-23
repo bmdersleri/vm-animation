@@ -61,4 +61,21 @@ describe('curve scene', () => {
     expect(host(el).querySelectorAll('text.lc-pin-label')).toHaveLength(0);
     expect(host(el).querySelector('text.lc-label')!.textContent).toContain('0,798');
   });
+
+  it('step 7 shows the five CV folds as separate dots', () => {
+    const { el, player } = setup();
+    player.goto(step('oob-cv'));
+    const dots = [...host(el).querySelectorAll('circle.fold-dot')].map((c) => ({
+      x: Number(c.getAttribute('cx')),
+      y: Number(c.getAttribute('cy')),
+      r: Number(c.getAttribute('r')),
+    }));
+    expect(dots).toHaveLength(OOB_CV.cv.length);
+    for (let i = 0; i < dots.length; i++) {
+      for (let j = i + 1; j < dots.length; j++) {
+        const d = Math.hypot(dots[i].x - dots[j].x, dots[i].y - dots[j].y);
+        expect(d, `dots ${i} and ${j}`).toBeGreaterThanOrEqual(dots[i].r * 2);
+      }
+    }
+  });
 });

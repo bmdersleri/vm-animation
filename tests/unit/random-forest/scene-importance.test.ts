@@ -78,4 +78,11 @@ describe('importance scene', () => {
     player.goto(step('onem'));
     expect(host(el).querySelectorAll('a.scene-link')).toHaveLength(0);
   });
+
+  it('Ders step 10 leaves both columns at full strength', () => {
+    const { el, player } = setup();
+    player.goto(step('tuzak'));
+    expect(player.state.params.method).toBe('mdi');
+    expect(host(el).querySelectorAll('g.imp-col.muted')).toHaveLength(0);
+  });
 });
