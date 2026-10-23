@@ -1,0 +1,150 @@
+import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
+import type { SceneHandle } from '../../core/shell';
+import type { Mode } from '../../core/mode';
+import { BODY_FALLBACK } from '../../core/plot/text-measure';
+import { renderStrip } from '../../core/plot/strip';
+import type { RfParams } from './scenario';
+import { deriveRfView } from './view';
+import { RootsScene, MS_STEP } from './scene-roots';
+import { OobScene } from './scene-oob';
+
+const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
+
+/**
+ * Scene host of the Random Forest page: a stage with four view areas (`data-view` = roots, oob, curves,
+ * importance) above the formula strip. The roots (steps 1-4) and oob (steps 5-6) areas have their scene layer;
+ * the curves and importance areas (steps 7-10) are reserved for the next task. Updates coalesce into one
+ * frame; controls render without interpolation.
+ */
+export function mountRfScene(
+  el: HTMLElement,
+  player: StepPlayer<RfParams>,
+  initialMode: Mode,
+  opts: { durationScale?: number } = {},
+): SceneHandle {
+  const ds =
+    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 0
+      : (opts.durationScale ?? 1);
+  const doc = el.ownerDocument;
+  const scene = doc.createElement('div');
+  scene.className = 'rf-scene';
+  const stage = doc.createElement('div');
+  stage.className = 'rf-stage';
+  const hosts = {
+    roots: doc.createElement('div'),
+    oob: doc.createElement('div'),
+    curves: doc.createElement('div'),
+    importance: doc.createElement('div'),
+  };
+  for (const [name, host] of Object.entries(hosts)) {
+    host.className = `rf-host rf-${name}-host`;
+    host.dataset.host = name;
+  }
+  stage.append(hosts.roots, hosts.oob, hosts.curves, hosts.importance);
+  const strip = doc.createElement('p');
+  strip.className = 'formula';
+  scene.append(stage, strip);
+  el.append(scene);
+
+  const roots = new RootsScene(hosts.roots);
+  const oob = new OobScene(hosts.oob);
+  // a customer row chosen in the matrix (click, Enter or Space) is written back as the pick parameter
+  oob.onPick = (index) => player.setParam('pick', index);
+
+  let mode = initialMode;
+  let size: { w: number; h: number } | null = null;
+  let rendered = false;
+  let pending: { s: PlayerState<RfParams>; cause: ChangeCause } | null = null;
+  let rafId: number | null = null;
+  let lastStrip = '';
+
+  /** Area of the stage (estimated where layout is unavailable). */
+  function area(): { w: number; h: number } {
+    const r = stage.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) return { w: Math.floor(r.width), h: Math.floor(r.height) };
+    const lines = Math.max(1, lastStrip.split('\n').length);
+    const stripH = Math.ceil(lines * BODY_FALLBACK[mode] * 1.35 + 12 + 10);
+    return { w: size!.w, h: Math.max(120, size!.h - stripH) };
+  }
+
+  /** One render, timed as the `rf-render` measure for the performance spec. */
+  function render(state: PlayerState<RfParams>, cause: ChangeCause, instant: boolean): void {
+    if (!size) return;
+    const hasPerf = typeof performance !== 'undefined' && typeof performance.mark === 'function';
+    if (hasPerf) performance.mark('rf-render-start');
+    try {
+      draw(state, cause, instant);
+    } finally {
+      if (hasPerf) performance.measure('rf-render', 'rf-render-start');
+    }
+  }
+
+  function draw(state: PlayerState<RfParams>, cause: ChangeCause, instant: boolean): void {
+    roots.interrupt();
+    oob.interrupt();
+    const v = deriveRfView(state.index, state.params);
+    // slider and shortcut tweaks are instant; steps and sweep stops animate
+    const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
+    const view = v.view;
+    stage.dataset.view = view;
+    stage.dataset.step = v.stepId;
+    for (const [name, host] of Object.entries(hosts)) host.hidden = name !== view;
+    lastStrip = v.strip;
+    renderStrip(strip, v.strip);
+    if (view === 'roots') {
+      const a = area();
+      roots.resize(a.w, a.h, mode);
+      roots.update(v, ms);
+    } else if (view === 'oob') {
+      const a = area();
+      oob.resize(a.w, a.h, mode);
+      oob.update(v);
+    }
+    rendered = true;
+  }
+
+  function flush(): void {
+    rafId = null;
+    const p = pending;
+    pending = null;
+    if (p) render(p.s, p.cause, false);
+  }
+  const raf = (cb: () => void): number =>
+    typeof requestAnimationFrame === 'function' ? requestAnimationFrame(cb) : (setTimeout(cb, 16) as unknown as number);
+  const cancelRaf = (id: number): void => {
+    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(id);
+    else clearTimeout(id);
+  };
+  const unsubscribe = player.subscribe((s, cause) => {
+    const merged = pending && causeRank[pending.cause] > causeRank[cause] ? pending.cause : cause;
+    pending = { s, cause: merged };
+    if (ds === 0) flush();
+    else if (rafId === null) rafId = raf(flush);
+  });
+
+  return {
+    resize(w: number, h: number): void {
+      size = { w, h };
+      if (rafId !== null) cancelRaf(rafId);
+      rafId = null;
+      pending = null;
+      // the first draw animates in; later resizes are instant
+      render(player.state, 'step', rendered);
+    },
+    setMode(m: Mode): void {
+      if (m === mode) return;
+      mode = m;
+      if (size) render(player.state, 'step', true);
+    },
+    destroy(): void {
+      unsubscribe();
+      if (rafId !== null) cancelRaf(rafId);
+      rafId = null;
+      pending = null;
+      roots.destroy();
+      oob.destroy();
+      scene.remove();
+    },
+  };
+}
