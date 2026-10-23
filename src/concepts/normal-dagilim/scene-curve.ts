@@ -267,20 +267,28 @@ export class CurveLayer {
           .text(line),
       );
     });
-    // Each ghost label sits on its own curve: anchored at the inflection point (mu + sigma), text just outside it.
-    // Clamped to the SVG width and kept below the mean / median / marker lane.
+    // Each ghost label sits on its own curve, text just outside it: at the inflection point (mu ± sigma), or further
+    // down the flank where that point is above the mean / median / marker lane. Right flank first, the mirrored left
+    // flank when the right one has no room; only a label with room on neither side is clamped to the SVG.
     const ghostTop = top + (Math.max(...rows) + 1) * tick * 1.5 + tick;
+    // Density at the lane floor; a curve point below it on screen leaves room for the text above it.
+    const floor = ((base - ghostTop - 4) / (base - top)) * peak;
     for (const g of v.ghosts) {
       const mu = v.curve!.mu;
       const text = `σ = ${formatTrim(g.sigma, 0)}`;
       const width = this.measure.width(text, 'ghost-label', tick);
-      const anchorX = sx(mu + g.sigma);
-      const x = Math.max(pad, Math.min(this.w - pad - width, anchorX + 6));
-      const y = Math.max(ghostTop, sy(normPdf(mu + g.sigma, mu, g.sigma)) - 4);
+      // Anchor distance in sigmas: where the curve falls to the floor density, never inside the inflection point.
+      const ratio = floor * g.sigma * Math.sqrt(2 * Math.PI);
+      const d = ratio < 1 ? Math.max(1, Math.sqrt(-2 * Math.log(ratio))) : 1;
+      const right = sx(mu + d * g.sigma) + 6;
+      const left = sx(mu - d * g.sigma) - 6;
+      const onRight = right + width <= this.w - pad || left - width < pad;
+      const x = onRight ? Math.max(pad, Math.min(this.w - pad - width, right)) : left;
+      const y = Math.max(ghostTop, sy(normPdf(mu + d * g.sigma, mu, g.sigma)) - 4);
       this.labels
         .append('text')
         .attr('class', 'ghost-label')
-        .attr('text-anchor', 'start')
+        .attr('text-anchor', onRight ? 'start' : 'end')
         .append('tspan')
         .attr('x', r1(x))
         .attr('y', r1(y))

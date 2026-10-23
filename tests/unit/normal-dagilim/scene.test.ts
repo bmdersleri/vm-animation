@@ -25,6 +25,38 @@ function setup() {
   return { el, player, scene };
 }
 
+/** Ghost labels of the current scene, each checked to sit 4px above its own curve, 6px off the anchor point. */
+function ghostLabels(el: HTMLElement) {
+  const svg = el.querySelector('svg')!;
+  const w = Number(svg.getAttribute('width'));
+  const paths = [...el.querySelectorAll('path.ghost')].map((p) =>
+    p
+      .getAttribute('d')!
+      .slice(1)
+      .split('L')
+      .map((pt) => pt.split(',').map(Number)),
+  );
+  const labels = [...el.querySelectorAll('text.ghost-label')];
+  expect(labels).toHaveLength(2);
+  return labels.map((label, i) => {
+    const tspan = label.querySelector('tspan')!;
+    const x = Number(tspan.getAttribute('x'));
+    const y = Number(tspan.getAttribute('y'));
+    const anchor = label.getAttribute('text-anchor')!;
+    const anchorX = anchor === 'start' ? x - 6 : x + 6;
+    // Curve height at anchorX, interpolated between its two neighbouring samples.
+    const pts = paths[i];
+    const j = pts.findIndex((pt) => pt[0] >= anchorX);
+    expect(j).toBeGreaterThan(0);
+    const [[x0, y0], [x1, y1]] = [pts[j - 1], pts[j]];
+    const curveY = y0 + ((y1 - y0) * (anchorX - x0)) / (x1 - x0 || 1);
+    expect(Math.abs(y + 4 - curveY)).toBeLessThan(1);
+    expect(x).toBeGreaterThanOrEqual(0);
+    expect(x).toBeLessThanOrEqual(w);
+    return { sigma: Number(label.textContent!.replace('σ = ', '')), anchor };
+  });
+}
+
 describe('normal scene', () => {
   it('step 1 draws one bar sub-path per bin', () => {
     const { el, player } = setup();
@@ -50,32 +82,23 @@ describe('normal scene', () => {
   });
 
   it('ghost labels sit on their own curves', () => {
-    const { el, player } = setup();
+    const { el, player, scene } = setup();
     player.goto(2);
-    const paths = [...el.querySelectorAll('path.ghost')].map((p) =>
-      p
-        .getAttribute('d')!
-        .slice(1)
-        .split('L')
-        .map((pt) => pt.split(',').map(Number)),
-    );
-    const labels = [...el.querySelectorAll('text.ghost-label')];
-    expect(labels).toHaveLength(2);
-    const sigmas = [5, 15];
-    labels.forEach((label, i) => {
-      const tspan = label.querySelector('tspan')!;
-      const x = Number(tspan.getAttribute('x')),
-        y = Number(tspan.getAttribute('y'));
-      // The anchor is the curve point at mu + sigma (the inflection); the text starts 6px to its right.
-      const anchorX = x - 6;
-      const nearest = paths[i].reduce((best, pt) =>
-        Math.abs(pt[0] - anchorX) < Math.abs(best[0] - anchorX) ? pt : best,
-      );
-      expect(Math.abs(nearest[0] - anchorX)).toBeLessThan(8);
-      expect(Math.abs(y - nearest[1])).toBeLessThanOrEqual(16);
-      expect(label.getAttribute('text-anchor')).toBe('start');
-      expect(label.textContent).toContain(`σ = ${sigmas[i]}`);
-    });
+    expect(ghostLabels(el).map((g) => [g.sigma, g.anchor])).toEqual([
+      [5, 'start'],
+      [15, 'start'],
+    ]);
+    // Near the right edge the labels move to the mirrored left flank; near the left edge they stay right.
+    player.setParams({ mu: 110 });
+    expect(ghostLabels(el).map((g) => g.anchor)).toEqual(['end', 'end']);
+    player.setParams({ mu: 30 });
+    expect(ghostLabels(el).map((g) => g.anchor)).toEqual(['start', 'start']);
+    // A narrow, tall main curve and a phone-width scene keep every label on its curve too.
+    player.setParams({ mu: 70, sigma: 3 });
+    ghostLabels(el);
+    scene.resize(390, 540);
+    player.setParams({ mu: 70, sigma: 10 });
+    ghostLabels(el);
   });
 
   it('step 4 shades area', () => {
