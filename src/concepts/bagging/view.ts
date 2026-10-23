@@ -1,4 +1,4 @@
-import { formatNumber as f, formatPercent as pct } from '../../core/plot/format';
+import { formatNumber as f, formatPercent as pct, formatTrim as trim } from '../../core/plot/format';
 import type { LineChartSpec } from '../../core/plot/line-chart';
 import { BOOK_BOOT, BOOTS, CUSTOMERS, EXPERIMENT, SINGLE } from '../topluluk/data';
 import { labBootstrap, majorityAccuracy, meanStd, oobChance } from '../topluluk/math';
@@ -37,6 +37,8 @@ export interface RegionsView {
 /** Chart scene data (steps 8-10), drawn by the chart scene. */
 export interface ChartsView {
   kind: 'majority' | 'experiment' | 'limit';
+  /** The closing question of the limit step. */
+  question: string;
   majority: LineChartSpec;
   experiment: { id: 'tree' | 'bagging'; label: string; values: number[]; mean: number; std: number }[];
 }
@@ -135,9 +137,16 @@ export function deriveBaggingView(index: number, p: BaggingParams): BaggingView 
         ? `müşteri ${p.pick} · ${m} ağaçtan Ayrıldı oyu = ${pickYes} / ${m} → ${verdict === 'berabere' ? 'berabere → Kaldı' : `çoğunluk: ${verdict}`}`
         : `${m} ağaç oy veriyor · hücre tonu = Ayrıldı oy payı · koyu çizgi = çoğunluk sınırı`;
       break;
-    case 'cogunluk':
-      strip = `p = ${f(p.p, 2)} · M = ${p.m} → çoğunluk doğruluğu = ${f(acc, 3)} (yanlış ${f(1 - acc, 3)})\nρ = 1 (aynı hatalar) → doğruluk ${f(p.p, 2)}'de kalır`;
+    case 'cogunluk': {
+      const q = 1 - p.p;
+      const head =
+        p.m === 3
+          ? `3 · ${trim(q, 2)}² · ${trim(p.p, 2)} + ${trim(q, 2)}³ = ${f(1 - acc, 3)} → doğruluk ${f(acc, 3)}`
+          : `p = ${f(p.p, 2)} · M = ${p.m} → çoğunluk doğruluğu = ${f(acc, 3)} (yanlış ${f(1 - acc, 3)})`;
+      strip = `${head}
+ρ = 1 (aynı hatalar) → doğruluk ${f(p.p, 2)}'de kalır`;
       break;
+    }
     case 'deney':
       strip = `tek ağaç: ortalama ${f(tree.mean, 3)}, std ${f(tree.std, 3)} · bagging: ortalama ${f(bagging.mean, 3)}, std ${f(bagging.std, 3)}\nBaggingClassifier(estimator=DecisionTreeClassifier(), n_estimators=50)`;
       break;
@@ -168,6 +177,7 @@ export function deriveBaggingView(index: number, p: BaggingParams): BaggingView 
     charts: kind
       ? {
           kind,
+          question: 'Ağaçları birbirinden nasıl uzaklaştırırız?',
           majority: majoritySpec(p.p, p.m),
           experiment: [
             { id: 'tree', label: 'tek ağaç', values: EXPERIMENT.tree, ...tree },

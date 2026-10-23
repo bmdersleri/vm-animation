@@ -6,15 +6,17 @@ import { renderStrip } from '../../core/plot/strip';
 import type { BaggingParams } from './scenario';
 import { deriveBaggingView } from './view';
 import { BagScene, MS_STEP } from './scene-bag';
+import { RegionScene } from './scene-regions';
+import { ChartScene } from './scene-charts';
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 
 /**
  * Scene host of the bootstrap and bagging page: a stage with three view areas
- * (`data-view` = bag, regions, charts) above the formula strip. The bag area is
- * drawn here (steps 1-4); the region (steps 5-7) and chart (steps 8-10) areas
- * are empty containers for the later scene layers. Updates coalesce into one
- * frame; controls render without interpolation.
+ * (`data-view` = bag, regions, charts) above the formula strip. The bag
+ * (steps 1-4), region (steps 5-7) and chart (steps 8-10) areas each have their
+ * own scene layer. Updates coalesce into one frame; controls render without
+ * interpolation.
  */
 export function mountBaggingScene(
   el: HTMLElement,
@@ -43,6 +45,8 @@ export function mountBaggingScene(
   el.append(scene);
 
   const bag = new BagScene(hosts.bag);
+  const regions = new RegionScene(hosts.regions);
+  const charts = new ChartScene(hosts.charts);
 
   let mode = initialMode;
   let size: { w: number; h: number } | null = null;
@@ -74,6 +78,8 @@ export function mountBaggingScene(
 
   function draw(state: PlayerState<BaggingParams>, cause: ChangeCause, instant: boolean): void {
     bag.interrupt();
+    regions.interrupt();
+    charts.interrupt();
     const v = deriveBaggingView(state.index, state.params);
     // slider and shortcut tweaks are instant; steps and sweep stops animate
     const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
@@ -87,6 +93,14 @@ export function mountBaggingScene(
       const a = area();
       bag.resize(a.w, a.h, mode);
       bag.update(v, ms);
+    } else if (view === 'regions') {
+      const a = area();
+      regions.resize(a.w, a.h, mode);
+      regions.update(v, ms);
+    } else {
+      const a = area();
+      charts.resize(a.w, a.h, mode);
+      charts.update(v, ms);
     }
     rendered = true;
   }
@@ -130,6 +144,8 @@ export function mountBaggingScene(
       rafId = null;
       pending = null;
       bag.destroy();
+      regions.destroy();
+      charts.destroy();
       scene.remove();
     },
   };

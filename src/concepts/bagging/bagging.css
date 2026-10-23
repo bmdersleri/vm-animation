@@ -34,3 +34,24 @@
 .bagging-plot .lc-ref-label, .bagging-plot .lc-label { font-weight:600; paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
 .bagging-plot .lc-ref-label { fill:#A85A00; }
 .bagging-plot .lc-marker { fill:var(--orange); stroke:var(--navy); stroke-width:2; }
+
+/* region scene: panels, titles, vote map */
+.bagging-regions-host canvas { pointer-events:none; }
+.bagging-plot .panel.no-y .axis.y text { display:none; }
+.bagging-plot .region-legend { font-size:var(--fs-tick); font-weight:600; }
+.bagging-plot .panel-title { font-size:var(--fs-tick); font-weight:600; }
+.bagging-plot .panel-name { font-weight:800; }
+.bagging-plot .vote-boundary { stroke-linejoin:round; stroke-linecap:square; }
+.bagging-plot .vote-callout { font-weight:700; paint-order:stroke; stroke:var(--bg); stroke-width:5px; stroke-linejoin:round; }
+.bagging-plot .pt { vector-effect:non-scaling-stroke; }
+
+/* chart scene: experiment strips and closing links */
+.bagging-plot .exp-dot { fill:var(--navy); fill-opacity:.8; stroke:var(--surface); stroke-width:1.5; }
+.bagging-plot .exp-strip.bagging .exp-dot { fill:var(--orange); fill-opacity:.9; stroke:var(--navy); stroke-width:1.2; }
+.bagging-plot .exp-mean-line { stroke:var(--navy); stroke-width:2.5; }
+.bagging-plot .exp-mean { font-size:var(--fs-tick); font-weight:700; }
+.bagging-plot .exp-label { font-weight:700; }
+.bagging-plot .limit-question { font-weight:700; }
+.bagging-plot .scene-link text { fill:var(--navy); font-size:var(--fs-axis); text-decoration:underline; text-underline-offset:3px; }
+.bagging-plot .scene-link:hover text { fill:#A85A00; }
+.bagging-plot .scene-link:focus-visible { outline:2px solid var(--navy); outline-offset:4px; }
