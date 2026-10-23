@@ -241,6 +241,8 @@ export class RegionScene {
   /** The last vote count and boundary path, so a pick-only update recounts nothing. */
   private cells: { key: string; v: VoteCells } | null = null;
   private path: { key: string; d: string } | null = null;
+  /** Called when a customer of the vote map is picked (Lab: click, Enter or Space). */
+  onPick: (index: number) => void = () => {};
 
   constructor(private readonly host: HTMLElement) {
     const doc = host.ownerDocument;
@@ -461,7 +463,7 @@ export class RegionScene {
     }
 
     this.drawTitle(panel, title, plot, geo);
-    this.drawPoints(panel, spec, sc, plot, f.tick, i);
+    this.drawPoints(panel, spec, sc, plot, f.tick, i, !spec.tree && r.layout === 'vote' && this.mode === 'lab');
     this.drawPick(panel, spec, r, sc, plot, f.tick);
   }
 
@@ -498,7 +500,15 @@ export class RegionScene {
       .text((d, k, all) => (k < all.length - 1 ? `${d} ` : d));
   }
 
-  private drawPoints(panel: Panel, spec: PanelSpec, sc: Scales, plot: Rect, tick: number, panelIndex: number): void {
+  private drawPoints(
+    panel: Panel,
+    spec: PanelSpec,
+    sc: Scales,
+    plot: Rect,
+    tick: number,
+    panelIndex: number,
+    pickable: boolean,
+  ): void {
     const small = spec.counts !== null;
     const base = Math.min(small ? Math.max(3, tick * 0.32) : Math.max(5, Math.min(9, tick * 0.5)), plot.width / 30);
     const data = CUSTOMERS.map((c, i) => {
@@ -519,7 +529,20 @@ export class RegionScene {
       .attr('fill', (d) => (d.count === 0 ? 'none' : MARK[d.c.y]))
       .attr('stroke', (d) => (d.count === 0 ? TEXT[d.c.y] : spec.tree ? WHITE : NAVY))
       .attr('stroke-width', (d) => (d.count === 0 ? 2 : 1.2))
-      .attr('stroke-dasharray', (d) => (d.count === 0 ? '3 2' : null));
+      .attr('stroke-dasharray', (d) => (d.count === 0 ? '3 2' : null))
+      .classed('pickable', pickable)
+      .attr('tabindex', pickable ? '0' : null)
+      .attr('role', pickable ? 'button' : null)
+      .attr('aria-label', (d) => (pickable ? `Müşteri ${d.i}: oy dökümünü göster` : null))
+      .on('click', (_: MouseEvent, d) => {
+        if (pickable) this.onPick(d.i);
+      })
+      .on('keydown', (ev: KeyboardEvent, d) => {
+        if (!pickable || (ev.key !== 'Enter' && ev.key !== ' ')) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        this.onPick(d.i);
+      });
   }
 
   /** The marked customer of the vote map: a ring and the vote text beside it. */

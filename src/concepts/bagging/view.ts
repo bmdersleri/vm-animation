@@ -59,8 +59,8 @@ export function drawsFor(n: number, draw: number): number[] {
   return draw === 0 && n === BOOK_BOOT.ids.length ? [...BOOK_BOOT.sample] : labBootstrap(n, draw);
 }
 
-/** (1 − 1/n)ⁿ for n = 1..100 with the 1/e line and the marked n. */
-function curveSpec(n: number): LineChartSpec {
+/** (1 − 1/n)ⁿ for n = 1..100 with the 1/e line, the marked n and, after the Lab's "100 kez çek", the mean OOB share. */
+function curveSpec(n: number, avg: number | null): LineChartSpec {
   const at = Math.max(1, Math.min(100, Math.round(n)));
   const pts: [number, number][] = Array.from({ length: 100 }, (_, i) => [i + 1, oobChance(i + 1)]);
   return {
@@ -69,7 +69,15 @@ function curveSpec(n: number): LineChartSpec {
     xTitle: 'n (çekiliş sayısı)',
     yTitle: 'hiç seçilmeme olasılığı',
     series: [{ id: 'oob', cls: 'oob-curve', pts }],
-    refs: [{ y: 1 / Math.E, label: `1/e ≈ ${f(1 / Math.E, 3)}`, cls: 'e-line' }],
+    refs: [
+      // the two lines sit almost on top of each other, so one label carries both numbers
+      {
+        y: 1 / Math.E,
+        label: `1/e ≈ ${f(1 / Math.E, 3)}${avg === null ? '' : ` · 100 çekiliş ortalaması ${f(avg, 3)}`}`,
+        cls: 'e-line',
+      },
+      ...(avg === null ? [] : [{ y: avg, label: '', cls: 'lab-avg' }]),
+    ],
     marker: { x: at, y: oobChance(at), label: `n = ${at} · ${f(oobChance(at), 3)}` },
   };
 }
@@ -164,7 +172,7 @@ export function deriveBaggingView(index: number, p: BaggingParams): BaggingView 
     stepId,
     strip,
     bag: ['torba', 'cekilis', 'oob'].includes(stepId) ? { n, ids, sample, shown, counts, oob, badges } : null,
-    curve: stepId === 'yuzde' ? curveSpec(p.n) : null,
+    curve: stepId === 'yuzde' ? curveSpec(p.n, p.avg) : null,
     regions: layout
       ? {
           layout,

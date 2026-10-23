@@ -55,3 +55,22 @@
 .bagging-plot .scene-link text { fill:var(--navy); font-size:var(--fs-axis); text-decoration:underline; text-underline-offset:3px; }
 .bagging-plot .scene-link:hover text { fill:#A85A00; }
 .bagging-plot .scene-link:focus-visible { outline:2px solid var(--navy); outline-offset:4px; }
+
+/* Lab: controls, readout and pickable customers */
+.bagging-params { display:grid; gap:8px; }
+.bagging-params .ctl { min-width:0; }
+.bagging-params .ctl.range { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 8px; }
+.bagging-params .ctl.buttons { display:flex; flex-wrap:wrap; gap:8px; }
+.bagging-params .ctl-label { font-weight:600; }
+.bagging-params .bagging-value { font-weight:700; font-variant-numeric:tabular-nums; }
+.bagging-params input[type='range'] { grid-column:1 / -1; width:100%; min-height:var(--ctl); margin:0; accent-color:var(--navy); }
+.bagging-params .bagging-readout { margin:0; font-weight:600; font-variant-numeric:tabular-nums; }
+.bagging-params .bagging-readout[hidden] { display:none; }
+.bagging-extra p { margin:0 0 8px; }
+[data-mode='lab'] .bagging-params .ctl[data-off], [data-mode='lab'] .bagging-params[data-off] { display:none; }
+[data-mode='lab'] .bagging-params { gap:4px; }
+[data-mode='lab'] .bagging-params input[type='range'] { min-height:30px; }
+.bagging-plot .lc-ref.lab-avg { stroke:var(--navy); stroke-dasharray:6 4; }
+.bagging-plot .lc-ref-label.lab-avg { fill:var(--navy); }
+.bagging-plot .pt.pickable { cursor:pointer; }
+.bagging-plot .pt.pickable:focus-visible { outline:2px solid var(--navy); outline-offset:3px; }

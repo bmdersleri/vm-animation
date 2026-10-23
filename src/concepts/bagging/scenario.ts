@@ -19,6 +19,8 @@ export interface BaggingParams {
   p: number;
   m: number;
   pick: number | null;
+  /** Mean OOB share of the Lab's "100 kez çek" run for the current n (step 4), or null before a run. */
+  avg: number | null;
 }
 
 /** Exponent digits as Unicode superscripts: 10 -> "¹⁰". */
@@ -63,16 +65,18 @@ const roots = [0, 1, 2].map((i) => rootLabel(BOOTS[i].tree));
 
 /** The step scenario of the bootstrap and bagging page (Ders steps 1-10). */
 export const baggingScenario: Scenario<BaggingParams> = {
-  defaults: { n: n0, draw: 0, shown: 20, tree: 1, trees: TREES, p: P0, m: M0, pick: pickIndex },
+  defaults: { n: n0, draw: 0, shown: 20, tree: 1, trees: TREES, p: P0, m: M0, pick: pickIndex, avg: null },
   steps: [
     {
       id: 'torba',
+      labText: 'Kart sayısını kaydırıcıyla değiştir. "Yeni çekiliş" başka bir örnek çeker, "Kitabın örneği" kitabın çekilişine döner.',
       title: 'Torba',
       text: `${n0} müşteri var, kimlikleri 0–${n0 - 1}. Bagging her ağaca aynı büyüklükte ama farklı bir eğitim kümesi verir. Nasıl?`,
       params: { shown: 0 },
     },
     {
       id: 'cekilis',
+      labText: '"Yeni çekiliş" başka bir örnek çeker: aynı kart yine birden çok kez gelebilir, bazı kartlar hiç gelmeyebilir.',
       title: 'Yerine koyarak çek',
       term: 'bootstrap (yerine koyarak örnekleme)',
       text: `Torbadan ${n0} kez kart çekilir; her çekilişte kart torbaya geri döner. Kitabın örneği [${BOOK_BOOT.sample.join(' ')}]: aynı kart birden çok kez gelebilir.`,
@@ -85,6 +89,7 @@ export const baggingScenario: Scenario<BaggingParams> = {
     },
     {
       id: 'oob',
+      labText: 'Yeni çekilişlerde tekrar rozetleri ve OOB kartları değişir; hiç OOB kalmayan bir çekiliş de çıkabilir.',
       title: 'Tekrar ve dışarıda kalanlar',
       term: 'OOB (out-of-bag, torba dışı)',
       text: `${repeated.join(', ')}; ${once.join(', ')} ×1; ${never.join(', ')} hiç çekilmedi: OOB = ${never.length} / ${n0} = ${pct(never.length / n0)}. OOB müşteriler bu ağacın görmediği, bedava bir sınav kümesidir.`,
@@ -92,6 +97,7 @@ export const baggingScenario: Scenario<BaggingParams> = {
     },
     {
       id: 'yuzde',
+      labText: 'Kaydırıcı çekiliş sayısını değiştirir, eğrideki nokta onunla kayar. "100 kez çek" yüz örnek çeker ve ortalama OOB oranını eğrinin yanına yazar.',
       title: `Neden ${pct(1 / Math.E)}?`,
       text: `Bir müşterinin n çekilişte hiç seçilmeme olasılığı (1 − 1/n)ⁿ: n = ${n0}'da ${f(oobChance(n0), 3)}, n büyüdükçe 1/e ≈ ${f(1 / Math.E, 3)}. Bir müşteri en az bir kez ${f(1 - oobChance(n0), 3)} olasılıkla seçilir; her bootstrap verinin ≈ ${pct(1 - 1 / Math.E)}'sini görür.`,
     },
@@ -102,11 +108,14 @@ export const baggingScenario: Scenario<BaggingParams> = {
     },
     {
       id: 'uc-agac',
+      labText: 'Kaydırıcı hangi bootstrap örneğinden başlayan üç panelin görüneceğini seçer; kök sorusu her örnekte değişir.',
       title: 'Üç bootstrap, üç ağaç',
       text: `Her bootstrap'ın müşterileri (büyüklük = tekrar, içi boş = OOB) ve ağacının bölgeleri yan yana. Kök bölünmeleri: ${roots.join(' · ')}. Veride küçük bir oynama, kökten farklı bir ağaç.`,
     },
     {
       id: 'oylama',
+      labText:
+        'Ağaç sayısı kaydırıcısı oy haritasını yeniden boyar. Bir müşteriye tıkla ya da Tab ile gelip Enter veya Boşluk tuşuna bas: oy dökümü haritanın üstüne yazılır.',
       title: 'Oylama',
       term: 'bagging (bootstrap aggregating)',
       text: `Ağaç sayısı M = 1'den ${TREES}'e çıkarken oy haritası her durakta yeniden boyanır ve çoğunluk sınırı durulur. İşaretli müşteri: ${TREES} ağaçtan ${pickYes} tanesi Ayrıldı oyu veriyor → ${pickClass}.`,
@@ -118,6 +127,7 @@ export const baggingScenario: Scenario<BaggingParams> = {
     },
     {
       id: 'cogunluk',
+      labText: 'Model doğruluğu ve model sayısı kaydırıcılarıyla çoğunluğun doğruluğunu izle; tek sayılı model sayısı beraberliği önler.',
       title: 'Çoğunluk neden kazanır?',
       term: 'çoğunluk oyu (majority vote)',
       text: `Her biri %${f(P0 * 100, 0)} doğru, bağımsız ${M0} model: çoğunluk yanlışsa en az ikisi yanılmıştır: ${M0} · ${f(1 - P0, 1)}² · ${f(P0, 1)} + ${f(1 - P0, 1)}³ = ${f(wrong, 3)} → doğruluk ${f(1 - wrong, 3)}. Hatalar aynıysa kazanç yok: ρ = 1 çizgisi ${f(P0, 1)}'de düz kalır.`,
@@ -137,6 +147,14 @@ export const baggingScenario: Scenario<BaggingParams> = {
 
 /** Resolves step ids to indices, so the groups below stay in step with the scenario. */
 const indices = (...ids: string[]): number[] => ids.map((id) => stepIndex(baggingScenario, id));
+
+/** Steps with the n slider (5-20 on the cards, 1-100 on the curve) and the draw buttons (cards only). */
+export const N_STEPS = indices('torba', 'cekilis', 'oob', 'yuzde');
+export const DRAW_STEPS = indices('torba', 'cekilis', 'oob');
+export const SAMPLE_STEPS = indices('yuzde');
+export const TREE_STEPS = indices('uc-agac');
+export const TREES_STEPS = indices('oylama');
+export const PM_STEPS = indices('cogunluk');
 
 /** Steps drawn by the bag scene (cards, slots and the (1 − 1/n)ⁿ curve). */
 export const BAG_STEPS = indices('torba', 'cekilis', 'oob', 'yuzde');

@@ -46,6 +46,8 @@ export function mountBaggingScene(
 
   const bag = new BagScene(hosts.bag);
   const regions = new RegionScene(hosts.regions);
+  // a customer picked in the vote map (click, Enter or Space) is written back as the pick parameter
+  regions.onPick = (index) => player.setParam('pick', index);
   const charts = new ChartScene(hosts.charts);
 
   let mode = initialMode;

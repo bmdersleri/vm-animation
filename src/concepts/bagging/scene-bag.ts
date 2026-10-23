@@ -92,8 +92,10 @@ export class BagScene {
   private layout(n: number): BagLayout {
     const f = this.measure.fonts(this.mode);
     const pad = 12;
-    const gap = Math.max(6, Math.round(f.tick * 0.5));
-    const cw = Math.max(24, Math.min(110, (this.w - 2 * pad - (n - 1) * gap) / n));
+    // narrow screens: the gap shrinks before the cards do, so n = 20 still fits inside the stage
+    const room = this.w - 2 * pad;
+    const gap = Math.max(2, Math.min(Math.round(f.tick * 0.5), Math.floor((room - n * 24) / Math.max(1, n - 1))));
+    const cw = Math.max(8, Math.min(110, (room - (n - 1) * gap) / n));
     const ch = Math.round(f.axis * 2.4);
     const x0 = (this.w - (n * cw + (n - 1) * gap)) / 2;
     const lane = f.tick * 1.5;
