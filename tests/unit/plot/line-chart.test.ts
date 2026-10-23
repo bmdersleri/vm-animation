@@ -116,4 +116,18 @@ describe('LineChartLayer', () => {
       expect(Number(r.getAttribute('x')) + Number(r.getAttribute('width'))).toBeGreaterThanOrEqual(Number(labels[i].getAttribute('x')));
     });
   });
+
+  it('a ref with an empty label gets no background plate', () => {
+    const { svg, layer } = setup();
+    const spec: LineChartSpec = {
+      ...base,
+      refs: [
+        { y: 0.368, label: '1/e', cls: 'e-line' },
+        { y: 0.2, label: '', cls: 'plain' },
+      ],
+    };
+    layer.draw(spec, layer.plotRect(900, 400, spec), 0);
+    expect(svg.querySelectorAll('line.lc-ref')).toHaveLength(2);
+    expect(svg.querySelectorAll('rect.lc-ref-bg')).toHaveLength(1);
+  });
 });

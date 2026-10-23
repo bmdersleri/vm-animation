@@ -262,7 +262,7 @@ export function deriveRfView(index: number, p: RfParams): RfView {
   const row = rfRow(mf);
   const bag = BAGGING_ROW;
   const trees = Math.max(1, Math.min(BOOTS.length, Math.round(p.trees)));
-  const m = stepId === 'oob-matris' ? Math.min(MATRIX_COLS, trees) : trees;
+  const m = trees;
   const top2 = (xs: readonly number[]): string => {
     const [a, b] = rankDesc(xs);
     return `${RF.names[a]} ${xs[a]} · ${RF.names[b]} ${xs[b]} → ikisi ${xs[a] + xs[b]} / ${M_MAX}`;
@@ -285,7 +285,8 @@ export function deriveRfView(index: number, p: RfParams): RfView {
       break;
     case 'oob-matris': {
       const b = p.pick === null ? null : oobBreakdown(p.pick, m);
-      strip = b ? `müşteri ${p.pick} · ${b.text}` : `${m} ağaç oy veriyor · dolu hücre = ağaç müşteriyi gördü · kesikli = OOB (ağacın oyu)`;
+      const shown = m > MATRIX_COLS ? ` · matris ilk ${MATRIX_COLS} ağacı gösterir` : '';
+      strip = (b ? `müşteri ${p.pick} · ${b.text}` : `${m} ağaç oy veriyor · dolu hücre = ağaç müşteriyi gördü · kesikli = OOB (ağacın oyu)`) + shown;
       break;
     }
     case 'oob-skor': {

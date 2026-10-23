@@ -85,9 +85,9 @@ it("tree slider shows that bootstrap's tree", () => {
   const { host, el, player } = setup();
   player.goto(step('uc-agac'));
   expect(ctl(host, 'tree').min).toBe('1');
-  expect(ctl(host, 'tree').max).toBe('50');
+  expect(ctl(host, 'tree').max).toBe(String(BOOTS.length - 2));
   const titles = () => [...el.querySelectorAll('g.panel text.panel-title')].map((t) => t.textContent!);
-  for (const k of [17, 50]) {
+  for (const k of [17, BOOTS.length - 2]) {
     slide(ctl(host, 'tree'), k);
     expect(player.state.params.tree).toBe(k);
     // the window of three ends at tree 50, so the selected tree is always on screen
@@ -134,7 +134,7 @@ it('every strip stays finite at slider ends', () => {
     ['cekilis', 'n', [5, 20]],
     ['oob', 'n', [5, 20]],
     ['yuzde', 'n', [1, 100]],
-    ['uc-agac', 'tree', [1, 50]],
+    ['uc-agac', 'tree', [1, BOOTS.length - 2]],
     ['oylama', 'trees', [1, 50]],
     ['cogunluk', 'p', [0.5, 0.95]],
     ['cogunluk', 'm', [1, 51]],
@@ -222,3 +222,13 @@ it('the Lab note names Extra Trees and boosting', () => {
 });
 
 labTextTests(baggingScenario.steps, [1, 2, 3, 4, 6, 7, 8]);
+
+it('the OOB readout uses the concrete exponent', () => {
+  const { host, player } = setup();
+  player.goto(step('yuzde'));
+  slide(ctl(host, 'n'), 10);
+  btn(host, 'sample100').click();
+  const text = host.querySelector('.bagging-readout')!.textContent!;
+  expect(text).toContain('(1 − 1/10)¹⁰ = ');
+  expect(text).not.toContain('ⁿ');
+});

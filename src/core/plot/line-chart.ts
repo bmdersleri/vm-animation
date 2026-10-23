@@ -188,7 +188,7 @@ export class LineChartLayer {
     });
     this.refsG
       .selectAll<SVGRectElement, LineRef>('rect.lc-ref-bg')
-      .data(refs)
+      .data(refs.filter((d) => d.label !== ''))
       .join('rect')
       .attr('class', 'lc-ref-bg')
       .attr('fill', 'var(--bg, #fff)')

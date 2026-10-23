@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { StepPlayer } from '../../../src/core/player';
 import { CAUSAL, randomForestScenario } from '../../../src/concepts/random-forest/scenario';
 import { deriveRfView } from '../../../src/concepts/random-forest/view';
 import { BOOTS, CUSTOMERS, PICKS, RF } from '../../../src/concepts/topluluk/data';
@@ -26,20 +27,42 @@ describe('deriveRfView', () => {
   });
 
   it('oob breakdown counts unseen trees', () => {
-    const v = at('oob-matris').oob!;
+    const v = at('oob-matris', { trees: 12 }).oob!;
     expect(v.m).toBe(12);
     expect(v.pick).toBe(PICKS.oob);
     const x: [number, number] = [CUSTOMERS[PICKS.oob].t, CUSTOMERS[PICKS.oob].c];
     const unseen = BOOTS.slice(0, 12).filter((b) => b.counts[PICKS.oob] === 0);
     const yes = unseen.filter((b) => predictTree(b.tree, x) === 1).length;
     expect(v.breakdown).toMatchObject({ k: unseen.length, ayrildi: yes, kaldi: unseen.length - yes });
-    expect(at('oob-matris').strip).toContain(`12 ağaçtan ${unseen.length} tanesi onu görmedi`);
+    expect(at('oob-matris', { trees: 12 }).strip).toContain(`12 ağaçtan ${unseen.length} tanesi onu görmedi`);
     expect(at('oob-matris', { pick: null }).oob!.breakdown).toBeNull();
     // step 6 votes with all 50 trees
     const six = at('oob-skor').oob!;
     expect(six.m).toBe(50);
     expect(six.score!.total).toBeGreaterThan(0);
     expect(at('oob-skor').strip).toContain(`OOB skoru = ${six.score!.correct} / ${six.score!.total}`);
+  });
+
+  it('step 5 votes come from M trees, the matrix still draws 12 columns', () => {
+    const player = new StepPlayer(randomForestScenario);
+    player.goto(randomForestScenario.steps.findIndex((s) => s.id === 'oob-matris'));
+    expect(player.state.params.trees).toBe(12);
+    player.destroy();
+    const v = at('oob-matris', { trees: 30 });
+    const unseen = BOOTS.slice(0, 30).filter((b) => b.counts[PICKS.oob] === 0);
+    expect(v.oob!.m).toBe(30);
+    expect(v.oob!.cols).toBe(12);
+    expect(v.oob!.rows[0].cells).toHaveLength(12);
+    expect(v.oob!.rows[0].cells.every((c) => c.voting)).toBe(true);
+    expect(v.oob!.breakdown!.k).toBe(unseen.length);
+    expect(v.strip).toContain(`30 ağaçtan ${unseen.length} tanesi onu görmedi`);
+    expect(v.strip).toContain('matris ilk 12 ağacı gösterir');
+    expect(at('oob-matris', { trees: 12 }).strip).not.toContain('matris ilk');
+    // step 6 keeps its 50 trees after step 5
+    const p = new StepPlayer(randomForestScenario);
+    p.goto(randomForestScenario.steps.findIndex((s) => s.id === 'oob-skor'));
+    expect(p.state.params.trees).toBe(50);
+    p.destroy();
   });
 
   it('later steps name their scene', () => {

@@ -132,7 +132,7 @@ export function deriveBaggingView(index: number, p: BaggingParams): BaggingView 
       strip = `OOB = ${oob.length} / ${n} = ${pct(oob.length / n)}`;
       break;
     case 'yuzde':
-      strip = `(1 − 1/${n})${superscript(n)} = ${f(oobChance(n), 3)} · n → ∞: 1/e = ${f(1 / Math.E, 3)} · bootstrap verinin ≈ ${pct(1 - 1 / Math.E)}'sini görür`;
+      strip = `(1 − 1/${n})${superscript(n)} = ${f(oobChance(n), 3)} · n → ∞: 1/e = ${f(1 / Math.E, 3)} · bootstrap verinin ≈ ${pct(1 - 1 / Math.E)} kadarını görür`;
       break;
     case 'tek-agac':
       strip = `eğitimde ${trainOk} / ${CUSTOMERS.length} doğru · ${leafCount(SINGLE)} yaprak · yanlılık düşük, varyans yüksek`;
@@ -152,7 +152,7 @@ export function deriveBaggingView(index: number, p: BaggingParams): BaggingView 
           ? `3 · ${trim(q, 2)}² · ${trim(p.p, 2)} + ${trim(q, 2)}³ = ${f(1 - acc, 3)} → doğruluk ${f(acc, 3)}`
           : `p = ${f(p.p, 2)} · M = ${p.m} → çoğunluk doğruluğu = ${f(acc, 3)} (yanlış ${f(1 - acc, 3)})`;
       strip = `${head}
-ρ = 1 (aynı hatalar) → doğruluk ${f(p.p, 2)}'de kalır`;
+ρ = 1 (aynı hatalar) → doğruluk değişmez: p = ${f(p.p, 2)}`;
       break;
     }
     case 'deney':

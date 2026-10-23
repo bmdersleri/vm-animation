@@ -68,3 +68,9 @@ describe('deriveBaggingView', () => {
     expect(at('sinir').links.map((l) => l.href)).toEqual(['../random-forest/', '../karar-agaci/']);
   });
 });
+
+it('the cogunluk strip avoids an apostrophe suffix after p', () => {
+  const strip = deriveBaggingView(baggingScenario.steps.findIndex((s) => s.id === 'cogunluk'), { ...baggingScenario.defaults, p: 0.6 }).strip;
+  expect(strip).toContain('p = 0,60');
+  expect(strip).not.toMatch(/0,60'/);
+});

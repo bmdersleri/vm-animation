@@ -135,6 +135,7 @@ export const randomForestScenario: Scenario<RfParams> = {
     },
     {
       id: 'oob-matris',
+      params: { trees: MATRIX_COLS },
       labText: 'Ağaç sayısı kaydırıcısı oy veren ağaçları değiştirir. Bir satıra tıkla ya da Tab ile gelip Enter veya Boşluk tuşuna bas: müşteri seçilir.',
       title: 'OOB matrisi',
       term: 'OOB oylaması',
@@ -142,6 +143,7 @@ export const randomForestScenario: Scenario<RfParams> = {
     },
     {
       id: 'oob-skor',
+      params: { trees: TREES },
       labText: 'Ağaç sayısı kaydırıcısı oy veren ağaçları değiştirir; OOB skoru ve doğru / yanlış işaretleri yeniden hesaplanır.',
       title: 'OOB skoru',
       text: `${TREES} ağaçla her müşteri yalnız onu görmeyen ağaçların çoğunluğuyla tahmin edilir; doğru olanlar ✓: OOB skoru = ${score.correct} / ${score.total} = ${f(score.correct / score.total, 3)}. Ayrı bir test kümesi ayırmadan.`,

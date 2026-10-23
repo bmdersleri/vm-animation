@@ -566,14 +566,33 @@ export class RegionScene {
     const label = pick
       ? `${pick.m} ağaçtan ${pick.ayrildi} tanesi Ayrıldı → ${pick.verdict === 'berabere' ? 'berabere → Kaldı' : pick.verdict}`
       : '';
-    const w = pick ? this.measure.width(label, 'tick', tick) : 0;
+    // the callout stays inside the plot: wrapped to the plot width, then its x is clamped
+    const left = plot.left + 4;
     const right = plot.left + plot.width - 4;
+    const lines = pick ? this.measure.wrap(label, Math.max(1, right - left), 'tick', tick) : [];
+    const w = Math.max(0, ...lines.map((l) => this.measure.width(l, 'tick', tick)));
     const startFits = px + ring + 8 + w <= right;
-    const above = py - ring - 6 >= plot.top + tick;
-    overlayText(panel.overlay, pick ? label : null)
+    const lh = tick * 1.2;
+    const above = py - ring - 6 - (lines.length - 1) * lh >= plot.top + tick;
+    const x0 = startFits ? px + ring + 8 : px - ring - 8;
+    const x = startFits ? Math.min(x0, right - w) : Math.max(x0, left + w);
+    const y0 = above ? py - ring * 0.4 - (lines.length - 1) * lh : py + ring + tick;
+    const y = Math.min(y0, plot.top + plot.height - 2 - (lines.length - 1) * lh);
+    const text = overlayText(panel.overlay, pick ? label : null)
       .attr('text-anchor', startFits ? 'start' : 'end')
-      .attr('x', r1(startFits ? px + ring + 8 : px - ring - 8))
-      .attr('y', r1(above ? py - ring * 0.4 : py + ring + tick));
+      .attr('x', r1(x))
+      .attr('y', r1(y));
+    if (lines.length > 1) {
+      // keep the spaces between lines so the text content reads as one sentence
+      text
+        .text(null)
+        .selectAll('tspan')
+        .data(lines)
+        .join('tspan')
+        .attr('x', r1(x))
+        .attr('dy', (_, i) => (i === 0 ? '0' : r1(lh)))
+        .text((l, i) => (i < lines.length - 1 ? `${l} ` : l));
+    }
   }
 }
 

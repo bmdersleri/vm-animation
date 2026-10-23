@@ -53,9 +53,10 @@
 
 /* OOB matrix */
 .rf-plot .tree-head, .rf-plot .col-head { font-weight:700; }
-.rf-plot .oob-row { cursor:pointer; outline:none; }
+.rf-plot .oob-row { outline:none; }
+.rf-plot .oob-row.pickable { cursor:pointer; }
 .rf-plot .oob-row .row-bg { fill:transparent; }
-.rf-plot .oob-row:hover .row-bg { fill:var(--navy-soft); fill-opacity:.5; }
+.rf-plot .oob-row.pickable:hover .row-bg { fill:var(--navy-soft); fill-opacity:.5; }
 .rf-plot .oob-row.picked .row-bg { fill:var(--navy-soft); stroke:var(--orange); stroke-width:3; }
 .rf-plot .oob-row:focus-visible .row-bg { stroke:var(--navy); stroke-width:2.5; }
 .rf-plot .oob-cell.seen .cell-box { fill:var(--navy-soft); stroke:none; }

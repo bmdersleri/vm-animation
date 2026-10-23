@@ -77,7 +77,7 @@ export class HBarsLayer {
     const gapIn = 2;
     const barH = Math.max(6, Math.min(tick * (o.barK ?? 1.5), (groupH - 6 - gapIn * (o.slots - 1)) / o.slots));
     const blockH = barH * o.slots + gapIn * (o.slots - 1);
-    const len = (c: number): number => (c / o.max) * (xMax - x0);
+    const len = (c: number): number => (o.max > 0 ? (c / o.max) * (xMax - x0) : 0);
     const yOf = (row: number, slot: number): number => rect.y + row * groupH + (groupH - blockH) / 2 + slot * (barH + gapIn);
 
     const sel = this.g

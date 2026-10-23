@@ -1,5 +1,6 @@
 import type { StepPlayer } from '../../core/player';
 import { formatNumber, formatPercent } from '../../core/plot/format';
+import { BOOTS } from '../topluluk/data';
 import { labBootstrap, oobChance } from '../topluluk/math';
 import {
   DRAW_STEPS,
@@ -8,6 +9,7 @@ import {
   SAMPLE_STEPS,
   TREES_STEPS,
   TREE_STEPS,
+  superscript,
   type BaggingParams,
 } from './scenario';
 import { deriveBaggingView } from './view';
@@ -125,7 +127,8 @@ export function mountBaggingParams(host: HTMLElement, player: StepPlayer<Bagging
         return [lo, hi, 1];
       }
       case 'tree':
-        return [1, 50, 1];
+        // three panels from tree k: the last start is BOOTS.length - 2 (trees 48-50)
+        return [1, BOOTS.length - 2, 1];
       case 'trees':
         return [1, 50, 1];
       case 'p':
@@ -144,7 +147,7 @@ export function mountBaggingParams(host: HTMLElement, player: StepPlayer<Bagging
       return `OOB: ${bag.oob.join(', ')} → ${bag.oob.length} / ${bag.n} = ${formatPercent(bag.oob.length / bag.n)}`;
     }
     if (SAMPLE_STEPS.includes(index) && p.avg !== null) {
-      return `${RUNS} çekilişin ortalama OOB oranı ${formatPercent(p.avg)}; kuram (1 − 1/${p.n})ⁿ = ${formatNumber(oobChance(p.n), 3)}.`;
+      return `${RUNS} çekilişin ortalama OOB oranı ${formatPercent(p.avg)}; kuram (1 − 1/${p.n})${superscript(p.n)} = ${formatNumber(oobChance(p.n), 3)}.`;
     }
     return '';
   };

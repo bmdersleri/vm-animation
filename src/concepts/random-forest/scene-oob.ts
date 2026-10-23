@@ -126,32 +126,37 @@ export class OobScene {
       .text((d) => d);
 
     const self = this;
+    const lab = this.mode === 'lab';
     const rows = this.rowsG
       .selectAll<SVGGElement, OobRow>('g.oob-row')
       .data(o.rows, (d) => d.index)
       .join((enter) => {
-        const g = enter.append('g').attr('tabindex', 0).attr('role', 'button');
+        const g = enter.append('g');
         g.append('rect').attr('class', 'row-bg');
         g.append('text').attr('class', 'row-no cell');
         g.append('g').attr('class', 'row-class');
         g.append('g').attr('class', 'row-cells');
         g.append('text').attr('class', 'verdict cell').attr('text-anchor', 'middle');
         g.append('g').attr('class', 'verdict-g');
+        // rows are interactive in Lab only; in Ders the handlers do nothing
         g.on('click', function (_, d) {
-          self.onPick?.(d.index);
+          if (self.mode === 'lab') self.onPick?.(d.index);
         });
         g.on('keydown', function (e: KeyboardEvent, d) {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            self.onPick?.(d.index);
-          }
+          if (self.mode !== 'lab' || (e.key !== 'Enter' && e.key !== ' ')) return;
+          e.preventDefault();
+          e.stopPropagation();
+          self.onPick?.(d.index);
         });
         return g;
       })
       .attr('class', (d) => `oob-row ${d.outcome}${d.index === o.pick ? ' picked' : ''}`)
       .attr('data-row', (d) => d.index)
-      .attr('aria-label', (d) => `Müşteri ${d.index}`)
-      .attr('aria-pressed', (d) => (d.index === o.pick ? 'true' : 'false'));
+      .classed('pickable', lab)
+      .attr('tabindex', lab ? '0' : null)
+      .attr('role', lab ? 'button' : null)
+      .attr('aria-label', lab ? (d) => `Müşteri ${d.index}` : null)
+      .attr('aria-pressed', lab ? (d) => (d.index === o.pick ? 'true' : 'false') : null);
 
     rows
       .select('rect.row-bg')
@@ -246,7 +251,8 @@ export class OobScene {
   /** The legend sentence wrapped to the width of the scene. */
   private legendLines(o: OobView, tick: number): string[] {
     const idle = o.m < o.cols ? ` · soluk sütunlar oy vermez (${o.m} ağaç oy verir)` : '';
-    const text = `${o.cols} ağaç sütunu${idle} · dolu hücre: ağaç müşteriyi gördü (sayı = tekrar) · kesikli hücre: OOB, ağaç oy verir (● Kaldı, ▲ Ayrıldı) · sağda ${o.m} ağacın OOB çoğunluğu ve ✓ / ✗`;
+    const more = o.m > o.cols ? ` · oylar ${o.m} ağaçtan gelir, ilk ${o.cols} ağaç gösterilir` : '';
+    const text = `${o.cols} ağaç sütunu${idle}${more} · dolu hücre: ağaç müşteriyi gördü (sayı = tekrar) · kesikli hücre: OOB, ağaç oy verir (● Kaldı, ▲ Ayrıldı) · sağda ${o.m} ağacın OOB çoğunluğu ve ✓ / ✗`;
     return this.measure.wrap(text, this.w - 2 * PAD, 'tick', tick);
   }
 }

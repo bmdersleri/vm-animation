@@ -98,3 +98,8 @@ describe('random-forest scenario', () => {
     });
   });
 });
+
+it('no Turkish apostrophe suffix follows a computed number', () => {
+  const texts = randomForestScenario.steps.map((s) => s.text).join(' ').replaceAll("Bölüm 5'in", 'Bölüm beşin');
+  expect(texts).not.toMatch(/[\d²³]'(de|da|den|dan|e|a|ye|ya|in|ın|nin|nın|si|sı|sini|sını|yi|yı|i|ı)/);
+});

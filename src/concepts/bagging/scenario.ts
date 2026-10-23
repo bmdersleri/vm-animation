@@ -99,7 +99,7 @@ export const baggingScenario: Scenario<BaggingParams> = {
       id: 'yuzde',
       labText: 'Kaydırıcı çekiliş sayısını değiştirir, eğrideki nokta onunla kayar. "100 kez çek" yüz örnek çeker ve ortalama OOB oranını eğrinin yanına yazar.',
       title: `Neden ${pct(1 / Math.E)}?`,
-      text: `Bir müşterinin n çekilişte hiç seçilmeme olasılığı (1 − 1/n)ⁿ: n = ${n0}'da ${f(oobChance(n0), 3)}, n büyüdükçe 1/e ≈ ${f(1 / Math.E, 3)}. Bir müşteri en az bir kez ${f(1 - oobChance(n0), 3)} olasılıkla seçilir; her bootstrap verinin ≈ ${pct(1 - 1 / Math.E)}'sini görür.`,
+      text: `Bir müşterinin n çekilişte hiç seçilmeme olasılığı (1 − 1/n)ⁿ: n = ${n0} için ${f(oobChance(n0), 3)}, n büyüdükçe 1/e ≈ ${f(1 / Math.E, 3)}. Bir müşteri en az bir kez ${f(1 - oobChance(n0), 3)} olasılıkla seçilir; her bootstrap verinin ≈ ${pct(1 - 1 / Math.E)} kadarını görür.`,
     },
     {
       id: 'tek-agac',
@@ -118,7 +118,7 @@ export const baggingScenario: Scenario<BaggingParams> = {
         'Ağaç sayısı kaydırıcısı oy haritasını yeniden boyar. Bir müşteriye tıkla ya da Tab ile gelip Enter veya Boşluk tuşuna bas: oy dökümü haritanın üstüne yazılır.',
       title: 'Oylama',
       term: 'bagging (bootstrap aggregating)',
-      text: `Ağaç sayısı M = 1'den ${TREES}'e çıkarken oy haritası her durakta yeniden boyanır ve çoğunluk sınırı durulur. İşaretli müşteri: ${TREES} ağaçtan ${pickYes} tanesi Ayrıldı oyu veriyor → ${pickClass}.`,
+      text: `Ağaç sayısı M = 1 → ${TREES} artarken oy haritası her durakta yeniden boyanır ve çoğunluk sınırı durulur. İşaretli müşteri: ${TREES} ağaçtan ${pickYes} tanesi Ayrıldı oyu veriyor → ${pickClass}.`,
       sweep: {
         key: 'trees',
         values: Array.from({ length: TREES }, (_, i) => i + 1),
@@ -130,7 +130,7 @@ export const baggingScenario: Scenario<BaggingParams> = {
       labText: 'Model doğruluğu ve model sayısı kaydırıcılarıyla çoğunluğun doğruluğunu izle; tek sayılı model sayısı beraberliği önler.',
       title: 'Çoğunluk neden kazanır?',
       term: 'çoğunluk oyu (majority vote)',
-      text: `Her biri %${f(P0 * 100, 0)} doğru, bağımsız ${M0} model: çoğunluk yanlışsa en az ikisi yanılmıştır: ${M0} · ${f(1 - P0, 1)}² · ${f(P0, 1)} + ${f(1 - P0, 1)}³ = ${f(wrong, 3)} → doğruluk ${f(1 - wrong, 3)}. Hatalar aynıysa kazanç yok: ρ = 1 çizgisi ${f(P0, 1)}'de düz kalır.`,
+      text: `Her biri %${f(P0 * 100, 0)} doğru, bağımsız ${M0} model: çoğunluk yanlışsa en az ikisi yanılmıştır: ${M0} · ${f(1 - P0, 1)}² · ${f(P0, 1)} + ${f(1 - P0, 1)}³ = ${f(wrong, 3)} → doğruluk ${f(1 - wrong, 3)}. Hatalar aynıysa kazanç yok: ρ = 1 çizgisi düz kalır (${f(P0, 1)}).`,
     },
     {
       id: 'deney',

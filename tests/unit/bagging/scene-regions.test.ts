@@ -121,6 +121,33 @@ describe('region scene', () => {
     );
   });
 
+  it('the vote callout stays inside the plot at 366 px', () => {
+    vi.useFakeTimers();
+    const { el, player } = setup(366, 600);
+    player.goto(step('oylama'));
+    vi.advanceTimersByTime(120 * 60);
+    const frame = el.querySelector('g.panel rect.frame')!;
+    const left = num(frame, 'x');
+    const right = left + num(frame, 'width');
+    const top = num(frame, 'y');
+    const bottom = top + num(frame, 'height');
+    const callout = el.querySelector('text.vote-callout')!;
+    expect(callout.textContent).toMatch(/^50 ağaçtan \d+ tanesi Ayrıldı → /);
+    const anchor = callout.getAttribute('text-anchor');
+    const lines = callout.querySelectorAll('tspan');
+    const parts = lines.length ? [...lines].map((t) => t.textContent!.trim()) : [callout.textContent!];
+    const tick = 13;
+    const widths = parts.map((t) => t.length * tick * 0.62);
+    const x = num(callout, 'x');
+    const w = Math.max(...widths);
+    const l = anchor === 'end' ? x - w : x;
+    expect(l).toBeGreaterThanOrEqual(left - 0.5);
+    expect(l + w).toBeLessThanOrEqual(right + 0.5);
+    const y = num(callout, 'y');
+    expect(y).toBeGreaterThan(top);
+    expect(y + (parts.length - 1) * tick * 1.2).toBeLessThanOrEqual(bottom + 0.5);
+  });
+
   it('three panels fit 390 px without overlap', () => {
     const { el, player } = setup(390, 600, 'lab');
     player.goto(step('uc-agac'));

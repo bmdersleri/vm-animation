@@ -12,11 +12,11 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-function setup(w = 1280, h = 540) {
+function setup(w = 1280, h = 540, mode: 'ders' | 'lab' = 'ders') {
   const el = document.createElement('div');
   document.body.append(el);
   const player = new StepPlayer(randomForestScenario);
-  const scene = mountRfScene(el, player, 'ders', { durationScale: 0 });
+  const scene = mountRfScene(el, player, mode, { durationScale: 0 });
   scene.resize(w, h);
   clean.push(() => {
     scene.destroy();
@@ -123,5 +123,50 @@ describe('oob matrix scene', () => {
     const mark = row.querySelector('.verdict-mark');
     if (votes.length === 0) expect(mark).toBeNull();
     else expect(mark!.classList.contains('ayrildi')).toBe(yes * 2 > votes.length);
+  });
+});
+
+describe('oob rows are interactive in Lab only', () => {
+  const key = (k: string) => new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true });
+
+  it('Space and Enter on a Lab row pick it without advancing the step', () => {
+    const { el, player } = setup(1280, 540, 'lab');
+    const idx = step('oob-matris');
+    player.goto(idx);
+    const row = (i: number) => host(el).querySelector<SVGGElement>(`g.oob-row[data-row="${i}"]`)!;
+    expect(row(3).getAttribute('tabindex')).toBe('0');
+    expect(row(3).getAttribute('role')).toBe('button');
+    row(3).dispatchEvent(key(' '));
+    expect(player.state.params.pick).toBe(3);
+    expect(player.state.index).toBe(idx);
+    row(7).dispatchEvent(key('Enter'));
+    expect(player.state.params.pick).toBe(7);
+    expect(player.state.index).toBe(idx);
+    row(9).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(player.state.params.pick).toBe(9);
+  });
+
+  it('Ders rows have no tabindex or role and a click does not pick', () => {
+    const { el, player } = setup(1280, 540, 'ders');
+    player.goto(step('oob-matris'));
+    const rows = [...host(el).querySelectorAll('g.oob-row')];
+    expect(rows).toHaveLength(25);
+    for (const r of rows) {
+      expect(r.hasAttribute('tabindex')).toBe(false);
+      expect(r.hasAttribute('role')).toBe(false);
+    }
+    const before = player.state.params.pick;
+    rows[3].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    rows[4].dispatchEvent(key('Enter'));
+    expect(player.state.params.pick).toBe(before);
+  });
+
+  it('the legend says which trees are shown when M exceeds the columns', () => {
+    const { el, player } = setup(1280, 1000, 'lab');
+    player.goto(step('oob-matris'));
+    player.setParam('trees', 30);
+    expect(host(el).querySelectorAll('text.oob-legend').length).toBeGreaterThan(0);
+    expect(host(el).querySelector('.oob-legend')!.parentElement!.textContent).toContain('30 ağaçtan');
+    expect(el.querySelector('.formula')!.textContent).toContain('matris ilk 12 ağacı gösterir');
   });
 });
