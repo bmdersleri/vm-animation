@@ -1,4 +1,4 @@
-import type { Selection } from 'd3-selection';
+import { select, type Selection } from 'd3-selection';
 import { scaleLinear } from 'd3-scale';
 import { AxesLayer } from './axes';
 import { tickFormat } from './format';
@@ -34,6 +34,8 @@ export interface LineChartSpec {
   series: LineSeries[];
   refs?: LineRef[];
   marker?: { x: number; y: number; label: string } | null;
+  /** Fixed labelled points (e.g. the curve's first value), drawn small beside the moving marker. */
+  pins?: { x: number; y: number; label: string }[];
   /** Explicit tick values (e.g. the integers 1-8); default is the d3 tick choice. */
   xTicks?: number[];
   yTicks?: number[];
@@ -54,6 +56,7 @@ export class LineChartLayer {
   private readonly axes: AxesLayer;
   private readonly seriesG: G;
   private readonly refsG: G;
+  private readonly pinsG: G;
   private readonly markG: G;
 
   constructor(
@@ -63,6 +66,7 @@ export class LineChartLayer {
     this.axes = new AxesLayer(g.append('g').attr('class', 'lc-axes'));
     this.seriesG = g.append('g').attr('class', 'lc-series-layer');
     this.refsG = g.append('g').attr('class', 'lc-refs');
+    this.pinsG = g.append('g').attr('class', 'lc-pins');
     this.markG = g.append('g').attr('class', 'lc-mark');
   }
 
@@ -204,6 +208,42 @@ export class LineChartLayer {
       .attr('y', (d) => r1(refYs.get(d)!))
       .text((d) => d.label);
 
+    // pins are labelled before the marker, which then keeps clear of them
+    const pins = spec.pins ?? [];
+    const pinHalf = Math.max(3, m.tick * 0.28);
+    this.pinsG
+      .selectAll<SVGCircleElement, unknown>('circle.lc-pin')
+      .data(pins)
+      .join('circle')
+      .attr('class', 'lc-pin')
+      .attr('r', pinHalf)
+      .attr('cx', (d) => r1(sc.x(d.x)))
+      .attr('cy', (d) => r1(sc.y(d.y)));
+    const pinLabels = this.pinsG
+      .selectAll<SVGTextElement, (typeof pins)[number]>('text.lc-pin-label')
+      .data(pins)
+      .join('text')
+      .attr('class', 'lc-pin-label tick');
+    pinLabels.each((d, i, nodes) => {
+      const px = sc.x(d.x);
+      const py = sc.y(d.y);
+      const w = this.measure.width(d.label, 'tick', m.tick);
+      const o = chooseOffset({
+        x: px,
+        y: py,
+        chars: w / (m.tick * 0.7),
+        cands: offsets(pinHalf, m.gap, m.tick),
+        fs: m.tick,
+        taken,
+        area: labelArea(plot, 0),
+      });
+      const lo = o.anchor === 'end' ? plot.left + w : o.anchor === 'middle' ? plot.left + w / 2 : plot.left;
+      const hi = o.anchor === 'end' ? right : o.anchor === 'middle' ? right - w / 2 : right - w;
+      const x = Math.max(lo, Math.min(hi, px + o.dx));
+      const y = Math.max(plot.top + m.tick, Math.min(bottom - 2, py + o.dy));
+      select(nodes[i]).attr('text-anchor', o.anchor).attr('x', r1(x)).attr('y', r1(y)).text(d.label);
+    });
+
     const marker = spec.marker ?? null;
     const mx = marker ? sc.x(marker.x) : 0;
     const my = marker ? sc.y(marker.y) : 0;
@@ -245,6 +285,7 @@ export class LineChartLayer {
   clear(): void {
     this.seriesG.selectAll('*').remove();
     this.refsG.selectAll('*').remove();
+    this.pinsG.selectAll('*').remove();
     this.markG.selectAll('*').remove();
   }
 }

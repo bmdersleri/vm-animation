@@ -42,6 +42,8 @@ export interface HBarsOptions {
   itemCls: string;
   /** Widest value text, to reserve room for it (default: the widest `text` of the data). */
   valueSample?: string;
+  /** Tallest bar in tick-font heights (default 1.5). */
+  barK?: number;
   ms: number;
 }
 
@@ -73,7 +75,7 @@ export class HBarsLayer {
     const xMax = Math.max(x0 + 20, rect.x + rect.w - PAD - valueW);
     const groupH = rect.h / Math.max(1, o.rows);
     const gapIn = 2;
-    const barH = Math.max(6, Math.min(tick * 1.5, (groupH - 6 - gapIn * (o.slots - 1)) / o.slots));
+    const barH = Math.max(6, Math.min(tick * (o.barK ?? 1.5), (groupH - 6 - gapIn * (o.slots - 1)) / o.slots));
     const blockH = barH * o.slots + gapIn * (o.slots - 1);
     const len = (c: number): number => (c / o.max) * (xMax - x0);
     const yOf = (row: number, slot: number): number => rect.y + row * groupH + (groupH - blockH) / 2 + slot * (barH + gapIn);

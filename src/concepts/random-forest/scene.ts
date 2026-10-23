@@ -7,6 +7,8 @@ import type { RfParams } from './scenario';
 import { deriveRfView } from './view';
 import { RootsScene, MS_STEP } from './scene-roots';
 import { OobScene } from './scene-oob';
+import { CurvesScene } from './scene-curves';
+import { ImportanceScene } from './scene-importance';
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 
@@ -49,6 +51,8 @@ export function mountRfScene(
 
   const roots = new RootsScene(hosts.roots);
   const oob = new OobScene(hosts.oob);
+  const curves = new CurvesScene(hosts.curves);
+  const importance = new ImportanceScene(hosts.importance);
   // a customer row chosen in the matrix (click, Enter or Space) is written back as the pick parameter
   oob.onPick = (index) => player.setParam('pick', index);
 
@@ -83,6 +87,8 @@ export function mountRfScene(
   function draw(state: PlayerState<RfParams>, cause: ChangeCause, instant: boolean): void {
     roots.interrupt();
     oob.interrupt();
+    curves.interrupt();
+    importance.interrupt();
     const v = deriveRfView(state.index, state.params);
     // slider and shortcut tweaks are instant; steps and sweep stops animate
     const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
@@ -100,6 +106,14 @@ export function mountRfScene(
       const a = area();
       oob.resize(a.w, a.h, mode);
       oob.update(v);
+    } else if (view === 'curves') {
+      const a = area();
+      curves.resize(a.w, a.h, mode);
+      curves.update(v, ms);
+    } else {
+      const a = area();
+      importance.resize(a.w, a.h, mode);
+      importance.update(v, ms);
     }
     rendered = true;
   }
@@ -144,6 +158,8 @@ export function mountRfScene(
       pending = null;
       roots.destroy();
       oob.destroy();
+      curves.destroy();
+      importance.destroy();
       scene.remove();
     },
   };

@@ -157,14 +157,14 @@ export const randomForestScenario: Scenario<RfParams> = {
     },
     {
       id: 'onem',
-      labText: 'Anahtar önemin hesaplanış yolunu seçer: MDI ağaçların Gini azalımından, permütasyon test kümesinden okunur.',
+      labText: 'Anahtar veriye anlamsız bir kimlik sütunu ekler: çizim, bu sütunun da bulunduğu ayrı bir modelin MDI değerlerine geçer.',
       title: 'Öznitelik önemi',
       term: 'MDI (ortalama Gini azalımı)',
-      text: `Kitabın ${FEATURES} özniteliği, MDI: ${NAMES[mdiOrder[0]]} ${f(RF.mdi[mdiOrder[0]], 3)} … ${NAMES[mdiOrder[FEATURES - 1]]} ${f(RF.mdi[mdiOrder[FEATURES - 1]], 3)}; toplam ${f(mdiSum, 0)}. Bir özniteliğin bölünmelerle sağladığı Gini azalımı her ağaçta toplanır, ağaçlar üzerinde ortalaması alınır.`,
+      text: `Kitabın ${FEATURES} özniteliği, MDI: ${NAMES[mdiOrder[0]]} ${f(RF.mdi[mdiOrder[0]], 3)} … ${NAMES[mdiOrder[FEATURES - 1]]} ${f(RF.mdi[mdiOrder[FEATURES - 1]], 3)}; toplam ${f(mdiSum, 3)}. Bir özniteliğin bölünmelerle sağladığı Gini azalımı her ağaçta toplanır, ağaçlar üzerinde ortalaması alınır.`,
     },
     {
       id: 'tuzak',
-      labText: 'Anahtar veriye anlamsız bir kimlik sütunu ekler; iki önem yöntemi bu sütuna farklı davranır.',
+      labText: 'Anahtar iki sütundan hangisinin öne çıkacağını seçer: MDI ağaçların Gini azalımından, permütasyon test kümesinden okunur.',
       title: 'Önem tuzakları',
       text: `Veriye anlamsız ${RF.withId.names[idAt]} eklenir: MDI ona ${f(RF.withId.mdi[idAt], 3)} verir (${RF.withId.names[sozlesme]} ${f(RF.withId.mdi[sozlesme], 3)} ile neredeyse eşit), test kümesinde permütasyon önemi ${f(RF.withId.perm[idAt], 3)}. Sıralama da değişebilir: permütasyonda ${RF.withId.names[permTop]} birinci. Önem, modelin neye dayandığını söyler; nedeni değil: destek çağrısı churn'e yol açmaz, churn'e yatkın müşteri daha çok arar.`,
     },
@@ -191,4 +191,6 @@ export const MF_STEPS = indices('alt-kume', 'max-features');
 export const RHO_M_STEPS = indices('varyans');
 export const TREES_STEPS = indices('oob-matris', 'oob-skor');
 export const NEST_STEPS = indices('agac-sayisi');
-export const METHOD_STEPS = indices('onem', 'tuzak');
+/** Step 9 has the "musteriNo ekle" toggle; step 10 always shows the split model and has the method toggle. */
+export const ID_STEPS = indices('onem');
+export const METHOD_STEPS = indices('tuzak');

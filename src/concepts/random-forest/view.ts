@@ -1,6 +1,6 @@
 import { formatNumber as f } from '../../core/plot/format';
 import type { LineChartSpec } from '../../core/plot/line-chart';
-import { BOOTS, CUSTOMERS, NODE_DEMO, RF } from '../topluluk/data';
+import { BOOTS, CUSTOMERS, NODE_DEMO, OOB_CURVE, OOB_CV, RF } from '../topluluk/data';
 import { ensembleVariance } from '../topluluk/math';
 import { oobScore, oobVotes } from '../topluluk/vote';
 import { predictTree } from '../topluluk/tree';
@@ -15,7 +15,7 @@ import {
   type RfParams,
 } from './scenario';
 
-/** The four view areas of the page; the last two are drawn by Task 6. */
+/** The four view areas of the page. */
 export type RfViewName = 'roots' | 'oob' | 'curves' | 'importance';
 
 /** Roots scene data (steps 1-4): bars, the node card, and the chart of steps 3-4. */
@@ -63,6 +63,49 @@ export interface OobView {
   score: { correct: number; total: number } | null;
 }
 
+/** Curve scene data (steps 7-8): OOB beside CV, or the OOB - tree count line chart. */
+export interface CurvesView {
+  kind: 'compare' | 'curve';
+  /** Step 7: the two bars (value in 0..1), the CV folds and the time sentence. */
+  compare: {
+    bars: { id: 'oob' | 'cv'; label: string; value: number; text: string }[];
+    folds: number[];
+    sentence: string;
+  } | null;
+  /** Step 8: the line chart. */
+  chart: LineChartSpec | null;
+}
+
+/** One bar of the importance scene. */
+export interface ImportanceRow {
+  name: string;
+  value: number;
+  /** The meaningless id column. */
+  isId: boolean;
+}
+
+/** One column of importance bars, sorted largest first. */
+export interface ImportanceColumn {
+  id: 'mdi' | 'perm';
+  title: string;
+  rows: ImportanceRow[];
+  /** The method the toggle picked (step 10); the other column is muted. */
+  active: boolean;
+  /** Step 9: the sum line, e.g. "toplam 1,000". */
+  total: string | null;
+}
+
+/** Importance scene data (steps 9-10). */
+export interface ImportanceView {
+  kind: 'single' | 'double';
+  columns: ImportanceColumn[];
+  /** Step 10: the causality sentence and the links. */
+  causal: string | null;
+  links: { href: string; label: string }[];
+  /** Largest value of every column, so both columns share one bar scale. */
+  max: number;
+}
+
 /** Everything the scene draws for one step and parameter set. */
 export interface RfView {
   stepId: string;
@@ -70,6 +113,8 @@ export interface RfView {
   strip: string;
   roots: RootsView | null;
   oob: OobView | null;
+  curves: CurvesView | null;
+  importance: ImportanceView | null;
 }
 
 /** Trees of the variance curves: M = 1..250. */
@@ -138,6 +183,79 @@ function oobRows(m: number): OobRow[] {
   });
 }
 
+const CAUSAL =
+  "Önem, modelin neye dayandığını söyler; nedeni değil: destek çağrısı churn'e yol açmaz, churn'e yatkın müşteri daha çok arar.";
+
+/** The OOB - tree count curve point nearest to `n` trees. */
+function curveAt(n: number): { n: number; oob: number } {
+  return OOB_CURVE.reduce((a, b) => (Math.abs(b.n - n) < Math.abs(a.n - n) ? b : a));
+}
+
+/** Step 8: OOB score against tree count, the first value pinned and the chosen tree count marked. */
+function curveSpec(n: number): LineChartSpec {
+  const first = OOB_CURVE[0];
+  const last = OOB_CURVE[OOB_CURVE.length - 1];
+  const at = curveAt(n);
+  const lo = Math.floor((Math.min(...OOB_CURVE.map((p) => p.oob)) - 0.01) * 20) / 20;
+  const hi = Math.ceil((Math.max(...OOB_CURVE.map((p) => p.oob)) + 0.005) * 20) / 20;
+  const label = (p: { n: number; oob: number }): string => `${p.n} ağaç · ${f(p.oob, 3)}`;
+  return {
+    x: [first.n, last.n],
+    y: [lo, hi],
+    xTitle: 'ağaç sayısı',
+    yTitle: 'OOB skoru',
+    series: [{ id: 'oob', cls: 'oob-curve', pts: OOB_CURVE.map((p) => [p.n, p.oob] as [number, number]) }],
+    pins: at.n === first.n ? [] : [{ x: first.n, y: first.oob, label: label(first) }],
+    marker: { x: at.n, y: at.oob, label: label(at) },
+  };
+}
+
+/** Sorted importance rows of a (names, values) pair; the id column is flagged. */
+function importanceRows(names: readonly string[], values: readonly number[]): ImportanceRow[] {
+  return rankDesc(values).map((i) => ({ name: names[i], value: values[i], isId: names[i] === ID_NAME }));
+}
+
+const ID_NAME = RF.withId.names[RF.withId.names.length - 1];
+const cvMean = OOB_CV.cv.reduce((a, x) => a + x, 0) / OOB_CV.cv.length;
+
+/** Importance scene data: step 9 one MDI column (the book's model, or the split model with the id column), step 10 both columns. */
+function importanceView(stepId: string, p: RfParams): ImportanceView | null {
+  if (stepId === 'onem') {
+    const names = p.withId ? RF.withId.names : RF.names;
+    const mdi = p.withId ? RF.withId.mdi : RF.mdi;
+    return {
+      kind: 'single',
+      columns: [
+        {
+          id: 'mdi',
+          title: p.withId ? 'MDI (musteriNo eklenmiş model)' : 'MDI (ortalama Gini azalımı)',
+          rows: importanceRows(names, mdi),
+          active: true,
+          total: `toplam ${f(mdi.reduce((a, x) => a + x, 0), 3)}`,
+        },
+      ],
+      causal: null,
+      links: [],
+      max: Math.max(...mdi),
+    };
+  }
+  if (stepId !== 'tuzak') return null;
+  const names = RF.withId.names;
+  return {
+    kind: 'double',
+    columns: [
+      { id: 'mdi', title: 'MDI', rows: importanceRows(names, RF.withId.mdi), active: p.method === 'mdi', total: null },
+      { id: 'perm', title: 'permütasyon (test kümesi)', rows: importanceRows(names, RF.withId.perm), active: p.method === 'perm', total: null },
+    ],
+    causal: CAUSAL,
+    links: [
+      { href: '../bagging/', label: 'Bootstrap ve bagging' },
+      { href: '../ozellik-secimi/', label: 'Bölüm 4 · Özellik seçimi' },
+    ],
+    max: Math.max(...RF.withId.mdi, ...RF.withId.perm),
+  };
+}
+
 /** Derives the view (roots scene, OOB matrix, strip) for step `index` with parameters `p`. */
 export function deriveRfView(index: number, p: RfParams): RfView {
   const steps = randomForestScenario.steps;
@@ -177,8 +295,34 @@ export function deriveRfView(index: number, p: RfParams): RfView {
       strip = `OOB skoru = ${s.correct} / ${s.total} = ${f(s.correct / s.total, 3)}\nRandomForestClassifier(oob_score=True) · ${m} ağaç · ayrı test kümesi yok`;
       break;
     }
+    case 'oob-cv':
+      strip = `RandomForestClassifier(oob_score=True) → rf.oob_score_
+OOB ${f(OOB_CV.oob, 3)} · ${OOB_CV.cv.length} katlı CV ortalaması ${f(cvMean, 3)}`;
+      break;
+    case 'agac-sayisi': {
+      const at = curveAt(p.nEstimators);
+      strip = `RandomForestClassifier(n_estimators=${at.n}, oob_score=True)
+${at.n} ağaçta OOB skoru ${f(at.oob, 3)}`;
+      break;
+    }
+    case 'onem': {
+      const names = p.withId ? RF.withId.names : RF.names;
+      const mdi = p.withId ? RF.withId.mdi : RF.mdi;
+      const top = rankDesc(mdi)[0];
+      strip = `rf.feature_importances_ (MDI)
+${names.length} öznitelik · en önemlisi ${names[top]} ${f(mdi[top], 3)} · toplam ${f(mdi.reduce((a, x) => a + x, 0), 3)}`;
+      break;
+    }
+    case 'tuzak': {
+      const vals = p.method === 'mdi' ? RF.withId.mdi : RF.withId.perm;
+      const order = rankDesc(vals);
+      const idAt = RF.withId.names.indexOf(ID_NAME);
+      const label = p.method === 'mdi' ? 'MDI' : 'permütasyon';
+      strip = `rf.feature_importances_ (MDI) · permutation_importance (test kümesi)
+${label}: ${ID_NAME} ${f(vals[idAt], 3)}, sıra ${order.indexOf(idAt) + 1} / ${vals.length} · birinci ${RF.withId.names[order[0]]}`;
+      break;
+    }
     default:
-      // steps 7-10 are drawn by the next task
       strip = '';
   }
 
@@ -246,5 +390,25 @@ export function deriveRfView(index: number, p: RfParams): RfView {
       }
     : null;
 
-  return { stepId, view, strip, roots, oob };
+  const curves: CurvesView | null =
+    stepId === 'oob-cv'
+      ? {
+          kind: 'compare',
+          compare: {
+            bars: [
+              { id: 'oob', label: 'OOB skoru', value: OOB_CV.oob, text: f(OOB_CV.oob, 3) },
+              { id: 'cv', label: `${OOB_CV.cv.length} katlı CV`, value: cvMean, text: f(cvMean, 3) },
+            ],
+            folds: [...OOB_CV.cv],
+            sentence: `OOB modeli 1 kez eğitir: ${f(OOB_CV.seconds.oob, 2)} s · CV ${OOB_CV.cv.length} kez eğitir: ${f(OOB_CV.seconds.cv, 2)} s`,
+          },
+          chart: null,
+        }
+      : stepId === 'agac-sayisi'
+        ? { kind: 'curve', compare: null, chart: curveSpec(p.nEstimators) }
+        : null;
+
+  const importance: ImportanceView | null = importanceView(stepId, p);
+
+  return { stepId, view, strip, roots, oob, curves, importance };
 }

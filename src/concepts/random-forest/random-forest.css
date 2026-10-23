@@ -69,3 +69,27 @@
 .rf-plot .oob-legend { fill:var(--muted); }
 .rf-plot .oob-cell.idle { opacity:.35; }
 .rf-plot .tree-head.idle { opacity:.35; }
+
+/* curve scene: OOB beside CV, then the OOB - tree count curve */
+.rf-plot .curve-bar.oob rect.bar { fill:var(--rf-green); }
+.rf-plot .curve-bar.cv rect.bar { fill:var(--navy); }
+.rf-plot .curve-bar .bar-value { font-weight:700; }
+.rf-plot .fold-dot { fill:var(--surface); stroke:var(--orange); stroke-width:2; }
+.rf-plot .time-note { fill:var(--navy); }
+.rf-plot .dots-note { fill:var(--muted); }
+.rf-plot .lc-series.oob-curve { stroke:var(--rf-green); }
+.rf-plot .lc-pin { fill:var(--surface); stroke:var(--rf-green); stroke-width:2; }
+.rf-plot .lc-pin-label { font-weight:600; fill:var(--rf-green-text); paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
+
+/* importance scene: bars largest first, the id column highlighted, the unchosen method muted */
+.rf-plot .imp-title { font-weight:700; }
+.rf-plot .imp-total { fill:var(--muted); font-weight:600; }
+.rf-plot .imp-bar rect.bar { fill:var(--navy); }
+.rf-plot .imp-bar.hl rect.bar { fill:var(--orange); }
+.rf-plot .imp-bar.hl text { fill:var(--rf-orange-text); font-weight:800; }
+.rf-plot .imp-bar .bar-value { font-weight:700; }
+.rf-plot .imp-col.muted .imp-bar rect.bar, .rf-plot .imp-col.muted .imp-bar text { opacity:.5; }
+.rf-plot .causal { fill:var(--navy); }
+.rf-plot .scene-link text { fill:var(--navy); font-size:var(--fs-axis); text-decoration:underline; text-underline-offset:3px; }
+.rf-plot .scene-link:hover text { fill:var(--rf-orange-text); }
+.rf-plot .scene-link:focus-visible { outline:2px solid var(--navy); outline-offset:4px; }
