@@ -171,6 +171,7 @@ Adım 8–10'da **grafik sahnesi**: çoğunluk doğruluğu eğrisi; 10 bölünme
 10. **Bagging'in sınırı.** Ağaçlar aynı güçlü öznitelikleri seçerse hataları benzer olur, oylama
     az kazandırır. Ders sonu bağlantıları: Random Forest sayfasına ("Ağaçları birbirinden nasıl
     uzaklaştırırız?") ve Bölüm 5 karar ağacı sayfasına.
+
 (Kitabın sayıları üreticide doğrulanır. Adım 7'deki "31" gibi bootstrap'a bağlı sayılar örnektir;
 ekrandakiler üreticinin seçtiği tohumdan okunur.)
 
@@ -244,6 +245,7 @@ ve permütasyon iki sütun.
     nedeni değil: destek çağrısı churn'e yol açmaz, churn'e yatkın müşteri daha çok arar."
     Ders sonu bağlantıları: bagging sayfasına ve Bölüm 13 (yakında, SHAP) yerine Bölüm 4
     özellik seçimi sayfasına.
+
 (Adım 1–4 ve 10'daki sayılar ön denemenin değerleridir, adım 5–6'dakiler örnektir; ekrandaki her
 sayı üreticiden okunur, kitabın sayıları üreticide doğrulanır.)
 
