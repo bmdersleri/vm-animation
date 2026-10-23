@@ -1,6 +1,6 @@
 # VM Animasyon
 
-Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme**, **Özellik Seçimi (filtre ve sarmalayıcı)**, **Karmaşıklık Matrisi ve Metrikler**, **ROC, PR ve Karar Eşiği**, **Çapraz Doğrulama ve Veri Sızıntısı**, **K-Means Döngüsü**, **k Sayısının Seçimi**, **DBSCAN**, **Hiyerarşik Kümeleme ve Dendrogram**, **Destek, Güven ve Kaldıraç**, **Apriori ve FP-Growth**, **Dağılım, Ortalama–Medyan ve Çarpıklık**, **Normal Dağılım ve Standart Sapma**, **Korelasyon, Isı Haritası ve Anscombe Dörtlüsü** ile **Kutu Grafiği (çeyrekler ve aykırı değerler)**.
+Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme**, **Özellik Seçimi (filtre ve sarmalayıcı)**, **Karmaşıklık Matrisi ve Metrikler**, **ROC, PR ve Karar Eşiği**, **Çapraz Doğrulama ve Veri Sızıntısı**, **K-Means Döngüsü**, **k Sayısının Seçimi**, **DBSCAN**, **Hiyerarşik Kümeleme ve Dendrogram**, **Destek, Güven ve Kaldıraç**, **Apriori ve FP-Growth**, **Bootstrap ve Bagging**, **Random Forest, OOB ve Öznitelik Önemi**, **Dağılım, Ortalama–Medyan ve Çarpıklık**, **Normal Dağılım ve Standart Sapma**, **Korelasyon, Isı Haritası ve Anscombe Dörtlüsü** ile **Kutu Grafiği (çeyrekler ve aykırı değerler)**.
 
 İçerik, "Modern Veri Madenciliğine Giriş" kitabına (Prof. Dr. İsmail KIRBAŞ) dayanır.
 
@@ -23,6 +23,8 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - Hiyerarşik kümeleme ve dendrogram: https://bmdersleri.github.io/vm-animation/dendrogram/
 - Destek, güven ve kaldıraç: https://bmdersleri.github.io/vm-animation/birliktelik-olculeri/
 - Apriori ve FP-Growth: https://bmdersleri.github.io/vm-animation/apriori/
+- Bootstrap ve bagging: https://bmdersleri.github.io/vm-animation/bagging/
+- Random Forest, OOB ve öznitelik önemi: https://bmdersleri.github.io/vm-animation/random-forest/
 - Karmaşıklık matrisi: https://bmdersleri.github.io/vm-animation/karmasiklik-matrisi/
 - ROC ve karar eşiği: https://bmdersleri.github.io/vm-animation/roc-esik/
 - Çapraz doğrulama: https://bmdersleri.github.io/vm-animation/capraz-dogrulama/
