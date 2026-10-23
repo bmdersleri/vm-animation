@@ -3,6 +3,7 @@ import 'd3-transition';
 import { easeCubicInOut } from 'd3-ease';
 import type { Mode } from '../../core/mode';
 import { AxesLayer, type AxesSpec } from '../../core/plot/axes';
+import { curvePath, curvePathV } from '../../core/plot/density';
 import { GridLayer, type GridSize } from '../../core/plot/grid-layer';
 import { MARK, NAVY, TEXT, WHITE, r1, trianglePath } from '../../core/plot/marks';
 import { BODY_FALLBACK, TextMeasure, type Fonts } from '../../core/plot/text-measure';
@@ -138,8 +139,6 @@ function moveTo(sel: AnySel, ms: number, x: number, y: number): AnySel {
       return (t: number) => `translate(${r1(a.x + (x - a.x) * t)},${r1(a.y + (y - a.y) * t)})`;
     }) as unknown as AnySel;
 }
-
-const pathOf = (pts: [number, number][]): string => `M${pts.map(([x, y]) => `${r1(x)},${r1(y)}`).join('L')}`;
 
 /**
  * Part 3 (steps 10-12): the 154 training customers (Kaldı teal ●, Ayrıldı
@@ -350,18 +349,13 @@ export class GaussLayer {
     const [kT, kC] = this.bandScales(model, L);
     const top = L.plot.top;
     const right = L.plot.left + L.plot.width;
+    const toT = (d: number): number => top - d * kT;
+    const toC = (d: number): number => right + d * kC;
     for (const k of [0, 1] as const) {
-      const tPts: [number, number][] = [];
-      const cPts: [number, number][] = [];
-      for (let i = 0; i < CURVE_N; i++) {
-        const u = i / (CURVE_N - 1);
-        const t = DOMAIN.x[0] + u * (DOMAIN.x[1] - DOMAIN.x[0]);
-        const c = DOMAIN.y[0] + u * (DOMAIN.y[1] - DOMAIN.y[0]);
-        tPts.push([sc.x(t), top - pdf(model, k, 0, t) * kT]);
-        cPts.push([right + pdf(model, k, 1, c) * kC, sc.y(c)]);
-      }
-      this.gMargT.select(`path.marginal.${CLS[k]}`).attr('d', pathOf(tPts));
-      this.gMargC.select(`path.marginal.${CLS[k]}`).attr('d', pathOf(cPts));
+      const tD = curvePath((t) => pdf(model, k, 0, t), DOMAIN.x[0], DOMAIN.x[1], CURVE_N, sc.x, toT);
+      const cD = curvePathV((c) => pdf(model, k, 1, c), DOMAIN.y[0], DOMAIN.y[1], CURVE_N, toC, sc.y);
+      this.gMargT.select(`path.marginal.${CLS[k]}`).attr('d', tD);
+      this.gMargC.select(`path.marginal.${CLS[k]}`).attr('d', cD);
     }
   }
 
