@@ -13,11 +13,11 @@ test('normal sigma slider renders within 25 ms', async ({ page }, info) => {
   await page.mouse.down();
   for (let i = 1; i <= 60; i++) {
     await page.mouse.move(box.x + 3 + (box.width - 6) * i / 60, box.y + box.height / 2);
-    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())));
+    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
   }
   await page.mouse.up();
   await settled(() => page.locator('.normal-scene').innerHTML());
-  const durations = await page.evaluate(() => performance.getEntriesByName('normal-render').map(e => e.duration));
+  const durations = await page.evaluate(() => performance.getEntriesByName('normal-render').map((e) => e.duration));
   const detail = `normal-render n=${durations.length} p95=${round(p95(durations))} ms max=${round(Math.max(...durations))} ms`;
   info.annotations.push({ type: 'render', description: detail });
   console.log(detail);

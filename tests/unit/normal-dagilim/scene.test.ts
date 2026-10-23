@@ -4,12 +4,14 @@ import { StepPlayer } from '../../../src/core/player';
 import { normalScenario } from '../../../src/concepts/normal-dagilim/scenario';
 import { mountNormalScene } from '../../../src/concepts/normal-dagilim/scene';
 import { deriveNormalView } from '../../../src/concepts/normal-dagilim/view';
+
 const clean: (() => void)[] = [];
 afterEach(() => {
   vi.unstubAllGlobals();
   clean.splice(0).forEach((f) => f());
   document.body.replaceChildren();
 });
+
 function setup() {
   const el = document.createElement('div');
   document.body.append(el);
@@ -22,6 +24,7 @@ function setup() {
   });
   return { el, player, scene };
 }
+
 describe('normal scene', () => {
   it('step 1 draws one bar sub-path per bin', () => {
     const { el, player } = setup();
@@ -30,12 +33,14 @@ describe('normal scene', () => {
     expect(el.querySelectorAll('.mark')).toHaveLength(2);
     expect(el.querySelector('svg')!.getAttribute('viewBox')).toBeNull();
   });
+
   it('step 2 draws curve', () => {
     const { el, player } = setup();
     player.goto(1);
     expect(el.querySelector('path.curve')!.getAttribute('d')).toMatch(/^M/);
     expect(el.querySelector('svg')!.getAttribute('data-view')).toBe('egri');
   });
+
   it('step 3 draws two labelled ghost curves', () => {
     const { el, player } = setup();
     player.goto(2);
@@ -43,6 +48,7 @@ describe('normal scene', () => {
     expect(el.textContent).toContain('σ = 5');
     expect(el.textContent).toContain('σ = 15');
   });
+
   it('ghost labels sit on their own curves', () => {
     const { el, player } = setup();
     player.goto(2);
@@ -71,6 +77,7 @@ describe('normal scene', () => {
       expect(label.textContent).toContain(`σ = ${sigmas[i]}`);
     });
   });
+
   it('step 4 shades area', () => {
     const { el, player } = setup();
     player.goto(3);
@@ -79,12 +86,14 @@ describe('normal scene', () => {
     player.setParam('b', 80);
     expect(el.querySelector('path.area')!.getAttribute('d')).toBe('');
   });
+
   it('step 5 draws three bands labels', () => {
     const { el, player } = setup();
     player.goto(4);
     expect(el.querySelectorAll('path.band')).toHaveLength(3);
     for (const k of [1, 2, 3]) expect(el.querySelector(`.band-label.k${k}`)!.textContent).toContain(`±${k}σ`);
   });
+
   it('step 6 marks 85 and aligns z axis', () => {
     const { el, player } = setup();
     player.goto(5);
@@ -95,6 +104,7 @@ describe('normal scene', () => {
     const tickY = Number(el.querySelector('.z-axis .tick text')!.getAttribute('y'));
     expect(titleY - tickY).toBeGreaterThanOrEqual(27);
   });
+
   it('step 7 highlights one-sigma and separates mean median', () => {
     const { el, player } = setup();
     player.goto(6);
@@ -105,6 +115,7 @@ describe('normal scene', () => {
       el.querySelector('.mark.median')!.getAttribute('transform'),
     );
   });
+
   it('step 8 uses one z axis and three links, and standardizes mean to zero without signed zero', () => {
     const { el, player } = setup();
     player.goto(7);
@@ -121,6 +132,7 @@ describe('normal scene', () => {
     expect(cagriLabel).not.toContain('−0');
     expect(cagriLabel).not.toContain('-0');
   });
+
   it('parameter changes render instantly with full opacity even when animation is enabled', async () => {
     const el = document.createElement('div');
     document.body.append(el);
@@ -140,6 +152,7 @@ describe('normal scene', () => {
     expect(el.querySelector('path.curve')!.getAttribute('d')).not.toBe(oldD);
     expect(el.querySelector('.density-layer')!.getAttribute('opacity')).toBe('1');
   });
+
   it('Lab renders only the selected band', () => {
     const { el, player, scene } = setup();
     player.goto(4);
@@ -148,6 +161,7 @@ describe('normal scene', () => {
     expect(el.querySelectorAll('path.band')).toHaveLength(1);
     expect(el.querySelector('path.band.k3')).not.toBeNull();
   });
+
   it('reduced motion commits final geometry immediately', () => {
     vi.stubGlobal('matchMedia', () => ({ matches: true }));
     const el = document.createElement('div');
@@ -163,6 +177,7 @@ describe('normal scene', () => {
     expect(el.querySelector('svg')!.getAttribute('data-view')).toBe('olcekleme');
     expect(el.querySelector('.density-layer')!.getAttribute('opacity')).toBe('1');
   });
+
   it('coalesces rapid animated steps and interrupts final state', async () => {
     const el = document.createElement('div');
     document.body.append(el);
@@ -181,6 +196,7 @@ describe('normal scene', () => {
     expect(el.querySelectorAll('.ghost,.band,.scene-link')).toHaveLength(0);
     expect(el.querySelector('.density-layer')!.getAttribute('opacity')).toBe('1');
   });
+
   it('parameter updates and rapid steps settle in final state', () => {
     const { el, player, scene } = setup();
     player.goto(2);

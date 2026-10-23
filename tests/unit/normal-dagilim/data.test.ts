@@ -12,9 +12,16 @@ describe('normal data', () => {
       expect(skewness(s.values)).toBeCloseTo(s.skew, 10);
     }
   });
+
   it('fixed-edge histogram counts match numpy', () => {
     for (const s of Object.values(SERIES)) {
-      const counts = s.edges.slice(0, -1).map((lo, i) => s.values.filter((x) => x >= lo && (i === s.edges.length - 2 ? x <= s.edges[i + 1] : x < s.edges[i + 1])).length);
+      const counts = s.edges
+        .slice(0, -1)
+        .map(
+          (lo, i) =>
+            s.values.filter((x) => x >= lo && (i === s.edges.length - 2 ? x <= s.edges[i + 1] : x < s.edges[i + 1]))
+              .length,
+        );
       expect(counts).toEqual(s.counts);
       expect(counts.reduce((a, b) => a + b, 0)).toBe(s.values.length);
       expect(s.edges[0]).toBe(s.domain[0]);
@@ -22,13 +29,17 @@ describe('normal data', () => {
       s.edges.slice(1).forEach((x, i) => expect(x - s.edges[i]).toBe(s.binWidth));
     }
   });
+
   it('band counts match the fixture', () => {
-    for (const s of Object.values(SERIES)) for (const b of s.band) {
-      expect(b.lo).toBeCloseTo(mean(s.values) - b.k * std(s.values), 10);
-      expect(b.hi).toBeCloseTo(mean(s.values) + b.k * std(s.values), 10);
-      expect(s.values.filter((x) => x >= b.lo && x <= b.hi)).toHaveLength(b.count);
+    for (const s of Object.values(SERIES)) {
+      for (const b of s.band) {
+        expect(b.lo).toBeCloseTo(mean(s.values) - b.k * std(s.values), 10);
+        expect(b.hi).toBeCloseTo(mean(s.values) + b.k * std(s.values), 10);
+        expect(s.values.filter((x) => x >= b.lo && x <= b.hi)).toHaveLength(b.count);
+      }
     }
   });
+
   it('fixture std and scaler std differ by ddof', () => {
     for (const s of Object.values(SERIES)) {
       expect(s.std).toBeCloseTo(std0(s.values) * Math.sqrt(200 / 199), 10);
@@ -40,10 +51,13 @@ describe('normal data', () => {
       expect(s.scaled.skew).toBeCloseTo(s.skew, 10);
     }
   });
+
   it('sinav band fractions follow the 68-95-99.7 rule', () => {
     const s = SERIES.sinav;
-    expect(s.mean).toBeGreaterThanOrEqual(69.5); expect(s.mean).toBeLessThanOrEqual(70.5);
-    expect(s.std).toBeGreaterThanOrEqual(9.5); expect(s.std).toBeLessThanOrEqual(10.5);
+    expect(s.mean).toBeGreaterThanOrEqual(69.5);
+    expect(s.mean).toBeLessThanOrEqual(70.5);
+    expect(s.std).toBeGreaterThanOrEqual(9.5);
+    expect(s.std).toBeLessThanOrEqual(10.5);
     expect(Math.abs(s.skew)).toBeLessThan(0.2);
     const ranges = [[0.65, 0.71], [0.93, 0.97], [0.99, 1]];
     s.band.forEach((b, i) => {
@@ -51,6 +65,7 @@ describe('normal data', () => {
       expect(b.count / 200).toBeLessThanOrEqual(ranges[i][1]);
     });
   });
+
   it('cagri breaks the rule at one sigma', () => {
     const s = SERIES.cagri;
     expect(s.skew).toBeGreaterThan(1);
@@ -58,8 +73,10 @@ describe('normal data', () => {
     expect(s.band[0].count / 200).toBeGreaterThanOrEqual(0.75);
     expect(s.band[0].count / 200 - NORM.bands[0][1]).toBeGreaterThan(0.06);
   });
+
   it('fixed lesson values match scipy and the sample', () => {
-    const s = SERIES.sinav; const f = SINAV_FIXED;
+    const s = SERIES.sinav;
+    const f = SINAV_FIXED;
     expect(normCdf(f.b, s.mean, s.std) - normCdf(f.a, s.mean, s.std)).toBeCloseTo(f.area, 7);
     expect(s.values.filter((x) => x >= f.a && x <= f.b)).toHaveLength(f.count);
     expect((f.x - mean(s.values)) / std(s.values)).toBeCloseTo(f.z, 10);
