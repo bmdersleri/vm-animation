@@ -95,4 +95,25 @@ describe('LineChartLayer', () => {
     const line2 = Number(svg.querySelector('line.lc-ref')!.getAttribute('y1'));
     expect(Number(svg.querySelector('text.lc-ref-label')!.getAttribute('y'))).toBeLessThan(line2);
   });
+
+  it('each ref label has a background plate that covers its text', () => {
+    const { svg, layer } = setup();
+    const spec: LineChartSpec = {
+      ...base,
+      series: [{ id: 'a', cls: 'curve', pts: [[1, 0.9], [100, 0.5]] }],
+      refs: [{ y: 0.5, label: 'taban 0,5', cls: 'floor' }, { y: 0.2, label: 'alt', cls: 'low' }],
+      marker: null,
+    };
+    layer.draw(spec, layer.plotRect(900, 400, spec), 0);
+    const plates = [...svg.querySelectorAll('rect.lc-ref-bg')];
+    const labels = [...svg.querySelectorAll('text.lc-ref-label')];
+    expect(plates).toHaveLength(2);
+    plates.forEach((r, i) => {
+      const ty = Number(labels[i].getAttribute('y'));
+      const ry = Number(r.getAttribute('y'));
+      expect(ry).toBeLessThan(ty);
+      expect(ry + Number(r.getAttribute('height'))).toBeGreaterThan(ty);
+      expect(Number(r.getAttribute('x')) + Number(r.getAttribute('width'))).toBeGreaterThanOrEqual(Number(labels[i].getAttribute('x')));
+    });
+  });
 });

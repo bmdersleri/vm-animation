@@ -177,6 +177,23 @@ export class LineChartLayer {
       taken.push(labelBox(right - 4, best, d.label.length, 'end', m.tick));
       taken.push({ l: plot.left, t: y - 2, r: right, b: y + 2 });
     }
+    // a background plate keeps the label legible when a curve hugs its reference line
+    const plate = (d: LineRef): { w: number; y: number } => ({
+      w: this.measure.width(d.label, 'tick', m.tick) + 8,
+      y: refYs.get(d)!,
+    });
+    this.refsG
+      .selectAll<SVGRectElement, LineRef>('rect.lc-ref-bg')
+      .data(refs)
+      .join('rect')
+      .attr('class', 'lc-ref-bg')
+      .attr('fill', 'var(--bg, #fff)')
+      .attr('fill-opacity', 0.92)
+      .attr('rx', 3)
+      .attr('x', (d) => r1(right - 4 - plate(d).w + 4))
+      .attr('y', (d) => r1(plate(d).y - m.tick * 0.95))
+      .attr('width', (d) => r1(plate(d).w))
+      .attr('height', r1(m.tick * 1.3));
     this.refsG
       .selectAll<SVGTextElement, LineRef>('text.lc-ref-label')
       .data(refs)
