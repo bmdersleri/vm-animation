@@ -1,0 +1,36 @@
+/* Bootstrap and bagging page; every text size is a theme token. */
+.bagging-scene { width:100%; height:100%; min-height:0; display:flex; flex-direction:column; gap:10px; font-family:var(--font); color:var(--navy); }
+.bagging-stage { position:relative; flex:1 1 0; min-height:0; overflow:hidden; }
+.bagging-host { position:absolute; inset:0; overflow:hidden; }
+.bagging-host[hidden] { display:none; }
+.bagging-plot { display:block; overflow:visible; }
+.bagging-scene .formula { margin:0; padding:6px 14px; border-left:4px solid var(--navy); border-radius:6px; background:var(--bg); font-size:var(--fs-body); line-height:1.35; font-variant-numeric:tabular-nums; min-height:calc(2 * 1.35em + 12px); }
+.bagging-scene .formula .line { display:block; }
+.bagging-scene .formula .term { display:inline; white-space:nowrap; }
+@media (max-width:900px) {
+  .bagging-scene .formula .term { white-space:normal; overflow-wrap:anywhere; }
+}
+
+/* text and ticks */
+.bagging-plot text { font-size:var(--fs-tick); fill:var(--navy); font-variant-numeric:tabular-nums; }
+.bagging-plot .axis-title, .bagging-plot .bag-caption { font-size:var(--fs-axis); font-weight:600; }
+
+/* bag scene: bag cards, bootstrap slots, repeat badges, OOB */
+.bagging-plot .bag-card rect { fill:var(--surface); stroke:var(--navy); stroke-width:2.5; }
+.bagging-plot .bag-card text, .bagging-plot .slot-card text { font-size:var(--fs-axis); font-weight:700; }
+.bagging-plot .bag-card.active rect { fill:var(--navy-soft); stroke:var(--orange); stroke-width:4; }
+.bagging-plot .bag-card.oob rect { stroke-dasharray:7 5; stroke:#A85A00; }
+.bagging-plot .bag-card.oob text { fill:#A85A00; }
+.bagging-plot .bag-oob-label { font-weight:700; fill:#A85A00; }
+.bagging-plot .slot-box { fill:none; stroke:var(--navy); stroke-opacity:.35; stroke-width:2; stroke-dasharray:4 4; }
+.bagging-plot .slot-card rect { fill:var(--navy-soft); stroke:var(--navy); stroke-width:2.5; }
+.bagging-plot .bag-badge rect { fill:var(--orange); }
+.bagging-plot .bag-badge text { fill:var(--navy); font-weight:800; }
+
+/* line chart (the (1 − 1/n)ⁿ curve and the shared line-chart classes) */
+.bagging-plot .lc-series { fill:none; stroke:var(--navy); stroke-width:3; }
+.bagging-plot .lc-series.majority-curve { stroke:var(--navy); }
+.bagging-plot .lc-ref { stroke:#A85A00; stroke-width:2; }
+.bagging-plot .lc-ref-label, .bagging-plot .lc-label { font-weight:600; paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
+.bagging-plot .lc-ref-label { fill:#A85A00; }
+.bagging-plot .lc-marker { fill:var(--orange); stroke:var(--navy); stroke-width:2; }

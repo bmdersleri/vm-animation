@@ -2,12 +2,13 @@ import '../../core/theme.css';
 import './bagging.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
 import { baggingScenario, type BaggingParams } from './scenario';
+import { mountBaggingScene } from './scene';
 
 const baggingPage: ConceptPage<BaggingParams> = {
   title: 'Bootstrap ve bagging',
-  chapter: 'Bölüm ? · …',
+  chapter: 'Bölüm 9 · Topluluk öğrenmesi',
   scenario: baggingScenario,
-  mountScene: () => ({ resize() {}, setMode() {}, destroy() {} }),
+  mountScene: mountBaggingScene,
   mountParams: () => {},
 };
 

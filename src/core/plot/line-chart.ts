@@ -157,6 +157,24 @@ export class LineChartLayer {
       .text((d) => d.label);
     for (const d of refs) {
       taken.push(labelBox(right - 4, refY(d), d.label.length, 'end', m.tick));
+      const y = sc.y(d.y);
+      taken.push({ l: plot.left, t: y - 2, r: right, b: y + 2 });
+    }
+    // the polylines and reference lines count as occupied, so the marker label sits beside them
+    const step = Math.max(3, m.tick * 0.3);
+    for (const sr of spec.series) {
+      for (let i = 1; i < sr.pts.length; i++) {
+        const ax = sc.x(sr.pts[i - 1][0]);
+        const ay = sc.y(sr.pts[i - 1][1]);
+        const dx = sc.x(sr.pts[i][0]) - ax;
+        const dy = sc.y(sr.pts[i][1]) - ay;
+        const k = Math.max(1, Math.ceil(Math.hypot(dx, dy) / step));
+        for (let j = 0; j <= k; j++) {
+          const x = ax + (dx * j) / k;
+          const y = ay + (dy * j) / k;
+          taken.push({ l: x - 2, t: y - 2, r: x + 2, b: y + 2 });
+        }
+      }
     }
 
     const marker = spec.marker ?? null;
