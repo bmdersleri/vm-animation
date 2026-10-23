@@ -35,7 +35,8 @@ export class CurveLayer {
   const f=this.measure.fonts(this.mode), tick=f.tick;
   const margin=Math.max(24,tick*2), top=tick*2.5;
   const secondary=v.zAxis&&!v.scaled;
-  const base=Math.max(top+45,this.h-tick*(secondary?7.1:v.links.length?6.3:4.4));
+  // Reserve a separate title lane: SVG text boxes exceed their nominal font size.
+  const base=Math.max(top+45,this.h-tick*(secondary?7.6:v.links.length?6.3:4.4));
   const sx=lineScale({min:v.domain[0],max:v.domain[1]},[margin,Math.max(margin+40,this.w-margin)]);
   const curves=v.curve?[v.curve,...v.ghosts.map(g=>({mu:v.curve!.mu,sigma:g.sigma}))]:[];
   const peak=Math.max(...v.bins.map(b=>b.density),...curves.map(c=>normPdf(c.mu,c.mu,c.sigma)),0.001)*1.08;
@@ -56,7 +57,7 @@ export class CurveLayer {
   if(secondary){
    const z=lineScale({min:(v.domain[0]-v.mean)/v.std,max:(v.domain[1]-v.mean)/v.std},sx.range);
    z.ticks=()=>[-3,-2,-1,0,1,2,3].filter(d=>d>=z.spec.min&&d<=z.spec.max);
-   new NumberLineLayer(this.axes.append('g').attr('class','z-axis')).draw(z,base+tick*3.7,{tickCount:7,tickY:base+tick*5.1,title:'z',titleY:base+tick*6.4},0,`${v.stepId}-z`);
+   new NumberLineLayer(this.axes.append('g').attr('class','z-axis')).draw(z,base+tick*3.7,{tickCount:7,tickY:base+tick*5.1,title:'z',titleY:base+tick*6.9},0,`${v.stepId}-z`);
   }
   this.labels.selectAll('*').remove();
   const labels:{x:number;y:number;text:string;cls:string}[]=[];
@@ -72,13 +73,14 @@ export class CurveLayer {
    g.append('text').attr('class','mark-label').attr('text-anchor','middle').attr('y',top+(rows[i]+1)*tick*1.5).text(m.text);
   });
   // Ghost/band rows reserve their own header lane, away from mean/median labels.
+  const headerOffset=Math.max(...rows)+3;
   const labelRows=staggerRows(labels.map(l=>({x:l.x,w:this.measure.width(l.text,l.cls,tick)})),10);
   labels.forEach((l,i)=>{
    const lines=this.measure.wrap(l.text,this.w-margin*2,l.cls,tick);
    const width=Math.min(this.w-margin*2,this.measure.width(l.text,l.cls,tick));
    const x=Math.max(margin+width/2,Math.min(this.w-margin-width/2,l.x));
    const text=this.labels.append('text').attr('class',l.cls).attr('text-anchor','middle');
-   lines.forEach((line,j)=>text.append('tspan').attr('x',x).attr('y',top+(labelRows[i]*lines.length+j+3)*tick*1.35).text(line));
+   lines.forEach((line,j)=>text.append('tspan').attr('x',x).attr('y',top+(labelRows[i]*lines.length+j+headerOffset)*tick*1.35).text(line));
   });
   if(v.marker){this.labels.append('line').attr('class','marker').attr('x1',sx(v.marker.x)).attr('x2',sx(v.marker.x)).attr('y1',top).attr('y2',base);this.labels.append('text').attr('class','marker-label').attr('text-anchor','middle').attr('x',sx(v.marker.x)).attr('y',top+tick).text(`x = ${formatTrim(v.marker.x,1)} · z = ${formatTrim(v.marker.z,2)}`);}
   if(v.links.length){
