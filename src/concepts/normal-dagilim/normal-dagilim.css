@@ -27,3 +27,20 @@
 .normal-plot .scene-link text { fill:var(--navy); text-decoration:underline; text-underline-offset:3px; }
 .normal-plot .scene-link:hover text { fill:#A85A00; }
 .normal-plot .scene-link:focus-visible { outline:2px solid var(--navy); outline-offset:4px; }
+
+/* Use the chapter's existing parameter and Lab-note vocabulary. */
+.normal-params { display:grid; gap:8px; }
+.normal-params .ctl { min-width:0; }
+.normal-params .ctl.select { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:center; gap:8px; }
+.normal-params .ctl.range { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 8px; }
+.normal-params .ctl-label { font-weight:600; }
+.normal-params select { width:100%; min-height:var(--ctl); padding:0 8px; color:var(--navy); border:2px solid var(--navy); border-radius:8px; background:var(--surface); font:inherit; }
+.normal-params .normal-value { font-weight:700; font-variant-numeric:tabular-nums; }
+.normal-params input[type='range'] { grid-column:1 / -1; width:100%; min-height:var(--ctl); margin:0; accent-color:var(--navy); }
+.normal-extra p { margin:0 0 8px; }
+.normal-extra .live-note { font-weight:600; color:var(--navy); }
+[data-mode='lab'] .normal-params .ctl[data-off], [data-mode='lab'] .params[data-off] { display:none; }
+[data-mode='lab'] .normal-params { gap:4px; }
+[data-mode='lab'] .normal-params input[type='range'] { min-height:30px; }
+[data-mode='lab'] .side .params { flex:none; padding:8px 14px; }
+[data-mode='lab'] .side .explain { flex:0 1 auto; min-height:0; overflow:auto; }
