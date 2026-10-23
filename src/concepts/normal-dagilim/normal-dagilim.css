@@ -4,7 +4,10 @@
 .normal-plot { display:block; overflow:visible; }
 .normal-scene .formula { margin:0; padding:6px 14px; border-left:4px solid var(--navy); border-radius:6px; background:var(--bg); font-size:var(--fs-body); line-height:1.35; font-variant-numeric:tabular-nums; min-height:calc(2 * 1.35em + 12px); }
 .normal-scene .formula .line { display:block; }
-.normal-scene .formula .term { white-space:nowrap; }
+.normal-scene .formula .term { display:inline; white-space:nowrap; }
+@media (max-width:900px) {
+  .normal-scene .formula .term { white-space:normal; overflow-wrap:anywhere; }
+}
 .normal-plot text { font-size:var(--fs-tick); fill:var(--navy); font-variant-numeric:tabular-nums; }
 .normal-plot .axis-title { font-size:var(--fs-axis); font-weight:600; }
 .normal-plot .nl-axis { stroke-width:3; }

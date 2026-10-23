@@ -15,7 +15,6 @@ export function renderStrip(p: HTMLElement, text: string): void {
       if (i > 0) nodes.push(doc.createTextNode(' '));
       const s = doc.createElement('span');
       s.className = 'term';
-      s.style.whiteSpace = 'nowrap';
       s.textContent = t.trim();
       nodes.push(s);
     });

@@ -35,8 +35,27 @@ export class CurveLayer {
   const f=this.measure.fonts(this.mode), tick=f.tick;
   const margin=Math.max(24,tick*2), top=tick*2.5;
   const secondary=v.zAxis&&!v.scaled;
+  let linkRows=0, fitsOneRow=true, linkWidths:number[]=[];
+  if(v.links.length){
+   linkWidths=v.links.map(l=>this.measure.width(l.label,'scene-link',tick));
+   const total=linkWidths.reduce((a,b)=>a+b,0)+tick*3*(v.links.length-1);
+   fitsOneRow=total<=this.w-margin*2;
+   if(fitsOneRow){linkRows=1;}
+   else{
+    let curX=margin, curRows=1;
+    v.links.forEach((l,i)=>{
+     const w=linkWidths[i];
+     const lines=this.measure.wrap(l.label,this.w-margin*2,'scene-link',tick);
+     if(i>0&&curX+w>this.w-margin){curX=margin;curRows+=1;}
+     curX+=w+tick*3;
+     curRows+=lines.length-1;
+    });
+    linkRows=curRows;
+   }
+  }
   // Reserve a separate title lane: SVG text boxes exceed their nominal font size.
-  const base=Math.max(top+45,this.h-tick*(secondary?7.6:v.links.length?6.3:4.4));
+  const footerTicks=secondary?7.6:v.links.length?(4.8+linkRows*1.5):4.4;
+  const base=Math.max(top+45,this.h-tick*footerTicks);
   const sx=lineScale({min:v.domain[0],max:v.domain[1]},[margin,Math.max(margin+40,this.w-margin)]);
   const curves=v.curve?[v.curve,...v.ghosts.map(g=>({mu:v.curve!.mu,sigma:g.sigma}))]:[];
   const peak=Math.max(...v.bins.map(b=>b.density),...curves.map(c=>normPdf(c.mu,c.mu,c.sigma)),0.001)*1.08;
@@ -64,31 +83,61 @@ export class CurveLayer {
   for(const g of v.ghosts)labels.push({x:sx(v.curve!.mu+g.sigma),y:top,text:`σ = ${formatTrim(g.sigma,0)}`,cls:'ghost-label'});
   for(const b of visibleBands)labels.push({x:sx(v.mean),y:top,text:`±${b.k}σ: ${formatPercent(b.theory)} (örneklem ${formatPercent(b.sample)})`,cls:`band-label k${b.k}`});
   const showMedian=['histogram','carpik'].includes(v.stepId);
-  const marks=[{kind:'mean',x:v.curve?.mu??v.mean,text:`ortalama ${formatTrim(v.curve?.mu??v.mean,1)}`},...(showMedian?[{kind:'median',x:v.median,text:`medyan ${formatTrim(v.median,1)}`}]:[])];
-  const rows=staggerRows(marks.map(m=>({x:sx(m.x),w:this.measure.width(m.text,'mark-label',tick)})),8);
-  marks.forEach((m,i)=>{
-   const g=this.labels.append('g').attr('class',`mark ${m.kind}`).attr('transform',`translate(${r1(sx(m.x))},0)`);
-   g.append('line').attr('class',`mark-${m.kind}`).attr('y1',top).attr('y2',base);
-   g.append('path').attr('class','mark-cap').attr('d',m.kind==='mean'?trianglePath(5):diamondPath(0,0,5)).attr('transform',`translate(0,${r1(base)})`);
-   g.append('text').attr('class','mark-label').attr('text-anchor','middle').attr('y',top+(rows[i]+1)*tick*1.5).text(m.text);
+  const rawMean=v.curve?.mu??v.mean;
+  const cleanMean=Math.abs(rawMean)<1e-12?0:rawMean;
+  const markItems:{kind:'mean'|'median'|'marker';x:number;text:string;cls:string}[]=[
+   {kind:'mean',x:cleanMean,text:`ortalama ${formatTrim(cleanMean,1)}`,cls:'mark-label'},
+   ...(showMedian?[{kind:'median' as const,x:v.median,text:`medyan ${formatTrim(v.median,1)}`,cls:'mark-label'}]:[]),
+   ...(v.marker?[{kind:'marker' as const,x:v.marker.x,text:`x = ${formatTrim(v.marker.x,1)} · z = ${formatTrim(v.marker.z,2)}`,cls:'marker-label'}]:[]),
+  ];
+  const pad=6;
+  const markBoxes=markItems.map(m=>{
+   const w=this.measure.width(m.text,m.cls,tick);
+   const targetX=sx(m.x);
+   const minX=pad+w/2;
+   const maxX=Math.max(minX,this.w-pad-w/2);
+   const clampedX=Math.max(minX,Math.min(maxX,targetX));
+   return {w,x:clampedX,targetX};
   });
-  // Ghost/band rows reserve their own header lane, away from mean/median labels.
+  const rows=staggerRows(markBoxes,10);
+  markItems.forEach((m,i)=>{
+   const b=markBoxes[i];
+   const y=top+(rows[i]+1)*tick*1.5;
+   if(m.kind==='marker'){
+    this.labels.append('line').attr('class','marker').attr('x1',b.targetX).attr('x2',b.targetX).attr('y1',top).attr('y2',base);
+    this.labels.append('text').attr('class','marker-label').attr('text-anchor','middle').attr('x',r1(b.x)).attr('y',y).text(m.text);
+   }else{
+    const g=this.labels.append('g').attr('class',`mark ${m.kind}`).attr('transform',`translate(${r1(b.targetX)},0)`);
+    g.append('line').attr('class',`mark-${m.kind}`).attr('y1',top).attr('y2',base);
+    g.append('path').attr('class','mark-cap').attr('d',m.kind==='mean'?trianglePath(5):diamondPath(0,0,5)).attr('transform',`translate(0,${r1(base)})`);
+    g.append('text').attr('class','mark-label').attr('text-anchor','middle').attr('x',r1(b.x-b.targetX)).attr('y',y).text(m.text);
+   }
+  });
+  // Ghost/band rows reserve their own header lane, away from mean/median/marker labels.
   const headerOffset=Math.max(...rows)+3;
   const labelRows=staggerRows(labels.map(l=>({x:l.x,w:this.measure.width(l.text,l.cls,tick)})),10);
   labels.forEach((l,i)=>{
    const lines=this.measure.wrap(l.text,this.w-margin*2,l.cls,tick);
    const width=Math.min(this.w-margin*2,this.measure.width(l.text,l.cls,tick));
-   const x=Math.max(margin+width/2,Math.min(this.w-margin-width/2,l.x));
+   const minX=pad+width/2;
+   const maxX=Math.max(minX,this.w-pad-width/2);
+   const x=Math.max(minX,Math.min(maxX,l.x));
    const text=this.labels.append('text').attr('class',l.cls).attr('text-anchor','middle');
    lines.forEach((line,j)=>text.append('tspan').attr('x',x).attr('y',top+(labelRows[i]*lines.length+j+headerOffset)*tick*1.35).text(line));
   });
-  if(v.marker){this.labels.append('line').attr('class','marker').attr('x1',sx(v.marker.x)).attr('x2',sx(v.marker.x)).attr('y1',top).attr('y2',base);this.labels.append('text').attr('class','marker-label').attr('text-anchor','middle').attr('x',sx(v.marker.x)).attr('y',top+tick).text(`x = ${formatTrim(v.marker.x,1)} · z = ${formatTrim(v.marker.z,2)}`);}
   if(v.links.length){
    let y=base+tick*4.2;
-   const widths=v.links.map(l=>this.measure.width(l.label,'scene-link',tick));
-   const total=widths.reduce((a,b)=>a+b,0)+tick*3*(v.links.length-1);
-   let x=Math.max(margin,(this.w-total)/2);
-   v.links.forEach((l,i)=>{if(x+widths[i]>this.w-margin){x=margin;y+=tick*1.5;}const a=this.labels.append('a').attr('class','scene-link').attr('href',l.href).attr('aria-label',l.label).append('text');const lines=this.measure.wrap(l.label,this.w-margin*2,'scene-link',tick);lines.forEach((line,j)=>a.append('tspan').attr('x',x).attr('y',y+j*tick*1.5).text(line));x+=widths[i]+tick*3;y+=(lines.length-1)*tick*1.5;});
+   const total=linkWidths.reduce((a,b)=>a+b,0)+tick*3*(v.links.length-1);
+   let x=fitsOneRow?Math.max(margin,(this.w-total)/2):margin;
+   v.links.forEach((l,i)=>{
+    if(!fitsOneRow&&i>0&&x+linkWidths[i]>this.w-margin){x=margin;y+=tick*1.5;}
+    const a=this.labels.append('a').attr('class','scene-link').attr('href',l.href).attr('aria-label',l.label);
+    const text=a.append('text');
+    const lines=this.measure.wrap(l.label,this.w-margin*2,'scene-link',tick);
+    lines.forEach((line,j)=>text.append('tspan').attr('x',x).attr('y',y+j*tick*1.5).text(line));
+    x+=linkWidths[i]+tick*3;
+    y+=(lines.length-1)*tick*1.5;
+   });
   }
   // One authored reveal; parameters and reduced-motion renders always receive ms=0.
   if(ms>0)this.plot.attr('opacity',0.7).transition('normal').duration(ms).ease(t=>1-Math.pow(1-t,3)).attr('opacity',1);else this.plot.attr('opacity',1);

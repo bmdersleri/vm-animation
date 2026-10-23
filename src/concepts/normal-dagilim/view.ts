@@ -21,7 +21,7 @@ export function deriveNormalView(index:number,p:NormalParams):NormalView {
  const populationStd=std(source.values,0);
  const tx=(x:number):number=>scaled?(x-source.mean)/populationStd:x;
  const values=source.values.map(tx);
- const m=mean(values), med=median(values), sd=std(values,scaled?0:1), sk=skewness(values);
+ const mRaw=mean(values), m=Math.abs(mRaw)<1e-12?0:mRaw, med=median(values), sd=std(values,scaled?0:1), sk=skewness(values);
  const mu=stepId==='mu-sigma'?p.mu:m, sigma=stepId==='mu-sigma'?p.sigma:sd;
  const bins=source.counts.map((count,i)=>{ const lo=tx(source.edges[i]),hi=tx(source.edges[i+1]); return {lo,hi,count,density:count/(values.length*(hi-lo))}; });
  const a=Math.min(p.a,p.b), b=Math.max(p.a,p.b);
@@ -38,7 +38,7 @@ export function deriveNormalView(index:number,p:NormalParams):NormalView {
  case 'kural':strip=bands.map(t=>`±${f(t.k,0)}σ: ${pct(t.theoretical)} (örneklem ${pct(t.empirical)})`).join(' · ');break;
  case 'z-skor':strip=`z = (${f(p.x,1)} − ${f(mu,1)}) / ${f(sigma,1)} = ${f(z,2)} · Φ(z) = ${f(phi,3)}`;break;
  case 'carpik':{ const band=bands[p.k-1];strip=`çarpıklık = ${f(sk,2)} · ±${f(p.k,0)}σ: örneklem ${pct(band.empirical)} (normalde ${pct(band.theoretical)}) · ortalama ${f(m,1)} > medyan ${f(med,1)}`;break; }
- case 'olcekleme':strip=`StandardScaler: ortalama ${f(source.mean,1)} → ${f(Math.abs(m)<1e-12?0:m,0)} · std ${f(populationStd,1)} → ${f(sd,0)} · çarpıklık ${f(source.skew,2)} → ${f(sk,2)}`;break;
+ case 'olcekleme':strip=`StandardScaler: ortalama ${f(source.mean,1)} → ${f(m,0)} · std ${f(populationStd,1)} → ${f(sd,0)} · çarpıklık ${f(source.skew,2)} → ${f(sk,2)}`;break;
  }
  const notes:Record<string,string>={histogram:'Yoğunluk: sayı / (n × kova genişliği); toplam histogram alanı birdir.',egri:'Eğrinin yüksekliği olasılık değildir; tek noktanın olasılığı sıfırdır.','mu-sigma':'Histogram referans olarak yerinde kalır; yalnız normal eğri değişir.',alan:'Sınırlar ters seçilirse küçükten büyüğe okunur; eşit sınırların alanı sıfırdır.',kural:'Kural normale yakın veriler içindir. Q–Q grafiği bir denetimdir.','z-skor':'|z| > 3 kaba bir aykırılık işaretidir; çarpık veride IQR daha dayanıklıdır.',carpik:'Normal eğri negatif sürelere de alan verir; çağrı süresi negatif olamaz.',olcekleme:'pandas std(): ddof = 1; StandardScaler: ddof = 0. Ölçekleme şekli değiştirmez.'};
  return {stepId,seri,values,domain:[tx(source.domain[0]),tx(source.domain[1])],bins,mean:m,median:med,std:sd,skew:sk,
