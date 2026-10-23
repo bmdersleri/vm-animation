@@ -30,6 +30,7 @@ export default defineConfig({
         'dendrogram': resolve(root, 'dendrogram/index.html'),
         'birliktelik-olculeri': resolve(root, 'birliktelik-olculeri/index.html'),
         'apriori': resolve(root, 'apriori/index.html'),
+        'normal-dagilim': resolve(root, 'normal-dagilim/index.html'),
       },
     },
   },

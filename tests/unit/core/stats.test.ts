@@ -4,6 +4,33 @@ import { clip, covariance2, histCounts, mean, median, pearson, quantile, quantil
 import boyut from '../../fixtures/boyut_sklearn.json';
 import { PAIR } from '../../../src/concepts/pca/data';
 import { VALUES } from '../../../src/concepts/ozellik-secimi/data';
+import { normPdf, normCdf, std } from '../../../src/core/stats';
+import { NORM } from '../../../src/concepts/normal-dagilim/data';
+
+describe('normal distribution', () => {
+  it('normPdf matches scipy at every fixture point', () => {
+    for (const p of NORM.points) expect(Math.abs(normPdf(p.x, p.mu, p.sigma) - p.pdf)).toBeLessThanOrEqual(1e-7);
+  });
+  it('normCdf matches scipy at every fixture point', () => {
+    for (const p of NORM.points) expect(Math.abs(normCdf(p.x, p.mu, p.sigma) - p.cdf)).toBeLessThanOrEqual(1e-7);
+  });
+  it('normCdf is symmetric and hits 0.5 at the mean', () => {
+    for (const [mu, sigma] of [[0, 1], [70, 10], [4, 0.3]]) {
+      expect(normCdf(mu, mu, sigma)).toBe(0.5);
+      for (const z of [0.01, 0.5, 1, 2, 3, 8, 9]) expect(normCdf(mu + z * sigma, mu, sigma) + normCdf(mu - z * sigma, mu, sigma)).toBeCloseTo(1, 14);
+      expect(normCdf(mu - 9 * sigma, mu, sigma)).toBe(0);
+      expect(normCdf(mu + 9 * sigma, mu, sigma)).toBe(1);
+    }
+  });
+  it('std uses ddof 1 by default', () => {
+    expect(std([1, 2, 3, 4])).toBeCloseTo(Math.sqrt(5 / 3), 14);
+    expect(std([1, 2, 3, 4], 0)).toBe(std0([1, 2, 3, 4]));
+    expect(std([7, 7, 7])).toBe(0);
+  });
+  it('normCdf propagates NaN without iterating', () => {
+    expect(normCdf(NaN, 0, 1)).toBeNaN();
+  });
+});
 
 const iqr = fixture.iqr;
 const raw = [...iqr.sorted].reverse(); // unsorted input on purpose

@@ -53,6 +53,39 @@ export function variance(xs: readonly number[], ddof = 0): number {
   return s / (xs.length - ddof);
 }
 
+/** Sample standard deviation by default, as in pandas Series.std(). */
+export function std(xs: readonly number[], ddof = 1): number {
+  return Math.sqrt(variance(xs, ddof));
+}
+
+/** Normal probability density; callers supply sigma > 0. */
+export function normPdf(x: number, mu: number, sigma: number): number {
+  const z = (x - mu) / sigma;
+  return Math.exp(-0.5 * z * z) / (sigma * Math.sqrt(2 * Math.PI));
+}
+
+/** Normal CDF via the convergent positive-term integral series (|z| <= 8).
+ * Factoring out exp(-z²/2) avoids cancellation in the series terms.
+ */
+export function normCdf(x: number, mu: number, sigma: number): number {
+  const z = (x - mu) / sigma;
+  if (Number.isNaN(z)) return NaN;
+  if (z < -8) return 0;
+  if (z > 8) return 1;
+  if (z === 0) return 0.5;
+  const a = Math.abs(z);
+  let term = a;
+  let sum = a;
+  for (let denominator = 3; ; denominator += 2) {
+    term *= a * a / denominator;
+    const next = sum + term;
+    if (next === sum) break;
+    sum = next;
+  }
+  const area = sum * Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI);
+  return Math.max(0, Math.min(1, z < 0 ? 0.5 - area : 0.5 + area));
+}
+
 export interface Cov2 {
   xx: number;
   xy: number;
