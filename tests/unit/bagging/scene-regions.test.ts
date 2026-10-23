@@ -1,11 +1,18 @@
 // @vitest-environment jsdom
 import { afterEach, describe, it, expect, vi } from 'vitest';
+
+vi.mock('../../../src/concepts/topluluk/vote', async (orig) => {
+  const m = await orig<typeof import('../../../src/concepts/topluluk/vote')>();
+  return { ...m, votes: vi.fn(m.votes) };
+});
 import { StepPlayer } from '../../../src/core/player';
 import { baggingScenario, rootLabel } from '../../../src/concepts/bagging/scenario';
 import { mountBaggingScene } from '../../../src/concepts/bagging/scene';
 import { BOOTS, CUSTOMERS, PICKS, SINGLE } from '../../../src/concepts/topluluk/data';
 import { predictTree } from '../../../src/concepts/topluluk/tree';
-import { votes } from '../../../src/concepts/topluluk/vote';
+import { voteFill, votes } from '../../../src/concepts/topluluk/vote';
+import { VOTE_COLORS, voteCells } from '../../../src/concepts/bagging/scene-regions';
+import { scaleLinear } from 'd3-scale';
 
 const clean: (() => void)[] = [];
 afterEach(() => {
@@ -88,9 +95,7 @@ describe('region scene', () => {
     expect(player.state.params.trees).toBe(50);
     expect(el.querySelector('.formula')!.textContent).toContain(`${k} / 50`);
     const callout = el.querySelector('text.vote-callout')!.textContent!;
-    expect(callout).toContain('50 ağaç');
-    expect(callout).toContain(String(k));
-    expect(callout).toContain('Ayrıldı');
+    expect(callout).toBe(`50 ağaçtan ${k} tanesi Ayrıldı → Ayrıldı`);
     expect(el.querySelectorAll('circle.pick-ring')).toHaveLength(1);
     expect(el.querySelector('path.vote-boundary')!.getAttribute('d')!.length).toBeGreaterThan(20);
     expect(el.querySelectorAll('g.vote-ramp rect')).toHaveLength(11);
@@ -111,7 +116,9 @@ describe('region scene', () => {
     player.goto(step('oylama'));
     player.setParams({ pick: found![0], trees: found![1] });
     expect(el.querySelector('.formula')!.textContent).toContain('berabere → Kaldı');
-    expect(el.querySelector('text.vote-callout')!.textContent).toContain('berabere → Kaldı');
+    expect(el.querySelector('text.vote-callout')!.textContent).toBe(
+      `${found![1]} ağaçtan ${found![1] / 2} tanesi Ayrıldı → berabere → Kaldı`,
+    );
   });
 
   it('three panels fit 390 px without overlap', () => {
@@ -134,5 +141,34 @@ describe('region scene', () => {
       expect(num(t, 'x')).toBeGreaterThanOrEqual(frames[i].l - 1);
       expect(num(t, 'x')).toBeLessThan(frames[i].r);
     });
+  });
+
+  it('a pick-only change recounts no votes', () => {
+    const { el, player } = setup();
+    player.goto(step('oylama'));
+    const calls = vi.mocked(votes);
+    const before = calls.mock.calls.length;
+    const d = el.querySelector('path.vote-boundary')!.getAttribute('d');
+    player.setParams({ pick: 3 });
+    expect(el.querySelector('text.vote-callout')!.textContent).toContain('ağaçtan');
+    // only the view's single count for the picked customer, no per-cell counting
+    expect(calls.mock.calls.length - before).toBe(1);
+    expect(el.querySelector('path.vote-boundary')!.getAttribute('d')).toBe(d);
+    // a new tree count does recount
+    const mid = calls.mock.calls.length;
+    player.setParams({ trees: 20 });
+    expect(calls.mock.calls.length).toBeGreaterThan(mid + 1000);
+  });
+
+  it('vote cells share the tint of voteFill', () => {
+    const sc = {
+      x: scaleLinear().domain([0, 60]).range([0, 100]),
+      y: scaleLinear().domain([-0.5, 5.5]).range([100, 0]),
+    };
+    const g = { cols: 20, rows: 10 };
+    const out = new Uint8Array(200);
+    voteFill(17, sc)(g, out);
+    expect([...voteCells(17, sc, 20, 10).shade]).toEqual([...out]);
+    expect(VOTE_COLORS).toHaveLength(11);
   });
 });

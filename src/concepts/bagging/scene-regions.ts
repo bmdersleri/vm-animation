@@ -9,7 +9,7 @@ import { fitViewport, type Rect, type Scales } from '../../core/plot/viewport';
 import { DOMAIN } from '../karar-agaci/data';
 import { BOOTS, CUSTOMERS, SINGLE, type Tree } from '../topluluk/data';
 import { predictTree } from '../topluluk/tree';
-import { votes, voteFill } from '../topluluk/vote';
+import { votes } from '../topluluk/vote';
 import type { BaggingView, RegionsView } from './view';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -60,23 +60,43 @@ export function treeFill(tree: Tree, sc: Scales): (g: GridSize, out: Uint8Array)
   };
 }
 
-/**
- * The majority boundary of the first `m` trees as one SVG path: the cell edges
- * of a `cols` × `rows` grid over `plot` where the majority class changes
- * (a tie goes to Kaldı). Runs of edges are merged into single segments.
- */
-export function voteBoundary(m: number, sc: Scales, plot: Rect, cols: number, rows: number): string {
+/** Per-cell vote result of the first `m` trees on a `cols` × `rows` grid (row 0 = top). */
+export interface VoteCells {
+  /** round(10 · Ayrıldı share): the index into VOTE_COLORS (same as `voteFill`). */
+  shade: Uint8Array;
+  /** 1 where Ayrıldı has the majority (a tie goes to Kaldı). */
+  maj: Uint8Array;
+}
+
+/** Counts the votes of the first `m` trees once per cell; the tint and the boundary both read this. */
+export function voteCells(m: number, sc: Scales, cols: number, rows: number): VoteCells {
   const [x0, x1] = sc.x.domain();
   const [y0, y1] = sc.y.domain();
+  const shade = new Uint8Array(cols * rows);
   const maj = new Uint8Array(cols * rows);
   const at: [number, number] = [0, 0];
   for (let r = 0; r < rows; r++) {
     at[1] = y1 - ((r + 0.5) / rows) * (y1 - y0);
     for (let c = 0; c < cols; c++) {
       at[0] = x0 + ((c + 0.5) / cols) * (x1 - x0);
-      maj[r * cols + c] = votes(at, m) * 2 > m ? 1 : 0;
+      const yes = votes(at, m);
+      shade[r * cols + c] = m > 0 ? Math.round((10 * yes) / m) : 0;
+      maj[r * cols + c] = yes * 2 > m ? 1 : 0;
     }
   }
+  return { shade, maj };
+}
+
+/** The majority boundary of the first `m` trees as one SVG path (see `boundaryPath`). */
+export function voteBoundary(m: number, sc: Scales, plot: Rect, cols: number, rows: number): string {
+  return boundaryPath(voteCells(m, sc, cols, rows).maj, plot, cols, rows);
+}
+
+/**
+ * The cell edges of a `cols` × `rows` grid over `plot` where the majority class
+ * changes, as one SVG path. Runs of edges are merged into single segments.
+ */
+export function boundaryPath(maj: Uint8Array, plot: Rect, cols: number, rows: number): string {
   const cw = plot.width / cols;
   const ch = plot.height / rows;
   let d = '';
@@ -218,6 +238,9 @@ export class RegionScene {
   private mode: Mode = 'ders';
   /** Plot size each canvas was last sized to (index = canvas). */
   private readonly canvasSize: string[] = ['', '', '', ''];
+  /** The last vote count and boundary path, so a pick-only update recounts nothing. */
+  private cells: { key: string; v: VoteCells } | null = null;
+  private path: { key: string; d: string } | null = null;
 
   constructor(private readonly host: HTMLElement) {
     const doc = host.ownerDocument;
@@ -417,7 +440,13 @@ export class RegionScene {
     }
     const local: Rect = { left: 0, top: 0, width: plot.width, height: plot.height };
     const scLocal = fitViewport({ x: [DOMAIN.x[0], DOMAIN.x[1]], y: [DOMAIN.y[0], DOMAIN.y[1]] }, local, false);
-    grid.update(spec.key, local, spec.tree ? treeFill(spec.tree, scLocal) : voteFill(r.m, scLocal));
+    grid.update(
+      spec.key,
+      local,
+      spec.tree
+        ? treeFill(spec.tree, scLocal)
+        : (g, out) => out.set(this.cellsFor(r.m, scLocal, g.cols, g.rows).shade),
+    );
 
     // majority boundary of the vote map
     if (spec.tree) {
@@ -428,12 +457,28 @@ export class RegionScene {
       panel.boundary
         .attr('display', null)
         .attr('stroke-width', this.mode === 'ders' ? 3 : 2.5)
-        .attr('d', voteBoundary(r.m, sc, plot, cols, rows));
+        .attr('d', this.pathFor(r.m, scLocal, plot, cols, rows));
     }
 
     this.drawTitle(panel, title, plot, geo);
     this.drawPoints(panel, spec, sc, plot, f.tick, i);
     this.drawPick(panel, spec, r, sc, plot, f.tick);
+  }
+
+  /** Vote cells of `m` trees, counted once per (m, grid size). */
+  private cellsFor(m: number, sc: Scales, cols: number, rows: number): VoteCells {
+    const key = `${m}|${cols}x${rows}`;
+    if (!this.cells || this.cells.key !== key) this.cells = { key, v: voteCells(m, sc, cols, rows) };
+    return this.cells.v;
+  }
+
+  /** Boundary path of `m` trees on the plot, rebuilt only when the votes or the plot change. */
+  private pathFor(m: number, sc: Scales, plot: Rect, cols: number, rows: number): string {
+    const key = `${m}|${cols}x${rows}|${r1(plot.left)},${r1(plot.top)},${r1(plot.width)},${r1(plot.height)}`;
+    if (!this.path || this.path.key !== key) {
+      this.path = { key, d: boundaryPath(this.cellsFor(m, sc, cols, rows).maj, plot, cols, rows) };
+    }
+    return this.path.d;
   }
 
   private drawTitle(panel: Panel, title: string[], plot: Rect, geo: RegionGeometry): void {
@@ -496,7 +541,7 @@ export class RegionScene {
       .attr('cx', r1(px))
       .attr('cy', r1(py));
     const label = pick
-      ? `${pick.m} ağaç: ${pick.ayrildi} Ayrıldı oyu → ${pick.verdict === 'berabere' ? 'berabere → Kaldı' : pick.verdict}`
+      ? `${pick.m} ağaçtan ${pick.ayrildi} tanesi Ayrıldı → ${pick.verdict === 'berabere' ? 'berabere → Kaldı' : pick.verdict}`
       : '';
     const w = pick ? this.measure.width(label, 'tick', tick) : 0;
     const right = plot.left + plot.width - 4;
