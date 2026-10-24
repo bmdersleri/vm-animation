@@ -27,6 +27,8 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - Random Forest, OOB ve öznitelik önemi: https://bmdersleri.github.io/vm-animation/random-forest/
 - Gradyan artırma: https://bmdersleri.github.io/vm-animation/gradyan-artirma/
 - Boosting ayarları: https://bmdersleri.github.io/vm-animation/boosting-ayarlari/
+- Dengesiz veri (doğruluk tuzağı, SMOTE, sınıf ağırlığı): https://bmdersleri.github.io/vm-animation/dengesiz-veri/
+- SMOTE sızıntısı ve PR-AUC: https://bmdersleri.github.io/vm-animation/smote-sizinti/
 - Karmaşıklık matrisi: https://bmdersleri.github.io/vm-animation/karmasiklik-matrisi/
 - ROC ve karar eşiği: https://bmdersleri.github.io/vm-animation/roc-esik/
 - Çapraz doğrulama: https://bmdersleri.github.io/vm-animation/capraz-dogrulama/
@@ -108,6 +110,7 @@ python scripts/make_kmeans_data.py
 python scripts/make_dbscan_data.py
 python scripts/make_dendrogram_data.py
 python scripts/make_birliktelik_data.py
+python scripts/make_dengesiz_data.py
 ```
 
 - `make_knn_data.py`: Telco churn CSV'sinden k-NN örneğini ve scikit-learn referans değerlerini üretir.
@@ -121,6 +124,7 @@ python scripts/make_birliktelik_data.py
 - `make_dbscan_data.py`: DBSCAN sayfasının iki hilal verisini ve scikit-learn referanslarını üretir (`src/concepts/dbscan/data/`); CSV gerekmez.
 - `make_dendrogram_data.py`: Hiyerarşik kümeleme ve dendrogram sayfasının verisini ve SciPy/scikit-learn referanslarını üretir (`src/concepts/dendrogram/data/`); CSV gerekmez.
 - `make_birliktelik_data.py`: Bölüm 8 sayfalarının (destek/güven/kaldıraç ve Apriori/FP-Growth) ortak 18 fişlik sepet verisini ve mlxtend referanslarını üretir (`src/concepts/birliktelik/data/`); CSV gerekmez.
+- `make_dengesiz_data.py`: Bölüm 11 sayfalarının (dengesiz veri ve SMOTE sızıntısı) ortak verisini (`src/concepts/dengesiz/data/dengesiz.json`) ve `tests/fixtures/dengesiz_sklearn.json` referanslarını üretir; `imbalanced-learn` kurulmaz, SMOTE elle yazılmıştır. Girdisi kitabın veri kümesinin birebir kopyası olan `scripts/data/telco_churn_synthetic_severe.csv` dosyasıdır (üreticinin kendi kopyası); `--check` hiçbir şey yazmadan sapmayı denetler.
 
 ## Yeni kavram ekleme
 

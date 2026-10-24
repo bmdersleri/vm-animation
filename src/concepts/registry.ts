@@ -107,7 +107,8 @@ export const concepts: ConceptEntry[] = [
   { id: 'random-forest', chapter: 9, chapterTitle: CH[9], title: 'Random Forest, OOB ve öznitelik önemi', status: 'hazir', href: 'random-forest/' },
   { id: 'gradyan-artirma', chapter: 10, chapterTitle: CH[10], title: 'Gradyan artırma: artıklarla düzeltme', status: 'hazir', href: 'gradyan-artirma/' },
   { id: 'boosting-ayarlari', chapter: 10, chapterTitle: CH[10], title: 'Boosting ayarları: öğrenme oranı, erken durdurma, arama', status: 'hazir', href: 'boosting-ayarlari/' },
-  soon('smote', 11, 'SMOTE'),
+  { id: 'dengesiz-veri', chapter: 11, chapterTitle: CH[11], title: 'Dengesiz veri: doğruluk tuzağı, SMOTE ve sınıf ağırlığı', status: 'hazir', href: 'dengesiz-veri/' },
+  { id: 'smote-sizinti', chapter: 11, chapterTitle: CH[11], title: 'SMOTE sızıntısı ve PR-AUC', status: 'hazir', href: 'smote-sizinti/' },
   soon('tfidf-kosinus', 12, 'TF-IDF ve kosinüs benzerliği'),
   soon('shap', 13, 'SHAP'),
 ];
