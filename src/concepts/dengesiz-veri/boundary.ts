@@ -152,17 +152,30 @@ export function outsideNote(matrix: Confusion): string {
   return 'sınır alan dışında';
 }
 
+/** Test scores and PR-AUC of a fitted model; neither depends on the threshold, so a threshold drag reuses them. */
+const scoreCache = new WeakMap<LogRegModel, { scores: ScoredSample[]; ap: number | null }>();
+
+function scoredFor(model: LogRegModel): { scores: ScoredSample[]; ap: number | null } {
+  let hit = scoreCache.get(model);
+  if (!hit) {
+    const scores = testScores(model);
+    hit = { scores, ap: averagePrecision(scores) };
+    scoreCache.set(model, hit);
+  }
+  return hit;
+}
+
 /** Matrix, PR-AUC and line of a method at a threshold. */
 export function resultFor(method: Method, p: FitParams, threshold: number): MethodResult {
   const model = modelFor(method, p);
-  const scores = testScores(model);
+  const { scores, ap } = scoredFor(model);
   const matrix = classify(scores, threshold);
   const segment = boundarySegment(model, threshold);
   return {
     method,
     label: METHODS.find((m) => m.id === method)!.label,
     matrix,
-    ap: averagePrecision(scores),
+    ap,
     segment,
     note: segment ? null : outsideNote(matrix),
   };

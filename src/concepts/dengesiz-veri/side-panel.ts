@@ -150,7 +150,7 @@ export class SidePanel {
 
     this.title
       .attr('x', r1(rect.x + 4))
-      .attr('y', r1(y + axis))
+      .attr('y', r1(y + axis * 1.1))
       .text(v.counts.title);
     y += p.titleH;
 

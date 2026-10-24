@@ -79,7 +79,7 @@ export class BoundarySide implements SideLike {
     const b = v.boundary;
     this.title
       .attr('x', r1(rect.x + 4))
-      .attr('y', r1(rect.y + axis))
+      .attr('y', r1(rect.y + axis * 1.1))
       .text(v.counts.title);
     const captionY = rect.y + this.titleH(axis);
     this.caption
