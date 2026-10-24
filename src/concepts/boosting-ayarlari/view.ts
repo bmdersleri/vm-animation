@@ -174,8 +174,8 @@ function lrExperiment(p: TuneParams, lab: boolean): TuneView {
   }
   const c = lab ? curveOf(p.lr) : null;
   const strip = c
-    ? `ν = ${lrText(p.lr)} · ${n} ağaç · doğrulama AUC = ${f(c.valAuc[n - 1], 3)} · log-kaybı = ${f(c.valLoss[n - 1], 3)}\nXGBClassifier(n_estimators=${n}, max_depth=4, learning_rate=${p.lr})`
-    : `XGBClassifier(n_estimators=${BOOK_TREES}, max_depth=4, learning_rate=oran)\nBu sayfada aynı deney scikit-learn'ün GradientBoostingClassifier'ıyla yapılır.`;
+    ? `ν = ${lrText(p.lr)} · ${n} ağaç · doğrulama AUC = ${f(c.valAuc[n - 1], 3)} · log-kaybı = ${f(c.valLoss[n - 1], 3)}\nGradientBoostingClassifier(n_estimators=${n}, max_depth=4, learning_rate=${p.lr})`
+    : `Kitabın kodu: XGBClassifier(n_estimators=${BOOK_TREES}, max_depth=4, learning_rate=oran)\nBu sayfada aynı deney scikit-learn'ün GradientBoostingClassifier'ıyla yapılır.`;
   return { stepId: 'lr-deney', kind: 'points', strip, ...EMPTY, chart };
 }
 
@@ -231,7 +231,7 @@ function moreTrees(p: TuneParams, lab: boolean): TuneView {
   return {
     stepId: 'agac-ekle',
     kind: 'curves',
-    strip: `ν = ${lrText(p.lr)} · ${n} ağaç · doğrulama AUC = ${f(c.valAuc[n - 1], 3)} · log-kaybı = ${f(c.valLoss[n - 1], 3)}\nGradientBoostingClassifier(n_estimators=${n}, learning_rate=${p.lr})`,
+    strip: `ν = ${lrText(p.lr)} · ${n} ağaç · doğrulama AUC = ${f(c.valAuc[n - 1], 3)} · log-kaybı = ${f(c.valLoss[n - 1], 3)}\nGradientBoostingClassifier(n_estimators=${n}, max_depth=4, learning_rate=${p.lr})`,
     chart,
     endLabels: [{ id: 'val', text: `ν = ${lrText(p.lr)}`, x: n, y: c.valLoss[n - 1] }],
     vlines: [{ x: BOOK_TREES, label: '', anchor: 'start', row: 0, cls: 'book' }],
@@ -253,7 +253,7 @@ function overfit(p: TuneParams): TuneView {
   return {
     stepId: 'ezber',
     kind: 'curves',
-    strip: `ν = ${lrText(p.lr)} · ${MAX_TREES} ağaç · eğitim log-kaybı = ${c.trainLoss[last] < 5e-7 ? '0' : formatNonZero(c.trainLoss[last], 3)} · doğrulama log-kaybı = ${f(c.valLoss[last], 3)}\nen düşük doğrulama kaybı ${dip}. ağaçta · açık (doğrulama − eğitim) = ${f(c.valLoss[last] - c.trainLoss[last], 3)}`,
+    strip: `ν = ${lrText(p.lr)} · ${MAX_TREES} ağaç · eğitim log-kaybı = ${c.trainLoss[last] < 5e-7 ? '< 0,000001' : formatNonZero(c.trainLoss[last], 3)} · doğrulama log-kaybı = ${f(c.valLoss[last], 3)}\nen düşük doğrulama kaybı ${dip}. ağaçta · açık (doğrulama − eğitim) = ${f(c.valLoss[last] - c.trainLoss[last], 3)}`,
     chart,
     endLabels: [
       { id: 'train', text: 'eğitim', x: MAX_TREES, y: c.trainLoss[last] },
@@ -459,7 +459,9 @@ const bestCell = (cells: readonly number[]): string => {
 };
 /** Best cell of the grid and of the sequential search for one budget and seed. */
 function compareText(budget: number, seed: number): string {
-  return `ızgara en iyisi: ${bestCell(gridTrials(budget))} · sıralı en iyisi: ${bestCell(sequentialSearch(SURFACE.auc, budget, seed))}`;
+  const grid = gridTrials(budget);
+  const seq = sequentialSearch(SURFACE.auc, budget, seed);
+  return `ızgara (${grid.length} deneme) en iyisi: ${bestCell(grid)} · sıralı (${seq.length} deneme) en iyisi: ${bestCell(seq)}`;
 }
 
 /** Steps 9-10: the heatmap with the first `trial` cells of the grid or of the sequential search. */
@@ -495,8 +497,10 @@ function search(id: 'izgara' | 'sirali-arama', p: TuneParams, lab: boolean): Tun
     bestText,
     links: id === 'sirali-arama' ? LINKS : [],
   };
-  const head = `${label} · ${trial} / ${order.length} deneme · ${SURFACE.depths.length * N_LR} hücrelik yüzey`;
-  // Lab step 10 hides the step text, so the strip carries the comparison of the two searches (same budget)
+  // the grid fits whole rows of cells into the budget, so it can use fewer trials than asked
+  const unused = order.length < budget ? ` (ızgara ${order.length} deneme kullanır)` : '';
+  const head = `${label} · ${tried.length} / ${budget} deneme${unused} · ${SURFACE.depths.length * N_LR} hücrelik yüzey`;
+  // Lab step 10 hides the step text, so the strip carries the comparison of the two searches
   const second = lab && id === 'sirali-arama' ? `\n${compareText(budget, p.seed)}` : '';
   return {
     stepId: id,

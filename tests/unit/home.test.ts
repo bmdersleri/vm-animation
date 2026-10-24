@@ -16,7 +16,7 @@ describe('home page', () => {
     expect(concepts.length).toBe(27);
   });
 
-  it('only hazir cards are links: the four chapter 2 pages, iqr-aykiri/, olcekleme/, pca/, ozellik-secimi/, karar-agaci/, knn/, naive-bayes/, the three chapter 6 pages and the four chapter 7 pages and the two chapter 8 pages and the two chapter 9 pages', () => {
+  it('only hazir cards are links: the four chapter 2 pages, iqr-aykiri/, olcekleme/, pca/, ozellik-secimi/, karar-agaci/, knn/, naive-bayes/, the three chapter 6 pages and the four chapter 7 pages and the two chapter 8 pages and the two chapter 9 pages and the two chapter 10 pages', () => {
     const root = render();
     const links = [...root.querySelectorAll<HTMLAnchorElement>('a.card')];
     expect(links.length).toBe(24);

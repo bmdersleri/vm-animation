@@ -197,13 +197,30 @@ it('budget and new start change the trials', () => {
   expect(player.state.params.seed).toBe(1);
   expect(tried()).toEqual(sequentialSearch(SURFACE.auc, 12, 1));
   expect(tried()).not.toEqual(before);
-  // the second strip row compares both searches for the same budget
+  // the second strip row compares both searches and names the trials each used
   const rows = strip(el);
-  expect(rows).toContain('ızgara en iyisi: derinlik');
-  expect(rows).toContain('sıralı en iyisi: derinlik');
+  expect(rows).toContain('ızgara (12 deneme) en iyisi: derinlik');
+  expect(rows).toContain('sıralı (12 deneme) en iyisi: derinlik');
   const best = (cells: number[]) => cells.reduce((a, c) => (SURFACE.auc.flat()[c] > SURFACE.auc.flat()[a] ? c : a));
   const g = best(gridTrials(12));
   expect(rows).toContain(`AUC ${f(SURFACE.auc.flat()[g], 3)} · sıralı`);
+});
+
+it('an odd budget does not claim more grid trials than ran', () => {
+  const { host, el, player } = setup();
+  player.goto(step('izgara'));
+  slide(ctl(host, 'budget'), 5);
+  const used = gridTrials(5).length;
+  expect(used).toBe(4);
+  expect(strip(el)).toContain(`${used} / 5 deneme (ızgara ${used} deneme kullanır)`);
+  slide(ctl(host, 'budget'), 8);
+  expect(strip(el)).toContain('8 / 8 deneme ·');
+  expect(strip(el)).not.toContain('kullanır');
+  player.goto(step('sirali-arama'));
+  slide(ctl(host, 'budget'), 5);
+  expect(strip(el)).toContain('5 / 5 deneme ·');
+  expect(strip(el)).toContain(`ızgara (${used} deneme) en iyisi`);
+  expect(strip(el)).toContain('sıralı (5 deneme) en iyisi');
 });
 
 it('surface toggle reveals all cells', () => {

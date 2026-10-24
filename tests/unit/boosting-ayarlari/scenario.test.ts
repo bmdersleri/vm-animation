@@ -69,6 +69,9 @@ describe('boosting-ayarlari scenario', () => {
     expect(es).toEqual({ best: 91, stop: 141 });
     expect(step('erken-durdurma').text).toContain(`${es.best}. ağaçta en düşük`);
     expect(step('erken-durdurma').text).toContain(`${es.stop}. ağaçta dur`);
+    // step 10 names Optuna honestly
+    expect(step('sirali-arama').text).toContain("Optuna'nın yaptığına benzer, sadeleştirilmiş sıralı arama");
+    expect(step('sirali-arama').labText).toContain("Optuna'nın yaptığına benzer");
     // step 7: three thresholds and two errors
     expect(step('yaprak').text).toContain('2,651');
     expect(step('yaprak').text).toContain('6,372');

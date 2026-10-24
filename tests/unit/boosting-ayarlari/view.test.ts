@@ -32,6 +32,22 @@ describe('boosting-ayarlari view', () => {
     expect(v.note).toBeNull();
   });
 
+  it('step 5 with a short patience stops at an early local dip', () => {
+    const v = view('erken-durdurma', { patience: 10 });
+    expect(v.vlines.map((l) => l.x)).toEqual([48, 58]);
+    expect(v.note).toBeNull();
+    expect(v.strip).toContain('en iyi ağaç = 48 · durma ağacı = 58');
+  });
+
+  it('measured numbers sit next to the scikit-learn call, not the book XGBoost call', () => {
+    const lab = deriveTuneView(stepIndex(sc, 'lr-deney'), { ...sc.defaults }, true);
+    expect(lab.strip).toContain('GradientBoostingClassifier(n_estimators=');
+    expect(lab.strip).not.toContain('XGBClassifier');
+    expect(view('lr-deney').strip).toContain('Kitabın kodu: XGBClassifier');
+    expect(view('agac-ekle').strip).toContain('GradientBoostingClassifier(n_estimators=');
+    expect(view('agac-ekle').strip).toContain('max_depth=4');
+  });
+
   it('step 5 says so when the curve ends before the patience runs out', () => {
     const v = view('erken-durdurma', { lr: 0.01 });
     expect(v.vlines.map((l) => l.x)).toEqual([500]);

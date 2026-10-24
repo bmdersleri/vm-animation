@@ -93,7 +93,6 @@ const stop = earlyStop(curveOf(0.3).valLoss, PATIENCE);
 // ---- steps 6-8 numbers
 const level = levelTree(2);
 const leaf = leafTree(4);
-const levelT = sortedThresholds(level);
 const leafSplits = leaf.splits.map((s) => s.t);
 const leafGains = leaf.splits.map((s) => s.gain);
 const rows = Array.from({ length: 61 }, (_, i) => {
@@ -165,7 +164,7 @@ export const boostingAyarlariScenario: Scenario<TuneParams> = {
       id: 'seviye',
       title: 'Seviye-öncelikli büyüme',
       term: 'seviye-öncelikli büyüme (level-wise, XGBoost)',
-      text: `Gradyan artırma sayfasının ilk artıklarına derinlik 2 ağacı: önce kök (${f(level.nodes[0].t, 3)}), sonra ikinci seviyenin iki düğümü birlikte (${f(levelT[0], 3)} ve ${f(levelT[2], 3)}); ${leafCount(level)} yaprak, dengeli; hata ${f(trainError(level), 3)}.`,
+      text: `Gradyan artırma sayfasının ilk artıklarına derinlik 2 ağacı: önce kök (${f(level.nodes[0].t, 3)}), sonra ikinci seviyenin iki düğümü birlikte (${f(level.nodes[level.nodes[0].l].t, 3)} ve ${f(level.nodes[level.nodes[0].r].t, 3)}); ${leafCount(level)} yaprak, dengeli; hata ${f(trainError(level), 3)}.`,
       labText: 'Ağaç derinliğini değiştirin: seviye-öncelikli ağaç her seviyesini tamamen açar. Şema, bölünme çizgileri ve hata birlikte güncellenir.',
     },
     {
@@ -193,8 +192,8 @@ export const boostingAyarlariScenario: Scenario<TuneParams> = {
     {
       id: 'sirali-arama',
       title: 'Sıralı arama',
-      text: `Aynı bütçe, ${gridCells.length} deneme: ilk 3 rastgele, sonra her deneme o ana kadarki iyi sonuçların yakınına. Izgara en iyisi: ${cellText(gridBest)} · Sıralı en iyisi: ${cellText(seqBest)} → sıralı arama ${seqWord} AUC buldu. Bunu gerçek bir aramada bilemezdiniz; burada sonradan ${surf.length} hücrenin hepsini ölçtük.`,
-      labText: 'Deneme bütçesini değiştirin ve "Yeni başlangıç" ile sıralı aramanın rastgele başlangıcını yenileyin. Şerit iki aramanın en iyisini aynı bütçeyle yan yana verir.',
+      text: `Aynı bütçe, ${gridCells.length} deneme: ilk 3 rastgele, sonra her deneme iyi sonuçlara yakın, kötülerden uzak hücrelere (Optuna'nın yaptığına benzer, sadeleştirilmiş sıralı arama). Izgara en iyisi: ${cellText(gridBest)} · Sıralı en iyisi: ${cellText(seqBest)} → sıralı arama ${seqWord} AUC buldu. Bunu gerçek bir aramada bilemezdiniz; burada sonradan ${surf.length} hücrenin hepsini ölçtük.`,
+      labText: `Deneme bütçesini değiştirin ve "Yeni başlangıç" ile sıralı aramanın rastgele başlangıcını yenileyin. Şerit iki aramanın en iyisini ve kullandıkları deneme sayısını yan yana verir. Sıralı arama, Optuna'nın yaptığına benzer, sadeleştirilmiş bir arama.`,
       sweep: { key: 'trial', values: trialSweep, intervalMs: 700 },
     },
   ],

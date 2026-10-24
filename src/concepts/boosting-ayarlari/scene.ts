@@ -92,7 +92,7 @@ export function mountTuneScene(
     grow.interrupt();
     search.interrupt();
     const v = deriveTuneView(state.index, state.params, mode === 'lab');
-    // slider and shortcut tweaks are instant; steps and sweep stops animate
+    // slider tweaks and instant redraws skip the animation
     const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
     stage.dataset.view = v.kind;
     stage.dataset.step = v.stepId;
