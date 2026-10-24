@@ -79,6 +79,8 @@ describe('boosting-ayarlari scenario', () => {
     expect(step('yaprak').text).toContain('0,113');
     expect(step('seviye').text).toContain('0,162');
     expect(step('seviye').text).toContain('0,616');
+    // step 7 names the gains like the scene list does: "kazanç", 4 decimals
+    expect(step('yaprak').text).toContain('kazanç 0,1131 / 0,1393 / 0,0680');
     // step 10 reads the surface
     expect(SURFACE.auc.flat()).toHaveLength(54);
     expect(step('sirali-arama').text).toContain('54 hücrenin');

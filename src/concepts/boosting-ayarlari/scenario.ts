@@ -171,7 +171,7 @@ export const boostingAyarlariScenario: Scenario<TuneParams> = {
       id: 'yaprak',
       title: 'Yaprak-öncelikli büyüme',
       term: 'yaprak-öncelikli büyüme (leaf-wise, LightGBM)',
-      text: `Aynı ${leafCount(leaf)} yaprak: her adımda en çok kazandıran yaprak açılır (${leafSplits.map((t) => f(t, 3)).join(' → ')}; kayıp azalışı ${leafGains.map((g) => f(g, 3)).join(' / ')}); ağaç dengesiz, derinlik ${treeDepth(leaf)}; hata ${f(trainError(leaf), 3)}. Aynı yaprak sayısında daha düşük kayıp, ama daha derin.`,
+      text: `Aynı ${leafCount(leaf)} yaprak: her adımda en çok kazandıran yaprak açılır (${leafSplits.map((t) => f(t, 3)).join(' → ')}; kazanç ${leafGains.map((g) => f(g, 4)).join(' / ')}); ağaç dengesiz, derinlik ${treeDepth(leaf)}; hata ${f(trainError(leaf), 3)}. Aynı yaprak sayısında daha düşük kayıp, ama daha derin.`,
       labText: 'Ağaç derinliğini değiştirin: yaprak-öncelikli ağaç, aynı derinlikteki seviye-öncelikli ağacın yaprak sayısı kadar yaprak açar. Şema, bölünme çizgileri ve hata birlikte güncellenir.',
     },
     {
