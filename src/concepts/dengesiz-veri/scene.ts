@@ -5,7 +5,9 @@ import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { renderStrip } from '../../core/plot/strip';
 import { dengesizVeriScenario, type ImbParams } from './scenario';
 import { deriveImbView } from './view';
+import { BoundaryScene } from './scene-boundary';
 import { ScatterScene } from './scene-scatter';
+import { SmoteScene, type ViewScene } from './scene-smote';
 
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -17,7 +19,8 @@ const MS_STEP = 600;
 /**
  * Scene host of the imbalanced-data page: a stage with four view areas (`data-view` = scatter,
  * smote, weight, boundary) above the formula strip. The scatter with its side panel draws
- * steps 1-5; the other three areas are reserved for the later scenes and stay empty.
+ * steps 1-5, the smote area steps 6-7, the weight area step 8 (the scatter with sized dots) and the
+ * boundary area steps 9-10.
  * Updates coalesce into one frame; controls render without interpolation.
  */
 export function mountImbScene(
@@ -51,7 +54,12 @@ export function mountImbScene(
   scene.append(stage, strip);
   el.append(scene);
 
-  const scatter = new ScatterScene(hosts.scatter);
+  const scenes: Record<keyof typeof hosts, ViewScene> = {
+    scatter: new ScatterScene(hosts.scatter),
+    smote: new SmoteScene(hosts.smote),
+    weight: new ScatterScene(hosts.weight),
+    boundary: new BoundaryScene(hosts.boundary),
+  };
 
   let mode = initialMode;
   let size: { w: number; h: number } | null = null;
@@ -82,8 +90,8 @@ export function mountImbScene(
   }
 
   function draw(state: PlayerState<ImbParams>, cause: ChangeCause, instant: boolean): void {
-    scatter.interrupt();
-    const v = deriveImbView(state.index, state.params);
+    for (const sc of Object.values(scenes)) sc.interrupt();
+    const v = deriveImbView(state.index, state.params, mode === 'lab');
     // slider and shortcut tweaks are instant; steps and sweep stops animate
     const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
     stage.dataset.view = v.kind;
@@ -91,11 +99,10 @@ export function mountImbScene(
     for (const [name, host] of Object.entries(hosts)) host.hidden = name !== v.kind;
     lastStrip = v.strip;
     renderStrip(strip, v.strip);
-    if (v.kind === 'scatter') {
-      const a = area();
-      scatter.resize(a.w, a.h, mode);
-      scatter.update(v, ms);
-    }
+    const active = scenes[v.kind];
+    const a = area();
+    active.resize(a.w, a.h, mode);
+    active.update(v, ms);
     rendered = true;
   }
 
@@ -146,7 +153,7 @@ export function mountImbScene(
       if (rafId !== null) cancelRaf(rafId);
       rafId = null;
       pending = null;
-      scatter.destroy();
+      for (const sc of Object.values(scenes)) sc.destroy();
       scene.remove();
     },
   };

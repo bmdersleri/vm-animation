@@ -100,7 +100,7 @@ export const dengesizVeriScenario: Scenario<ImbParams> = {
       id: 'kopyalama',
       title: 'Kopyalamadan farkı',
       text: `Rastgele kopyalama aynı ${TRAIN.pos} noktayı çoğaltır; en çok kopyalanan nokta ×${maxCopies + 1} olur. SMOTE aradaki bölgeyi doldurur. Kopya modeli aynı noktaları ezberlemeye iter; ama sentetik nokta yeni bir müşteri değildir.`,
-      labText: 'Hedef oranı ve tohumu değiştirin: iki panelde de eklenen nokta sayısı aynıdır, yalnız eklenme biçimi ayrılır.',
+      labText: 'Komşu sayısını, hedef oranı ve tohumu değiştirin: iki panelde de eklenen nokta sayısı aynıdır, yalnız eklenme biçimi ayrılır.',
       params: { ratio: 1 },
     },
     {
@@ -131,13 +131,13 @@ const indices = (...ids: string[]): number[] => ids.map((id) => stepIndex(denges
 /** Steps drawn by the scatter and side panel. */
 export const SCATTER_STEPS = indices('veri', 'dogruluk', 'azinlik', 'egitim', 'sentetik');
 
-/** Steps drawn by the SMOTE scenes (Task 3). */
+/** Steps drawn by the SMOTE scenes. */
 export const SMOTE_STEPS = indices('smote-doldur', 'kopyalama');
 
-/** Steps drawn by the class-weight scene (Task 3). */
+/** Steps drawn by the class-weight scene. */
 export const WEIGHT_STEPS = indices('agirlik');
 
-/** Steps drawn by the decision-boundary scenes (Task 3). */
+/** Steps drawn by the decision-boundary scenes. */
 export const BOUNDARY_STEPS = indices('sinir', 'karsilastirma');
 
 /** Steps whose Lab shows the test-points switch. */

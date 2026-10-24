@@ -7,11 +7,15 @@ import { r1 } from '../../core/plot/marks';
 import { TextMeasure } from '../../core/plot/text-measure';
 import { tr } from '../../core/plot/transition';
 import { fitViewport, type Rect } from '../../core/plot/viewport';
+import { X_DOMAIN, Y_DOMAIN } from './model';
 import { SidePanel } from './side-panel';
 import type { ImbDot, ImbView } from './view';
 
 const NS = 'http://www.w3.org/2000/svg';
 type G = Selection<SVGGElement, unknown, null, undefined>;
+
+/** Largest radius factor of a weighted dot (the Lab's heaviest manual weight, 30, is its square root). */
+export const MAX_WEIGHT_SCALE = Math.sqrt(30);
 
 /** Outer padding (px) around the drawing. */
 const PAD = 8;
@@ -20,9 +24,7 @@ const GAP = 12;
 /** Below this width the side panel flows under the scatter. */
 export const NARROW = 700;
 
-/** Tenure (months) and monthly charge ranges of the scatter. */
-export const X_DOMAIN: [number, number] = [0, 72];
-export const Y_DOMAIN: [number, number] = [15, 125];
+export { X_DOMAIN, Y_DOMAIN };
 
 /** A rectangle in px. */
 export interface Box {
@@ -42,15 +44,18 @@ export interface SplitLayout {
 
 /**
  * Splits a `w` x `h` stage: the side panel beside the scatter, or (under NARROW px) below it.
- * `sideNeed` is the height the side panel wants; a narrow drawing may be taller than the stage.
+ * `sideNeed` is the height the side panel wants and `sideMin` the least it can do with; a narrow
+ * drawing (or a wide one on a very short stage) may be taller than the stage.
  */
-export function splitLayout(w: number, h: number, sideNeed: number): SplitLayout {
+export function splitLayout(w: number, h: number, sideNeed: number, sideMin = 0): SplitLayout {
   if (w >= NARROW) {
     const sideW = Math.max(300, Math.min(560, Math.round(w * 0.4)));
+    // a stage too short for the side panel's least height grows the drawing; the host scrolls
+    const tall = Math.max(h, sideMin);
     return {
-      scatter: { x: 0, y: 0, w: w - sideW - GAP, h },
-      side: { x: w - sideW, y: 0, w: sideW, h },
-      height: h,
+      scatter: { x: 0, y: 0, w: w - sideW - GAP, h: tall },
+      side: { x: w - sideW, y: 0, w: sideW, h: tall },
+      height: tall,
       narrow: false,
     };
   }
@@ -63,23 +68,43 @@ export function splitLayout(w: number, h: number, sideNeed: number): SplitLayout
   };
 }
 
+/** What the scatter needs from the panel beside it. */
+export interface SideLike {
+  heightFor(v: ImbView, w: number, tick: number, axis: number): number;
+  /** The least height the panel can be drawn in (cells at their shortest); default 0. */
+  minHeightFor?(v: ImbView, w: number, tick: number, axis: number): number;
+  draw(v: ImbView, o: { rect: Box; tick: number; axis: number; ms: number }): void;
+}
+
+/** Builds the panel beside the scatter inside the group `g`. */
+export type SideFactory = (g: G, measure: TextMeasure) => SideLike;
+
+/** The rectangle, scales and font sizes of one drawn scatter plot (hooks for subclasses). */
+export interface PlotFrame {
+  rect: Rect;
+  sc: ReturnType<typeof fitViewport>;
+  tick: number;
+  axis: number;
+  ms: number;
+}
+
 /**
  * The scatter and side panel of the imbalanced-data page (Ders steps 1-5): customers by tenure and
  * monthly charge, the step-5 SMOTE example on top, and the count bars / matrix / metrics beside it.
  */
 export class ScatterScene {
-  private readonly svg: Selection<SVGSVGElement, unknown, null, undefined>;
-  private readonly plotG: G;
+  protected readonly svg: Selection<SVGSVGElement, unknown, null, undefined>;
+  protected readonly plotG: G;
   private readonly dotsG: G;
   private readonly exampleG: G;
   private readonly axes: AxesLayer;
-  private readonly side: SidePanel;
-  private readonly measure: TextMeasure;
-  private w = 1;
-  private h = 1;
-  private mode: Mode = 'ders';
+  private readonly side: SideLike;
+  protected readonly measure: TextMeasure;
+  protected w = 1;
+  protected h = 1;
+  protected mode: Mode = 'ders';
 
-  constructor(host: HTMLElement) {
+  constructor(host: HTMLElement, makeSide: SideFactory = (g, m) => new SidePanel(g, m)) {
     const root = host.ownerDocument.createElementNS(NS, 'svg');
     host.append(root);
     this.svg = select(root)
@@ -92,7 +117,24 @@ export class ScatterScene {
     this.exampleG = this.plotG.append('g').attr('class', 'imb-example');
     const probe = this.svg.append('text').attr('class', 'probe').attr('visibility', 'hidden').attr('aria-hidden', 'true');
     this.measure = new TextMeasure(probe.node()!);
-    this.side = new SidePanel(this.svg.append('g').attr('class', 'imb-side'), this.measure);
+    this.overG = this.svg.append('g').attr('class', 'imb-over');
+    this.side = makeSide(this.svg.append('g').attr('class', 'imb-side'), this.measure);
+  }
+
+  /** Layer above the dots for subclasses (boundary lines, labels, notes). */
+  protected readonly overG: G;
+
+  /** Height (px) a subclass wants above the plot rectangle (notes). */
+  protected reserveTop(_v: ImbView, _width: number, _tick: number): number {
+    return 0;
+  }
+
+  /** Called after the dots are drawn; subclasses draw their layer over the plot. */
+  protected drawOver(_v: ImbView, _f: PlotFrame, _scatter: Box): void {}
+
+  /** Shows or hides the whole drawing. */
+  setShown(shown: boolean): void {
+    this.svg.node()!.style.display = shown ? '' : 'none';
   }
 
   resize(w: number, h: number, mode: Mode): void {
@@ -116,14 +158,14 @@ export class ScatterScene {
     const fonts = this.measure.fonts(this.mode);
     const { tick, axis } = fonts;
     const need = this.side.heightFor(v, this.w, tick, axis);
-    const lay = splitLayout(this.w, this.h, need);
+    const lay = splitLayout(this.w, this.h, need, this.side.minHeightFor?.(v, this.w, tick, axis) ?? 0);
     this.svg.attr('width', this.w).attr('height', lay.height);
 
     const gap = Math.round(tick * 0.45);
     const yTickW = this.measure.maxWidth(['120'], 'tick', tick);
     const left = lay.scatter.x + PAD + axis * 1.2 + gap + yTickW + gap;
     const right = lay.scatter.x + lay.scatter.w - PAD - tick * 0.6;
-    const top = lay.scatter.y + PAD;
+    const top = lay.scatter.y + PAD + this.reserveTop(v, lay.scatter.w, tick);
     const below = gap + tick * 1.2 + gap + axis * 1.25 + PAD;
     const bottom = lay.scatter.y + lay.scatter.h - below;
     const rect: Rect = { left, top, width: Math.max(60, right - left), height: Math.max(60, bottom - top) };
@@ -150,12 +192,14 @@ export class ScatterScene {
     );
     this.drawDots(v, sc, tick, ms);
     this.drawExample(v, sc, tick, rect);
+    this.drawOver(v, { rect, sc, tick, axis, ms }, lay.scatter);
     this.side.draw(v, { rect: lay.side, tick, axis, ms });
   }
 
   private drawDots(v: ImbView, sc: ReturnType<typeof fitViewport>, tick: number, ms: number): void {
     const r = Math.max(2.4, tick * 0.17);
-    const radius = (d: ImbDot): number => r1(r * Math.min(3, Math.sqrt(d.weight)));
+    // a dot's area is proportional to its class weight
+    const radius = (d: ImbDot): number => r1(r * Math.min(MAX_WEIGHT_SCALE, Math.sqrt(d.weight)));
     const cls = (d: ImbDot): string => {
       const parts = ['pt', d.cls === 1 ? 'pos' : 'neg'];
       if (d.synthetic) {

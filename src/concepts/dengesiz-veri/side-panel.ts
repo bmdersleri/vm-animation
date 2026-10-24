@@ -61,6 +61,8 @@ interface Plan {
   metricCols: number;
   bookLines: string[];
   bookH: number;
+  noteLines: string[];
+  noteH: number;
   /** Everything except the matrix cells. */
   fixed: number;
   cellMin: number;
@@ -77,6 +79,7 @@ export class SidePanel {
   private readonly matrixG: G;
   private readonly metricsG: G;
   private readonly bookG: G;
+  private readonly noteG: G;
   private readonly bars: HBarsLayer;
   private readonly matrix: MatrixLayer;
 
@@ -89,6 +92,7 @@ export class SidePanel {
     this.matrixG = g.append('g').attr('class', 'sp-matrix');
     this.metricsG = g.append('g').attr('class', 'sp-metrics');
     this.bookG = g.append('g').attr('class', 'sp-book');
+    this.noteG = g.append('g').attr('class', 'sp-note');
     this.bars = new HBarsLayer(this.barsG, measure);
     this.matrix = new MatrixLayer(this.matrixG, measure);
   }
@@ -105,6 +109,8 @@ export class SidePanel {
     }
     const bookLines = v.book ? wrapCode(v.book, w - 8, (t) => this.measure.width(t, 'book-code', tick)) : [];
     const bookH = bookLines.length ? bookLines.length * tick * 1.35 + tick * 0.6 : 0;
+    const noteLines = v.note ? this.measure.wrap(v.note, w - 8, 'tick', tick) : [];
+    const noteH = noteLines.length ? noteLines.length * tick * 1.35 + tick * 0.4 : 0;
     const titleH = axis * level.title;
     const barsH = tick * level.bars;
     const headH = v.matrix ? tick * 3.1 : 0;
@@ -116,7 +122,9 @@ export class SidePanel {
       metricCols,
       bookLines,
       bookH,
-      fixed: titleH + barsH + metricsH + bookH + headH,
+      noteLines,
+      noteH,
+      fixed: titleH + barsH + noteH + metricsH + bookH + headH,
       cellMin: tick * 1.7,
       cellMax: tick * level.cellMax,
     };
@@ -161,6 +169,16 @@ export class SidePanel {
       ms: o.ms,
     });
     y += p.barsH;
+
+    this.noteG
+      .selectAll<SVGTextElement, string>('text.note-line')
+      .data(p.noteLines)
+      .join('text')
+      .attr('class', 'note-line')
+      .attr('x', r1(rect.x + 4))
+      .attr('y', (_, i) => r1(y + tick * 1.35 * (i + 0.8)))
+      .text((d) => d);
+    y += p.noteH;
 
     if (v.matrix) {
       const cell = Math.max(p.cellMin, Math.min(p.cellMax, (rect.h - p.fixed) / 2));

@@ -29,11 +29,13 @@ export interface MatrixOptions {
   /** When true the actual-churner row (fn, tp) is emphasised. */
   focusPositive: boolean;
   ms: number;
+  /** Drops the "tahmin" / "gerçek" titles and their room (a stack of matrices explains them once). */
+  compact?: boolean;
 }
 
 /** Height (px) the matrix needs for a given tick size and cell height. */
-export function matrixHeight(tick: number, cellH: number): number {
-  return tick * 3.1 + cellH * 2;
+export function matrixHeight(tick: number, cellH: number, compact = false): number {
+  return tick * (compact ? 1.7 : 3.1) + cellH * 2;
 }
 
 /**
@@ -65,7 +67,7 @@ export class MatrixLayer {
     const { rect, tick, axis } = o;
     const gap = Math.round(tick * 0.4);
     const nameW = this.measure.maxWidth([...CLASS_NAMES], 'tick', tick) + gap;
-    const head = tick * 3.1;
+    const head = tick * (o.compact ? 1.7 : 3.1);
     const cellW = Math.max(40, (rect.w - nameW) / 2);
     const cellH = Math.max(tick * 1.6, (rect.h - head) / 2);
     const x0 = rect.x + nameW;
@@ -74,12 +76,12 @@ export class MatrixLayer {
       .select('text.matrix-title')
       .attr('x', r1(x0 + cellW))
       .attr('y', r1(rect.y + axis))
-      .text('tahmin');
+      .text(o.compact ? '' : 'tahmin');
     this.g
       .select('text.matrix-row-title')
       .attr('x', r1(x0 - gap))
       .attr('y', r1(rect.y + head - tick * 0.5))
-      .text('gerçek');
+      .text(o.compact ? '' : 'gerçek');
     this.g.selectAll<SVGTextElement, unknown>('text.matrix-col-name').each(function () {
       const i = Number(this.getAttribute('data-class'));
       this.setAttribute('x', String(r1(x0 + cellW * (i + 0.5))));

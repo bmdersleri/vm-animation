@@ -48,3 +48,70 @@
 .imb-plot .metric-name { font-weight:600; }
 .imb-plot .metric-value { font-weight:700; }
 .imb-plot .book-code { font-family:ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size:var(--fs-tick); fill-opacity:.85; }
+
+/* step 6-8: two small panels, copy badges, the weight note */
+.imb-plot .panel-title { font-weight:700; }
+.imb-plot .panel-sub { font-size:var(--fs-tick); fill-opacity:.85; }
+.imb-plot .copy-badge rect { fill:var(--surface); fill-opacity:.92; stroke:#A85A00; stroke-width:1.2; }
+.imb-plot .copy-badge text { font-weight:700; fill:#A85A00; }
+.imb-plot .note-line { fill-opacity:.9; }
+
+/* step 9: boundary lines (plain, dashed, dotted), their names, the outside note, the matrices column */
+.imb-plot .boundary-line { fill:none; stroke-linecap:round; stroke-width:3.5; }
+.imb-plot .boundary-line.is-selected { stroke-width:5.5; }
+.imb-plot .boundary-line[data-method='yok'] { stroke:var(--navy); }
+.imb-plot .boundary-line[data-method='smote'] { stroke:#0B7473; stroke-dasharray:12 7; }
+.imb-plot .boundary-line[data-method='agirlik'] { stroke:#B3261E; stroke-dasharray:0.1 8; stroke-width:5; }
+.imb-plot .bs-item .bs-sample { stroke-width:4; stroke-linecap:round; }
+.imb-plot .bs-item[data-method='yok'] .bs-sample { stroke:var(--navy); }
+.imb-plot .bs-item[data-method='smote'] .bs-sample { stroke:#0B7473; stroke-dasharray:10 6; }
+.imb-plot .bs-item[data-method='agirlik'] .bs-sample { stroke:#B3261E; stroke-dasharray:0.1 8; stroke-width:5; }
+.imb-plot .bs-name { font-weight:600; }
+.imb-plot .bs-item.is-selected .bs-name { font-weight:800; text-decoration:underline; text-underline-offset:3px; }
+.imb-plot .sp-caption { font-size:var(--fs-tick); fill-opacity:.8; }
+.imb-plot .boundary-label { font-weight:700; paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
+.imb-plot .boundary-label[data-method='yok'] { fill:var(--navy); }
+.imb-plot .boundary-label[data-method='smote'] { fill:#0B7473; }
+.imb-plot .boundary-label[data-method='agirlik'] { fill:#B3261E; }
+.imb-plot .boundary-label.is-selected { text-decoration:underline; text-underline-offset:3px; }
+.imb-plot .outside-note { font-weight:600; fill:#A85A00; }
+
+/* step 10: the comparison table (HTML: it wraps and scrolls, never clips) */
+.imb-boundary-host { overflow-x:hidden; overflow-y:auto; }
+.imb-compare { padding:6px 4px 10px; }
+.imb-compare[hidden] { display:none; }
+.imb-table { width:100%; border-collapse:collapse; font-size:var(--fs-tick); font-variant-numeric:tabular-nums; }
+.imb-table th, .imb-table td { padding:.45em .6em; border-bottom:1.5px solid var(--navy-soft); text-align:right; }
+.imb-table th:first-child, .imb-table td:first-child { text-align:left; font-weight:700; }
+.imb-table thead th { font-weight:700; border-bottom:2.5px solid var(--navy); }
+.imb-table tr.is-selection td { background:var(--navy-soft); font-weight:600; }
+.imb-compare-note { margin:12px 0 6px; font-size:var(--fs-body); font-weight:600; line-height:1.35; }
+.imb-links { margin:0; display:flex; flex-wrap:wrap; gap:6px 24px; font-size:var(--fs-body); }
+.imb-links a { color:var(--navy); text-decoration:underline; text-underline-offset:3px; }
+.imb-links a:hover { color:#A85A00; }
+.imb-links a:focus-visible { outline:2px solid var(--navy); outline-offset:4px; }
+@media (max-width:700px) {
+  .imb-table, .imb-table tbody, .imb-table tr, .imb-table td { display:block; width:100%; }
+  .imb-table thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  .imb-table tr { padding:6px 0; border-bottom:2.5px solid var(--navy-soft); }
+  .imb-table td { display:flex; justify-content:space-between; gap:12px; border-bottom:0; padding:.2em .4em; text-align:right; }
+  .imb-table td::before { content:attr(data-label); font-weight:600; text-align:left; }
+}
+
+/* Lab: controls and note */
+.imb-params { display:grid; gap:8px; }
+.imb-params .ctl { min-width:0; }
+.imb-params .ctl.range { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 8px; }
+.imb-params .ctl.select { display:grid; grid-template-columns:minmax(0,1fr); gap:4px; }
+.imb-params .ctl.toggle { display:flex; align-items:center; gap:8px; min-height:var(--ctl); }
+.imb-params .ctl.toggle input { width:20px; height:20px; accent-color:var(--navy); }
+.imb-params .ctl-label { font-weight:600; }
+.imb-params .imb-value { font-weight:700; font-variant-numeric:tabular-nums; }
+.imb-params input[type='range'] { grid-column:1 / -1; width:100%; min-height:var(--ctl); margin:0; accent-color:var(--navy); }
+.imb-params select { min-height:var(--ctl); padding:0 .5em; border:2px solid var(--navy); border-radius:8px; background:var(--surface); }
+.imb-params button { min-height:var(--ctl); padding:0 1em; border:2px solid var(--navy); border-radius:8px; background:var(--surface); color:var(--navy); font-weight:600; cursor:pointer; }
+.imb-params button:hover { background:var(--navy-soft); }
+.imb-params .ctl[data-off], .imb-params[data-off] { display:none; }
+[data-mode='lab'] .imb-params { gap:4px; }
+[data-mode='lab'] .imb-params input[type='range'] { min-height:30px; }
+.imb-extra p { margin:0 0 8px; }

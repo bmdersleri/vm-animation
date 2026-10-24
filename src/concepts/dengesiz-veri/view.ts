@@ -1,8 +1,9 @@
 import { formatNumber as f, formatPercent as pct } from '../../core/plot/format';
 import { metrics, type Confusion } from '../degerlendirme/metrics';
 import { UNDEFINED_TEXT } from '../degerlendirme/ui';
-import { BOOK01, CUSTOMERS, MODELS2D } from '../dengesiz/data';
+import { BOOK01, CUSTOMERS } from '../dengesiz/data';
 import { fromScaled } from '../dengesiz/smote';
+import { METHODS, resultFor, weightsFor, type Method, type MethodResult, type Segment } from './boundary';
 import {
   BALANCED,
   COUNTS,
@@ -54,6 +55,50 @@ export interface ExampleView {
   lambda: number;
 }
 
+/** One boundary line of step 9: the clipped segment, or the note when it misses the plot. */
+export interface LineView {
+  method: Method;
+  label: string;
+  segment: Segment | null;
+  note: string | null;
+  /** The Lab's chosen method (never set in Ders). */
+  selected: boolean;
+}
+
+/** The test matrix of one method. */
+export interface MatrixView {
+  method: Method;
+  label: string;
+  matrix: Confusion;
+}
+
+/** Step 9: three lines, three matrices at one threshold. */
+export interface BoundaryView {
+  threshold: number;
+  lines: LineView[];
+  matrices: MatrixView[];
+}
+
+/** One row of the step-10 comparison table (already formatted). */
+export interface TableRow {
+  id: string;
+  label: string;
+  caught: string;
+  falseAlarm: string;
+  precision: string;
+  recall: string;
+  ap: string;
+  /** The Lab's fourth row. */
+  selection: boolean;
+}
+
+/** Step 10: the comparison table, its closing sentence and the links. */
+export interface TableView {
+  rows: TableRow[];
+  note: string;
+  links: { href: string; label: string }[];
+}
+
 /** Everything a scene draws for one (step, parameters) pair. */
 export interface ImbView {
   kind: ImbKind;
@@ -72,6 +117,10 @@ export interface ImbView {
   example: ExampleView | null;
   /** Random-oversampling copies per training churner (step 7). */
   copies: number[] | null;
+  /** A short explanation under the count bars (step 8: what a dot's area means). */
+  note: string | null;
+  boundary: BoundaryView | null;
+  table: TableView | null;
 }
 
 const BOOK_LINES: Record<string, string> = {
@@ -103,14 +152,6 @@ function exampleStrip(e: Example): string {
   ].join('\n');
 }
 
-/** Class weight of a churner for the page's weight choice. */
-function positiveWeight(p: ImbParams): number {
-  if (p.weight === 'dengeli') {
-    return BALANCED.pos;
-  }
-  return p.weight === 'elle' ? p.manualWeight : 1;
-}
-
 /** The dots of the customers (all, or the training part only), churners drawn last. */
 function customerDots(includeTest: boolean, weights: { neg: number; pos: number }): ImbDot[] {
   const dots: ImbDot[] = [];
@@ -132,6 +173,36 @@ function customerDots(includeTest: boolean, weights: { neg: number; pos: number 
   return dots.sort((a, b) => a.cls - b.cls);
 }
 
+/** The test customers' dots (step 9), churners drawn last. */
+function testDots(): ImbDot[] {
+  return customerDots(true, { neg: 1, pos: 1 }).filter((d) => d.test);
+}
+
+/** Row of the comparison table for a method result. */
+function tableRow(id: string, r: MethodResult, label: string, selection: boolean): TableRow {
+  const m = metrics(r.matrix);
+  const ratio = (v: number | null): string => (v === null ? UNDEFINED_TEXT : f(v, 3));
+  return {
+    id,
+    label,
+    caught: `${r.matrix.tp} / ${r.matrix.tp + r.matrix.fn}`,
+    falseAlarm: String(r.matrix.fp),
+    precision: ratio(m.precision),
+    recall: ratio(m.recall),
+    ap: ratio(r.ap),
+    selection,
+  };
+}
+
+/** The sentence under the comparison table. */
+export const COMPARE_NOTE = 'Dengeleme sıralamayı değil eşiği kaydırdı: aynı şeyi eşiği düşürerek de elde edebilirdik.';
+
+/** Ders-end links of the comparison step. */
+export const COMPARE_LINKS: { href: string; label: string }[] = [
+  { href: '../smote-sizinti/', label: 'SMOTE sızıntısı ve PR-AUC' },
+  { href: '../roc-esik/', label: 'Bölüm 6: ROC, PR ve karar eşiği' },
+];
+
 /** The step-6 scatter source: training customers plus the synthetic points. */
 function smoteDots(p: ImbParams): ImbDot[] {
   const dots = customerDots(false, { neg: 1, pos: 1 });
@@ -143,10 +214,10 @@ function smoteDots(p: ImbParams): ImbDot[] {
 }
 
 /**
- * The view of step `index` for the parameters `p`. Steps 1-5 are fully derived; steps 6-10 carry
- * their scenario ids, points and strip for the Task 3 scenes (`kind` smote / weight / boundary).
+ * The view of step `index` for the parameters `p`. `lab` adds the Lab-only parts (the chosen
+ * method's emphasis and the comparison table's fourth row).
  */
-export function deriveImbView(index: number, p: ImbParams): ImbView {
+export function deriveImbView(index: number, p: ImbParams, lab = false): ImbView {
   const id = scenario.steps[index].id;
   const base: ImbView = {
     kind: 'scatter',
@@ -161,6 +232,9 @@ export function deriveImbView(index: number, p: ImbParams): ImbView {
     book: BOOK_LINES[id] ?? null,
     example: null,
     copies: null,
+    note: null,
+    boundary: null,
+    table: null,
   };
   const trainCounts: CountsView = { title: 'Eğitim kümesi', neg: COUNTS.train.neg, pos: COUNTS.train.pos };
   switch (id) {
@@ -224,6 +298,7 @@ export function deriveImbView(index: number, p: ImbParams): ImbView {
         dots: smoteDots(p),
         counts: { title: 'Eğitim kümesi', neg: COUNTS.train.neg, pos: COUNTS.train.pos + n },
         copies,
+        note: id === 'smote-doldur' ? `ayrılan ${COUNTS.train.pos} + ${n} sentetik` : null,
         strip:
           id === 'smote-doldur'
             ? `sentetik = ${COUNTS.train.neg} − ${COUNTS.train.pos} = ${n} · ayrılan = ${COUNTS.train.pos} + ${n} = ${COUNTS.train.pos + n}`
@@ -231,25 +306,56 @@ export function deriveImbView(index: number, p: ImbParams): ImbView {
       };
     }
     case 'agirlik': {
-      const w = { neg: p.weight === 'yok' ? 1 : BALANCED.neg, pos: positiveWeight(p) };
+      const w = weightsFor(p);
       const total = COUNTS.train.neg + COUNTS.train.pos;
       return {
         ...base,
         kind: 'weight',
         dots: customerDots(false, w),
         counts: trainCounts,
-        strip: `ayrılan ağırlığı = ${total} / (2 · ${COUNTS.train.pos}) = ${f(BALANCED.pos, 2)} · kalan ağırlığı = ${total} / (2 · ${COUNTS.train.neg}) = ${f(BALANCED.neg, 2)}`,
+        note:
+          p.weight === 'yok'
+            ? 'Ağırlık yok: bütün noktalar aynı boyda.'
+            : `Nokta alanı ağırlıkla orantılı: ayrılan ${f(w.pos, 2)}, kalan ${f(w.neg, 2)}.`,
+        strip: `ayrılan ${f(BALANCED.pos, 2)} = ${total} / (2 · ${COUNTS.train.pos}) · kalan ${f(BALANCED.neg, 2)} = ${total} / (2 · ${COUNTS.train.neg})`,
       };
     }
     default: {
-      const m = MODELS2D;
-      const row = (c: Confusion): string => `${c.tp} / ${c.tp + c.fn}`;
+      const test = { title: `Test kümesi (${COUNTS.test.neg + COUNTS.test.pos})`, neg: COUNTS.test.neg, pos: COUNTS.test.pos };
+      const caught = (c: Confusion): string => `${c.tp} / ${c.tp + c.fn}`;
+      if (id === 'sinir') {
+        const results = METHODS.map((m) => resultFor(m.id, p, p.threshold));
+        return {
+          ...base,
+          kind: 'boundary',
+          dots: testDots(),
+          counts: test,
+          boundary: {
+            threshold: p.threshold,
+            lines: results.map((r) => ({
+              method: r.method,
+              label: r.label,
+              segment: r.segment,
+              note: r.note,
+              selected: lab && r.method === p.method,
+            })),
+            matrices: results.map((r) => ({ method: r.method, label: r.label, matrix: r.matrix })),
+          },
+          strip: `eşik p = ${f(p.threshold, 2)} · yakalanan: ${results.map((r) => `${r.label} ${caught(r.matrix)}`).join(' · ')}`,
+        };
+      }
+      const rows = METHODS.map((m) => tableRow(m.id, resultFor(m.id, p, 0.5), m.label, false));
+      if (lab) {
+        const chosen = resultFor(p.method, p, p.threshold);
+        rows.push(tableRow('secim', chosen, `seçim: ${chosen.label}, eşik ${f(p.threshold, 2)}`, true));
+      }
       return {
         ...base,
         kind: 'boundary',
-        dots: customerDots(true, { neg: 1, pos: 1 }),
-        counts: { title: `Test kümesi (${COUNTS.test.neg + COUNTS.test.pos})`, neg: COUNTS.test.neg, pos: COUNTS.test.pos },
-        strip: `yakalanan: ağırlıksız ${row(m.base.matrix)} · SMOTE ${row(m.smote.matrix)} · ağırlıklı ${row(m.weighted.matrix)}`,
+        dots: [],
+        counts: test,
+        table: { rows, note: COMPARE_NOTE, links: COMPARE_LINKS },
+        strip: `PR-AUC: ${rows.map((r) => `${r.label} ${r.ap}`).join(' · ')}`,
       };
     }
   }

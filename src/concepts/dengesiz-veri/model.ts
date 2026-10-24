@@ -85,6 +85,10 @@ export function copiesFor(seed: number, ratio: number): number[] {
   return out;
 }
 
+/** Tenure (months) and monthly charge ranges of the scatter (the visible plot rectangle). */
+export const X_DOMAIN: [number, number] = [0, 72];
+export const Y_DOMAIN: [number, number] = [15, 125];
+
 /** A plane position in the original units. */
 export interface Place {
   tenure: number;
