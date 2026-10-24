@@ -58,14 +58,12 @@ export const smoteSizintiScenario: Scenario<LeakParams> = {
       term: 'veri sızıntısı (data leakage)',
       text: `Bütün veri ${ALL_COUNTS.neg} / ${ALL_COUNTS.pos} iken SMOTE onu ${ALL_COUNTS.neg} / ${ALL_COUNTS.neg} yapar (${smoteAdded} sentetik). Sonra katmansız 70/30 bölme: test ${run.leaky.n} satır, ${leakyPos} ayrılan, bunların ${synth} sentetik.`,
       labText: 'Sırayı ve tohumu değiştirin: doğru sırada test kümesine hiç sentetik satır girmez, sayımlar buna göre yeniden çizilir.',
-      params: { order: 'yanlis' },
     },
     {
       id: 'testte-ne-var',
       title: 'Testte ne var?',
       text: `Testteki bir sentetik nokta ve iki ebeveyni; ikisi de eğitimde. Sentetik test noktalarının ${pct(run.leaky.parentInTrain / synth, 0)} kadarının en az bir ebeveyni eğitimde: model sınavda, ezberlediği noktaların arasını görüyor.`,
       labText: 'Sırayı ve tohumu değiştirin: doğru sırada testte sentetik nokta bulunmaz, bu yüzden örnek çizilmez; başka tohumlarda yalnızca oran yazılır.',
-      params: { order: 'yanlis' },
     },
     {
       id: 'pr-taban',

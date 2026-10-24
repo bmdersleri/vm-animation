@@ -69,6 +69,25 @@ describe('SMOTE-leakage Lab controls', () => {
     expect(el.querySelectorAll('.flow-bar.bar-synth').length).toBeGreaterThan(0);
   });
 
+  it('the order chosen on step 1 carries through steps 2 to 5', () => {
+    const { host, el, player } = setup();
+    player.goto(step('iki-sira'));
+    choose(ctl(host, 'order'), 'dogru');
+    for (const id of ['once-smote', 'testte-ne-var', 'pr-taban', 'iki-skor']) {
+      player.next();
+      expect(sc.steps[player.state.index].id).toBe(id);
+      expect(player.state.params.order, id).toBe('dogru');
+      expect((ctl(host, 'order') as unknown as HTMLSelectElement).value, id).toBe('dogru');
+    }
+    // step 2 on the right order: no synthetic rows reach the test set
+    player.goto(step('once-smote'));
+    expect(el.querySelectorAll('.flow-bar.bar-synth')).toHaveLength(0);
+    // step 4 on the right order: the honest curve is the emphasised one
+    player.goto(step('pr-taban'));
+    expect(el.querySelector('path.lc-series.is-honest')!.getAttribute('class')).toContain('is-selected');
+    expect(el.querySelector('path.lc-series.is-leaky')!.getAttribute('class')).not.toContain('is-selected');
+  });
+
   it('seed choice changes both scores', () => {
     const { host, el, player } = setup();
     player.goto(step('iki-skor'));

@@ -67,11 +67,16 @@ describe('smote-sizinti scenario', () => {
     expect(s.values).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it('the player resets the order at steps 2 and 3', () => {
+  it('no step forces the order, so the Lab choice of step 1 carries on', () => {
+    for (const s of sc.steps) {
+      expect(s.params ?? {}, s.id).not.toHaveProperty('order');
+    }
     const player = new StepPlayer(sc);
     player.setParams({ order: 'dogru' });
-    player.goto(1);
-    expect(player.state.params.order).toBe('yanlis');
+    for (let i = 1; i < 5; i++) {
+      player.goto(i);
+      expect(player.state.params.order, sc.steps[i].id).toBe('dogru');
+    }
     player.destroy();
   });
 });
