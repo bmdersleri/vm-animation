@@ -33,7 +33,7 @@ export interface LineChartSpec {
   yTitle: string;
   series: LineSeries[];
   refs?: LineRef[];
-  marker?: { x: number; y: number; label: string } | null;
+  marker?: { x: number; y: number; label: string; cls?: string } | null;
   /** Fixed labelled points (e.g. the curve's first value), drawn small beside the moving marker. */
   pins?: { x: number; y: number; label: string; cls?: string }[];
   /** Explicit tick values (e.g. the integers 1-8); default is the d3 tick choice. */
@@ -258,7 +258,7 @@ export class LineChartLayer {
       .selectAll<SVGCircleElement, unknown>('circle.lc-marker')
       .data(marker ? [marker] : [])
       .join('circle')
-      .attr('class', 'lc-marker')
+      .attr('class', (d) => (d.cls ? `lc-marker ${d.cls}` : 'lc-marker'))
       .attr('fill', NAVY)
       .attr('r', half)
       .attr('cx', r1(mx))

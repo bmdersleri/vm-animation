@@ -7,7 +7,8 @@ import { ALL_COUNTS, DEFAULT_SEED, leakFor, matchCaught, positiveRate } from './
 /**
  * Parameters of the SMOTE-leakage page. `order` is the order of the split and SMOTE, `seed` the SMOTE seed,
  * `fold` the cross-validation fold (0 = all five), `show` the curve switches of step 7, `model` and
- * `threshold` the step-8 choice, `fixed` the corrected code of step 9.
+ * `threshold` the step-8 choice, `bug` how many of the five bugs step 9 has marked (6 = all marked, the
+ * corrected code follows) and `fixed` the Lab's corrected-code switch.
  */
 export interface LeakParams {
   order: 'yanlis' | 'dogru';
@@ -16,6 +17,7 @@ export interface LeakParams {
   show: { base: boolean; smote: boolean; weighted: boolean };
   model: 'base' | 'smote' | 'weighted';
   threshold: number;
+  bug: number;
   fixed: boolean;
 }
 
@@ -40,6 +42,7 @@ export const smoteSizintiScenario: Scenario<LeakParams> = {
     show: { base: true, smote: true, weighted: true },
     model: 'smote',
     threshold: 0.5,
+    bug: 0,
     fixed: false,
   },
   steps: [
@@ -102,6 +105,7 @@ export const smoteSizintiScenario: Scenario<LeakParams> = {
       id: 'hata-ayiklama',
       title: 'Hata ayıklama',
       text: 'Kitabın ChurnDebug kodunda beş hata var: SMOTE bölmeden önce; model test verisinde eğitiliyor; yalnız doğruluğa bakılıyor; random_state yok; stratify yok. Hatalı satırlar sırayla işaretlenir, sonra düzeltilmiş kod gelir.',
+      sweep: { key: 'bug', values: [1, 2, 3, 4, 5, 6], intervalMs: 1400 },
       labText: 'Düzeltilmiş kodu göster anahtarıyla hatalı ve düzeltilmiş hâli arasında geçiş yapın.',
     },
     {

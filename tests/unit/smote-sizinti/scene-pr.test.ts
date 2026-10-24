@@ -34,7 +34,7 @@ const texts = (el: HTMLElement, sel: string) => [...el.querySelectorAll(sel)].ma
 /** Boxes of the plot's text labels (width from the character count at jsdom's 16 px). */
 function labelBoxes(el: HTMLElement): { name: string; box: Box }[] {
   const out: { name: string; box: Box }[] = [];
-  for (const t of el.querySelectorAll('text.lc-pin-label, text.score-name, text.score-big, text.score-book')) {
+  for (const t of el.querySelectorAll('text.lc-pin-label, text.legend-label, text.score-name, text.score-big, text.score-book')) {
     // jsdom resolves every font to its 16 px default (no theme CSS), so tick and title sizes are equal here
     out.push({
       name: t.textContent!,
@@ -102,8 +102,7 @@ describe('PR scene', () => {
 
   it('the curve names and floor labels do not overlap at 1280 and 390 px', () => {
     for (const [w, h] of [[1280, 540], [390, 520]] as const) {
-      // the three-curve step 7 is checked at full width only; its narrow layout belongs to the Lab task
-      for (const id of w >= 1000 ? ['pr-taban', 'iki-skor', 'smote-agirlik'] : ['pr-taban', 'iki-skor']) {
+      for (const id of ['pr-taban', 'iki-skor', 'smote-agirlik']) {
         const { el, player } = setup(w, h);
         go(player, id);
         const boxes = labelBoxes(el);

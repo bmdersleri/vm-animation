@@ -1,9 +1,10 @@
 import { formatNumber as f, formatPercent as pct } from '../../core/plot/format';
 import type { HBar } from '../../core/plot/hbars';
 import { classify, type ScoredSample } from '../degerlendirme/curves';
-import { metrics } from '../degerlendirme/metrics';
+import { metrics, type Confusion } from '../degerlendirme/metrics';
+import { UNDEFINED_TEXT } from '../degerlendirme/ui';
 import { BOOK_NUMBERS, COMPARE, CUSTOMERS, CV, LEAK_EXAMPLE } from '../dengesiz/data';
-import { ALL_COUNTS, DEFAULT_SEED, leakFor, positiveRate, staircase, TRAIN_COUNTS } from './model';
+import { ALL_COUNTS, DEFAULT_SEED, leakFor, matchCaught, positiveRate, staircase, TRAIN_COUNTS } from './model';
 import { smoteSizintiScenario as scenario, type LeakParams } from './scenario';
 
 /** Which scene area draws the step. */
@@ -65,6 +66,13 @@ export interface BigScore {
   cls: string;
 }
 
+/** Step 8: the confusion matrix and the lines written beside the curve. */
+export interface PrPanel {
+  matrix: Confusion;
+  /** "27 / 37 yakalandı · kesinlik 0,129" and the line naming the unweighted model's threshold at the same recall. */
+  lines: string[];
+}
+
 /** The PR area: curves, floors, the large scores of step 5 and the step-8 marker. */
 export interface PrView {
   series: PrSeries[];
@@ -73,6 +81,33 @@ export interface PrView {
   /** Small note under the large scores. */
   note: string | null;
   marker: { x: number; y: number; label: string } | null;
+  panel: PrPanel | null;
+}
+
+/** One cross-validation fold of step 6 (counts as drawn, the score formatted). */
+export interface FoldRow {
+  fold: number;
+  trainNeg: number;
+  trainPos: number;
+  smoteNeg: number;
+  smotePos: number;
+  valNeg: number;
+  valPos: number;
+  ap: string;
+}
+
+/** Step 6: the five fold rows, the selected fold (0 = none), the mean and the book's lines. */
+export interface FoldsView {
+  rows: FoldRow[];
+  selected: number;
+  mean: string;
+  book: string;
+}
+
+/** Step 9: how many bugs are marked (0-5) and whether the corrected code is shown. */
+export interface CodeView {
+  bug: number;
+  fixed: boolean;
 }
 
 /** Everything a scene draws for one (step, parameters) pair. */
@@ -82,6 +117,8 @@ export interface LeakView {
   strip: string;
   flow: FlowView | null;
   pr: PrView | null;
+  folds: FoldsView | null;
+  code: CodeView | null;
 }
 
 const ORDERS: Order[] = ['yanlis', 'dogru'];
@@ -185,7 +222,7 @@ function exampleView(p: LeakParams): { flow: FlowView; strip: string } {
   return { flow, strip: `ebeveyni eğitimde: ${parentInTrain} / ${synthPos} = ${pct(parentInTrain / synthPos, 0)}` };
 }
 
-const empty = (kind: LeakKind, id: string, strip = ''): LeakView => ({ kind, stepId: id, strip, flow: null, pr: null });
+const empty = (kind: LeakKind, id: string, strip = ''): LeakView => ({ kind, stepId: id, strip, flow: null, pr: null, folds: null, code: null });
 
 const series = (id: string, cls: string, samples: readonly ScoredSample[], score: number | null, selected: boolean, name: string): PrSeries => ({
   id,
@@ -213,11 +250,12 @@ function twoCurves(id: string, p: LeakParams): LeakView {
     big: null,
     note: null,
     marker: null,
+    panel: null,
   };
   if (!withScore) {
     const count = (s: readonly ScoredSample[]): string => `${s.filter((x) => x.actual === 1).length} / ${s.length}`;
     const strip = `taban = pozitif oran · sızıntılı ${count(run.leaky.scores)} = ${f(leakyRate, 3)} · sızıntısız ${count(run.honest.scores)} = ${f(honestRate, 3)}`;
-    return { kind: 'pr', stepId: id, strip, flow: null, pr };
+    return { ...empty('pr', id, strip), pr };
   }
   pr.big = [
     { id: 'leaky', label: 'sızıntılı', value: ap(run.leaky.ap), cls: 'is-leaky' },
@@ -225,10 +263,26 @@ function twoCurves(id: string, p: LeakParams): LeakView {
   ];
   pr.note = `kitap ${ap(BOOK_NUMBERS.leaky)} / ${ap(BOOK_NUMBERS.honest)}`;
   const strip = `PR-AUC: sızıntılı ${ap(run.leaky.ap)} · sızıntısız ${ap(run.honest.ap)} · kitap ${ap(BOOK_NUMBERS.leaky)} / ${ap(BOOK_NUMBERS.honest)}`;
-  return { kind: 'pr', stepId: id, strip, flow: null, pr };
+  return { ...empty('pr', id, strip), pr };
 }
 
-/** Steps 7 and 8 share the three-model PR area (Task 5 adds the Lab controls' details). */
+/** The book's "Sık yanlış anlama" box, shortened to one sentence for the strip of step 7. */
+const MISCONCEPTION =
+  'Sık yanlış anlama: "SMOTE her zaman class_weight\'ten daha iyi" sanılır · seçim veri miktarına, azınlık sayısına ve modele bağlıdır.';
+
+const precisionText = (v: number | null): string => (v === null ? UNDEFINED_TEXT : ap(v));
+
+/** Step 8's side lines: the caught count and precision, and where the unweighted model reaches the same recall. */
+function thresholdLines(model: LeakParams['model'], c: Confusion, precision: number | null): string[] {
+  const lines = [`${c.tp} / ${c.tp + c.fn} yakalandı · kesinlik ${precisionText(precision)}`];
+  if (model !== 'base' && c.tp > 0) {
+    const same = matchCaught(COMPARE.base.scores, c.tp);
+    lines.push(`Ağırlıksız model aynı duyarlılığa en çok ${ap(same.threshold)} eşiğinde ulaşır, kesinliği ${ap(same.precision)}.`);
+  }
+  return lines;
+}
+
+/** Steps 7 and 8 share the three-model PR area; step 7 shows the switched-on curves, step 8 one model and its threshold. */
 function compareCurves(id: string, p: LeakParams): LeakView {
   const rate = positiveRate(COMPARE.base.scores);
   const models: LeakParams['model'][] = id === 'esik' ? [p.model] : MODELS.filter((m) => p.show[m]);
@@ -238,18 +292,54 @@ function compareCurves(id: string, p: LeakParams): LeakView {
     big: null,
     note: null,
     marker: null,
+    panel: null,
   };
   if (id !== 'esik') {
-    const strip = `PR-AUC: ${MODELS.map((m) => `${MODEL_NAMES[m]} ${ap(COMPARE[m].ap)}`).join(' · ')}`;
-    return { kind: 'pr', stepId: id, strip, flow: null, pr };
+    const strip = [`PR-AUC: ${MODELS.map((m) => `${MODEL_NAMES[m]} ${ap(COMPARE[m].ap)}`).join(' · ')}`, MISCONCEPTION].join('\n');
+    return { ...empty('pr', id, strip), pr };
   }
   const c = classify(COMPARE[p.model].scores, p.threshold);
   const m = metrics(c);
   if (m.precision !== null && m.recall !== null) {
     pr.marker = { x: m.recall, y: m.precision, label: `eşik ${f(p.threshold, 2)}` };
   }
-  const strip = `${MODEL_NAMES[p.model]} · eşik ${f(p.threshold, 2)} · yakalanan ${c.tp} / ${c.tp + c.fn} · kesinlik ${m.precision === null ? 'tanımsız' : ap(m.precision)}`;
-  return { kind: 'pr', stepId: id, strip, flow: null, pr };
+  pr.panel = { matrix: c, lines: thresholdLines(p.model, c, m.precision) };
+  const strip = `${MODEL_NAMES[p.model]} · eşik ${f(p.threshold, 2)} · yakalanan ${c.tp} / ${c.tp + c.fn} · kesinlik ${precisionText(m.precision)}`;
+  return { ...empty('pr', id, strip), pr };
+}
+
+/** The book's sentence about the pipeline (step 6 strip). */
+const PIPELINE_SENTENCE = 'imblearn Pipeline, örnekleyiciyi yalnız fit sırasında çalıştırır';
+
+/** The pipeline book line of step 6. */
+const PIPELINE_LINE = 'Pipeline(steps=[("olcekleme", …), ("smote", …), ("model", …)])';
+
+/** Step 6: the five fold rows with the selected fold and the mean. */
+function foldsView(id: string, p: LeakParams): LeakView {
+  const rows: FoldRow[] = CV.folds.map((fold, i) => ({
+    fold: i + 1,
+    trainNeg: fold.trainNeg,
+    trainPos: fold.trainPos,
+    smoteNeg: fold.smoteNeg,
+    smotePos: fold.smotePos,
+    valNeg: fold.valNeg,
+    valPos: fold.valPos,
+    ap: ap(fold.ap),
+  }));
+  const mean = ap(CV.mean);
+  const strip = [`ortalama PR-AUC = ${mean} · kitap ${ap(BOOK_NUMBERS.cv)}`, PIPELINE_SENTENCE].join('\n');
+  const selected = p.fold >= 1 && p.fold <= rows.length ? p.fold : 0;
+  return { ...empty('folds', id, strip), folds: { rows, selected, mean, book: PIPELINE_LINE } };
+}
+
+/** Step 9: the marked bug count (a sweep value 6 or the Lab switch brings the corrected code). */
+function codeView(id: string, p: LeakParams): LeakView {
+  const bug = Math.max(0, Math.min(5, Math.trunc(p.bug)));
+  const fixed = p.fixed || p.bug >= 6;
+  const strip = fixed
+    ? 'düzeltilmiş: önce böl (stratify, random_state) → SMOTE yalnız eğitimde → eğitimde eğit → PR-AUC'
+    : `işaretlenen hata: ${bug} / 5`;
+  return { ...empty('code', id, strip), code: { bug, fixed } };
 }
 
 /** The view of step `index` for the parameters `p`. */
@@ -261,15 +351,15 @@ export function deriveLeakView(index: number, p: LeakParams): LeakView {
         'yanlış: veri → SMOTE → böl → eğit → test',
         'doğru: veri → böl → SMOTE → eğit → test (SMOTE yalnız eğitim parçasında)',
       ].join('\n');
-      return { kind: 'flow', stepId: id, strip, flow: emptyFlow('rows', p), pr: null };
+      return { ...empty('flow', id, strip), flow: emptyFlow('rows', p) };
     }
     case 'once-smote': {
       const { flow, strip } = countsView(p);
-      return { kind: 'flow', stepId: id, strip, flow, pr: null };
+      return { ...empty('flow', id, strip), flow };
     }
     case 'testte-ne-var': {
       const { flow, strip } = exampleView(p);
-      return { kind: 'flow', stepId: id, strip, flow, pr: null };
+      return { ...empty('flow', id, strip), flow };
     }
     case 'pr-taban':
     case 'iki-skor':
@@ -278,10 +368,12 @@ export function deriveLeakView(index: number, p: LeakParams): LeakView {
     case 'esik':
       return compareCurves(id, p);
     case 'pipeline':
-      return empty('folds', id, `ortalama PR-AUC = ${ap(CV.mean)} · kitap ${ap(BOOK_NUMBERS.cv)}`);
+      return foldsView(id, p);
     case 'hata-ayiklama':
-      return empty('code', id);
+      return codeView(id, p);
+    case 'baska-sizintilar':
+      return empty('cards', id, 'ölçekleyici, kodlayıcı, seçici, SMOTE → parametreler yalnız eğitim verisinden öğrenilir');
     default:
-      return empty('cards', id);
+      throw new RangeError(`no view for step "${id}"`);
   }
 }

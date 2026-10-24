@@ -63,6 +63,13 @@ describe('smote-sizinti view', () => {
     expect(v5.pr!.note).toBe('kitap 0,724 / 0,147');
   });
 
+  it('every step has a view and an unknown step throws', () => {
+    for (const s of sc.steps) {
+      expect(() => deriveLeakView(stepIndex(sc, s.id), sc.defaults)).not.toThrow();
+    }
+    expect(() => deriveLeakView(sc.steps.length, sc.defaults)).toThrow();
+  });
+
   it('later steps reserve their areas', () => {
     expect(view('pipeline').kind).toBe('folds');
     expect(view('hata-ayiklama').kind).toBe('code');

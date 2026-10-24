@@ -5,7 +5,10 @@ import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { renderStrip } from '../../core/plot/strip';
 import { smoteSizintiScenario, type LeakParams } from './scenario';
 import type { ViewScene } from './scene-base';
+import { CardsScene } from './scene-cards';
+import { CodeScene } from './scene-code';
 import { FlowScene } from './scene-flow';
+import { FoldsScene } from './scene-folds';
 import { PrScene } from './scene-pr';
 import { deriveLeakView, type LeakKind } from './view';
 
@@ -16,13 +19,10 @@ const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 /** Milliseconds a step change animates. */
 const MS_STEP = 600;
 
-/** A view area whose drawing a later task fills (fold strip, code panel, cards). */
-const reserved = (): ViewScene => ({ resize() {}, update() {}, interrupt() {}, destroy() {} });
-
 /**
  * Scene host of the SMOTE-leakage page: a stage with five view areas (`data-view` = flow, pr, folds, code,
- * cards) above the formula strip. The flow area draws steps 1-3, the PR area steps 4, 5, 7 and 8; the other
- * three are reserved for steps 6, 9 and 10.
+ * cards) above the formula strip. The flow area draws steps 1-3, the PR area steps 4, 5, 7 and 8, the fold
+ * area step 6, the code area step 9 and the card area step 10.
  * Updates coalesce into one frame; controls render without interpolation.
  */
 export function mountLeakScene(
@@ -52,9 +52,9 @@ export function mountLeakScene(
   const scenes: Record<LeakKind, ViewScene> = {
     flow: new FlowScene(hosts.flow),
     pr: new PrScene(hosts.pr),
-    folds: reserved(),
-    code: reserved(),
-    cards: reserved(),
+    folds: new FoldsScene(hosts.folds),
+    code: new CodeScene(hosts.code),
+    cards: new CardsScene(hosts.cards),
   };
 
   let mode = initialMode;

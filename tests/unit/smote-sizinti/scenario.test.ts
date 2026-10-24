@@ -29,6 +29,7 @@ describe('smote-sizinti scenario', () => {
       show: { base: true, smote: true, weighted: true },
       model: 'smote',
       threshold: 0.5,
+      bug: 0,
       fixed: false,
     });
   });

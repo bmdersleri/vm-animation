@@ -1,6 +1,8 @@
 import '../../core/theme.css';
 import './smote-sizinti.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
+import { mountLeakParams } from './controls';
+import { mountLeakExtra } from './extra';
 import { smoteSizintiScenario, type LeakParams } from './scenario';
 import { mountLeakScene } from './scene';
 
@@ -9,7 +11,8 @@ const smoteSizintiPage: ConceptPage<LeakParams> = {
   chapter: 'Bölüm 11 · Dengesiz veri ve tuzaklar',
   scenario: smoteSizintiScenario,
   mountScene: mountLeakScene,
-  mountParams: () => {},
+  mountParams: mountLeakParams,
+  mountExplainExtra: mountLeakExtra,
 };
 
 const app = document.querySelector<HTMLElement>('#app');
