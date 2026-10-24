@@ -35,7 +35,7 @@ export interface LineChartSpec {
   refs?: LineRef[];
   marker?: { x: number; y: number; label: string } | null;
   /** Fixed labelled points (e.g. the curve's first value), drawn small beside the moving marker. */
-  pins?: { x: number; y: number; label: string }[];
+  pins?: { x: number; y: number; label: string; cls?: string }[];
   /** Explicit tick values (e.g. the integers 1-8); default is the d3 tick choice. */
   xTicks?: number[];
   yTicks?: number[];
@@ -221,7 +221,7 @@ export class LineChartLayer {
       .selectAll<SVGCircleElement, unknown>('circle.lc-pin')
       .data(pins)
       .join('circle')
-      .attr('class', 'lc-pin')
+      .attr('class', (d) => (d.cls ? `lc-pin ${d.cls}` : 'lc-pin'))
       .attr('r', pinHalf)
       .attr('cx', (d) => r1(sc.x(d.x)))
       .attr('cy', (d) => r1(sc.y(d.y)));
@@ -229,7 +229,7 @@ export class LineChartLayer {
       .selectAll<SVGTextElement, (typeof pins)[number]>('text.lc-pin-label')
       .data(pins)
       .join('text')
-      .attr('class', 'lc-pin-label tick');
+      .attr('class', (d) => (d.cls ? `lc-pin-label tick ${d.cls}` : 'lc-pin-label tick'));
     pinLabels.each((d, i, nodes) => {
       const px = sc.x(d.x);
       const py = sc.y(d.y);

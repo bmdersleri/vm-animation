@@ -36,6 +36,7 @@ export default defineConfig({
         'gradyan-artirma': resolve(root, 'gradyan-artirma/index.html'),
         'boosting-ayarlari': resolve(root, 'boosting-ayarlari/index.html'),
         'dengesiz-veri': resolve(root, 'dengesiz-veri/index.html'),
+        'smote-sizinti': resolve(root, 'smote-sizinti/index.html'),
       },
     },
   },
