@@ -211,7 +211,11 @@ function panelsFor(id: string, p: GbParams): { panels: PanelView; strip: string 
 const ERR_FLOOR = 1e-5;
 const logErr = (v: number): number => Math.log10(Math.max(v, ERR_FLOOR));
 
-/** An error as the strip writes it: 4 decimals, more while it would read as zero, "< 0,000001" below that. */
+/**
+ * An error as the strip writes it: 4 decimals, more while it would read as zero. The one exception to
+ * the 4-decimal rule: a near-zero training error (Lab, large ν with depth) would print as "0,000000"
+ * or "0,0000", which reads as exactly zero, so below 5e-7 it prints "< 0,000001".
+ */
 export function errText(v: number): string {
   return v < 5e-7 ? '< 0,000001' : formatNonZero(v, 4);
 }

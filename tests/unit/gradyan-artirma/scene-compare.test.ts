@@ -53,11 +53,42 @@ describe('compare scene', () => {
     for (const a of el.querySelectorAll('a.scene-link')) expect(a.getAttribute('aria-label')).toBeTruthy();
   });
 
-  it('step 10 fits a 390 px screen', () => {
-    const { el } = setup(390, 640);
-    const ys = [...el.querySelectorAll('text')].map((t) => Number(t.getAttribute('y'))).filter((y) => Number.isFinite(y));
-    expect(Math.max(...ys)).toBeLessThanOrEqual(640);
-    const right = [...el.querySelectorAll('rect.cmp-box')].map((r) => Number(r.getAttribute('x')) + Number(r.getAttribute('width')));
-    expect(Math.max(...right)).toBeLessThanOrEqual(390);
+  it('step 10 lays out without overlap at both widths', () => {
+    for (const [w, h] of [[1280, 540], [390, 640], [390, 420]] as const) {
+      const { el } = setup(w, h);
+      const host = el.querySelector('.gb-compare-host')!;
+      const svgH = Number(host.querySelector('svg')!.getAttribute('height'));
+      const rect = (r: Element) => ({
+        l: Number(r.getAttribute('x')),
+        t: Number(r.getAttribute('y')),
+        r: Number(r.getAttribute('x')) + Number(r.getAttribute('width')),
+        b: Number(r.getAttribute('y')) + Number(r.getAttribute('height')),
+      });
+      const boxes = [...host.querySelectorAll('rect.cmp-box')].map(rect);
+      expect(Math.max(...boxes.map((b) => b.r))).toBeLessThanOrEqual(w);
+      boxes.forEach((a, i) =>
+        boxes.slice(i + 1).forEach((b) => {
+          const apart = a.r <= b.l || b.r <= a.l || a.b <= b.t || b.b <= a.t;
+          expect(apart, `${w}x${h} boxes ${i}`).toBe(true);
+        }),
+      );
+      const y = (t: Element) => Number(t.getAttribute('y'));
+      const lowestBox = Math.max(...boxes.map((b) => b.b));
+      const rows = [...host.querySelectorAll('g.cmp-row text')].map(y);
+      const heads = [...host.querySelectorAll('text.cmp-head')].map(y);
+      // schemes above the table, the table above the links, everything inside the svg
+      expect(Math.min(...heads, ...rows)).toBeGreaterThan(lowestBox);
+      const links = [...host.querySelectorAll('a.scene-link text')].map(y);
+      expect(Math.min(...links)).toBeGreaterThan(Math.max(...rows));
+      expect(Math.max(...links)).toBeLessThanOrEqual(svgH);
+    }
+  });
+
+  it('step 10 keeps the label column clear of the first value column', () => {
+    const { el } = setup(1280, 540);
+    const labelX = Number(el.querySelector('text.cmp-label')!.getAttribute('x'));
+    const cellX = Number(el.querySelector('text.cmp-cell')!.getAttribute('x'));
+    // jsdom estimate of the longest label at the axis size (16 px, 0,62 em per character)
+    expect(cellX - labelX).toBeGreaterThanOrEqual('Tipik zayıf öğrenici derinliği'.length * 16 * 0.62);
   });
 });

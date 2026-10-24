@@ -37,17 +37,18 @@
 .gb-plot .book-row.filled text { fill-opacity:1; font-weight:700; }
 
 /* error chart (steps 7-9): curves, pins, marker, end labels */
-.gb-plot .lc-series { fill:none; stroke-width:3.5; stroke-linejoin:round; }
+.gb-plot .lc-series { fill:none; stroke-width:3; stroke-linejoin:round; }
 .gb-plot .lc-series.train { stroke:var(--navy); }
 .gb-plot .lc-series.val { stroke:#C26A00; }
 .gb-plot .lc-series.nu-0 { stroke:var(--navy); }
 .gb-plot .lc-series.nu-1 { stroke:#1E8A4C; }
 .gb-plot .lc-series.nu-2 { stroke:#C26A00; }
 .gb-plot .lc-series.nu-3 { stroke:#7A3E9D; }
-.gb-plot .lc-series.emph { stroke-width:6; }
+.gb-plot .lc-series.emph { stroke-width:4; }
 .gb-plot .lc-series.muted { opacity:.4; }
 .gb-plot .lc-pin { fill:var(--surface); stroke:var(--navy); stroke-width:2.5; }
 .gb-plot .lc-pin-label, .gb-plot .lc-label, .gb-plot .end-label, .gb-plot .no-dip { font-weight:600; paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
+.gb-plot .lc-pin-label { stroke-width:7px; }
 .gb-plot .lc-marker { fill:var(--orange); stroke:var(--navy); stroke-width:2; }
 .gb-plot .end-label { fill:var(--navy); }
 .gb-plot .end-label.val { fill:#A85A00; }
@@ -59,9 +60,9 @@
 
 /* step 9: the two F lines, hollow validation points, legend */
 .gb-plot .f-line.soft { stroke:var(--navy); stroke-width:4; }
-.gb-plot .f-line.zig { stroke:#C26A00; stroke-width:2.5; }
+.gb-plot .f-line.zig { stroke:#D9480F; stroke-width:3; stroke-linejoin:round; }
 .gb-plot .leg-soft line { stroke:var(--navy); stroke-width:4; }
-.gb-plot .leg-zig line { stroke:#C26A00; stroke-width:2.5; }
+.gb-plot .leg-zig line { stroke:#D9480F; stroke-width:3; }
 .gb-plot .leg-val circle { fill:none; stroke:#5B6F8A; stroke-width:2; }
 
 /* step 10: comparison scheme, book rows, links */
@@ -90,3 +91,6 @@
 [data-mode='lab'] .gb-params .ctl[data-off], [data-mode='lab'] .gb-params[data-off] { display:none; }
 [data-mode='lab'] .gb-params { gap:4px; }
 [data-mode='lab'] .gb-params input[type='range'] { min-height:30px; }
+
+/* step 10 may be taller than the stage on a narrow screen: scroll vertically, never sideways */
+.gb-compare-host { overflow-x:hidden; overflow-y:auto; }

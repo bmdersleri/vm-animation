@@ -1,14 +1,16 @@
 // @vitest-environment jsdom
-import { afterEach, describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { StepPlayer, stepIndex } from '../../../src/core/player';
 import { bestIndex } from '../../../src/concepts/boosting/boost';
 import { REG } from '../../../src/concepts/boosting/data';
 import { gradyanArtirmaScenario as sc, runFor } from '../../../src/concepts/gradyan-artirma/scenario';
 import { mountGbScene } from '../../../src/concepts/gradyan-artirma/scene';
+import { dodge } from '../../../src/concepts/gradyan-artirma/scene-error';
 import { formatNumber as f } from '../../../src/core/plot/format';
 
 const clean: (() => void)[] = [];
 afterEach(() => {
+  vi.unstubAllGlobals();
   clean.splice(0).forEach((fn) => fn());
   document.body.replaceChildren();
 });
@@ -91,6 +93,11 @@ describe('error scene', () => {
     // the small error chart replaces the lower panel
     expect(count(el, 'path.lc-series')).toBe(2);
     expect(count(el, 'line.zero-line')).toBe(0);
+    // the zigzag is drawn over the soft line, and the small chart has a short y title and no marker label
+    const order = [...el.querySelectorAll(`${HOST}path.f-line`)].map((p) => p.classList.contains('zig'));
+    expect(order).toEqual([false, true]);
+    expect(texts(el, 'g.axis.y text.axis-title, text.axis-title.y')).toContain('hata (log)');
+    expect(texts(el, 'text.lc-label')).toEqual(['']);
     // the long F has more pieces than the soft one
     const pieces = (cls: string) => el.querySelector(`${HOST}path.f-line.${cls}`)!.getAttribute('d')!.match(/M|L/g)!.length;
     expect(pieces('zig')).toBeGreaterThan(pieces('soft'));
@@ -118,5 +125,31 @@ describe('error scene', () => {
         expect(el.innerHTML).not.toMatch(/NaN|undefined|Infinity/);
       }
     }
+  });
+
+  it('reduced motion lands the sweeps on their last value at once', () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q }));
+    const { el, player } = setup();
+    go(player, 'tekrar');
+    expect(player.state.params.m).toBe(5);
+    go(player, 'durma');
+    expect(player.state.params.trees).toBe(200);
+    expect(texts(el, 'text.lc-label')).toEqual(['M = 200']);
+  });
+});
+
+describe('dodge', () => {
+  it('keeps the order, separates close labels and stays inside the range', () => {
+    const out = dodge([100, 102, 101, 300], 20, 0, 400);
+    expect(out[0]).toBeLessThan(out[2]);
+    expect(out[2]).toBeLessThan(out[1]);
+    const sorted = [...out].sort((a, b) => a - b);
+    for (let i = 1; i < sorted.length; i++) expect(sorted[i] - sorted[i - 1]).toBeGreaterThanOrEqual(20 - 1e-9);
+    expect(out[3]).toBe(300);
+    // labels crowded at the bottom edge are pushed back up
+    const low = dodge([395, 398, 400], 20, 0, 400);
+    expect(Math.max(...low)).toBeLessThanOrEqual(400);
+    expect(low[1] - low[0]).toBeGreaterThanOrEqual(20 - 1e-9);
+    expect(dodge([], 20, 0, 10)).toEqual([]);
   });
 });

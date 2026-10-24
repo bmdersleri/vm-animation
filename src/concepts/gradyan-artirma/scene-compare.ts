@@ -13,6 +13,8 @@ type Scheme = CompareView['schemes'][number];
 const PAD = 10;
 /** Trees per scheme row (a picture, not data). */
 const TREES = 4;
+/** Least height (px) of the boxes-and-arrows drawing of one scheme row. */
+const MIN_DRAWING = 84;
 
 /**
  * Comparison scene (Ders step 10): a two-row scheme (bagging: parallel deep trees into one average;
@@ -56,21 +58,37 @@ export class CompareScene {
 
   update(v: CompareView): void {
     const { tick, axis } = this.measure.fonts(this.mode);
-    const line = tick * 1.4;
+    const line = Math.max(tick, axis) * 1.4;
     const linkRow = tick * 1.7;
     const linksH = linkRow * v.links.length + PAD;
     const table = this.layoutTable(v.rows, tick, axis, line);
-    const tableH = table.height;
-    const schemesH = Math.max(120, this.h - linksH - tableH - PAD);
-    this.drawSchemes(v.schemes, schemesH / v.schemes.length, tick, axis);
-    this.drawTable(table, tick, schemesH + PAD * 0.5);
-    this.drawLinks(v.links, this.h - linksH + linkRow * 0.8, linkRow, axis);
+    // every scheme row needs its header and a minimum drawing; the content may outgrow the stage (it scrolls)
+    const need = Math.max(...v.schemes.map((s) => this.schemeHead(s, tick, axis).headH)) + MIN_DRAWING + PAD * 0.8;
+    const spare = (this.h - linksH - table.height - PAD) / v.schemes.length;
+    const rowH = Math.max(need, spare);
+    const schemesH = rowH * v.schemes.length;
+    const total = schemesH + PAD + table.height + linksH;
+    this.svg.attr('height', Math.ceil(Math.max(this.h, total)));
+    this.drawSchemes(v.schemes, rowH, tick, axis);
+    this.drawTable(table, tick, schemesH + PAD * 0.5, line);
+    this.drawLinks(v.links, total - linksH + linkRow * 0.8, linkRow, axis);
+  }
+
+  /** Title and note lines of a scheme row, with the height they take. */
+  private schemeHead(s: Scheme, tick: number, axis: number): { lines: string[]; stacked: boolean; headH: number } {
+    const titleW = this.measure.width(s.title, 'axis-title', axis);
+    const beside = this.measure.wrap(s.note, this.w - PAD * 2 - titleW - 12, 'tick', tick);
+    // the note shares the title's line when it fits there; else it wraps under the title
+    const stacked = beside.length > 1;
+    const lines = stacked ? this.measure.wrap(s.note, this.w - PAD * 2, 'tick', tick) : beside;
+    return { lines, stacked, headH: axis * 1.1 + (stacked ? lines.length * tick * 1.35 : 0) + tick * 0.6 };
   }
 
   /** Column positions (wide) or stacked lines (narrow) of the table, with its total height. */
   private layoutTable(rows: CompareRow[], tick: number, axis: number, line: number) {
     const m = (texts: string[]): number => this.measure.maxWidth(texts, 'tick', tick);
-    const labW = Math.max(m(rows.map((r) => r.label)), this.measure.width('Özellik', 'axis-title', axis));
+    // labels and heads are drawn bold at the axis size
+    const labW = Math.max(this.measure.maxWidth(rows.map((r) => r.label), 'axis-title', axis), this.measure.width('Özellik', 'axis-title', axis));
     const bagW = Math.max(m(rows.map((r) => r.bagging)), this.measure.width('Bagging', 'axis-title', axis));
     const booW = Math.max(m(rows.map((r) => r.boosting)), this.measure.width('Boosting', 'axis-title', axis));
     const gapX = 20;
@@ -106,10 +124,7 @@ export class CompareScene {
   /** One scheme row: title and note on top, boxes and arrows below. */
   private drawScheme(g: G, s: Scheme, top: number, rowH: number, tick: number, axis: number): void {
     g.selectAll('*').remove();
-    const noteLines = this.measure.wrap(s.note, this.w - PAD * 2 - this.measure.width(s.title, 'axis-title', axis) - 12, 'tick', tick);
-    // title and note share the first line when the note is short; else the note wraps under the title
-    const stacked = noteLines.length > 1;
-    const lines = stacked ? this.measure.wrap(s.note, this.w - PAD * 2, 'tick', tick) : noteLines;
+    const { lines, stacked, headH } = this.schemeHead(s, tick, axis);
     g.append('text')
       .attr('class', 'cmp-title')
       .attr('x', PAD)
@@ -123,9 +138,8 @@ export class CompareScene {
         .attr('y', r1(top + axis * 1.1 + (stacked ? (k + 1) * tick * 1.35 : 0)))
         .text(t);
     });
-    const headH = axis * 1.1 + (stacked ? lines.length * tick * 1.35 : 0) + tick * 0.6;
     const gTop = top + headH;
-    const gH = Math.max(36, rowH - headH - PAD * 0.8);
+    const gH = rowH - headH - PAD * 0.8;
     const bagging = s.id === 'bagging';
     const outW = this.measure.width(s.out, 'tick', tick) + 18;
     const avail = this.w - PAD * 2;
@@ -184,8 +198,8 @@ export class CompareScene {
     t: ReturnType<CompareScene['layoutTable']>,
     tick: number,
     top: number,
+    line: number,
   ): void {
-    const line = tick * 1.4;
     this.tableG.selectAll('*').remove();
     if (t.wide) {
       const heads = ['Özellik', 'Bagging', 'Boosting'];

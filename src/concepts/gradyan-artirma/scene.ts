@@ -3,11 +3,13 @@ import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
 import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { renderStrip } from '../../core/plot/strip';
-import type { GbParams } from './scenario';
+import { gradyanArtirmaScenario, type GbParams } from './scenario';
 import { deriveGbView } from './view';
 import { PanelScene } from './scene-panels';
 import { ErrorScene } from './scene-error';
 import { CompareScene } from './scene-compare';
+
+const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 
@@ -119,7 +121,16 @@ export function mountGbScene(
     if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(id);
     else clearTimeout(id);
   };
+  let lastIndex = player.state.index;
   const unsubscribe = player.subscribe((s, cause) => {
+    // Reduced motion: entering a sweep step lands on the sweep's last value at once (this also ends the player's sweep).
+    const entered = s.index !== lastIndex;
+    lastIndex = s.index;
+    const sweep = gradyanArtirmaScenario.steps[s.index].sweep;
+    if (entered && sweep && reducedMotion()) {
+      player.setParams({ [sweep.key]: sweep.values[sweep.values.length - 1] });
+      return;
+    }
     const merged = pending && causeRank[pending.cause] > causeRank[cause] ? pending.cause : cause;
     pending = { s, cause: merged };
     if (ds === 0) flush();

@@ -118,9 +118,12 @@ export class ErrorScene {
   /** The chart spec for this mode: Lab-only marker rules and the emphasised / muted curves. */
   private specFor(v: ErrorView, lab: boolean): LineChartSpec {
     const c = v.chart;
+    // step 9 shrinks the chart: a short y title, and the legend already names M, so the marker has no label
+    const small = v.top !== null;
     return {
       ...c,
-      marker: v.labMarker && !lab ? null : c.marker,
+      yTitle: small ? 'hata (log)' : c.yTitle,
+      marker: v.labMarker && !lab ? null : small && c.marker ? { ...c.marker, label: '' } : c.marker,
       series: c.series.map((s) =>
         lab && v.selectedId ? { ...s, cls: `${s.cls} ${s.id === v.selectedId ? 'emph' : 'muted'}` } : s,
       ),
@@ -215,6 +218,19 @@ export class ErrorScene {
     );
 
     const r = Math.max(3.5, tick * 0.3);
+    // the soft F first and the zigzag over it; the points on top so the zigzag is seen passing through them
+    const lines: { cls: string; segs: StepSegment[] }[] = [
+      { cls: 'f-line soft', segs: top.soft },
+      { cls: 'f-line zig', segs: top.zig },
+    ];
+    dataG
+      .selectAll<SVGPathElement, (typeof lines)[number]>('path.f-line')
+      .data(lines, (d) => d.cls)
+      .join('path')
+      .attr('class', (d) => d.cls)
+      .attr('fill', 'none')
+      .attr('d', (d) => stepPath(d.segs, sc.x, sc.y))
+      .order();
     const dots = (cls: string, data: GbPoint[]): void => {
       dataG
         .selectAll<SVGCircleElement, GbPoint>(`circle.${cls}`)
@@ -223,21 +239,11 @@ export class ErrorScene {
         .attr('class', cls)
         .attr('r', r)
         .attr('cx', (d) => r1(sc.x(d.x)))
-        .attr('cy', (d) => r1(sc.y(d.y)));
+        .attr('cy', (d) => r1(sc.y(d.y)))
+        .raise();
     };
     dots('pt', top.points);
     dots('pt-val', top.valPoints);
-    const lines: { cls: string; segs: StepSegment[] }[] = [
-      { cls: 'f-line zig', segs: top.zig },
-      { cls: 'f-line soft', segs: top.soft },
-    ];
-    dataG
-      .selectAll<SVGPathElement, (typeof lines)[number]>('path.f-line')
-      .data(lines, (d) => d.cls)
-      .join('path')
-      .attr('class', (d) => d.cls)
-      .attr('fill', 'none')
-      .attr('d', (d) => stepPath(d.segs, sc.x, sc.y));
   }
 
   private legendItems(top: TopView): { cls: string; text: string }[] {
