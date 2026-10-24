@@ -20,6 +20,15 @@ const LEGEND_UNDER = 700;
 /** Width (px) from which the step-8 panel sits beside the chart. */
 const NARROW = 760;
 
+/** Plot height, in tick heights, the chart keeps when the step-8 panel sits under it (six y ticks stay apart). */
+const MIN_PLOT_TICKS = 6.5;
+
+/** Smallest matrix cell height, in tick heights, of the panel under the chart (the tag and the count stay apart). */
+const MIN_CELL_TICKS = 3.1;
+
+/** Chart share of the stage when the panel sits under it and there is room to spare. */
+const CHART_SHARE = 0.58;
+
 /** Fixed axis titles of the PR plane. */
 const X_TITLE = 'duyarlılık (recall)';
 const Y_TITLE = 'kesinlik (precision)';
@@ -45,7 +54,7 @@ export function prSpec(pr: PrView, legend = false): LineChartSpec {
 }
 
 /** Link under the step-8 panel (the Bölüm 6 threshold page). */
-const THRESHOLD_LINK = { href: '../roc-esik/', text: 'Eşik seçimi: roc-esik sayfası' };
+const THRESHOLD_LINK = { href: '../roc-esik/', text: 'Bölüm 6: ROC, PR ve karar eşiği' };
 
 /**
  * The PR area (steps 4, 5, 7, 8): the staircase curves, dashed floor lines at the positive rates, the curve
@@ -98,21 +107,51 @@ export class PrScene implements ViewScene {
     this.interrupt();
     const fonts = this.measure.fonts(this.mode);
     const band = this.drawBig(pr, fonts.tick, fonts.title);
-    const legend = pr.series.length > 2 && this.w < LEGEND_UNDER;
-    const spec = prSpec(pr, legend);
     // the step-8 panel sits beside the chart, or under it on a narrow screen
     const side = pr.panel !== null && this.w >= NARROW;
+    const under = pr.panel !== null && !side;
+    // a narrow chart names its curves in a legend: three curves crowd, and under the step-8 panel the chart is short
+    const legend = this.w < LEGEND_UNDER && (pr.series.length > 2 || under);
+    const spec = prSpec(pr, legend);
     const panelW = side ? Math.max(280, Math.min(420, this.w * 0.38)) : this.w;
     const chartW = side ? this.w - panelW : this.w;
-    const panelH = pr.panel && !side ? this.panelHeight(fonts.tick, fonts.axis) : 0;
-    const chartH = pr.panel && !side ? Math.max(260, Math.round(this.h * 0.58)) : this.h;
-    this.svg.attr('width', this.w).attr('height', chartH + panelH);
+    const fit = under && pr.panel ? this.underFit(pr.panel.lines, spec, fonts.tick, fonts.axis) : null;
+    const chartH = fit ? fit.chartH : this.h;
+    this.svg.attr('width', this.w).attr('height', fit ? fit.chartH + fit.panelH : this.h);
     const rect = this.chart.plotRect(chartW, Math.max(120, chartH - band), spec);
     rect.top += band;
     this.chart.clear();
     this.chart.draw(spec, rect, ms);
     this.drawLegend(legend ? pr : null, rect, fonts.tick);
-    this.drawPanel(pr, side ? { x: chartW, y: PAD, w: panelW - PAD } : { x: PAD, y: chartH, w: this.w - PAD * 2 }, fonts.tick, fonts.axis, ms);
+    const at = side ? { x: chartW, y: PAD, w: panelW - PAD } : { x: PAD, y: chartH, w: this.w - PAD * 2 };
+    this.drawPanel(pr, at, fit ? fit.cellH : this.cellH(fonts.tick), fonts.tick, fonts.axis, ms);
+  }
+
+  /**
+   * Heights of chart, panel and matrix cells when the step-8 panel sits under the chart. The panel is sized
+   * from the lines it really writes; the matrix cells shrink first (down to `MIN_CELL_TICKS`, where tag and
+   * count still stand apart), then the chart gives up what the panel needs, down to a plot of
+   * `MIN_PLOT_TICKS` ticks. When even that does not fit (Ders type on a phone), the host scrolls and its
+   * bottom shadow shows that more follows; nothing is cut.
+   */
+  private underFit(lines: readonly string[], spec: LineChartSpec, tick: number, axis: number): { chartH: number; panelH: number; cellH: number } {
+    const text = this.panelTextHeight(lines, this.w - PAD * 2, tick, axis);
+    const head = matrixHeight(tick, 0);
+    const probe = 1000;
+    const chrome = probe - this.chart.plotRect(this.w, probe, spec).height;
+    const minChart = Math.ceil(chrome + tick * MIN_PLOT_TICKS);
+    const room = (this.h - minChart - text - head) / 2;
+    const cellH = Math.max(tick * MIN_CELL_TICKS, Math.min(this.cellH(tick), room));
+    const panelH = Math.ceil(matrixHeight(tick, cellH) + text);
+    const chartH = Math.max(minChart, Math.min(this.h - panelH, Math.round(this.h * CHART_SHARE)));
+    return { chartH, panelH, cellH };
+  }
+
+  /** Height of the panel below its matrix: the gap, the wrapped lines as `drawPanel` writes them, the link and the padding. */
+  private panelTextHeight(lines: readonly string[], w: number, tick: number, axis: number): number {
+    const wrapped = lines.reduce((n, line) => n + this.measure.wrap(line, w, 'tick', tick).length, 0);
+    // first baseline, line leads and gaps, then the link baseline and its descender
+    return axis * 1.4 + wrapped * tick * 1.45 + lines.length * tick * 0.3 + tick * 0.2 + tick * 0.35 + PAD;
   }
 
   /** Names the curves in the plot's empty upper right (a narrow chart has no room for names beside three crowded curves). */
@@ -147,24 +186,19 @@ export class PrScene implements ViewScene {
     });
   }
 
-  /** Cell height of the panel matrix. */
+  /** Cell height of the panel matrix when there is room for it. */
   private cellH(tick: number): number {
     return tick * 3.3;
   }
 
-  /** Height the panel needs under the chart: matrix, three lines of text, the link. */
-  private panelHeight(tick: number, axis: number): number {
-    return matrixHeight(tick, this.cellH(tick)) + axis + tick * 1.5 * 5 + PAD * 3;
-  }
-
   /** The step-8 panel: matrix, the caught count, the unweighted comparison and the link. */
-  private drawPanel(pr: PrView, at: { x: number; y: number; w: number }, tick: number, axis: number, ms: number): void {
+  private drawPanel(pr: PrView, at: { x: number; y: number; w: number }, cellH: number, tick: number, axis: number, ms: number): void {
     this.panelG.selectAll('text.panel-line, a.op-link').remove();
     this.panelG.attr('display', pr.panel ? null : 'none');
     if (!pr.panel) {
       return;
     }
-    const mh = matrixHeight(tick, this.cellH(tick));
+    const mh = matrixHeight(tick, cellH);
     this.matrix.draw(pr.panel.matrix, { rect: { x: at.x, y: at.y, w: at.w, h: mh }, tick, axis, focusPositive: true, ms });
     let y = at.y + mh + axis * 1.4;
     const lead = tick * 1.45;

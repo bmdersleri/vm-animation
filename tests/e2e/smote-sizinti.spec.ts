@@ -67,3 +67,24 @@ test('lab: threshold slider moves the operating point', async ({ page }) => {
   expect(await paramsOutside(page)).toEqual([]);
   await expect(page).toHaveScreenshot('smote-sizinti-lab-8.png');
 });
+
+test.describe('390 px', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('step 8: the panel shows whole (Lab fits the stage, Ders scrolls to its last line)', async ({ page }) => {
+    for (const mode of ['lab', 'ders'] as const) {
+      await open(page, PAGE, mode, READY);
+      await step(page, 8);
+      expect((await overlaps(page, LABELS)).filter((o) => o !== CORNER), mode).toEqual([]);
+      const r = await page.evaluate(() => {
+        const host = document.querySelector<HTMLElement>('.leak-pr-host')!;
+        const fits = host.scrollHeight <= host.clientHeight + 1;
+        host.scrollTop = host.scrollHeight;
+        const link = document.querySelector('.leak-pr-host text.panel-link')!.getBoundingClientRect();
+        return { fits, linkBottom: link.bottom, hostBottom: host.getBoundingClientRect().bottom };
+      });
+      if (mode === 'lab') expect(r.fits, 'lab: no scroll').toBe(true);
+      expect(r.linkBottom, mode).toBeLessThanOrEqual(r.hostBottom + 1);
+    }
+  });
+});

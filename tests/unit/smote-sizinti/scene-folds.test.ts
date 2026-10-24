@@ -71,4 +71,14 @@ describe('fold scene', () => {
     player.setParam('fold', 0);
     expect(el.querySelectorAll('.fold-row.is-selected')).toHaveLength(0);
   });
+
+  it('the CSS gives the training part one display only', async () => {
+    const { readFileSync } = (await import('node:fs' as string)) as { readFileSync: (p: string, e: string) => string };
+    const css = readFileSync('src/concepts/smote-sizinti/smote-sizinti.css', 'utf8');
+    // every rule whose selector list names .fold-train itself (not a descendant) and sets display
+    const rules = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].filter(
+      ([, sel, body]) => sel.split(',').some((x) => /\.fold-train\s*$/.test(x.trim().replace(/^.*\s/, ''))) && /display:/.test(body),
+    );
+    expect(rules.map(([, , body]) => /display:([a-z-]+)/.exec(body)![1])).toEqual(['block']);
+  });
 });
