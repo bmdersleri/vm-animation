@@ -382,6 +382,7 @@ body {
   .stage {
     /* 60vh, but never past the sticky player bar: a two-line title moves the stage
        down (shell.ts publishes --stage-top and --player-bar-h) */
+    height: clamp(320px, 60vh, 640px);
     height: clamp(320px, min(60vh, calc(100svh - var(--stage-top, 0px) - var(--player-bar-h, 0px))), 640px);
     overflow-x: hidden;
     overflow-y: auto; /* tall scenes scroll inside the stage instead of being cut off */

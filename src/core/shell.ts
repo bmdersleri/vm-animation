@@ -232,10 +232,13 @@ export function mountConceptPage<P extends object>(
   };
   // narrow screens cap the stage at the room between its top and the sticky player bar
   // (theme.css), so a two-line title never pushes the stage under the bar
+  let lastTop = '';
+  let lastBar = '';
   const publishBars = (): void => {
-    const top = stage.getBoundingClientRect().top - root.getBoundingClientRect().top;
-    root.style.setProperty('--stage-top', `${Math.ceil(top)}px`);
-    root.style.setProperty('--player-bar-h', `${Math.ceil(playerBar.getBoundingClientRect().height)}px`);
+    const top = `${Math.ceil(stage.getBoundingClientRect().top - root.getBoundingClientRect().top)}px`;
+    const bar = `${Math.ceil(playerBar.getBoundingClientRect().height)}px`;
+    if (top !== lastTop) root.style.setProperty('--stage-top', (lastTop = top));
+    if (bar !== lastBar) root.style.setProperty('--player-bar-h', (lastBar = bar));
   };
   const RO = (globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver;
   const observer = RO ? new RO(() => { publishBars(); forwardSize(false); }) : null;

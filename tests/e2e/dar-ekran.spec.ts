@@ -6,7 +6,7 @@ test.use({ viewport: { width: 390, height: 844 } });
 
 const ready = concepts.filter((c) => c.status === 'hazir' && c.href);
 /** `<id> <mode>` whose page CSS sets its own narrow-screen stage height. */
-const TALL_STAGES = new Set(['capraz-dogrulama ders', 'capraz-dogrulama lab', 'karmasiklik-matrisi lab', 'roc-esik lab']);
+const TALL_STAGES = new Set(['capraz-dogrulama ders', 'capraz-dogrulama lab', 'roc-esik lab']);
 
 /** Boxes of the stage and every svg / canvas in it, read until they stop moving. */
 const stageSettled = (page: Page): Promise<void> => settled(() => page.evaluate(() =>

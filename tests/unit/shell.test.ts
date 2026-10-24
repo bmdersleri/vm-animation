@@ -405,6 +405,10 @@ describe('shell', () => {
     rects.set('stage', { top: 94, height: 450 });
     FakeRO.instances[0].fire();
     expect(root.style.getPropertyValue('--stage-top')).toBe('94px');
+    // a mode switch republishes too (the only path without ResizeObserver)
+    rects.set('stage', { top: 102, height: 450 });
+    root.querySelector<HTMLButtonElement>('[data-mode-btn="ders"]')!.click();
+    expect(root.style.getPropertyValue('--stage-top')).toBe('102px');
     mounted!.destroy();
     mounted = null;
     expect(root.style.getPropertyValue('--stage-top')).toBe('');
