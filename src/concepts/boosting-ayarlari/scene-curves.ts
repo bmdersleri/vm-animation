@@ -118,7 +118,7 @@ export class CurveScene {
       .attr('class', (d) => `cv-vlabel ${d.cls}`)
       .attr('text-anchor', (d) => d.anchor)
       .attr('x', (d) => r1(sc.x(d.x) + (d.anchor === 'start' ? gap : -gap)))
-      .attr('y', (d) => r1(plot.top + tick * (1.3 + d.row * 1.3)))
+      .attr('y', (d) => r1(plot.top + tick * (1.3 + d.row * 1.5)))
       .text((d) => d.label);
   }
 
@@ -126,9 +126,9 @@ export class CurveScene {
   private drawEndLabels(labels: TuneEndLabel[], v: TuneView, sc: Scales, plot: Rect, tick: number, gap: number): void {
     const ys = dodge(
       labels.map((l) => sc.y(l.y)),
-      tick * 1.25,
+      tick * 1.4,
       plot.top + tick * 0.5,
-      plot.top + plot.height - tick * 0.3,
+      plot.top + plot.height - tick * 0.8,
     );
     const cls = (id: string): string => v.chart!.series.find((s) => s.id === id)?.cls ?? '';
     this.labelsG

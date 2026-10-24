@@ -115,9 +115,9 @@ export class ErrorScene {
     const sc = fitViewport({ x: spec.x, y: spec.y }, plot, false);
     const ys = dodge(
       labels.map((l) => sc.y(l.y)),
-      tick * 1.25,
+      tick * 1.4,
       plot.top + tick * 0.5,
-      plot.top + plot.height - tick * 0.3,
+      plot.top + plot.height - tick * 0.8,
     );
     const cls = (id: string): string => spec.series.find((s) => s.id === id)?.cls ?? '';
     this.labelsG

@@ -196,7 +196,8 @@ function curves(p: TuneParams, lab: boolean): TuneView {
     : `doğrulama log-kaybı · ${n} ağaç`;
   const chart = lossChart('doğrulama log-kaybı', series);
   if (lab) {
-    chart.marker = { x: n, y: c.valLoss[n - 1], label: `${n}. ağaç · AUC ${f(c.valAuc[n - 1], 3)}` };
+    // no label: the end labels sit at the same place, and the strip already names the AUC
+    chart.marker = { x: n, y: c.valLoss[n - 1], label: '' };
   }
   return {
     stepId: 'egriler',
