@@ -41,6 +41,8 @@ export interface LineChartSpec {
   yTicks?: number[];
   /** Label of a y tick (a log axis drawn on log10 values); with `yTicks` it also sizes the tick column. */
   yFormat?: (v: number) => string;
+  /** Label of an x tick (a log axis drawn on log10 values); the default is the evenly-spaced tick format. */
+  xFormat?: (v: number) => string;
 }
 
 /** Outer padding (px) around the axis titles. */
@@ -113,6 +115,7 @@ export class LineChartLayer {
         xTicks: spec.xTicks,
         yTicks: spec.yTicks,
         yFormat: spec.yFormat,
+        xFormat: spec.xFormat,
         xTickY,
         yTickX: plot.left - m.gap,
         xTitle: { x: plot.left + plot.width / 2, y: xTickY + m.tick * 0.3 + m.gap + m.axis * 0.95, text: spec.xTitle },

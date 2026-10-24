@@ -12,6 +12,8 @@ export interface AxesSpec {
   xTicks?: number[]; yTicks?: number[];
   /** Label of a y tick (e.g. 10^v for a log axis drawn on log10 values); default is the evenly-spaced tick format. */
   yFormat?: (v: number) => string;
+  /** Label of an x tick (e.g. 10^v for a log axis drawn on log10 values); default is the evenly-spaced tick format. */
+  xFormat?: (v: number) => string;
 }
 
 /** Frame, gridline ticks and axis titles of a scatter-style plot. */
@@ -37,7 +39,7 @@ export class AxesLayer {
     this.frame.attr('x', plot.left).attr('y', plot.top).attr('width', plot.width).attr('height', plot.height);
 
     const xt = spec.xTicks ?? sc.x.ticks(spec.xTickCount);
-    const fx = tickFormat(xt);
+    const fx = spec.xFormat ?? tickFormat(xt);
     const xs = this.gx.selectAll<SVGGElement, number>('g.tick').data(xt, (d) => `${dataKey}:${d}`).join(
       (enter) => {
         const g = enter.append('g').attr('class', 'tick').attr('opacity', 0)

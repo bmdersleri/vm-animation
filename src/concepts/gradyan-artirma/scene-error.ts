@@ -2,6 +2,7 @@ import { select, type Selection } from 'd3-selection';
 import 'd3-transition';
 import type { Mode } from '../../core/mode';
 import { AxesLayer } from '../../core/plot/axes';
+import { dodge } from '../../core/plot/dodge';
 import { LineChartLayer, type LineChartSpec } from '../../core/plot/line-chart';
 import { r1 } from '../../core/plot/marks';
 import { stepPath, type StepSegment } from '../../core/plot/step-line';
@@ -17,25 +18,7 @@ const PAD = 8;
 /** Share of the height the top panel takes on step 9. */
 const TOP_SHARE = 0.55;
 
-/**
- * Shifts labels (given by their wanted pixel y, in the order of `ys`) apart by at least `gap`,
- * keeping their order and the range [lo, hi]. Used for the ν labels, whose curves end almost together.
- */
-export function dodge(ys: readonly number[], gap: number, lo: number, hi: number): number[] {
-  const order = ys.map((_, i) => i).sort((a, b) => ys[a] - ys[b]);
-  const out = [...ys];
-  let prev = lo - gap;
-  for (const i of order) {
-    out[i] = Math.max(ys[i], prev + gap, lo);
-    prev = out[i];
-  }
-  let next = hi + gap;
-  for (const i of [...order].reverse()) {
-    out[i] = Math.min(out[i], next - gap);
-    next = out[i];
-  }
-  return out;
-}
+export { dodge };
 
 /**
  * Error scene of the gradient boosting page (Ders steps 7-9): the log error chart with
