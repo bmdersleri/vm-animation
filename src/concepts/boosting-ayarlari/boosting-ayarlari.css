@@ -1,0 +1,48 @@
+/* Boosting settings page; every text size is a theme token. */
+.tune-scene { width:100%; height:100%; min-height:0; display:flex; flex-direction:column; gap:10px; font-family:var(--font); color:var(--navy); }
+.tune-stage { position:relative; flex:1 1 0; min-height:0; overflow:hidden; }
+.tune-host { position:absolute; inset:0; overflow:hidden; }
+.tune-host[hidden] { display:none; }
+.tune-plot { display:block; overflow:visible; }
+.tune-scene .formula { margin:0; padding:6px 14px; border-left:4px solid var(--navy); border-radius:6px; background:var(--bg); font-size:var(--fs-body); line-height:1.35; font-variant-numeric:tabular-nums; min-height:calc(2 * 1.35em + 12px); }
+.tune-scene .formula .line { display:block; }
+.tune-scene .formula .term { display:inline; white-space:nowrap; }
+@media (max-width:900px) {
+  .tune-scene .formula .term { white-space:normal; overflow-wrap:anywhere; }
+}
+
+/* text and ticks */
+.tune-plot text { font-size:var(--fs-tick); fill:var(--navy); font-variant-numeric:tabular-nums; }
+.tune-plot .axis-title { font-size:var(--fs-axis); font-weight:600; }
+
+/* curves: one colour per learning rate, train solid and validation dashed */
+.tune-plot .lc-series { fill:none; stroke-width:3; stroke-linejoin:round; }
+.tune-plot .lc-series.auc { stroke:var(--navy); }
+.tune-plot .lc-series.train { stroke:var(--navy); }
+.tune-plot .lc-series.val { stroke:#C26A00; }
+.tune-plot .lc-series.lr-0 { stroke:var(--navy); }
+.tune-plot .lc-series.lr-1 { stroke:#1E8A4C; }
+.tune-plot .lc-series.lr-2 { stroke:#C26A00; }
+.tune-plot .lc-series.lr-3 { stroke:#7A3E9D; }
+.tune-plot .lc-series.lr-4 { stroke:#B3261E; }
+.tune-plot .lc-pin { fill:var(--surface); stroke:var(--navy); stroke-width:2.5; }
+.tune-plot .lc-pin-label, .tune-plot .end-label, .tune-plot .cv-vlabel, .tune-plot .cv-note { font-weight:600; paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
+.tune-plot .lc-pin-label { stroke-width:7px; }
+.tune-plot .end-label { fill:var(--navy); }
+.tune-plot .end-label.val { fill:#A85A00; }
+.tune-plot .end-label.lr-0 { fill:var(--navy); }
+.tune-plot .end-label.lr-1 { fill:#1E8A4C; }
+.tune-plot .end-label.lr-2 { fill:#A85A00; }
+.tune-plot .end-label.lr-3 { fill:#7A3E9D; }
+.tune-plot .end-label.lr-4 { fill:#B3261E; }
+.tune-plot .cv-note { fill:#A85A00; font-weight:700; }
+
+/* the shaded gap between training and validation loss (step 4) */
+.tune-plot .gap { fill:#C26A00; fill-opacity:.16; stroke:none; }
+
+/* vertical tree-count lines: the book's 150, the best tree and the stop tree */
+.tune-plot .cv-vline { stroke:var(--navy); stroke-width:2; stroke-dasharray:8 5; stroke-opacity:.55; }
+.tune-plot .cv-vline.best { stroke:#1E8A4C; stroke-opacity:.9; }
+.tune-plot .cv-vline.stop { stroke:#B3261E; stroke-opacity:.9; }
+.tune-plot .cv-vlabel.best { fill:#1E8A4C; }
+.tune-plot .cv-vlabel.stop { fill:#B3261E; }

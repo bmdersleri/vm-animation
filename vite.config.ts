@@ -34,6 +34,7 @@ export default defineConfig({
         'bagging': resolve(root, 'bagging/index.html'),
         'random-forest': resolve(root, 'random-forest/index.html'),
         'gradyan-artirma': resolve(root, 'gradyan-artirma/index.html'),
+        'boosting-ayarlari': resolve(root, 'boosting-ayarlari/index.html'),
       },
     },
   },
