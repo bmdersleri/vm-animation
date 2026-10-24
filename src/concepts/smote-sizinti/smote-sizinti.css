@@ -162,6 +162,8 @@
 .leak-params input[type='range'] { grid-column:1 / -1; width:100%; min-height:var(--ctl); margin:0; accent-color:var(--navy); }
 .leak-params select { min-height:var(--ctl); padding:0 .5em; border:2px solid var(--navy); border-radius:8px; background:var(--surface); }
 .leak-params .ctl[data-off], .leak-params[data-off] { display:none; }
+/* a step with no control (step 10) hides the whole params card (controls.ts sets data-off on the host) */
+[data-mode='lab'] .params[data-off] { display:none; }
 [data-mode='lab'] .leak-params { gap:4px; }
 [data-mode='lab'] .leak-params input[type='range'] { min-height:30px; }
 .leak-extra p { margin:0 0 8px; }

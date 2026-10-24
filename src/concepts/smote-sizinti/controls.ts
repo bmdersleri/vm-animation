@@ -175,10 +175,10 @@ export function mountLeakParams(host: HTMLElement, player: StepPlayer<LeakParams
       r.input.disabled = off;
       r.box.toggleAttribute('data-off', off);
     }
-    wrap.toggleAttribute(
-      'data-off',
-      rows.every((r) => !r.steps.includes(index)),
-    );
+    // a step with no control at all (step 10) hides the whole card in Lab instead of an empty box
+    const none = rows.every((r) => !r.steps.includes(index));
+    wrap.toggleAttribute('data-off', none);
+    host.toggleAttribute('data-off', none);
   };
   sync();
   player.subscribe(sync);

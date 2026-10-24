@@ -183,7 +183,11 @@ describe('SMOTE-leakage Lab controls', () => {
         expect(input.disabled).toBe(true);
       }
     }
+    // step 10 has no control: the whole params card (the host) is hidden, not left as an empty box
     expect(host.querySelector('.leak-params')!.hasAttribute('data-off')).toBe(true);
+    expect(host.hasAttribute('data-off')).toBe(true);
+    player.goto(step('hata-ayiklama'));
+    expect(host.hasAttribute('data-off')).toBe(false);
   });
 
   it('arrow keys on a slider do not change the step', () => {

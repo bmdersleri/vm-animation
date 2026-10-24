@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import '../svg-stubs';
 import { StepPlayer, stepIndex } from '../../../src/core/player';
 import { smoteSizintiScenario as sc } from '../../../src/concepts/smote-sizinti/scenario';
@@ -8,6 +8,7 @@ import { mountLeakScene } from '../../../src/concepts/smote-sizinti/scene';
 const clean: (() => void)[] = [];
 afterEach(() => {
   clean.splice(0).forEach((fn) => fn());
+  vi.useRealTimers();
   document.body.replaceChildren();
 });
 
@@ -54,6 +55,28 @@ describe('code scene', () => {
     expect(el.querySelectorAll('.bug-badge')).toHaveLength(0);
     expect(el.querySelectorAll('.code-line.code-fixed').length).toBeGreaterThan(10);
     expect(el.querySelector('.code-title')!.textContent).toBe('Düzeltilmiş kod');
+  });
+
+  it('leaving step 9 and coming back restarts the sweep from the first bug', () => {
+    vi.useFakeTimers();
+    const { el, player } = setup('hata-ayiklama');
+    const step9 = stepIndex(sc, 'hata-ayiklama');
+    // the sweep plays to its end: the corrected code
+    vi.advanceTimersByTime(1400 * 6);
+    expect(player.state.params.bug).toBe(6);
+    expect(el.querySelectorAll('.code-line.code-fixed').length).toBeGreaterThan(10);
+    for (const away of [step9 + 1, step9 - 1]) {
+      player.goto(away);
+      player.goto(step9);
+      // back on step 9 the faulty code returns with only the first bug marked, then the sweep plays on
+      expect(player.state.params.bug).toBe(1);
+      expect(el.querySelectorAll('.code-fixed')).toHaveLength(0);
+      expect(badges(el)).toEqual(['1']);
+      vi.advanceTimersByTime(1400);
+      expect(badges(el)).toEqual(['1', '2']);
+      vi.advanceTimersByTime(1400 * 5);
+      expect(player.state.params.bug).toBe(6);
+    }
   });
 
   it('fixed toggle shows the corrected code', () => {

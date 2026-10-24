@@ -69,7 +69,7 @@ export interface BigScore {
 /** Step 8: the confusion matrix and the lines written beside the curve. */
 export interface PrPanel {
   matrix: Confusion;
-  /** "27 / 37 yakalandı · kesinlik 0,129" and the line naming the unweighted model's threshold at the same recall. */
+  /** "27 / 37 yakalandı · kesinlik …" and the line naming the unweighted model's threshold at the same recall. */
   lines: string[];
 }
 
@@ -268,7 +268,7 @@ function twoCurves(id: string, p: LeakParams): LeakView {
 
 /** The book's "Sık yanlış anlama" box, shortened to one sentence for the strip of step 7. */
 const MISCONCEPTION =
-  'Sık yanlış anlama: "SMOTE her zaman class_weight\'ten daha iyi" sanılır · seçim veri miktarına, azınlık sayısına ve modele bağlıdır.';
+  'Sık yanlış anlama: "SMOTE her zaman class_weight\'ten daha iyi" sanılır; seçim veri miktarına, azınlık sayısına ve modele bağlıdır.';
 
 const precisionText = (v: number | null): string => (v === null ? UNDEFINED_TEXT : ap(v));
 
