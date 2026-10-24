@@ -1,4 +1,5 @@
 import '../../core/theme.css';
+import '../boosting/lr-color.css';
 import './gradyan-artirma.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
 import { gradyanArtirmaScenario, type GbParams } from './scenario';

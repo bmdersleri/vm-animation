@@ -39,11 +39,7 @@
 /* error chart (steps 7-9): curves, pins, marker, end labels */
 .gb-plot .lc-series { fill:none; stroke-width:3; stroke-linejoin:round; }
 .gb-plot .lc-series.train { stroke:var(--navy); }
-.gb-plot .lc-series.val { stroke:#C26A00; }
-.gb-plot .lc-series.nu-0 { stroke:var(--navy); }
-.gb-plot .lc-series.nu-1 { stroke:#1E8A4C; }
-.gb-plot .lc-series.nu-2 { stroke:#C26A00; }
-.gb-plot .lc-series.nu-3 { stroke:#7A3E9D; }
+.gb-plot .lc-series.val:not([class*='lrc-']) { stroke:#C26A00; }
 .gb-plot .lc-series.emph { stroke-width:4; }
 .gb-plot .lc-series.muted { opacity:.4; }
 .gb-plot .lc-pin { fill:var(--surface); stroke:var(--navy); stroke-width:2.5; }
@@ -51,10 +47,7 @@
 .gb-plot .lc-pin-label { stroke-width:7px; }
 .gb-plot .lc-marker { fill:var(--orange); stroke:var(--navy); stroke-width:2; }
 .gb-plot .end-label { fill:var(--navy); }
-.gb-plot .end-label.val { fill:#A85A00; }
-.gb-plot .end-label.nu-1 { fill:#1E8A4C; }
-.gb-plot .end-label.nu-2 { fill:#A85A00; }
-.gb-plot .end-label.nu-3 { fill:#7A3E9D; }
+.gb-plot .end-label.val:not([class*='lrc-']) { fill:#A85A00; }
 .gb-plot .end-label.muted { fill-opacity:.6; }
 .gb-plot .no-dip { fill:#A85A00; font-weight:700; }
 

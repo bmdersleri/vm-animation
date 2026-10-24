@@ -1,4 +1,5 @@
 import '../../core/theme.css';
+import '../boosting/lr-color.css';
 import './boosting-ayarlari.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
 import { boostingAyarlariScenario, type TuneParams } from './scenario';

@@ -2,6 +2,7 @@ import { formatNonZero, formatNumber as f } from '../../core/plot/format';
 import type { LineChartSpec, LineSeries } from '../../core/plot/line-chart';
 import { segmentsFrom, type StepSegment } from '../../core/plot/step-line';
 import { REG } from '../boosting/data';
+import { lrColorClass } from '../boosting/lr-color';
 import { bestIndex, boostSegments, predictBoost, type BoostRun } from '../boosting/boost';
 import { predictReg } from '../boosting/regtree';
 import {
@@ -271,7 +272,7 @@ function learningRates(p: GbParams, trees: number): { error: ErrorView; strip: s
   const all = runs.flatMap((r) => r.valMse);
   const axis = logAxis(Math.min(...all) * 0.3, Math.max(...all) * 1.25);
   const dips = runs.map((r) => dipPin(r.valMse));
-  const series: LineSeries[] = nus.map((v, i) => ({ id: `val-${v}`, cls: `val nu-${i}`, pts: curve(runs[i].valMse), dash: '8 5' }));
+  const series: LineSeries[] = nus.map((v, i) => ({ id: `val-${v}`, cls: `val ${lrColorClass(v)}`, pts: curve(runs[i].valMse), dash: '8 5' }));
   const chosen = nus.indexOf(p.nu);
   const chart: LineChartSpec = {
     x: [1, MAX_TREES],

@@ -1,0 +1,25 @@
+/* Learning-rate colours shared by the boosting pages (see lr-color.ts); lines take the stroke, end labels the darker text tone. The `svg` prefix outranks a page's plain `.end-label` rule. */
+:root {
+  --lrc-0: #1b2a49;
+  --lrc-1: #1e8a4c;
+  --lrc-2: #c26a00;
+  --lrc-3: #7a3e9d;
+  --lrc-4: #b3261e;
+  --lrc-5: #1f7ea8;
+  --lrc-x: #5b6f8a;
+  --lrc-text-2: #a85a00;
+}
+svg .lc-series.lrc-0 { stroke:var(--lrc-0); }
+svg .lc-series.lrc-1 { stroke:var(--lrc-1); }
+svg .lc-series.lrc-2 { stroke:var(--lrc-2); }
+svg .lc-series.lrc-3 { stroke:var(--lrc-3); }
+svg .lc-series.lrc-4 { stroke:var(--lrc-4); }
+svg .lc-series.lrc-5 { stroke:var(--lrc-5); }
+svg .lc-series.lrc-x { stroke:var(--lrc-x); }
+svg .end-label.lrc-0 { fill:var(--lrc-0); }
+svg .end-label.lrc-1 { fill:var(--lrc-1); }
+svg .end-label.lrc-2 { fill:var(--lrc-text-2); }
+svg .end-label.lrc-3 { fill:var(--lrc-3); }
+svg .end-label.lrc-4 { fill:var(--lrc-4); }
+svg .end-label.lrc-5 { fill:var(--lrc-5); }
+svg .end-label.lrc-x { fill:var(--lrc-x); }

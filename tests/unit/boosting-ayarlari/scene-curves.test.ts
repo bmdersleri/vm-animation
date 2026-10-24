@@ -68,7 +68,7 @@ describe('curve scene', () => {
     expect(el.querySelector(HOST + 'path.gap')!.getAttribute('d')).toMatch(/^M.*Z$/);
     expect(count(el, 'path.lc-series.train')).toBe(1);
     expect(count(el, 'path.lc-series.val')).toBe(1);
-    expect(texts(el, 'text.lc-pin-label')).toEqual(['7. ağaç · 0,3136']);
+    expect(texts(el, 'text.lc-pin-label')).toEqual(['7. ağaç · 0,314']);
     expect(texts(el, 'text.end-label')).toEqual(['eğitim', 'doğrulama']);
   });
 
@@ -81,6 +81,22 @@ describe('curve scene', () => {
     expect(count(el, 'text.cv-note')).toBe(0);
     player.setParam('lr', 0.01);
     expect(texts(el, 'text.cv-note')).toEqual(['500 ağaca kadar durmadı']);
+  });
+
+  it('a learning rate keeps its colour class on every step', () => {
+    const { el, player } = setup();
+    const series = (sel: string) => [...el.querySelectorAll(HOST + sel)].map((e) => e.getAttribute('class'));
+    go(player, 'egriler');
+    expect(series('path.lc-series')).toEqual(
+      [0, 1, 2, 3, 4].map((i) => `lc-series val lrc-${i}`),
+    );
+    go(player, 'agac-ekle');
+    expect(series('path.lc-series')).toEqual(['lc-series val lrc-0']);
+    go(player, 'ezber');
+    expect(series('path.lc-series')).toEqual(['lc-series train lrc-5', 'lc-series val lrc-5']);
+    expect(series('text.end-label')).toEqual(['end-label train lrc-5', 'end-label val lrc-5']);
+    go(player, 'erken-durdurma');
+    expect(series('path.lc-series')).toEqual(['lc-series val lrc-3']);
   });
 
   it('steps 6-10 reserve their own views', () => {

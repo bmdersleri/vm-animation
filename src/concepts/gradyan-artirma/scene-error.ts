@@ -18,8 +18,6 @@ const PAD = 8;
 /** Share of the height the top panel takes on step 9. */
 const TOP_SHARE = 0.55;
 
-export { dodge };
-
 /**
  * Error scene of the gradient boosting page (Ders steps 7-9): the log error chart with
  * training / validation curves, dip pins, end labels and the sweep marker (`LineChartLayer`).

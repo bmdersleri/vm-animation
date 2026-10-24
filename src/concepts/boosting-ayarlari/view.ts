@@ -2,6 +2,7 @@ import { formatNumber as f, formatNonZero } from '../../core/plot/format';
 import type { LineChartSpec, LineSeries } from '../../core/plot/line-chart';
 import { bestIndex, earlyStop } from '../boosting/boost';
 import { BOOK_LRS, CURVES, SURFACE } from '../boosting/data';
+import { lrColorClass } from '../boosting/lr-color';
 import { leafCount, treeDepth } from '../boosting/regtree';
 import { gridTrials } from '../boosting/search';
 import {
@@ -114,7 +115,7 @@ function curves(trees: number): TuneView {
   const n = Math.max(1, Math.min(MAX_TREES, Math.round(trees)));
   const series: LineSeries[] = BOOK_LRS.map((lr, i) => ({
     id: `val-${lr}`,
-    cls: `val lr-${i}`,
+    cls: `val ${lrColorClass(lr)}`,
     pts: pts(curveOf(lr).valLoss, n),
   }));
   const values = BOOK_LRS.map((lr) => `ν = ${lrText(lr)}: ${f(curveOf(lr).valLoss[n - 1], 3)}`);
@@ -140,7 +141,7 @@ function moreTrees(p: TuneParams): TuneView {
   const c = curveOf(p.lr);
   const n = Math.max(1, Math.min(MAX_TREES, Math.round(p.trees)));
   const at = n > BOOK_TREES ? [BOOK_TREES, n] : [n];
-  const series: LineSeries[] = [{ id: 'val', cls: 'val lr-0', pts: pts(c.valLoss, n) }];
+  const series: LineSeries[] = [{ id: 'val', cls: `val ${lrColorClass(p.lr)}`, pts: pts(c.valLoss, n) }];
   const chart = lossChart('doğrulama log-kaybı', series);
   chart.pins = at.map((k) => ({ x: k, y: c.valLoss[k - 1], label: `${k}. ağaç · AUC ${f(c.valAuc[k - 1], 3)}` }));
   return {
@@ -161,14 +162,14 @@ function overfit(p: TuneParams): TuneView {
   const dip = bestIndex(c.valLoss);
   const last = MAX_TREES - 1;
   const chart = lossChart('log-kaybı', [
-    { id: 'train', cls: 'train', pts: pts(c.trainLoss, MAX_TREES) },
-    { id: 'val', cls: 'val', pts: pts(c.valLoss, MAX_TREES), dash: '8 5' },
+    { id: 'train', cls: `train ${lrColorClass(p.lr)}`, pts: pts(c.trainLoss, MAX_TREES) },
+    { id: 'val', cls: `val ${lrColorClass(p.lr)}`, pts: pts(c.valLoss, MAX_TREES), dash: '8 5' },
   ]);
-  chart.pins = [{ x: dip, y: c.valLoss[dip - 1], label: `${dip}. ağaç · ${f(c.valLoss[dip - 1], 4)}` }];
+  chart.pins = [{ x: dip, y: c.valLoss[dip - 1], label: `${dip}. ağaç · ${f(c.valLoss[dip - 1], 3)}` }];
   return {
     stepId: 'ezber',
     kind: 'curves',
-    strip: `ν = ${lrText(p.lr)} · ${MAX_TREES} ağaç · eğitim log-kaybı = ${c.trainLoss[last] < 5e-7 ? '0' : formatNonZero(c.trainLoss[last], 4)} · doğrulama log-kaybı = ${f(c.valLoss[last], 4)}\nen düşük doğrulama kaybı ${dip}. ağaçta · açık (doğrulama − eğitim) = ${f(c.valLoss[last] - c.trainLoss[last], 3)}`,
+    strip: `ν = ${lrText(p.lr)} · ${MAX_TREES} ağaç · eğitim log-kaybı = ${c.trainLoss[last] < 5e-7 ? '0' : formatNonZero(c.trainLoss[last], 3)} · doğrulama log-kaybı = ${f(c.valLoss[last], 3)}\nen düşük doğrulama kaybı ${dip}. ağaçta · açık (doğrulama − eğitim) = ${f(c.valLoss[last] - c.trainLoss[last], 3)}`,
     chart,
     endLabels: [
       { id: 'train', text: 'eğitim', x: MAX_TREES, y: c.trainLoss[last] },
@@ -191,7 +192,7 @@ function earlyStopping(p: TuneParams): TuneView {
   if (es.stop !== null) {
     vlines.push({ x: es.stop, label: `${es.stop}. ağaçta dur`, anchor: side(es.stop), row: 1, cls: 'stop' });
   }
-  const chart = lossChart('doğrulama log-kaybı', [{ id: 'val', cls: 'val', pts: pts(c.valLoss, MAX_TREES) }]);
+  const chart = lossChart('doğrulama log-kaybı', [{ id: 'val', cls: `val ${lrColorClass(p.lr)}`, pts: pts(c.valLoss, MAX_TREES) }]);
   const stopText = es.stop === null ? 'durma yok' : `durma ağacı = ${es.stop}`;
   return {
     stepId: 'erken-durdurma',
@@ -227,7 +228,7 @@ function searchPlaceholder(id: string, p: TuneParams): TuneView {
   const strip =
     id === 'izgara'
       ? `ızgara · ${gridTrials(p.budget).length} deneme · ${cells} hücrelik yüzey`
-      : `sıralı arama · ${p.budget} deneme · ${cells} hücrelik yüzey`;
+      : `sıralı arama · ${p.trial} deneme · ${cells} hücrelik yüzey`;
   return { stepId: id, kind: 'search', strip, ...EMPTY };
 }
 

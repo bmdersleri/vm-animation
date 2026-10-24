@@ -9,7 +9,7 @@ import { gridTrials, sequentialSearch } from '../boosting/search';
  * Parameters of the boosting settings page.
  * `lr` is the learning rate ν and `trees` the tree count of the curve scene (steps 1-5); `patience`
  * is the early-stopping patience (step 5); `depth` and `leaves` size the single tree of steps 6-8;
- * `budget`, `seed` and `showSurface` belong to the search of steps 9-10.
+ * `budget` (trials the search may spend), `trial` (how many of them the Ders sweep has shown), `seed` and `showSurface` belong to the search of steps 9-10.
  */
 export interface TuneParams {
   lr: number;
@@ -18,6 +18,7 @@ export interface TuneParams {
   depth: number;
   leaves: number;
   budget: number;
+  trial: number;
   seed: number;
   showSurface: boolean;
 }
@@ -121,11 +122,14 @@ const seqNote =
       ? 'bu tohumda sıralı arama ızgaranın gerisinde kaldı'
       : 'ikisi aynı hücreyi buldu';
 
+// Book constants in the texts below (not in the data files): 3000 observations and depth 4 for the
+// step 1 experiment (make_classification(3000), max_depth=4), 800 observations for the search surface,
+// "first 3 random" = the first 3 trials of sequentialSearch, max_depth=5 / num_leaves=24 = the book's rule.
 const trialSweep = Array.from({ length: 8 }, (_, i) => i + 1);
 
 /** The step scenario of the boosting settings page (Ders steps 1-10). */
 export const boostingAyarlariScenario: Scenario<TuneParams> = {
-  defaults: { lr: 0.3, trees: BOOK_TREES, patience: PATIENCE, depth: 2, leaves: 4, budget: 8, seed: 0, showSurface: false },
+  defaults: { lr: 0.3, trees: BOOK_TREES, patience: PATIENCE, depth: 2, leaves: 4, budget: 8, trial: 8, seed: 0, showSurface: false },
   steps: [
     {
       id: 'lr-deney',
@@ -147,7 +151,7 @@ export const boostingAyarlariScenario: Scenario<TuneParams> = {
     {
       id: 'ezber',
       title: 'Ezber açığı',
-      text: `Büyük ν = ${lrText(big.lr)}: eğitim log-kaybı ${bigTrain < 5e-7 ? 'sıfıra iner' : `${formatNonZero(bigTrain, 4)} değerine iner`}, doğrulama kaybı ${bigDip}. ağaçta en düşük (${f(big.valLoss[bigDip - 1], 4)}), sonra ${f(big.valLoss[MAX_TREES - 1], 3)} değerine yükselir. Aradaki açık (taralı) aşırı öğrenme işaretidir; kitabın birinci hatası: eğitimde neredeyse mükemmel, doğrulamada düşüş.`,
+      text: `Büyük ν = ${lrText(big.lr)}: eğitim log-kaybı ${/* exactly 0 in the data; formatNonZero(0) would print "0,000" */ bigTrain < 5e-7 ? 'sıfıra iner' : `${formatNonZero(bigTrain, 3)} değerine iner`}, doğrulama kaybı ${bigDip}. ağaçta en düşük (${f(big.valLoss[bigDip - 1], 3)}), sonra ${f(big.valLoss[MAX_TREES - 1], 3)} değerine yükselir. Aradaki açık (taralı) aşırı öğrenme işaretidir; kitabın birinci hatası: eğitimde neredeyse mükemmel, doğrulamada düşüş.`,
       params: { lr: big.lr },
     },
     {
@@ -161,7 +165,7 @@ export const boostingAyarlariScenario: Scenario<TuneParams> = {
       id: 'seviye',
       title: 'Seviye-öncelikli büyüme',
       term: 'seviye-öncelikli büyüme (level-wise, XGBoost)',
-      text: `Gradyan artırma sayfasının ilk artıklarına derinlik 2 ağacı: önce kök (${f(levelT[1], 3)}), sonra ikinci seviyenin iki düğümü birlikte (${f(levelT[0], 3)} ve ${f(levelT[2], 3)}); ${leafCount(level)} yaprak, dengeli; hata ${f(trainError(level), 3)}.`,
+      text: `Gradyan artırma sayfasının ilk artıklarına derinlik 2 ağacı: önce kök (${f(level.nodes[0].t, 3)}), sonra ikinci seviyenin iki düğümü birlikte (${f(levelT[0], 3)} ve ${f(levelT[2], 3)}); ${leafCount(level)} yaprak, dengeli; hata ${f(trainError(level), 3)}.`,
     },
     {
       id: 'yaprak',
@@ -180,13 +184,13 @@ export const boostingAyarlariScenario: Scenario<TuneParams> = {
       title: 'Izgara araması',
       term: 'ızgara araması (grid search)',
       text: `Kitabın 800 gözlemlik verisi; derinlik × ν uzayı, ${SURFACE.nTrees} ağaç, ${SURFACE.cv} katlı çapraz doğrulama AUC. Izgara ${gridCells.length} deneme: derinlik {${gridDepths.join(', ')}} × ν {${gridLrs.map(surfaceLrText).join('; ')}}; en iyisi ${cellText(gridBest)}. Izgara nereye bakacağını önceden sabitler.`,
-      sweep: { key: 'budget', values: trialSweep, intervalMs: 700 },
+      sweep: { key: 'trial', values: trialSweep, intervalMs: 700 },
     },
     {
       id: 'sirali-arama',
       title: 'Sıralı arama',
       text: `Aynı bütçe, ${gridCells.length} deneme: ilk 3 rastgele, sonra her deneme o ana kadarki iyi sonuçların yakınına. En iyisi ${cellText(seqBest)}; ızgaranınki AUC ${f(surf[gridBest], 3)}: ${seqNote}. Bunu gerçek bir aramada bilemezdiniz; burada sonradan ${surf.length} hücrenin hepsini ölçtük (gerçek en iyisi ${cellText(surfaceBest)}).`,
-      sweep: { key: 'budget', values: trialSweep, intervalMs: 700 },
+      sweep: { key: 'trial', values: trialSweep, intervalMs: 700 },
     },
   ],
 };

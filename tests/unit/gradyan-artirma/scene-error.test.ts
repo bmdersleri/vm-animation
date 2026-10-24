@@ -5,7 +5,7 @@ import { bestIndex } from '../../../src/concepts/boosting/boost';
 import { REG } from '../../../src/concepts/boosting/data';
 import { gradyanArtirmaScenario as sc, runFor } from '../../../src/concepts/gradyan-artirma/scenario';
 import { mountGbScene } from '../../../src/concepts/gradyan-artirma/scene';
-import { dodge } from '../../../src/concepts/gradyan-artirma/scene-error';
+import { dodge } from '../../../src/core/plot/dodge';
 import { formatNumber as f } from '../../../src/core/plot/format';
 
 const clean: (() => void)[] = [];
@@ -78,7 +78,7 @@ describe('error scene', () => {
     // a nu outside the three adds a fourth curve
     player.setParam('nu', 0.1);
     expect(count(el, 'path.lc-series.val')).toBe(4);
-    expect(el.querySelector(HOST + 'path.lc-series.emph')!.classList.contains('nu-3')).toBe(true);
+    expect(el.querySelector(HOST + 'path.lc-series.emph')!.classList.contains('lrc-2')).toBe(true);
   });
 
   it('step 9 draws two F lines and hollow val points', () => {

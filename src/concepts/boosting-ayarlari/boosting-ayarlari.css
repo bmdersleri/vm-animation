@@ -15,30 +15,16 @@
 .tune-plot text { font-size:var(--fs-tick); fill:var(--navy); font-variant-numeric:tabular-nums; }
 .tune-plot .axis-title { font-size:var(--fs-axis); font-weight:600; }
 
-/* curves: one colour per learning rate, train solid and validation dashed */
+/* curves: the colour of a learning rate comes from boosting/lr-color.css; train is solid, validation dashed */
 .tune-plot .lc-series { fill:none; stroke-width:3; stroke-linejoin:round; }
 .tune-plot .lc-series.auc { stroke:var(--navy); }
-.tune-plot .lc-series.train { stroke:var(--navy); }
-.tune-plot .lc-series.val { stroke:#C26A00; }
-.tune-plot .lc-series.lr-0 { stroke:var(--navy); }
-.tune-plot .lc-series.lr-1 { stroke:#1E8A4C; }
-.tune-plot .lc-series.lr-2 { stroke:#C26A00; }
-.tune-plot .lc-series.lr-3 { stroke:#7A3E9D; }
-.tune-plot .lc-series.lr-4 { stroke:#B3261E; }
 .tune-plot .lc-pin { fill:var(--surface); stroke:var(--navy); stroke-width:2.5; }
 .tune-plot .lc-pin-label, .tune-plot .end-label, .tune-plot .cv-vlabel, .tune-plot .cv-note { font-weight:600; paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
 .tune-plot .lc-pin-label { stroke-width:7px; }
-.tune-plot .end-label { fill:var(--navy); }
-.tune-plot .end-label.val { fill:#A85A00; }
-.tune-plot .end-label.lr-0 { fill:var(--navy); }
-.tune-plot .end-label.lr-1 { fill:#1E8A4C; }
-.tune-plot .end-label.lr-2 { fill:#A85A00; }
-.tune-plot .end-label.lr-3 { fill:#7A3E9D; }
-.tune-plot .end-label.lr-4 { fill:#B3261E; }
 .tune-plot .cv-note { fill:#A85A00; font-weight:700; }
 
 /* the shaded gap between training and validation loss (step 4) */
-.tune-plot .gap { fill:#C26A00; fill-opacity:.16; stroke:none; }
+.tune-plot .gap { fill:var(--navy); fill-opacity:.1; stroke:none; }
 
 /* vertical tree-count lines: the book's 150, the best tree and the stop tree */
 .tune-plot .cv-vline { stroke:var(--navy); stroke-width:2; stroke-dasharray:8 5; stroke-opacity:.55; }

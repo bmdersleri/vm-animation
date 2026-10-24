@@ -29,6 +29,7 @@ describe('boosting-ayarlari scenario', () => {
       depth: 2,
       leaves: 4,
       budget: 8,
+      trial: 8,
       seed: 0,
       showSurface: false,
     });
@@ -36,6 +37,7 @@ describe('boosting-ayarlari scenario', () => {
     expect(step('egriler').sweep!.values).toHaveLength(150);
     expect(step('yaprak-siniri').sweep!.key).toBe('leaves');
     expect(step('yaprak-siniri').sweep!.values).toEqual(Array.from({ length: 61 }, (_, i) => i + 4));
+    expect(step('izgara').sweep!.key).toBe('trial');
     expect(step('izgara').sweep!.values).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(step('sirali-arama').sweep!.values).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
