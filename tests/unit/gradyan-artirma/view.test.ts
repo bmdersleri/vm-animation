@@ -59,6 +59,30 @@ describe('gradyan-artirma view', () => {
     }
   });
 
+  it('a training error under the log floor ends its line with a pin instead of a flat run', () => {
+    const run = boost(REG.train, REG.val, 1, 3, 200);
+    const cut = run.trainMse.findIndex((v) => v < 1e-5);
+    expect(cut).toBeGreaterThan(0);
+    for (const id of ['durma', 'ezber']) {
+      const e = view(id, { nu: 1, depth: 3 }).error!;
+      const train = e.chart.series.find((s) => s.id === 'train')!;
+      expect(train.pts).toHaveLength(cut + 1);
+      expect(train.pts[cut]).toEqual([cut + 1, -5]);
+      expect(train.pts[cut - 1][1]).toBeGreaterThan(-5);
+      expect(e.chart.pins!.map((p) => p.label)).toContain('eğitim < 0,00001');
+      expect(e.chart.pins!.find((p) => p.label.startsWith('eğitim'))).toMatchObject({ x: cut + 1, y: -5 });
+      expect(e.endLabels.map((l) => l.id)).toEqual(['val']);
+    }
+    // the strip still shows the real value
+    expect(view('durma', { nu: 1, depth: 3 }).strip).toContain('eğitim hatası = < 0,000001');
+  });
+
+  it('a training curve above the floor keeps its full line and end label', () => {
+    const e = view('durma').error!;
+    expect(e.chart.series.find((s) => s.id === 'train')!.pts).toHaveLength(200);
+    expect(e.endLabels.map((l) => l.id)).toEqual(['train', 'val']);
+  });
+
   it('steps 7 to 10 name their later scene kind', () => {
     expect(view('durma').kind).toBe('error');
     expect(view('bagging-karsi').kind).toBe('compare');

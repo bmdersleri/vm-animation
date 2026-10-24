@@ -225,6 +225,20 @@ export function errText(v: number): string {
 
 const curve = (values: readonly number[]): [number, number][] => values.map((v, i) => [i + 1, logErr(v)]);
 
+/**
+ * A training curve on the log chart: the line ends at the first tree whose error is under the floor
+ * (its last point sits on the floor) and a pin there says so. Past that point the error is not
+ * drawn at all, so a flat run on the floor cannot read as a plateau.
+ */
+function trainCurve(values: readonly number[]): { pts: [number, number][]; pin: { x: number; y: number; label: string } | null } {
+  const cut = values.findIndex((v) => v < ERR_FLOOR);
+  if (cut < 0) {
+    return { pts: curve(values), pin: null };
+  }
+  const pts = curve(values.slice(0, cut + 1));
+  return { pts, pin: { x: cut + 1, y: pts[cut][1], label: `eğitim < ${f(ERR_FLOOR, 5)}` } };
+}
+
 /** The dip of a validation curve as a pin; `last` says the minimum is the last tree (no dip yet). */
 function dipPin(valMse: readonly number[]): { pin: { x: number; y: number; label: string }; last: boolean } {
   const at = bestIndex(valMse);
@@ -292,6 +306,7 @@ function learningRates(p: GbParams, trees: number): { error: ErrorView; strip: s
 function trainAndVal(id: string, p: GbParams, trees: number): { error: ErrorView; strip: string } {
   const run = runFor(p.nu, p.depth);
   const dip = dipPin(run.valMse);
+  const train = trainCurve(run.trainMse);
   const axis = logAxis(ERR_FLOOR, Math.max(...run.valMse, ...run.trainMse) * 1.25);
   const chart: LineChartSpec = {
     x: [1, MAX_TREES],
@@ -299,10 +314,10 @@ function trainAndVal(id: string, p: GbParams, trees: number): { error: ErrorView
     xTitle: 'ağaç sayısı M',
     yTitle: 'ortalama kare hata (log)',
     series: [
-      { id: 'train', cls: 'train', pts: curve(run.trainMse) },
+      { id: 'train', cls: 'train', pts: train.pts },
       { id: 'val', cls: 'val', pts: curve(run.valMse), dash: '8 5' },
     ],
-    pins: [dip.pin],
+    pins: train.pin ? [dip.pin, train.pin] : [dip.pin],
     marker: { x: trees, y: logErr(run.valMse[trees - 1]), label: `M = ${trees}` },
     xTicks: [1, 50, 100, 150, 200],
     yTicks: axis.ticks,
@@ -312,7 +327,7 @@ function trainAndVal(id: string, p: GbParams, trees: number): { error: ErrorView
     error: {
       chart,
       endLabels: [
-        { id: 'train', text: 'eğitim', y: logErr(run.trainMse[MAX_TREES - 1]) },
+        ...(train.pin ? [] : [{ id: 'train', text: 'eğitim', y: logErr(run.trainMse[MAX_TREES - 1]) }]),
         { id: 'val', text: 'doğrulama', y: logErr(run.valMse[MAX_TREES - 1]) },
       ],
       selectedId: null,
