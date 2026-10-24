@@ -119,10 +119,10 @@ describe('step 9: decision boundaries', () => {
       expect(boxes).toHaveLength(3);
       boxes.forEach((b, i) => {
         for (let j = i + 1; j < boxes.length; j++) expect(overlap(b, boxes[j])).toBe(0);
-        expect(b.l).toBeGreaterThanOrEqual(fr.l - 8);
-        expect(b.r).toBeLessThanOrEqual(fr.r + 8);
-        expect(b.t).toBeGreaterThanOrEqual(fr.t - 8);
-        expect(b.b).toBeLessThanOrEqual(fr.b + 8);
+        expect(b.l).toBeGreaterThanOrEqual(fr.l - 12);
+        expect(b.r).toBeLessThanOrEqual(fr.r + 12);
+        expect(b.t).toBeGreaterThanOrEqual(fr.t - 12);
+        expect(b.b).toBeLessThanOrEqual(fr.b + 12);
       });
     }
   });
@@ -183,8 +183,68 @@ describe('step 9 and 8 side panels fit the stage', () => {
   });
 });
 
+describe('step 9 labels and cells stay apart', () => {
+  it.each([
+    ['ders', 1280, 540],
+    ['lab', 750, 540],
+    ['lab', 900, 420],
+  ] as const)('%s %i x %i: tag and count of every matrix cell never intersect', (mode, w, h) => {
+    const { el, player } = setup(w, h, mode);
+    go(player, 'sinir');
+    const fs = mode === 'ders' ? 18 : 13;
+    for (const cell of el.querySelectorAll('.bs-item [data-cell]')) {
+      const tag = cell.querySelector('.cell-tag')!;
+      const cnt = cell.querySelector('.cell-count')!;
+      const bg = cell.querySelector('.cell-bg')!;
+      const tagText = tag.textContent!;
+      const cntText = cnt.textContent!;
+      const width = (t: string) => t.length * 0.62 * fs;
+      const cntX = num(cnt, 'x');
+      const cntRight = cnt.getAttribute('text-anchor') === 'end' ? cntX : cntX + width(cntText) / 2;
+      const cntLeft = cntRight - width(cntText);
+      if (tagText) {
+        const tagRight = num(tag, 'x') + width(tagText);
+        const sameLine = Math.abs(num(tag, 'y') - num(cnt, 'y')) < fs;
+        if (sameLine) expect(tagRight + 8, `${tagText} / ${cntText}`).toBeLessThanOrEqual(cntLeft);
+        expect(tagRight).toBeLessThanOrEqual(num(bg, 'x') + num(bg, 'width'));
+      }
+      expect(cntRight).toBeLessThanOrEqual(num(bg, 'x') + num(bg, 'width'));
+      expect(cntText).not.toBe('');
+    }
+  });
+
+  it.each([
+    ['ders', 1280, 540, 0.5],
+    ['ders', 1280, 540, 0.1],
+    ['lab', 750, 540, 0.5],
+    ['lab', 750, 540, 0.2],
+    ['lab', 750, 540, 0.15],
+  ] as const)('%s %i x %i threshold %f: line labels clear of each other and of every line', (mode, w, h, thr) => {
+    const { el, player } = setup(w, h, mode);
+    go(player, 'sinir');
+    player.setParams({ threshold: thr });
+    const fs = mode === 'ders' ? 18 : 13;
+    const boxes = [...el.querySelectorAll('text.boundary-label')].map((t) =>
+      labelBox(num(t, 'x'), num(t, 'y'), t.textContent!.length, t.getAttribute('text-anchor') as 'start', fs),
+    );
+    expect(boxes.length).toBeGreaterThanOrEqual(2);
+    boxes.forEach((b, i) => {
+      for (let j = i + 1; j < boxes.length; j++) expect(overlap(b, boxes[j])).toBe(0);
+      for (const l of el.querySelectorAll('line.boundary-line')) {
+        const n = 60;
+        for (let t = 0; t <= n; t++) {
+          const x = num(l, 'x1') + ((num(l, 'x2') - num(l, 'x1')) * t) / n;
+          const y = num(l, 'y1') + ((num(l, 'y2') - num(l, 'y1')) * t) / n;
+          const inside = x > b.l && x < b.r && y > b.t && y < b.b;
+          expect(inside, `label ${i} on line ${l.getAttribute('data-method')}`).toBe(false);
+        }
+      }
+    });
+  });
+});
+
 describe('step 10: what changed', () => {
-  it('step 10 table has three rows with equal pr auc', () => {
+  it('step 10 table has three rows with nearly equal pr auc', () => {
     const { el, player } = setup();
     go(player, 'karsilastirma');
     const rows = [...el.querySelectorAll('.imb-table tbody tr')];

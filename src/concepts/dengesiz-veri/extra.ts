@@ -1,11 +1,10 @@
 import type { StepPlayer } from '../../core/player';
 import type { ImbParams } from './scenario';
 
-/** Lab note: what balancing does to probabilities, and two SMOTE relatives, one sentence each. */
+/** Lab note: two short sentences (the shell puts this note above the controls, so it must stay short). */
 const NOTES = [
-  'Dengeleme olasılıkları şişirir: SMOTE ile ya da sınıf ağırlığıyla eğitilen bir model, gerçekte olduğundan daha sık "ayrılır" olasılığı verir. Bu yüzden skorlar olasılık olarak okunmadan önce kalibrasyon denetimi gerekir.',
-  'ADASYN, SMOTE gibi sentetik nokta üretir ama öğrenmesi zor olan, yani çevresinde daha çok kalan bulunan ayrılanlardan daha fazla üretir.',
-  'Borderline-SMOTE yalnızca iki sınıfın sınırına yakın ayrılanlardan sentetik nokta üretir; sınırdan uzak, rahat bölgedeki ayrılanları çoğaltmaz.',
+  'Dengeleme olasılıkları şişirir; skorlar olasılık olarak okunmadan önce kalibrasyon denetlenmelidir.',
+  'ADASYN öğrenmesi zor bölgelerde, Borderline-SMOTE sınıf sınırında daha çok sentetik nokta üretir.',
 ];
 
 /** Mounts the static Lab note under the page. */

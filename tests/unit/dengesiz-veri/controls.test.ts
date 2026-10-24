@@ -227,6 +227,7 @@ describe('imbalanced-data Lab controls', () => {
     mountImbExtra(host, new StepPlayer(sc));
     const text = host.textContent!;
     expect(text).toContain('kalibrasyon');
+    expect(host.querySelectorAll('p').length).toBeLessThanOrEqual(2);
     expect(text).toContain('ADASYN');
     expect(text).toContain('Borderline-SMOTE');
   });

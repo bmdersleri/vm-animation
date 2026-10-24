@@ -1,5 +1,5 @@
 import type { Selection } from 'd3-selection';
-import { chooseOffset, labelArea, offsets, type Box as LabelBox } from '../../core/plot/label-place';
+import { labelArea, labelBox, overlap, type Box as LabelBox } from '../../core/plot/label-place';
 import { r1 } from '../../core/plot/marks';
 import type { TextMeasure } from '../../core/plot/text-measure';
 import { MatrixLayer } from '../dengesiz/matrix';
@@ -23,7 +23,7 @@ export const TABLE_HEADS: readonly { key: 'label' | 'caught' | 'falseAlarm' | 'p
 ];
 
 /** Spacing levels of the side panel: roomy cells, then short ones when the stage is short. */
-const CELL_MAX = 2.4;
+const CELL_MAX = 2.2;
 const CELL_MIN = 1.6;
 
 /**
@@ -271,29 +271,53 @@ export class BoundaryScene extends ScatterScene implements ViewScene {
     py: (c: number) => number,
   ): void {
     const shown = lines.filter((l) => l.segment);
+    // the lines are obstacles: boxes every ~3 px along each of them
     const taken: LabelBox[] = [];
     for (const l of shown) {
       const s = l.segment!;
-      for (let t = 0; t <= 16; t++) {
-        const x = px(s.x1) + ((px(s.x2) - px(s.x1)) * t) / 16;
-        const y = py(s.y1) + ((py(s.y2) - py(s.y1)) * t) / 16;
-        taken.push({ l: x - 2, t: y - 2, r: x + 2, b: y + 2 });
+      const len = Math.hypot(px(s.x2) - px(s.x1), py(s.y2) - py(s.y1));
+      const n = Math.max(2, Math.ceil(len / 3));
+      for (let t = 0; t <= n; t++) {
+        const x = px(s.x1) + ((px(s.x2) - px(s.x1)) * t) / n;
+        const y = py(s.y1) + ((py(s.y2) - py(s.y1)) * t) / n;
+        taken.push({ l: x - 3, t: y - 3, r: x + 3, b: y + 3 });
       }
     }
     const area = labelArea(f.rect, 4);
+    const outside = (b: LabelBox): number => (b.r - b.l) * (b.b - b.t) - overlap(b, area);
+    const fs = f.tick;
     const placed = shown.map((l) => {
       const s = l.segment!;
-      const right = px(s.x2) >= px(s.x1) ? { x: px(s.x2), y: py(s.y2) } : { x: px(s.x1), y: py(s.y1) };
-      const o = chooseOffset({
-        x: right.x,
-        y: right.y,
-        chars: l.label.length,
-        cands: offsets(3, 3, f.tick),
-        fs: f.tick,
-        taken,
-        area,
-      });
-      return { method: l.method, label: l.label, x: r1(right.x + o.dx), y: r1(right.y + o.dy), anchor: o.anchor, selected: l.selected };
+      // walk from the right end inward; try both sides of the line at every stop
+      const ends = [
+        { x: px(s.x1), y: py(s.y1) },
+        { x: px(s.x2), y: py(s.y2) },
+      ].sort((a, b) => b.x - a.x);
+      const [from, to] = ends;
+      const len = Math.hypot(to.x - from.x, to.y - from.y) || 1;
+      const dx = (to.x - from.x) / len;
+      const dy = (to.y - from.y) / len;
+      const nx = -dy;
+      const ny = dx;
+      const w = l.label.length * 0.7 * fs + 2;
+      const h = 1.25 * fs + 2;
+      const reach = Math.abs(nx) * (w / 2) + Math.abs(ny) * (h / 2) + 5;
+      let best: { x: number; y: number; hits: number; box: LabelBox } | null = null;
+      for (let k = 0; k <= 30 && !(best && best.hits === 0); k++) {
+        const u = (k / 30) * 0.9;
+        for (const [side, far] of [[1, 1], [-1, 1], [1, 1.8], [-1, 1.8], [1, 2.8], [-1, 2.8]]) {
+          const cx = from.x + dx * len * u + nx * reach * far * side;
+          const cy = from.y + dy * len * u + ny * reach * far * side;
+          const y = cy + 0.325 * fs;
+          const box = labelBox(cx, y, l.label.length, 'middle', fs);
+          const hits = taken.reduce((sum, t) => sum + overlap(box, t), 0) + outside(box);
+          if (!best || hits < best.hits) {
+            best = { x: cx, y, hits, box };
+          }
+        }
+      }
+      taken.push(best!.box);
+      return { method: l.method, label: l.label, x: r1(best!.x), y: r1(best!.y), anchor: 'middle' as const, selected: l.selected };
     });
     this.linesG
       .selectAll<SVGTextElement, (typeof placed)[number]>('text.boundary-label')

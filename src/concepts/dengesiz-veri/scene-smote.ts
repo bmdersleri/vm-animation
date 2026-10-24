@@ -7,6 +7,7 @@ import { r1 } from '../../core/plot/marks';
 import { TextMeasure } from '../../core/plot/text-measure';
 import { tr } from '../../core/plot/transition';
 import { fitViewport, type Rect } from '../../core/plot/viewport';
+import { CUSTOMERS } from '../dengesiz/data';
 import { COUNTS, MINORITY, X_DOMAIN, Y_DOMAIN } from './model';
 import { NARROW, ScatterScene, type Box } from './scene-scatter';
 import type { ImbDot, ImbView } from './view';
@@ -26,8 +27,17 @@ export interface ViewScene {
 const PAD = 8;
 const GAP = 14;
 
-/** A point shows the copy badge from this many extra copies on. */
+/** A point shows the copy badge from this many extra copies on, and at most this many badges are drawn. */
 export const BADGE_MIN = 10;
+export const BADGE_MAX = 3;
+
+/** Dot id (`c<customer index>`) of every training churner to its index in the minority list. */
+const MINORITY_INDEX = new Map(MINORITY.map((c, i) => [`c${CUSTOMERS.indexOf(c)}`, i]));
+
+/** Radius factor of a copied point: its area is proportional to 1 + copies (the original and its copies). */
+export function copyScale(copies: number): number {
+  return 0.6 * Math.sqrt(1 + copies);
+}
 
 /** The two panels' rectangles and the height the drawing needs. */
 export interface PanelsLayout {
@@ -123,6 +133,15 @@ class Panel {
     );
     const dots = this.name === 'kopya' ? v.dots.filter((d) => !d.synthetic) : v.dots;
     const base = Math.max(1.8, tick * 0.11);
+    const copies = this.name === 'kopya' ? v.copies : null;
+    // copy panel: a churner's area grows with its copy count; SMOTE panel: plain marks
+    const radius = (d: ImbDot): number => {
+      const i = MINORITY_INDEX.get(d.id);
+      if (copies && i !== undefined) {
+        return r1(Math.max(base * 1.5, base * copyScale(copies[i])));
+      }
+      return r1(d.cls === 1 ? base * 1.5 : base);
+    };
     this.dotsG
       .selectAll<SVGCircleElement, ImbDot>('circle.pt')
       .data(dots, (d) => d.id)
@@ -138,34 +157,35 @@ class Panel {
         },
       )
       .attr('class', (d) => `pt ${d.cls === 1 ? 'pos' : 'neg'}${d.synthetic ? ' synthetic' : ''}`)
-      .attr('r', (d) => r1(d.cls === 1 ? base * 1.5 : base))
+      .attr('r', (d) => radius(d))
       .attr('cx', (d) => r1(sc.x(d.tenure)))
       .attr('cy', (d) => r1(sc.y(d.charge)));
-    this.drawBadges(this.name === 'kopya' ? v.copies : null, sc, rect, tick, base * 1.5);
+    this.drawBadges(copies, sc, rect, tick, (i) => (copies ? Math.max(base * 1.5, base * copyScale(copies[i])) : base * 1.5));
   }
 
   /**
-   * Copy badges "xN" (N = the point's total count) on points with at least BADGE_MIN extra copies,
-   * most copied first. A badge needs a free spot (not on a churner mark or another badge); the most
+   * Copy badges "xN" (N = the point's total count) on the BADGE_MAX most copied points (each with at
+   * least BADGE_MIN extra copies). A badge needs a free spot (not on a churner mark or another badge); the most
    * copied point always gets one.
    */
-  private drawBadges(copies: number[] | null, sc: ReturnType<typeof fitViewport>, rect: Rect, tick: number, mark: number): void {
+  private drawBadges(copies: number[] | null, sc: ReturnType<typeof fitViewport>, rect: Rect, tick: number, markOf: (i: number) => number): void {
     const items: { index: number; text: string; x: number; y: number; anchor: string; box: LabelBox }[] = [];
     if (copies) {
       const area = labelArea(rect, 0);
       const px = (i: number): number => sc.x(MINORITY[i].tenure);
       const py = (i: number): number => sc.y(MINORITY[i].charge);
       const taken: LabelBox[] = MINORITY.map((_, i) => ({
-        l: px(i) - mark - 1,
-        t: py(i) - mark - 1,
-        r: px(i) + mark + 1,
-        b: py(i) + mark + 1,
+        l: px(i) - markOf(i) - 1,
+        t: py(i) - markOf(i) - 1,
+        r: px(i) + markOf(i) + 1,
+        b: py(i) + markOf(i) + 1,
       }));
       const order = copies.map((c, i) => i).sort((a, b) => copies[b] - copies[a] || a - b);
-      order.forEach((i, rank) => {
+      order.slice(0, BADGE_MAX).forEach((i, rank) => {
         if (copies[i] < BADGE_MIN && rank > 0) {
           return;
         }
+        const mark = markOf(i);
         const text = `×${copies[i] + 1}`;
         const cands = offsets(mark, 3, tick);
         const x = px(i);

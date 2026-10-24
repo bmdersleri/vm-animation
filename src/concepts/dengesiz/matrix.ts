@@ -110,12 +110,16 @@ export class MatrixLayer {
       // a short cell writes tag and count on one baseline, a tall one stacks them
       const stacked = cellH >= tick * 2.3;
       const mid = y0 + row * cellH + cellH / 2;
+      // on one line the tag gives way to the count when the cell is too narrow for both
+      const countW = this.measure.width(String(matrix[c.key]), 'cell-count', axis);
+      const tagW = this.measure.width(c.tag, 'cell-tag', tick);
+      const showTag = stacked || (tagW + countW) * 1.15 + 24 <= cellW;
       cell
         .select('text.cell-tag')
         .attr('x', r1(x0 + col * cellW + 8))
         .attr('y', r1(stacked ? y0 + row * cellH + tick * 1.15 : mid))
         .attr('dy', stacked ? null : '0.35em')
-        .text(c.tag);
+        .text(showTag ? c.tag : '');
       cell
         .select('text.cell-count')
         .attr('text-anchor', stacked ? 'middle' : 'end')

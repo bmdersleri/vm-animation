@@ -6,7 +6,7 @@ import { overlap, type Box } from '../../../src/core/plot/label-place';
 import { BALANCED, copiesFor, MINORITY, SWEEP_RATIOS, syntheticFor } from '../../../src/concepts/dengesiz-veri/model';
 import { dengesizVeriScenario as sc } from '../../../src/concepts/dengesiz-veri/scenario';
 import { mountImbScene } from '../../../src/concepts/dengesiz-veri/scene';
-import { BADGE_MIN, panelsLayout } from '../../../src/concepts/dengesiz-veri/scene-smote';
+import { BADGE_MAX, BADGE_MIN, copyScale, panelsLayout } from '../../../src/concepts/dengesiz-veri/scene-smote';
 
 const clean: (() => void)[] = [];
 afterEach(() => {
@@ -72,11 +72,27 @@ describe('step 7: copy against SMOTE', () => {
     for (const b of badges) {
       expect(copies[Number(b.getAttribute('data-index'))]).toBeGreaterThanOrEqual(BADGE_MIN);
     }
+    expect(badges.length).toBeLessThanOrEqual(BADGE_MAX);
     // the lesson text names the same N
     expect(sc.steps[stepIndex(sc, 'kopyalama')].text).toContain(`×${top + 1}`);
     expect(count(el, '[data-panel="kopya"] circle.pt.synthetic')).toBe(0);
     expect(count(el, '[data-panel="smote"] circle.pt.synthetic')).toBe(1226);
     expect(count(el, '[data-panel="kopya"] circle.pt.pos')).toBe(MINORITY.length);
+  });
+
+  it('at most 3 badges, and the copy count shows as dot area', () => {
+    const { el, player } = setup();
+    go(player, 'kopyalama');
+    const copies = copiesFor(42, 1);
+    expect(count(el, '[data-panel="kopya"] .copy-badge')).toBeLessThanOrEqual(3);
+    expect(count(el, '[data-panel="kopya"] .copy-badge')).toBeGreaterThanOrEqual(1);
+    const radii = [...el.querySelectorAll('[data-panel="kopya"] circle.pt.pos')].map((c) => num(c, 'r'));
+    const few = copies.indexOf(Math.min(...copies));
+    const many = copies.indexOf(Math.max(...copies));
+    expect(copyScale(copies[many])).toBeGreaterThan(copyScale(copies[few]));
+    expect(Math.max(...radii)).toBeGreaterThan(Math.min(...radii));
+    // SMOTE panel keeps plain marks
+    expect(new Set([...el.querySelectorAll('[data-panel="smote"] circle.pt.pos')].map((c) => num(c, 'r'))).size).toBe(1);
   });
 
   it.each([
@@ -93,7 +109,7 @@ describe('step 7: copy against SMOTE', () => {
     const frame = panel.querySelector('rect.frame')!;
     const fr = boxOf(frame);
     const rects = [...panel.querySelectorAll('.copy-badge rect')].map(boxOf);
-    expect(rects.length).toBeGreaterThan(3);
+    expect(rects.length).toBeGreaterThanOrEqual(1);
     rects.forEach((r, i) => {
       expect(r.l).toBeGreaterThanOrEqual(fr.l - 1);
       expect(r.r).toBeLessThanOrEqual(fr.r + 1);
