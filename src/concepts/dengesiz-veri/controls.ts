@@ -28,8 +28,8 @@ type SelectKey = 'weight' | 'method';
  * Mounts the Lab controls of the imbalanced-data page. Only the current step's controls are shown:
  * the test-points switch (steps 1-4), k with the "another point" button (5), k / target ratio / seed
  * (6-7), the weight choice and manual weight (8), and method and threshold (9-10) with k and ratio
- * only for SMOTE and the weight choice and manual weight only for the weighted method. Every input writes through `player.setParam`; key presses on the controls do not
- * reach the step shortcuts.
+ * only for SMOTE and the weight choice and manual weight only for the weighted method. Every input
+ * writes through `player.setParam`; key presses on the controls do not reach the step shortcuts.
  */
 export function mountImbParams(host: HTMLElement, player: StepPlayer<ImbParams>): void {
   const doc = host.ownerDocument;

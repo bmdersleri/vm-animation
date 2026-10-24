@@ -59,7 +59,8 @@ export function weightsFor(p: Pick<ImbParams, 'weight' | 'manualWeight'>): { neg
 /**
  * The two-feature logistic model of a method, fitted in the browser on the standardised training
  * part (SMOTE adds its synthetic points, the weighted method gives the churners their weight).
- * Cached by the parameters that matter.
+ * Cached by the parameters that matter. A fit that does not converge in Newton's 50 steps keeps its last
+ * coefficients and logs one console warning.
  */
 export function modelFor(method: Method, p: FitParams): LogRegModel {
   const w = weightsFor(p);
@@ -89,6 +90,10 @@ export function modelFor(method: Method, p: FitParams): LogRegModel {
       );
     } else {
       fit = fitLogReg(TRAIN_PTS, TRAIN_Y, null, 1);
+    }
+    if (!fit.converged) {
+      // the spec's error case: the last coefficients are used, and the developer console says so (once per fit)
+      console.warn(`dengesiz-veri: Newton did not converge in ${fit.iterations} steps (${key}); using the last coefficients`);
     }
     model = { coef: fit.coef, intercept: fit.intercept };
     if (fitCache.size >= CACHE_LIMIT) {

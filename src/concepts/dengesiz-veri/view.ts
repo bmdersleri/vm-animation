@@ -178,6 +178,12 @@ function testDots(): ImbDot[] {
   return customerDots(true, { neg: 1, pos: 1 }).filter((d) => d.test);
 }
 
+/** The test part's counts, shown beside the boundary and the table. */
+const testCounts = { title: `Test kümesi (${COUNTS.test.neg + COUNTS.test.pos})`, neg: COUNTS.test.neg, pos: COUNTS.test.pos };
+
+/** "caught / churners" of a matrix. */
+const caughtText = (c: Confusion): string => `${c.tp} / ${c.tp + c.fn}`;
+
 /** Row of the comparison table for a method result. */
 function tableRow(id: string, r: MethodResult, label: string, selection: boolean): TableRow {
   const m = metrics(r.matrix);
@@ -185,7 +191,7 @@ function tableRow(id: string, r: MethodResult, label: string, selection: boolean
   return {
     id,
     label,
-    caught: `${r.matrix.tp} / ${r.matrix.tp + r.matrix.fn}`,
+    caught: caughtText(r.matrix),
     falseAlarm: String(r.matrix.fp),
     precision: ratio(m.precision),
     recall: ratio(m.recall),
@@ -320,30 +326,28 @@ export function deriveImbView(index: number, p: ImbParams, lab = false): ImbView
         strip: `ayrılan ${f(BALANCED.pos, 2)} = ${total} / (2 · ${COUNTS.train.pos}) · kalan ${f(BALANCED.neg, 2)} = ${total} / (2 · ${COUNTS.train.neg})`,
       };
     }
-    default: {
-      const test = { title: `Test kümesi (${COUNTS.test.neg + COUNTS.test.pos})`, neg: COUNTS.test.neg, pos: COUNTS.test.pos };
-      const caught = (c: Confusion): string => `${c.tp} / ${c.tp + c.fn}`;
-      if (id === 'sinir') {
-        const results = METHODS.map((m) => resultFor(m.id, p, p.threshold));
-        return {
-          ...base,
-          kind: 'boundary',
-          dots: testDots(),
-          counts: test,
-          boundary: {
-            threshold: p.threshold,
-            lines: results.map((r) => ({
-              method: r.method,
-              label: r.label,
-              segment: r.segment,
-              note: r.note,
-              selected: lab && r.method === p.method,
-            })),
-            matrices: results.map((r) => ({ method: r.method, label: r.label, matrix: r.matrix })),
-          },
-          strip: `eşik p = ${f(p.threshold, 2)} · yakalanan: ${results.map((r) => `${r.label} ${caught(r.matrix)}`).join(' · ')}`,
-        };
-      }
+    case 'sinir': {
+      const results = METHODS.map((m) => resultFor(m.id, p, p.threshold));
+      return {
+        ...base,
+        kind: 'boundary',
+        dots: testDots(),
+        counts: testCounts,
+        boundary: {
+          threshold: p.threshold,
+          lines: results.map((r) => ({
+            method: r.method,
+            label: r.label,
+            segment: r.segment,
+            note: r.note,
+            selected: lab && r.method === p.method,
+          })),
+          matrices: results.map((r) => ({ method: r.method, label: r.label, matrix: r.matrix })),
+        },
+        strip: `eşik p = ${f(p.threshold, 2)} · yakalanan: ${results.map((r) => `${r.label} ${caughtText(r.matrix)}`).join(' · ')}`,
+      };
+    }
+    case 'karsilastirma': {
       const rows = METHODS.map((m) => tableRow(m.id, resultFor(m.id, p, 0.5), m.label, false));
       if (lab) {
         const chosen = resultFor(p.method, p, p.threshold);
@@ -353,10 +357,12 @@ export function deriveImbView(index: number, p: ImbParams, lab = false): ImbView
         ...base,
         kind: 'boundary',
         dots: [],
-        counts: test,
+        counts: testCounts,
         table: { rows, note: COMPARE_NOTE, links: COMPARE_LINKS },
         strip: `PR-AUC: ${rows.map((r) => `${r.label} ${r.ap}`).join(' · ')}`,
       };
     }
+    default:
+      throw new RangeError(`no view for step "${id}"`);
   }
 }

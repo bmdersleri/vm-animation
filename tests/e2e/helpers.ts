@@ -64,29 +64,49 @@ export function outsideStage(page: Page, selector: string): Promise<string[]> {
   }, selector);
 }
 
-/** Intersecting pairs among the visible matches (class + text of both). */
-export function overlaps(page: Page, selector: string): Promise<string[]> {
-  return page.evaluate((sel) => {
-    const items: { name: string; r: DOMRect }[] = [];
+/**
+ * A pair that stacks on purpose: an `upper` text directly above a `lower` text inside the same `within`
+ * ancestor, whose line boxes may touch by at most `maxShare` of the smaller box height. Text on one
+ * baseline (the same top) never matches, so a tag drawn over its count still counts as an overlap.
+ */
+export interface Stack {
+  upper: string;
+  lower: string;
+  within: string;
+  maxShare: number;
+}
+
+/** Intersecting pairs among the visible matches (class + text of both); `stacks` names pairs that touch on purpose. */
+export function overlaps(page: Page, selector: string, stacks: Stack[] = []): Promise<string[]> {
+  return page.evaluate(([sel, rules]) => {
+    const items: { el: Element; name: string; r: DOMRect }[] = [];
     for (const el of document.querySelectorAll<Element>(sel)) {
       const r = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
       if (r.width === 0 || r.height === 0 || cs.visibility === 'hidden' || cs.display === 'none') continue;
       if (el.closest('[hidden]') || cs.opacity === '0') continue;
-      items.push({ name: `${el.getAttribute('class') ?? el.tagName} "${(el.textContent ?? '').trim().slice(0, 30)}"`, r });
+      items.push({ el, name: `${el.getAttribute('class') ?? el.tagName} "${(el.textContent ?? '').trim().slice(0, 30)}"`, r });
     }
+    const stacked = (a: (typeof items)[number], b: (typeof items)[number], depth: number): boolean =>
+      rules.some((s) => {
+        const [up, low] = a.el.matches(s.upper) && b.el.matches(s.lower) ? [a, b] : b.el.matches(s.upper) && a.el.matches(s.lower) ? [b, a] : [null, null];
+        if (!up || !low) return false;
+        const box = up.el.closest(s.within);
+        return box !== null && box === low.el.closest(s.within) && up.r.top < low.r.top - 0.5 && depth <= s.maxShare * Math.min(up.r.height, low.r.height);
+      });
     const out: string[] = [];
     for (let i = 0; i < items.length; i++) {
       for (let j = i + 1; j < items.length; j++) {
         const a = items[i].r;
         const b = items[j].r;
-        if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5) {
+        const depth = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+        if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && depth > 0.5 && !stacked(items[i], items[j], depth)) {
           out.push(`${items[i].name} x ${items[j].name}`);
         }
       }
     }
     return out;
-  }, selector);
+  }, [selector, stacks] as const);
 }
 
 /**

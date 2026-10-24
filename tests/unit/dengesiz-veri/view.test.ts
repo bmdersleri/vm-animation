@@ -95,4 +95,20 @@ describe('step 5 example choice', () => {
     const key = (p: { tenure: number; charge: number }) => `${p.tenure.toFixed(2)}|${p.charge.toFixed(2)}`;
     expect(new Set([key(e.xi), key(e.xz), key(e.xnew)]).size).toBe(3);
   });
+
+  it('every step has its own view and an unknown step throws', () => {
+    for (const [i, s] of sc.steps.entries()) {
+      expect(deriveImbView(i, sc.defaults).stepId).toBe(s.id);
+    }
+    expect(view('sinir').boundary).toBeTruthy();
+    expect(view('karsilastirma').table).toBeTruthy();
+    // a step the view does not know (added for this test only) is an error, not the comparison table
+    sc.steps.push({ id: 'bilinmeyen', title: 'x', text: 'x' });
+    try {
+      expect(() => deriveImbView(sc.steps.length - 1, sc.defaults)).toThrow(RangeError);
+    } finally {
+      sc.steps.pop();
+    }
+    expect(sc.steps).toHaveLength(10);
+  });
 });

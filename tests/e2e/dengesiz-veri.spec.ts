@@ -1,12 +1,22 @@
 import { test, expect, type Page } from '@playwright/test';
-import { open, outsideStage, overlaps, pageOverflow, paramsOutside, settled } from './helpers';
+import { open, outsideStage, overlaps, pageOverflow, paramsOutside, settled, type Stack } from './helpers';
 
 const PAGE = '/dengesiz-veri/';
 const READY = 'svg.imb-plot';
 const IDS = ['veri', 'dogruluk', 'azinlik', 'egitim', 'sentetik', 'smote-doldur', 'kopyalama', 'agirlik', 'sinir', 'karsilastirma'];
 const STEPS = IDS.length;
-/** Every label; the matrix tag over its count and the caption under a panel title stack on purpose (their line boxes touch). */
-const LABELS = '.imb-plot text:not(.probe):not(.cell-tag):not(.sp-caption)';
+/** Every label. */
+const LABELS = '.imb-plot text:not(.probe)';
+
+/**
+ * The two pairs that stack on purpose, their line boxes touching: a stacked matrix cell's tag over its
+ * count (same cell), and the step-9 caption under the side panel's title. A tag on the count's baseline
+ * (the old "doğru kalan" over "563") is still an overlap.
+ */
+const STACKS: Stack[] = [
+  { upper: '.cell-tag', lower: '.cell-count', within: '[data-cell]', maxShare: 0.5 },
+  { upper: '.sp-title', lower: '.sp-caption', within: '.imb-side', maxShare: 0.5 },
+];
 
 test.use({ reducedMotion: 'reduce' });
 
@@ -19,7 +29,7 @@ async function step(page: Page, n: number) {
 }
 
 async function geometry(page: Page) {
-  expect(await overlaps(page, LABELS)).toEqual([]);
+  expect(await overlaps(page, LABELS, STACKS)).toEqual([]);
   expect(await outsideStage(page, `${LABELS}, .imb-scene .formula`)).toEqual([]);
   expect((await pageOverflow(page)).x).toBeLessThanOrEqual(0);
 }
@@ -63,6 +73,22 @@ test('lab: every step fits and shows only its controls inside the card', async (
     await geometry(page);
     expect(await paramsOutside(page), `step ${n}`).toEqual([]);
   }
+});
+
+test('the overlap check passes stacked tags and still flags a tag on its count', async ({ page }) => {
+  await open(page, PAGE, 'lab', READY);
+  await step(page, 2);
+  expect(await overlaps(page, LABELS, STACKS)).toEqual([]);
+  // put one tag on its count's baseline, as the old narrow cell did ("doğru kalan" over "563")
+  await page.evaluate(() => {
+    const cell = document.querySelector('.imb-plot [data-cell="tn"]')!;
+    const tag = cell.querySelector('.cell-tag')!;
+    const count = cell.querySelector('.cell-count')!;
+    tag.setAttribute('y', count.getAttribute('y')!);
+    tag.setAttribute('dy', count.getAttribute('dy') ?? '0');
+    tag.setAttribute('x', String(Number(count.getAttribute('x')) - 20));
+  });
+  expect(await overlaps(page, LABELS, STACKS)).toContain('cell-tag "doğru kalan" x cell-count "563"');
 });
 
 test('lab: k and target ratio sliders, then the method select', async ({ page }) => {
