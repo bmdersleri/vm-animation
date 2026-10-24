@@ -159,4 +159,32 @@ describe('scatter scene', () => {
       expect(l.textContent!.length * 16 * 0.62).toBeLessThanOrEqual(column - 8);
     }
   });
+  it('step 5 labels carry a class whose CSS gives a visible fill', async () => {
+    const { readFileSync } = (await import('node:fs' as string)) as { readFileSync: (p: string, e: string) => string };
+    const css = readFileSync('src/concepts/dengesiz-veri/dengesiz-veri.css', 'utf8');
+    const { el, player } = setup();
+    go(player, 'sentetik');
+    const byText = new Map([...el.querySelectorAll('text.x-label')].map((l) => [l.textContent, l]));
+    for (const [name, cls] of [['x_i', 'is-xi'], ['x_zi', 'is-xzi'], ['x_new', 'is-xnew']]) {
+      const label = byText.get(name)!;
+      expect(label.getAttribute('class')).toBe(`x-label ${cls}`);
+      expect(css.length).toBeGreaterThan(100);
+      const rule = css.split(String.fromCharCode(10)).find((r: string) => r.includes(`.x-label.${cls} {`))!;
+      expect(rule).toMatch(/fill:(var\(--navy\)|#[0-9A-Fa-f]{6});/);
+    }
+  });
+
+  it('step 5 x_new label stays off the chosen segment', () => {
+    const { el, player } = setup();
+    go(player, 'sentetik');
+    const label = el.querySelector('text.x-label.is-xnew')!;
+    const box = labelBox(Number(label.getAttribute('x')), Number(label.getAttribute('y')), 5, label.getAttribute('text-anchor') as 'start', 16);
+    const a = el.querySelector('circle.x-i')!;
+    const b = el.querySelector('circle.x-zi')!;
+    for (let t = 0; t <= 12; t++) {
+      const x = Number(a.getAttribute('cx')) + ((Number(b.getAttribute('cx')) - Number(a.getAttribute('cx'))) * t) / 12;
+      const y = Number(a.getAttribute('cy')) + ((Number(b.getAttribute('cy')) - Number(a.getAttribute('cy'))) * t) / 12;
+      expect(overlap(box, { l: x - 1, t: y - 1, r: x + 1, b: y + 1 })).toBe(0);
+    }
+  });
 });

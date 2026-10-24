@@ -236,7 +236,16 @@ export class ScatterScene {
           { name: 'x_new', at: e.xnew },
         ]
       : [];
-    const taken: LabelBox[] = marks.map((m) => ({ l: px(m.at) - half, t: py(m.at) - half, r: px(m.at) + half, b: py(m.at) + half }));
+    // the chosen segment x_i - x_zi is an obstacle too: small boxes along it
+    const segment: LabelBox[] = [];
+    if (e) {
+      for (let t = 0; t <= 12; t++) {
+        const x = px(e.xi) + ((px(e.xz) - px(e.xi)) * t) / 12;
+        const y = py(e.xi) + ((py(e.xz) - py(e.xi)) * t) / 12;
+        segment.push({ l: x - 2, t: y - 2, r: x + 2, b: y + 2 });
+      }
+    }
+    const taken: LabelBox[] = segment.concat(marks.map((m) => ({ l: px(m.at) - half, t: py(m.at) - half, r: px(m.at) + half, b: py(m.at) + half })));
     const placed = marks.map((m) => {
       const x = px(m.at);
       const y = py(m.at);
@@ -247,7 +256,7 @@ export class ScatterScene {
       .selectAll<SVGTextElement, (typeof placed)[number]>('text.x-label')
       .data(placed, (d) => d.name)
       .join('text')
-      .attr('class', (d) => `x-label ${d.name.replace('_', '-')}`)
+      .attr('class', (d) => `x-label is-${d.name.replace('_', '')}`)
       .attr('data-chars', (d) => d.name.length)
       .attr('text-anchor', (d) => d.anchor)
       .attr('x', (d) => d.x)

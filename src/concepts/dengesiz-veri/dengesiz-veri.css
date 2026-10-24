@@ -28,6 +28,9 @@
 .imb-plot .x-i { fill:none; stroke:var(--navy); stroke-width:3; }
 .imb-plot .x-zi { fill:none; stroke:#A85A00; stroke-width:3; }
 .imb-plot .x-new { fill:#E07B00; stroke:var(--navy); stroke-width:2; }
+.imb-plot .x-label.is-xi { fill:var(--navy); }
+.imb-plot .x-label.is-xzi { fill:#A85A00; }
+.imb-plot .x-label.is-xnew { fill:#B35F00; }
 .imb-plot .x-label { font-weight:700; paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
 
 /* side panel: title, count bars, matrix, metrics, the book's code line */
