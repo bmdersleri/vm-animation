@@ -22,7 +22,24 @@ async function step(page: Page, n: number, mode: 'ders' | 'lab' = 'ders') {
   await settled(() => page.locator('.tune-scene').innerHTML());
 }
 
+/** Node labels of the tree diagram that leave their box (the overlap check compares text with text only). */
+async function labelsOutsideBoxes(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const out: string[] = [];
+    for (const n of document.querySelectorAll('g.tg-node')) {
+      const r = n.querySelector('rect')!.getBoundingClientRect();
+      if (r.width === 0) continue;
+      for (const t of n.querySelectorAll('text')) {
+        const b = t.getBoundingClientRect();
+        if (b.left < r.left + 1 || b.right > r.right - 1 || b.top < r.top || b.bottom > r.bottom) out.push(t.textContent ?? '');
+      }
+    }
+    return out;
+  });
+}
+
 async function geometry(page: Page) {
+  expect(await labelsOutsideBoxes(page)).toEqual([]);
   expect(await overlaps(page, LABELS)).toEqual([]);
   expect(await outsideStage(page, '.tune-plot text:not(.probe), .tune-scene .formula')).toEqual([]);
   expect((await pageOverflow(page)).x).toBeLessThanOrEqual(0);
@@ -75,10 +92,42 @@ test('lab: depth and trial budget sliders', async ({ page }) => {
   expect(await page.locator('.formula').innerText()).not.toEqual(before);
   await geometry(page);
   await expect(page).toHaveScreenshot('boosting-ayarlari-lab-6.png');
+  // leaf-wise at depth 3 is eight leaves five deep
+  await step(page, 7, 'lab');
+  await setRange(page, 'depth', '3');
+  await geometry(page);
 
   await step(page, 9, 'lab');
   await setRange(page, 'budget', '12');
   await expect(page.locator('.formula')).toContainText('12 / 12 deneme');
   await geometry(page);
   await expect(page).toHaveScreenshot('boosting-ayarlari-lab-9.png');
+});
+
+test.describe('narrow screen', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('lab: depth 3 trees keep their labels in their boxes at 390 px', async ({ page }) => {
+    await open(page, PAGE, 'lab', READY);
+    for (const n of [6, 7]) {
+      await step(page, n, 'lab');
+      await setRange(page, 'depth', '3');
+      expect(await labelsOutsideBoxes(page)).toEqual([]);
+      expect(await overlaps(page, LABELS)).toEqual([]);
+      expect((await pageOverflow(page)).x).toBeLessThanOrEqual(0);
+    }
+  });
+
+  test('ders: the formula strip is never under the player bar', async ({ page }) => {
+    await open(page, PAGE, 'ders', READY);
+    for (const n of [1, 5, 9, 10]) {
+      await step(page, n);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const under = await page.evaluate(() => {
+        const bar = document.querySelector('.player-bar')!.getBoundingClientRect();
+        return document.querySelector('.formula')!.getBoundingClientRect().bottom - bar.top;
+      });
+      expect(under, `step ${n}`).toBeLessThanOrEqual(0);
+    }
+  });
 });

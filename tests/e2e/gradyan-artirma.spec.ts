@@ -77,3 +77,20 @@ test('lab: learning rate and tree count sliders', async ({ page }) => {
   await geometry(page);
   await expect(page).toHaveScreenshot('gradyan-artirma-lab-7.png');
 });
+
+test.describe('narrow screen', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('ders: the formula strip is never under the player bar', async ({ page }) => {
+    await open(page, PAGE, 'ders', READY);
+    for (const n of [1, 5, 9, 10]) {
+      await step(page, n);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const under = await page.evaluate(() => {
+        const bar = document.querySelector('.player-bar')!.getBoundingClientRect();
+        return document.querySelector('.formula')!.getBoundingClientRect().bottom - bar.top;
+      });
+      expect(under, `step ${n}`).toBeLessThanOrEqual(0);
+    }
+  });
+});

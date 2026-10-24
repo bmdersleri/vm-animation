@@ -99,7 +99,7 @@ describe('growth scene', () => {
 
   it('tree diagram fits 390 px', () => {
     for (const nodes of [treeNodes(levelTree(2), 'level'), treeNodes(leafTree(8), 'leaf'), treeNodes(leafTree(4), 'leaf')]) {
-      const lay = layoutTree(nodes, 390, { rowH: 56, boxH: 40, maxBoxW: 110 });
+      const lay = layoutTree(nodes, 390, { rowH: 56, boxH: 40, boxW: (n) => n.label.length * 8 + 12 });
       expect(lay.boxes).toHaveLength(nodes.length);
       for (const b of lay.boxes) {
         expect(b.x).toBeGreaterThanOrEqual(0);
@@ -132,5 +132,43 @@ describe('growth scene', () => {
       expect(b.x + b.w).toBeLessThanOrEqual(390);
     }
     expect(Number(el.querySelector(G + 'svg')!.getAttribute('width'))).toBeLessThanOrEqual(390);
+  });
+
+  it('every node box of a depth 3 tree holds its label and keeps clear of its neighbours', () => {
+    for (const [w, h] of [[1280, 540], [390, 700]]) {
+      for (const id of ['seviye', 'yaprak']) {
+        const { el, player } = setup(w, h);
+        go(player, id);
+        player.setParam('depth', 3);
+        const nodes = [...el.querySelectorAll(G + 'g.tg-node')].map((n) => {
+          const r = n.querySelector('rect')!;
+          const t = n.querySelector('text')!;
+          return {
+            label: t.textContent!,
+            lines: t.querySelectorAll('tspan').length,
+            x: Number(r.getAttribute('x')),
+            y: Number(r.getAttribute('y')),
+            w: Number(r.getAttribute('width')),
+            h: Number(r.getAttribute('height')),
+          };
+        });
+        expect(nodes.length, `${id} ${w}`).toBeGreaterThanOrEqual(15);
+        for (const n of nodes) {
+          // one line, and the box is wider than the label's estimated width (0.62 em per character)
+          expect(n.lines, `${id} ${w} ${n.label}`).toBe(1);
+          expect(n.w, `${id} ${w} ${n.label}`).toBeGreaterThanOrEqual(n.label.length * 13 * 0.62);
+          expect(n.x).toBeGreaterThanOrEqual(0);
+          expect(n.x + n.w).toBeLessThanOrEqual(w);
+        }
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const a = nodes[i];
+            const b = nodes[j];
+            const apart = a.x + a.w + 3 <= b.x || b.x + b.w + 3 <= a.x || a.y + a.h + 3 <= b.y || b.y + b.h + 3 <= a.y;
+            expect(apart, `${id} ${w}: ${a.label} / ${b.label}`).toBe(true);
+          }
+        }
+      }
+    }
   });
 });

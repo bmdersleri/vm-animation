@@ -38,37 +38,60 @@ export interface TreeLayout {
   height: number;
 }
 
+/** Space kept between two boxes, sideways and downwards (px). */
+const BOX_GAP = 4;
+
 /**
  * Positions of a tree diagram `width` px wide: one row per depth (`rowH` apart), leaves in equal
- * slots from left to right, every parent centred over its two children. A box is as wide as its slot
- * minus 4 px (at most `maxBoxW`), so boxes of one row never touch and nothing leaves [0, width].
+ * slots from left to right, every parent centred over its two children. A box is as wide as its
+ * text needs (`boxW`), kept inside [0, width]. When neighbours in a row would touch (a narrow
+ * screen, a deep leaf-wise tree) the later box moves down to the next free place, below its parent
+ * and clear of every other box, so labels always keep their full width.
  */
 export function layoutTree(
   nodes: readonly TreeNodeView[],
   width: number,
-  opts: { rowH: number; boxH: number; maxBoxW: number },
+  opts: { rowH: number; boxH: number; boxW: (node: TreeNodeView) => number },
 ): TreeLayout {
   const slots: number[] = Array(nodes.length).fill(0);
+  const parent: number[] = Array(nodes.length).fill(-1);
   let next = 0;
   const place = (id: number): number => {
     const n = nodes[id];
     if (n.l === -1) {
       slots[id] = next++;
     } else {
+      parent[n.l] = id;
+      parent[n.r] = id;
       slots[id] = (place(n.l) + place(n.r)) / 2;
     }
     return slots[id];
   };
   place(0);
   const slotW = (width - PAD * 2) / Math.max(1, next);
-  const w = Math.max(1, Math.min(opts.maxBoxW, slotW - 4));
-  let maxDepth = 0;
-  const boxes = nodes.map((n): TreeBox => {
-    maxDepth = Math.max(maxDepth, n.depth);
-    const cx = PAD + (slots[n.id] + 0.5) * slotW;
-    return { id: n.id, x: cx - w / 2, y: PAD + n.depth * opts.rowH, w, h: opts.boxH, cx };
-  });
-  return { boxes, height: PAD + maxDepth * opts.rowH + opts.boxH + PAD };
+  const byId = new Map<number, TreeBox>();
+  const boxes: TreeBox[] = [];
+  const order = [...nodes].sort((a, b) => a.depth - b.depth || slots[a.id] - slots[b.id]);
+  for (const n of order) {
+    const w = Math.max(1, Math.min(width, opts.boxW(n)));
+    const x = Math.max(0, Math.min(width - w, PAD + (slots[n.id] + 0.5) * slotW - w / 2));
+    const up = parent[n.id] >= 0 ? byId.get(parent[n.id])! : null;
+    let y = Math.max(PAD + n.depth * opts.rowH, up ? up.y + opts.rowH : 0);
+    for (;;) {
+      const hit = boxes.filter(
+        (o) => x < o.x + o.w + BOX_GAP && o.x < x + w + BOX_GAP && y < o.y + o.h + BOX_GAP && o.y < y + opts.boxH + BOX_GAP,
+      );
+      if (hit.length === 0) {
+        break;
+      }
+      y = Math.max(...hit.map((o) => o.y + o.h)) + BOX_GAP;
+    }
+    const box: TreeBox = { id: n.id, x, y, w, h: opts.boxH, cx: x + w / 2 };
+    byId.set(n.id, box);
+    boxes.push(box);
+  }
+  const bottom = Math.max(...boxes.map((b) => b.y + b.h));
+  return { boxes: nodes.map((n) => byId.get(n.id)!), height: bottom + PAD };
 }
 
 /** Pixel geometry shared by `plan` and `draw`. */
@@ -80,7 +103,6 @@ interface Plan {
   headY: number;
   tree: TreeLayout;
   treeTop: number;
-  twoLine: boolean;
   splitsY: number;
   captionY: number;
   captionLines: string[];
@@ -146,21 +168,21 @@ export class GrowScene {
     const { tick, axis } = this.measure.fonts(this.mode);
     const gap = Math.round(tick * 0.45);
     const wide = width >= WIDE;
-    const treeW = wide ? Math.floor(width * 0.46) : width;
+    // eight leaves need their room: the tree takes more of a wide stage than a small one
+    const leaves = g.nodes.filter((n) => n.l === -1).length;
+    const treeW = wide ? Math.floor(width * (leaves > 4 ? 0.56 : 0.46)) : width;
     const lineH = tick * 1.45;
     const headY = PAD + tick;
     const treeTop = PAD + lineH * g.head.length + gap;
-    // internal labels that do not fit their box in one line take two
-    const slotW = (treeW - PAD * 2) / Math.max(1, g.nodes.filter((n) => n.l === -1).length);
-    const labelW = this.measure.maxWidth(g.nodes.map((n) => n.label), 'tick', tick);
-    const twoLine = labelW + 10 > Math.min(110, slotW - 4);
-    const boxH = tick * (twoLine ? 2.7 : 2);
+    const boxH = tick * 2;
     const rows = Math.max(...g.nodes.map((n) => n.depth)) + 1;
     const below = lineH * (g.splits.length + 3) + PAD;
     const rowH = wide
       ? Math.max(boxH * 1.25, Math.min(boxH * 1.7, (minH - treeTop - below) / rows))
       : boxH * 1.5;
-    const tree = layoutTree(g.nodes, treeW, { rowH, boxH, maxBoxW: 110 });
+    // a box holds its label on one line: the bold text plus 6 px each side
+    const boxW = (n: TreeNodeView): number => Math.ceil(this.measure.width(n.label, 'tick', tick) * 1.1) + 12;
+    const tree = layoutTree(g.nodes, treeW, { rowH, boxH, boxW });
     const splitsY = treeTop + tree.height + tick;
     const captionLines = this.measure.wrap(g.caption, treeW - PAD * 2, 'tick', tick);
     const captionY = splitsY + lineH * g.splits.length + tick * 0.3;
@@ -179,7 +201,7 @@ export class GrowScene {
     const plot: Rect = { left: plotLeft, top: plotTop, width: plotW, height: plotH };
     const plotBottom = plotTop + plotH + below2;
     const height = Math.max(minH, wide ? Math.max(treeBottom, plotBottom) : plotBottom);
-    return { width, height, wide, treeW, headY, tree, treeTop, twoLine, splitsY, captionY, captionLines, plot, badgeR, badgeRows };
+    return { width, height, wide, treeW, headY, tree, treeTop, splitsY, captionY, captionLines, plot, badgeR, badgeRows };
   }
 
   /** Draws `v.grow`; `ms` > 0 animates the step line. */
@@ -255,13 +277,11 @@ export class GrowScene {
         .attr('height', r1(b.h));
       const t = el.select<SVGTextElement>('text.tg-label').attr('x', r1(b.cx));
       const midY = top + b.y + b.h / 2;
-      // "x ≤ " and the number stay one string for readers, two lines for the eye when the box is narrow
-      const parts = p.twoLine && !d.leaf ? [d.label.slice(0, d.label.indexOf('≤') + 2), d.label.slice(d.label.indexOf('≤') + 2)] : [d.label];
       t.selectAll('tspan')
-        .data(parts)
+        .data([d.label])
         .join('tspan')
         .attr('x', r1(b.cx))
-        .attr('y', (_, k) => r1(midY + tick * 0.35 + (k - (parts.length - 1) / 2) * tick * 1.15))
+        .attr('y', r1(midY + tick * 0.35))
         .text((s) => s);
     });
 
