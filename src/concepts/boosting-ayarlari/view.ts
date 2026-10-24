@@ -144,45 +144,66 @@ function lossChart(yTitle: string, series: LineSeries[]): LineChartSpec {
   };
 }
 
-/** Step 1: validation AUC at 150 trees over the five book rates, on a log10 x axis. */
-function lrExperiment(): TuneView {
-  const xs = BOOK_LRS.map((lr) => Math.log10(lr));
-  const ys = BOOK_LRS.map((lr) => curveOf(lr).valAuc[BOOK_TREES - 1]);
+const clampTrees = (trees: number): number => Math.max(1, Math.min(MAX_TREES, Math.round(trees)));
+const sameLr = (a: number, b: number): boolean => Math.abs(a - b) < 1e-9;
+
+/**
+ * Step 1: validation AUC at a tree count over the learning rates, on a log10 x axis. The Ders view is the
+ * book's experiment (five rates, 150 trees); the Lab adds the rate 1,0, takes the tree count from the slider
+ * and marks the selected rate with the marker.
+ */
+function lrExperiment(p: TuneParams, lab: boolean): TuneView {
+  const rates = lab ? CURVES.lrs : BOOK_LRS;
+  const n = lab ? clampTrees(p.trees) : BOOK_TREES;
+  const xs = rates.map((lr) => Math.log10(lr));
+  const ys = rates.map((lr) => curveOf(lr).valAuc[n - 1]);
   const pad = 0.12;
+  const sel = lab ? rates.findIndex((lr) => sameLr(lr, p.lr)) : -1;
   const chart: LineChartSpec = {
     x: [xs[0] - pad, xs[xs.length - 1] + pad],
     y: [Math.floor(Math.min(...ys) * 100) / 100 - 0.01, Math.ceil(Math.max(...ys) * 100) / 100 + 0.01],
     xTitle: 'öğrenme oranı ν (log ölçek)',
     yTitle: 'doğrulama AUC',
     series: [{ id: 'auc', cls: 'auc', pts: xs.map((x, i) => [x, ys[i]]) }],
-    pins: xs.map((x, i) => ({ x, y: ys[i], label: f(ys[i], 3) })),
+    pins: xs.flatMap((x, i) => (i === sel ? [] : [{ x, y: ys[i], label: f(ys[i], 3) }])),
     xTicks: xs,
     xFormat: (t) => lrText(10 ** t),
   };
-  return {
-    stepId: 'lr-deney',
-    kind: 'points',
-    strip: `XGBClassifier(n_estimators=${BOOK_TREES}, max_depth=4, learning_rate=oran)\nBu sayfada aynı deney scikit-learn'ün GradientBoostingClassifier'ıyla yapılır.`,
-    ...EMPTY,
-    chart,
-  };
+  if (sel >= 0) {
+    chart.marker = { x: xs[sel], y: ys[sel], label: `ν = ${lrText(rates[sel])} · AUC ${f(ys[sel], 3)}` };
+  }
+  const c = lab ? curveOf(p.lr) : null;
+  const strip = c
+    ? `ν = ${lrText(p.lr)} · ${n} ağaç · doğrulama AUC = ${f(c.valAuc[n - 1], 3)} · log-kaybı = ${f(c.valLoss[n - 1], 3)}\nXGBClassifier(n_estimators=${n}, max_depth=4, learning_rate=${p.lr})`
+    : `XGBClassifier(n_estimators=${BOOK_TREES}, max_depth=4, learning_rate=oran)\nBu sayfada aynı deney scikit-learn'ün GradientBoostingClassifier'ıyla yapılır.`;
+  return { stepId: 'lr-deney', kind: 'points', strip, ...EMPTY, chart };
 }
 
-/** Step 2: the five book rates' validation log-loss up to `trees` trees. */
-function curves(trees: number): TuneView {
-  const n = Math.max(1, Math.min(MAX_TREES, Math.round(trees)));
-  const series: LineSeries[] = BOOK_LRS.map((lr, i) => ({
+/** Step 2: the five book rates' validation log-loss up to `trees` trees (Lab: plus the selected rate, which is emphasised). */
+function curves(p: TuneParams, lab: boolean): TuneView {
+  const n = clampTrees(p.trees);
+  const rates = lab && !BOOK_LRS.some((lr) => sameLr(lr, p.lr)) ? [...BOOK_LRS, p.lr] : BOOK_LRS;
+  const look = (lr: number): string => (lab ? (sameLr(lr, p.lr) ? ' sel' : ' dim') : '');
+  const series: LineSeries[] = rates.map((lr) => ({
     id: `val-${lr}`,
-    cls: `val ${lrColorClass(lr)}`,
+    cls: `val ${lrColorClass(lr)}${look(lr)}`,
     pts: pts(curveOf(lr).valLoss, n),
   }));
-  const values = BOOK_LRS.map((lr) => `ν = ${lrText(lr)}: ${f(curveOf(lr).valLoss[n - 1], 3)}`);
+  const values = rates.map((lr) => `ν = ${lrText(lr)}: ${f(curveOf(lr).valLoss[n - 1], 3)}`);
+  const c = curveOf(p.lr);
+  const head = lab
+    ? `ν = ${lrText(p.lr)} · ${n} ağaç · doğrulama AUC = ${f(c.valAuc[n - 1], 3)} · log-kaybı = ${f(c.valLoss[n - 1], 3)}`
+    : `doğrulama log-kaybı · ${n} ağaç`;
+  const chart = lossChart('doğrulama log-kaybı', series);
+  if (lab) {
+    chart.marker = { x: n, y: c.valLoss[n - 1], label: `${n}. ağaç · AUC ${f(c.valAuc[n - 1], 3)}` };
+  }
   return {
     stepId: 'egriler',
     kind: 'curves',
-    strip: `doğrulama log-kaybı · ${n} ağaç\n${values.join(' · ')}`,
-    chart: lossChart('doğrulama log-kaybı', series),
-    endLabels: BOOK_LRS.map((lr, i) => ({
+    strip: `${head}\n${values.join(' · ')}`,
+    chart,
+    endLabels: rates.map((lr, i) => ({
       id: series[i].id,
       text: `ν = ${lrText(lr)}`,
       x: n,
@@ -195,13 +216,17 @@ function curves(trees: number): TuneView {
 }
 
 /** Step 3: one rate's validation curve up to `trees`, pinned with the AUC at 150 and at the end. */
-function moreTrees(p: TuneParams): TuneView {
+function moreTrees(p: TuneParams, lab: boolean): TuneView {
   const c = curveOf(p.lr);
-  const n = Math.max(1, Math.min(MAX_TREES, Math.round(p.trees)));
-  const at = n > BOOK_TREES ? [BOOK_TREES, n] : [n];
+  const n = clampTrees(p.trees);
+  // the Lab marks the end of the curve with the marker instead of a pin
+  const at = lab ? (n > BOOK_TREES ? [BOOK_TREES] : []) : n > BOOK_TREES ? [BOOK_TREES, n] : [n];
   const series: LineSeries[] = [{ id: 'val', cls: `val ${lrColorClass(p.lr)}`, pts: pts(c.valLoss, n) }];
   const chart = lossChart('doğrulama log-kaybı', series);
   chart.pins = at.map((k) => ({ x: k, y: c.valLoss[k - 1], label: `${k}. ağaç · AUC ${f(c.valAuc[k - 1], 3)}` }));
+  if (lab) {
+    chart.marker = { x: n, y: c.valLoss[n - 1], label: `${n}. ağaç · AUC ${f(c.valAuc[n - 1], 3)}` };
+  }
   return {
     stepId: 'agac-ekle',
     kind: 'curves',
@@ -427,10 +452,20 @@ const LINKS = [
   { href: '../capraz-dogrulama/', text: 'Çapraz doğrulama sayfası' },
 ];
 
+const bestCell = (cells: readonly number[]): string => {
+  const c = cells.reduce((a, k) => (FLAT_AUC[k] > FLAT_AUC[a] ? k : a));
+  return `derinlik ${SURFACE.depths[Math.floor(c / N_LR)]} · ν ${surfaceLrText(SURFACE.lrs[c % N_LR])} · AUC ${f(FLAT_AUC[c], 3)}`;
+};
+/** Best cell of the grid and of the sequential search for one budget and seed. */
+function compareText(budget: number, seed: number): string {
+  return `ızgara en iyisi: ${bestCell(gridTrials(budget))} · sıralı en iyisi: ${bestCell(sequentialSearch(SURFACE.auc, budget, seed))}`;
+}
+
 /** Steps 9-10: the heatmap with the first `trial` cells of the grid or of the sequential search. */
-function search(id: 'izgara' | 'sirali-arama', p: TuneParams): TuneView {
+function search(id: 'izgara' | 'sirali-arama', p: TuneParams, lab: boolean): TuneView {
   const budget = Math.max(1, Math.round(p.budget));
-  const trial = Math.max(0, Math.min(budget, Math.round(p.trial)));
+  // the Lab shows every trial at once; the Ders sweeps `trial`
+  const trial = lab ? budget : Math.max(0, Math.min(budget, Math.round(p.trial)));
   const order = id === 'izgara' ? gridTrials(budget) : sequentialSearch(SURFACE.auc, budget, p.seed);
   const tried = order.slice(0, trial);
   let best = -1;
@@ -453,31 +488,34 @@ function search(id: 'izgara' | 'sirali-arama', p: TuneParams): TuneView {
     rowLabels: SURFACE.depths.map(String),
     colLabels: SURFACE.lrs.map(colLabel),
     cells,
-    showSurface: p.showSurface || (id === 'sirali-arama' && trial >= budget),
+    showSurface: lab ? p.showSurface : p.showSurface || (id === 'sirali-arama' && trial >= budget),
     aucMin: AUC_MIN,
     aucMax: AUC_MAX,
     bestText,
     links: id === 'sirali-arama' ? LINKS : [],
   };
+  const head = `${label} · ${trial} / ${order.length} deneme · ${SURFACE.depths.length * N_LR} hücrelik yüzey`;
+  // Lab step 10 hides the step text, so the strip carries the comparison of the two searches (same budget)
+  const second = lab && id === 'sirali-arama' ? `\n${compareText(budget, p.seed)}` : '';
   return {
     stepId: id,
     kind: 'search',
-    strip: `${label} · ${trial} / ${order.length} deneme · ${SURFACE.depths.length * N_LR} hücrelik yüzey`,
+    strip: head + second,
     ...EMPTY,
     search: searchView,
   };
 }
 
-/** The view of step `index` for the parameters `p`. */
-export function deriveTuneView(index: number, p: TuneParams): TuneView {
+/** The view of step `index` for the parameters `p`; `lab` is the Lab mode (selection markers, all search trials at once). */
+export function deriveTuneView(index: number, p: TuneParams, lab = false): TuneView {
   const id = boostingAyarlariScenario.steps[index].id;
   switch (id) {
     case 'lr-deney':
-      return lrExperiment();
+      return lrExperiment(p, lab);
     case 'egriler':
-      return curves(p.trees);
+      return curves(p, lab);
     case 'agac-ekle':
-      return moreTrees(p);
+      return moreTrees(p, lab);
     case 'ezber':
       return overfit(p);
     case 'erken-durdurma':
@@ -489,7 +527,7 @@ export function deriveTuneView(index: number, p: TuneParams): TuneView {
       return leafLimit(p);
     case 'izgara':
     case 'sirali-arama':
-      return search(id, p);
+      return search(id, p, lab);
     default:
       throw new Error(`unknown step ${id}`);
   }

@@ -91,7 +91,7 @@ export function mountTuneScene(
     curves.interrupt();
     grow.interrupt();
     search.interrupt();
-    const v = deriveTuneView(state.index, state.params);
+    const v = deriveTuneView(state.index, state.params, mode === 'lab');
     // slider and shortcut tweaks are instant; steps and sweep stops animate
     const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
     stage.dataset.view = v.kind;

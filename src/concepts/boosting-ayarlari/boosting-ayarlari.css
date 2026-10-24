@@ -23,6 +23,11 @@
 .tune-plot .lc-pin-label { stroke-width:7px; }
 .tune-plot .cv-note { fill:#A85A00; font-weight:700; }
 
+/* Lab: the selected rate's curve is emphasised, the others are muted */
+.tune-plot .lc-series.sel { stroke-width:4.5px; }
+.tune-plot .lc-series.dim { stroke-opacity:.4; }
+.tune-plot .end-label.dim { fill-opacity:.55; }
+
 /* the shaded gap between training and validation loss (step 4) */
 .tune-plot .gap { fill:var(--navy); fill-opacity:.1; stroke:none; }
 
@@ -68,3 +73,17 @@
 .tune-links { display:flex; flex-wrap:wrap; gap:4px 18px; padding:4px 8px; font-size:var(--fs-body); }
 .tune-links[hidden] { display:none; }
 .tune-links a { color:var(--navy); font-weight:600; }
+
+/* Lab controls */
+.tune-params { display:grid; gap:8px; }
+.tune-params .ctl { min-width:0; }
+.tune-params .ctl.range { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 8px; }
+.tune-params .ctl.toggle { display:flex; align-items:center; gap:8px; min-height:var(--ctl); }
+.tune-params .ctl.toggle input { width:20px; height:20px; accent-color:var(--navy); }
+.tune-params .ctl-label { font-weight:600; }
+.tune-params .tune-value { font-weight:700; font-variant-numeric:tabular-nums; }
+.tune-params input[type='range'] { grid-column:1 / -1; width:100%; min-height:var(--ctl); margin:0; accent-color:var(--navy); }
+.tune-extra p { margin:0 0 8px; }
+[data-mode='lab'] .tune-params .ctl[data-off], [data-mode='lab'] .tune-params[data-off] { display:none; }
+[data-mode='lab'] .tune-params { gap:4px; }
+[data-mode='lab'] .tune-params input[type='range'] { min-height:30px; }
