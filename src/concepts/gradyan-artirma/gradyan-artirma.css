@@ -35,3 +35,58 @@
 .gb-plot .book-head { font-size:var(--fs-axis); font-weight:700; }
 .gb-plot .book-row text { font-weight:600; fill-opacity:.55; }
 .gb-plot .book-row.filled text { fill-opacity:1; font-weight:700; }
+
+/* error chart (steps 7-9): curves, pins, marker, end labels */
+.gb-plot .lc-series { fill:none; stroke-width:3.5; stroke-linejoin:round; }
+.gb-plot .lc-series.train { stroke:var(--navy); }
+.gb-plot .lc-series.val { stroke:#C26A00; }
+.gb-plot .lc-series.nu-0 { stroke:var(--navy); }
+.gb-plot .lc-series.nu-1 { stroke:#1E8A4C; }
+.gb-plot .lc-series.nu-2 { stroke:#C26A00; }
+.gb-plot .lc-series.nu-3 { stroke:#7A3E9D; }
+.gb-plot .lc-series.emph { stroke-width:6; }
+.gb-plot .lc-series.muted { opacity:.4; }
+.gb-plot .lc-pin { fill:var(--surface); stroke:var(--navy); stroke-width:2.5; }
+.gb-plot .lc-pin-label, .gb-plot .lc-label, .gb-plot .end-label, .gb-plot .no-dip { font-weight:600; paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
+.gb-plot .lc-marker { fill:var(--orange); stroke:var(--navy); stroke-width:2; }
+.gb-plot .end-label { fill:var(--navy); }
+.gb-plot .end-label.val { fill:#A85A00; }
+.gb-plot .end-label.nu-1 { fill:#1E8A4C; }
+.gb-plot .end-label.nu-2 { fill:#A85A00; }
+.gb-plot .end-label.nu-3 { fill:#7A3E9D; }
+.gb-plot .end-label.muted { fill-opacity:.6; }
+.gb-plot .no-dip { fill:#A85A00; font-weight:700; }
+
+/* step 9: the two F lines, hollow validation points, legend */
+.gb-plot .f-line.soft { stroke:var(--navy); stroke-width:4; }
+.gb-plot .f-line.zig { stroke:#C26A00; stroke-width:2.5; }
+.gb-plot .leg-soft line { stroke:var(--navy); stroke-width:4; }
+.gb-plot .leg-zig line { stroke:#C26A00; stroke-width:2.5; }
+.gb-plot .leg-val circle { fill:none; stroke:#5B6F8A; stroke-width:2; }
+
+/* step 10: comparison scheme, book rows, links */
+.gb-plot .cmp-title, .gb-plot .cmp-head, .gb-plot .cmp-label { font-size:var(--fs-axis); font-weight:700; }
+.gb-plot .cmp-note { font-weight:600; fill-opacity:.8; }
+.gb-plot .cmp-box { fill:var(--surface); stroke:var(--navy); stroke-width:2.5; }
+.gb-plot .cmp-box.tree { fill:var(--navy-soft); }
+.gb-plot .cmp-box.out { fill:var(--orange); stroke:var(--navy); }
+.gb-plot .cmp-box-label { font-weight:700; }
+.gb-plot .cmp-arrow { stroke:var(--navy); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+.gb-plot .cmp-row .cmp-cell { font-weight:500; }
+.gb-plot .scene-link text { fill:var(--navy); font-size:var(--fs-axis); text-decoration:underline; text-underline-offset:3px; }
+.gb-plot .scene-link:hover text { fill:#A85A00; }
+.gb-plot .scene-link:focus-visible { outline:2px solid var(--navy); outline-offset:4px; }
+
+/* Lab: controls and note */
+.gb-params { display:grid; gap:8px; }
+.gb-params .ctl { min-width:0; }
+.gb-params .ctl.range { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 8px; }
+.gb-params .ctl.toggle { display:flex; align-items:center; gap:8px; min-height:var(--ctl); }
+.gb-params .ctl.toggle input { width:20px; height:20px; accent-color:var(--navy); }
+.gb-params .ctl-label { font-weight:600; }
+.gb-params .gb-value { font-weight:700; font-variant-numeric:tabular-nums; }
+.gb-params input[type='range'] { grid-column:1 / -1; width:100%; min-height:var(--ctl); margin:0; accent-color:var(--navy); }
+.gb-extra p { margin:0 0 8px; }
+[data-mode='lab'] .gb-params .ctl[data-off], [data-mode='lab'] .gb-params[data-off] { display:none; }
+[data-mode='lab'] .gb-params { gap:4px; }
+[data-mode='lab'] .gb-params input[type='range'] { min-height:30px; }

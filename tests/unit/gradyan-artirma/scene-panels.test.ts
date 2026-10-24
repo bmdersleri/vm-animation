@@ -85,7 +85,7 @@ describe('panel scene', () => {
   it('panels fit 390 px without overlap', () => {
     const { el, player } = setup(390, 640);
     go(player, 'ilk-agac');
-    const frames = [...el.querySelectorAll('rect.frame')].map((r) => ({
+    const frames = [...el.querySelectorAll('.gb-panels-host rect.frame')].map((r) => ({
       x: Number(r.getAttribute('x')),
       y: Number(r.getAttribute('y')),
       w: Number(r.getAttribute('width')),

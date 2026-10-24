@@ -2,6 +2,8 @@ import '../../core/theme.css';
 import './gradyan-artirma.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
 import { gradyanArtirmaScenario, type GbParams } from './scenario';
+import { mountGbParams } from './controls';
+import { mountGbExtra } from './extra';
 import { mountGbScene } from './scene';
 
 const gradyanArtirmaPage: ConceptPage<GbParams> = {
@@ -9,8 +11,8 @@ const gradyanArtirmaPage: ConceptPage<GbParams> = {
   chapter: 'Bölüm 10 · Gradyan artırma',
   scenario: gradyanArtirmaScenario,
   mountScene: mountGbScene,
-  // the Lab controls arrive with the page's controls task
-  mountParams: () => {},
+  mountParams: mountGbParams,
+  mountExplainExtra: mountGbExtra,
 };
 
 const app = document.querySelector<HTMLElement>('#app');

@@ -6,6 +6,8 @@ import { renderStrip } from '../../core/plot/strip';
 import type { GbParams } from './scenario';
 import { deriveGbView } from './view';
 import { PanelScene } from './scene-panels';
+import { ErrorScene } from './scene-error';
+import { CompareScene } from './scene-compare';
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 
@@ -14,9 +16,9 @@ const MS_STEP = 600;
 
 /**
  * Scene host of the gradient boosting page: a stage with three view areas
- * (`data-view` = panels, error, compare) above the formula strip. The panels area (steps 1-6)
- * has its scene layer; the error and compare areas are reserved for the next task. Updates
- * coalesce into one frame; controls render without interpolation.
+ * (`data-view` = panels, error, compare) above the formula strip: the panels (steps 1-6), the
+ * error chart (steps 7-9) and the bagging comparison (step 10) each have their own scene layer.
+ * Updates coalesce into one frame; controls render without interpolation.
  */
 export function mountGbScene(
   el: HTMLElement,
@@ -45,6 +47,8 @@ export function mountGbScene(
   el.append(scene);
 
   const panels = new PanelScene(hosts.panels);
+  const error = new ErrorScene(hosts.error);
+  const compare = new CompareScene(hosts.compare);
 
   let mode = initialMode;
   let size: { w: number; h: number } | null = null;
@@ -76,6 +80,7 @@ export function mountGbScene(
 
   function draw(state: PlayerState<GbParams>, cause: ChangeCause, instant: boolean): void {
     panels.interrupt();
+    error.interrupt();
     const v = deriveGbView(state.index, state.params);
     // slider and shortcut tweaks are instant; steps and sweep stops animate
     const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
@@ -88,6 +93,16 @@ export function mountGbScene(
       const a = area();
       panels.resize(a.w, a.h, mode);
       panels.update(v.panels, ms);
+    }
+    if (v.error) {
+      const a = area();
+      error.resize(a.w, a.h, mode);
+      error.update(v.error, ms);
+    }
+    if (v.compare) {
+      const a = area();
+      compare.resize(a.w, a.h, mode);
+      compare.update(v.compare);
     }
     rendered = true;
   }
@@ -131,6 +146,8 @@ export function mountGbScene(
       rafId = null;
       pending = null;
       panels.destroy();
+      error.destroy();
+      compare.destroy();
       scene.remove();
     },
   };
