@@ -125,8 +125,11 @@ adım kartı Lab'de `labText` gösterir; etkileşimli sahne öğeleri yalnız La
     azalışa göre.
   - `boost(train, val, nu, depth, M)` → her adımın ağacı, eğitim ve doğrulama ortalama kare
     hatası, F'nin çizim ızgarasındaki değerleri.
-  - `earlyStop(valLoss, patience)` → `{ best, stop }` (en iyi ağaç sayısı; durma ağacı =
-    best + patience, eğri daha kısaysa son ağaç).
+  - `earlyStop(valLoss, patience)` → `{ best, stop }`: eğri baştan yürünür; o ana kadarki en
+    düşük değer `patience` ağaç boyunca iyileşmezse orada durulur (gerçek erken durdurma, eğrinin
+    geleceğine bakmaz); `best` o ana kadarki en iyi ağaç, `stop` = best + patience; eğri biterse
+    `stop` yok ve `best` eğrinin en iyisi. (2026-10-24 düzeltmesi: ilk tanım eğrinin genel
+    minimumunu alıyordu.)
   - `gridTrials(budget)` → ızgara aramasının denediği hücreler (adım bölümünde);
     `sequentialSearch(surface, budget, seed)` → sıralı aramanın hücre sırası.
   - Sıralı arama: hücre koordinatları u = derinlik dizini / 5, v = ν dizini / 8. İlk 3 deneme
