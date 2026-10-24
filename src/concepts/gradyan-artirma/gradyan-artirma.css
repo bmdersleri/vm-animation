@@ -1,0 +1,37 @@
+/* Gradient boosting page; every text size is a theme token. */
+.gb-scene { width:100%; height:100%; min-height:0; display:flex; flex-direction:column; gap:10px; font-family:var(--font); color:var(--navy); }
+.gb-stage { position:relative; flex:1 1 0; min-height:0; overflow:hidden; }
+.gb-host { position:absolute; inset:0; overflow:hidden; }
+.gb-host[hidden] { display:none; }
+.gb-plot { display:block; overflow:visible; }
+.gb-scene .formula { margin:0; padding:6px 14px; border-left:4px solid var(--navy); border-radius:6px; background:var(--bg); font-size:var(--fs-body); line-height:1.35; font-variant-numeric:tabular-nums; min-height:calc(2 * 1.35em + 12px); }
+.gb-scene .formula .line { display:block; }
+.gb-scene .formula .term { display:inline; white-space:nowrap; }
+@media (max-width:900px) {
+  .gb-scene .formula .term { white-space:normal; overflow-wrap:anywhere; }
+}
+
+/* text and ticks */
+.gb-plot text { font-size:var(--fs-tick); fill:var(--navy); font-variant-numeric:tabular-nums; }
+.gb-plot .axis-title { font-size:var(--fs-axis); font-weight:600; }
+.gb-plot .panel.no-x .axis.x text { display:none; }
+
+/* top panel: points, faint sin curve, F */
+.gb-plot .pt { fill:#5B6F8A; fill-opacity:.85; stroke:var(--surface); stroke-width:1.2; }
+.gb-plot .pt-val { fill:none; stroke:#5B6F8A; stroke-width:2; }
+.gb-plot .sin-ref { stroke:var(--navy); stroke-opacity:.22; stroke-width:2; }
+.gb-plot .f-line { stroke:var(--navy); stroke-width:4; stroke-linejoin:round; }
+.gb-plot .f-prev { stroke:var(--navy); stroke-opacity:.35; stroke-width:3; stroke-dasharray:7 5; }
+
+/* bottom panel: residuals, h, thresholds */
+.gb-plot .zero-line { stroke:var(--navy); stroke-opacity:.55; stroke-width:1.5; }
+.gb-plot .res-line { stroke:#C26A00; stroke-width:2; stroke-opacity:.7; }
+.gb-plot .res-dot { fill:#E07B00; stroke:var(--surface); stroke-width:1; }
+.gb-plot .h-line { stroke:#1E8A4C; stroke-width:4; stroke-linejoin:round; }
+.gb-plot .thr-line { stroke:var(--navy); stroke-opacity:.4; stroke-width:1.5; stroke-dasharray:6 4; }
+.gb-plot .thr-label { font-weight:700; paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
+
+/* the book's error table */
+.gb-plot .book-head { font-size:var(--fs-axis); font-weight:700; }
+.gb-plot .book-row text { font-weight:600; fill-opacity:.55; }
+.gb-plot .book-row.filled text { fill-opacity:1; font-weight:700; }

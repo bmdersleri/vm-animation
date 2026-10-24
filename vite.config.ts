@@ -33,6 +33,7 @@ export default defineConfig({
         'normal-dagilim': resolve(root, 'normal-dagilim/index.html'),
         'bagging': resolve(root, 'bagging/index.html'),
         'random-forest': resolve(root, 'random-forest/index.html'),
+        'gradyan-artirma': resolve(root, 'gradyan-artirma/index.html'),
       },
     },
   },
