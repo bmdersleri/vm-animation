@@ -88,6 +88,7 @@ export class HeatTable {
     this.corner.textContent = spec.corner ?? '';
     this.table.dataset.scale = spec.scale.name;
     this.table.dataset.cols = String(spec.cols.length);
+    this.table.style.setProperty('--cols', String(spec.cols.length));
     this.fit(this.head, 1 + spec.cols.length, () => this.th('heat-col'));
     spec.cols.forEach((name, c) => {
       const th = this.head.children[c + 1] as HTMLTableCellElement;
@@ -111,8 +112,9 @@ export class HeatTable {
         td.dataset.col = String(c);
         td.textContent = cell.state === 'hidden' ? '' : cell.text;
         const shown = cell.state !== 'hidden';
-        td.style.backgroundColor = heatFill(spec.scale, shown ? cell.value : 0, spec.max);
-        td.style.color = heatInk(spec.scale, shown ? cell.value : 0, spec.max);
+        // a hidden cell drops the inline colours so the page's CSS can grey it
+        td.style.backgroundColor = shown ? heatFill(spec.scale, cell.value, spec.max) : '';
+        td.style.color = shown ? heatInk(spec.scale, cell.value, spec.max) : '';
         td.classList.toggle('is-zero', shown && cell.value === 0);
         td.classList.toggle('is-dim', cell.state === 'dim');
         td.classList.toggle('is-hidden', !shown);
