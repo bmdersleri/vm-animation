@@ -56,11 +56,27 @@ describe('boost', () => {
     expect(bestIndex([3, 1, 1, 2])).toBe(2);
   });
 
-  it('early stop at the curve end reports no stop', () => {
-    const run = boost(REG.train, REG.val, 0.3, 2, 200);
-    const best = bestIndex(run.valMse);
-    expect(earlyStop(run.valMse, 10)).toEqual({ best, stop: best + 10 });
-    expect(earlyStop(run.valMse, 200)).toEqual({ best, stop: null });
+  it('early stop is running-best: a short patience stops at an early local dip', () => {
+    expect(earlyStop([5, 3, 4, 4, 2], 2)).toEqual({ best: 2, stop: 4 });
+    expect(earlyStop([5, 3, 4, 4, 2], 3)).toEqual({ best: 5, stop: null });
     expect(earlyStop([3, 2, 1], 1)).toEqual({ best: 3, stop: null });
+    expect(earlyStop([3, 3, 3], 1)).toEqual({ best: 1, stop: 2 });
+  });
+
+  it('early stop on the nu 0.3 log-loss curve (checked against the data)', () => {
+    const loss = CURVES.byLr[CURVES.lrs.indexOf(0.3)].valLoss;
+    expect(earlyStop(loss, 50)).toEqual({ best: 91, stop: 141 });
+    expect(earlyStop(loss, 10)).toEqual({ best: 48, stop: 58 });
+    expect(loss[47]).toBeLessThan(loss[57]);
+    expect(Math.min(...loss.slice(0, 58))).toBe(loss[47]);
+    expect(loss[90]).toBeLessThan(loss[47]);
+  });
+
+  it('early stop on a regression run stops after the patience', () => {
+    const run = boost(REG.train, REG.val, 0.3, 2, 200);
+    const es = earlyStop(run.valMse, 10);
+    expect(es.stop).toBe(es.best + 10);
+    expect(Math.min(...run.valMse.slice(0, es.stop! - 1))).toBe(run.valMse[es.best - 1]);
+    expect(earlyStop(run.valMse, 200)).toEqual({ best: bestIndex(run.valMse), stop: null });
   });
 });

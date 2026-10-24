@@ -65,6 +65,7 @@ describe('boosting-ayarlari scenario', () => {
     expect(step('agac-ekle').text).toContain('0,959');
     // step 5: best and stop tree
     const es = earlyStop(curve(0.3).valLoss, 50);
+    expect([es.best, es.stop]).toEqual([91, 141]);
     expect(es).toEqual({ best: 91, stop: 141 });
     expect(step('erken-durdurma').text).toContain(`${es.best}. ağaçta en düşük`);
     expect(step('erken-durdurma').text).toContain(`${es.stop}. ağaçta dur`);

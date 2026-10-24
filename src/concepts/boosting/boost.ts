@@ -84,14 +84,23 @@ export function bestIndex(curve: readonly number[]): number {
 }
 
 /**
- * Early stopping on a curve where lower is better: `best` = tree count of the minimum,
- * `stop` = best + patience, or null when the curve is not that long.
+ * Early stopping on a curve where lower is better, as `early_stopping_rounds` works: walk
+ * forward keeping the running best; stop at the first tree that is `patience` trees past
+ * the last strict improvement. It cannot see a lower minimum further on. Returns
+ * `{ best: running best tree count, stop }`; when the curve ends first, `best` is the
+ * overall minimum and `stop` is null.
  */
 export function earlyStop(
   curve: readonly number[],
   patience: number,
 ): { best: number; stop: number | null } {
-  const best = bestIndex(curve);
-  const stop = best + patience;
-  return { best, stop: stop <= curve.length ? stop : null };
+  let best = 0;
+  for (let i = 1; i < curve.length; i++) {
+    if (curve[i] < curve[best]) {
+      best = i;
+    } else if (i - best >= patience) {
+      return { best: best + 1, stop: i + 1 };
+    }
+  }
+  return { best: bestIndex(curve), stop: null };
 }

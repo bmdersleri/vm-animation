@@ -1,6 +1,6 @@
 import { stepIndex, type Scenario } from '../../core/player';
 import { formatNonZero, formatNumber as f, formatTrim } from '../../core/plot/format';
-import { earlyStop } from '../boosting/boost';
+import { bestIndex, earlyStop } from '../boosting/boost';
 import { BOOK_LRS, CURVES, REG, SURFACE, type LrCurve } from '../boosting/data';
 import { fitRegTree, leafCount, predictReg, treeDepth, type RegTree } from '../boosting/regtree';
 import { gridTrials, sequentialSearch } from '../boosting/search';
@@ -81,10 +81,10 @@ const aucAt = (lr: number, trees: number): number => curveOf(lr).valAuc[trees - 
 const bookAucs = BOOK_LRS.map((lr) => f(aucAt(lr, BOOK_TREES), 3));
 const slow = curveOf(BOOK_LRS[0]);
 const fast = curveOf(BOOK_LRS[BOOK_LRS.length - 1]);
-const slowDip = earlyStop(slow.valLoss, 0).best;
-const fastDip = earlyStop(fast.valLoss, 0).best;
+const slowDip = bestIndex(slow.valLoss);
+const fastDip = bestIndex(fast.valLoss);
 const big = curveOf(1);
-const bigDip = earlyStop(big.valLoss, 0).best;
+const bigDip = bestIndex(big.valLoss);
 const bigTrain = big.trainLoss[MAX_TREES - 1];
 /** Patience of the Ders step 5 (the Lab slider changes it). */
 const PATIENCE = 50;
