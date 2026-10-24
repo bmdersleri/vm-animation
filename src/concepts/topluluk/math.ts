@@ -1,3 +1,5 @@
+import { mulberry32 } from '../../core/random';
+
 /** Chance that a customer is never drawn in n draws with replacement: (1 - 1/n)^n, tends to 1/e. */
 export function oobChance(n: number): number {
   return Math.pow(1 - 1 / n, n);
@@ -29,14 +31,7 @@ export function ensembleVariance(rho: number, sigma2: number, m: number): number
 
 /** n draws with replacement from 0..n-1 with a seeded generator (mulberry32). */
 export function labBootstrap(n: number, seed: number): number[] {
-  let a = seed >>> 0;
-  const next = (): number => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+  const next = mulberry32(seed);
   const out: number[] = [];
   for (let i = 0; i < n; i++) {
     out.push(Math.floor(next() * n));

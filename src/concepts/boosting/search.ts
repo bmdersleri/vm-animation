@@ -1,3 +1,8 @@
+import { mulberry32 } from '../../core/random';
+
+/** Re-exported so existing imports keep working. */
+export { mulberry32 };
+
 const N_LR = 9;
 const N_DEPTH = 6;
 const N_CELLS = N_DEPTH * N_LR;
@@ -10,17 +15,6 @@ const TIE_EPS = 1e-9;
 
 /** The order in which the grid search takes learning-rate indices (even ones first). */
 const LR_ORDER = [0, 2, 4, 6, 8, 1, 3, 5, 7];
-
-/** 32-bit mulberry32 generator; values in [0, 1). Its Python twin masks with 0xFFFFFFFF. */
-export function mulberry32(seed: number): () => number {
-  let a = seed | 0;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 /** Cell index of the surface: depth index times 9 plus learning-rate index. */
 export function cellIndex(depthIdx: number, lrIdx: number): number {
