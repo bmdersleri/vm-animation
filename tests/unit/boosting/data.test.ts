@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  BOOK, BOOK_LRS, BOOK_XGB_AUC, CURVES, REG, SURFACE,
+  BOOK, BOOK_LRS, CURVES, REG, SURFACE,
 } from '../../../src/concepts/boosting/data';
 
 describe('boosting data', () => {
@@ -9,7 +9,6 @@ describe('boosting data', () => {
     expect(BOOK.nu).toBe(0.3);
     expect(BOOK.depth).toBe(2);
     expect([...BOOK_LRS]).toEqual([0.01, 0.05, 0.1, 0.3, 0.5]);
-    expect([...BOOK_XGB_AUC]).toEqual([0.9261, 0.9625, 0.9713, 0.9711, 0.9693]);
     expect(REG.train.x).toHaveLength(80);
     expect(REG.val.y).toHaveLength(80);
     expect(CURVES.lrs).toEqual([0.01, 0.05, 0.1, 0.3, 0.5, 1]);

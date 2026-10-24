@@ -48,9 +48,6 @@ export const CURVES: { lrs: readonly number[]; byLr: readonly LrCurve[] } = data
 /** The five learning rates of the book's comparison. */
 export const BOOK_LRS: readonly number[] = [0.01, 0.05, 0.1, 0.3, 0.5];
 
-/** The AUC values the book prints for XGBoost at those rates (only for the "differences" sentence). */
-export const BOOK_XGB_AUC: readonly number[] = [0.9261, 0.9625, 0.9713, 0.9711, 0.9693];
-
 /** Search surface: cross-validated AUC for depth (rows) by learning rate (columns). */
 export const SURFACE: {
   depths: readonly number[];
