@@ -1,6 +1,6 @@
 import { stepIndex, type StepPlayer } from '../../core/player';
 import { formatNumber as f } from '../../core/plot/format';
-import { METHODS } from './boundary';
+import { METHODS, type Method } from './boundary';
 import { dengesizVeriScenario as scenario, SHOW_TEST_STEPS, type ImbParams } from './scenario';
 
 let uid = 0;
@@ -27,8 +27,8 @@ type SelectKey = 'weight' | 'method';
 /**
  * Mounts the Lab controls of the imbalanced-data page. Only the current step's controls are shown:
  * the test-points switch (steps 1-4), k with the "another point" button (5), k / target ratio / seed
- * (6-7), the weight choice and manual weight (8), and method, k, ratio, weight, manual weight and
- * threshold (9-10). Every input writes through `player.setParam`; key presses on the controls do not
+ * (6-7), the weight choice and manual weight (8), and method and threshold (9-10) with k and ratio
+ * only for SMOTE and the weight choice and manual weight only for the weighted method. Every input writes through `player.setParam`; key presses on the controls do not
  * reach the step shortcuts.
  */
 export function mountImbParams(host: HTMLElement, player: StepPlayer<ImbParams>): void {
@@ -127,6 +127,7 @@ export function mountImbParams(host: HTMLElement, player: StepPlayer<ImbParams>)
     METHOD_STEPS,
     METHODS.map((m) => ({ value: m.id, text: m.label })),
   );
+  addSlider('threshold', 'Karar eşiği', METHOD_STEPS, THRESHOLD_RANGE, (v) => player.setParam('threshold', v));
   addSlider('k', 'Komşu sayısı k', K_STEPS, K_RANGE, (v) => player.setParam('k', v));
   addSlider('ratio', 'Hedef oran (ayrılan / kalan)', RATIO_STEPS, RATIO_RANGE, (v) => player.setParam('ratio', v));
   addButton('seed-point', 'Başka nokta', POINT_STEPS);
@@ -139,8 +140,16 @@ export function mountImbParams(host: HTMLElement, player: StepPlayer<ImbParams>)
   addSlider('manualWeight', 'Ayrılanın ağırlığı (elle)', WEIGHT_STEPS_LAB, WEIGHT_RANGE, (v) =>
     player.setParams({ manualWeight: v, weight: 'elle' }),
   );
-  addSlider('threshold', 'Karar eşiği', METHOD_STEPS, THRESHOLD_RANGE, (v) => player.setParam('threshold', v));
   host.append(wrap);
+
+  // steps 9-10 show the method-specific controls only for the chosen method
+  const boundarySteps = indices('sinir', 'karsilastirma');
+  const onlyFor: Record<string, Method> = { k: 'smote', ratio: 'smote', weight: 'agirlik', manualWeight: 'agirlik' };
+  const shown = (r: (typeof rows)[number], index: number, p: ImbParams): boolean => {
+    if (!r.steps.includes(index)) return false;
+    const need = onlyFor[r.input.dataset.param ?? ''];
+    return !need || !boundarySteps.includes(index) || p.method === need;
+  };
 
   // arrow keys, space and letters on a control belong to the control, not to the step shortcuts
   wrap.addEventListener('keydown', (e) => {
@@ -172,13 +181,13 @@ export function mountImbParams(host: HTMLElement, player: StepPlayer<ImbParams>)
     }
     toggle.checked = p.showTest;
     for (const r of rows) {
-      const off = !r.steps.includes(index);
+      const off = !shown(r, index, p);
       r.input.disabled = off;
       r.box.toggleAttribute('data-off', off);
     }
     wrap.toggleAttribute(
       'data-off',
-      rows.every((r) => !r.steps.includes(index)),
+      rows.every((r) => !shown(r, index, p)),
     );
   };
   sync();

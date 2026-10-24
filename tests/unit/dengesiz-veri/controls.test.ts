@@ -100,6 +100,7 @@ describe('imbalanced-data Lab controls', () => {
   it('manual weight moves the boundary', () => {
     const { host, el, player } = setup();
     player.goto(step('sinir'));
+    choose(ctl(host, 'method') as unknown as HTMLSelectElement, 'agirlik');
     const line = () => {
       const l = el.querySelector('line.boundary-line[data-method="agirlik"]')!;
       return ['x1', 'y1', 'x2', 'y2'].map((a) => l.getAttribute(a)).join('|');
@@ -128,6 +129,27 @@ describe('imbalanced-data Lab controls', () => {
     slide(ctl(host, 'threshold'), 0.3);
     expect(y()).not.toBe(at);
     expect(el.querySelector('.formula')!.textContent).toContain('p = 0,30');
+  });
+
+  it('method choice shows only its own controls', () => {
+    const { host, player } = setup();
+    const shown: Record<string, string[]> = {
+      yok: ['method', 'threshold'],
+      smote: ['method', 'threshold', 'k', 'ratio'],
+      agirlik: ['method', 'threshold', 'weight', 'manualWeight'],
+    };
+    for (const id of ['sinir', 'karsilastirma']) {
+      player.goto(step(id));
+      for (const [method, names] of Object.entries(shown)) {
+        choose(ctl(host, 'method') as unknown as HTMLSelectElement, method);
+        // threshold sits directly under the method
+        expect(visible(host)).toEqual([...names].sort((a, b) => ['method', 'threshold', 'k', 'ratio', 'weight', 'manualWeight'].indexOf(a) - ['method', 'threshold', 'k', 'ratio', 'weight', 'manualWeight'].indexOf(b)));
+        expect(ctl(host, 'threshold').disabled).toBe(false);
+      }
+    }
+    // step 8 still shows its weight controls whatever the method is
+    player.goto(step('agirlik'));
+    expect(visible(host)).toEqual(['weight', 'manualWeight']);
   });
 
   it('threshold 0.99 shows undefined precision', () => {
@@ -184,8 +206,8 @@ describe('imbalanced-data Lab controls', () => {
       'smote-doldur': ['k', 'ratio', 'seed'],
       kopyalama: ['k', 'ratio', 'seed'],
       agirlik: ['weight', 'manualWeight'],
-      sinir: ['method', 'k', 'ratio', 'weight', 'manualWeight', 'threshold'],
-      karsilastirma: ['method', 'k', 'ratio', 'weight', 'manualWeight', 'threshold'],
+      sinir: ['method', 'threshold'],
+      karsilastirma: ['method', 'threshold'],
     };
     for (const [id, names] of Object.entries(expected)) {
       player.goto(step(id));
