@@ -10,6 +10,8 @@ export interface AxesSpec {
   yTitle: { x: number; y: number; lines: string[] };
   /** For integer axes (e.g. complaint count 0-5): when given, these are the ticks. */
   xTicks?: number[]; yTicks?: number[];
+  /** Label of a y tick (e.g. 10^v for a log axis drawn on log10 values); default is the evenly-spaced tick format. */
+  yFormat?: (v: number) => string;
 }
 
 /** Frame, gridline ticks and axis titles of a scatter-style plot. */
@@ -52,7 +54,7 @@ export class AxesLayer {
     tr(xs, 'axes', ms).attr('transform', (d) => `translate(${r1(sc.x(d))},0)`).attr('opacity', 1);
 
     const yt = spec.yTicks ?? sc.y.ticks(spec.yTickCount);
-    const fy = tickFormat(yt);
+    const fy = spec.yFormat ?? tickFormat(yt);
     const ys = this.gy.selectAll<SVGGElement, number>('g.tick').data(yt, (d) => `${dataKey}:${d}`).join(
       (enter) => {
         const g = enter.append('g').attr('class', 'tick').attr('opacity', 0)

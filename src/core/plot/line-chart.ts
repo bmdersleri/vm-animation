@@ -39,6 +39,8 @@ export interface LineChartSpec {
   /** Explicit tick values (e.g. the integers 1-8); default is the d3 tick choice. */
   xTicks?: number[];
   yTicks?: number[];
+  /** Label of a y tick (a log axis drawn on log10 values); with `yTicks` it also sizes the tick column. */
+  yFormat?: (v: number) => string;
 }
 
 /** Outer padding (px) around the axis titles. */
@@ -75,8 +77,8 @@ export class LineChartLayer {
     const tick = this.measure.fontPx('tick', 13);
     const axis = this.measure.fontPx('axis-title', 14);
     const gap = Math.round(tick * 0.45);
-    const yt = scaleLinear().domain(spec.y).ticks(Y_TICKS);
-    const fy = tickFormat(yt);
+    const yt = spec.yFormat && spec.yTicks ? spec.yTicks : scaleLinear().domain(spec.y).ticks(Y_TICKS);
+    const fy = spec.yFormat ?? tickFormat(yt);
     const yTickW = this.measure.maxWidth(yt.map(fy), 'tick', tick);
     return { tick, axis, gap, yTickW };
   }
@@ -110,6 +112,7 @@ export class LineChartLayer {
         yTickCount: Y_TICKS,
         xTicks: spec.xTicks,
         yTicks: spec.yTicks,
+        yFormat: spec.yFormat,
         xTickY,
         yTickX: plot.left - m.gap,
         xTitle: { x: plot.left + plot.width / 2, y: xTickY + m.tick * 0.3 + m.gap + m.axis * 0.95, text: spec.xTitle },
