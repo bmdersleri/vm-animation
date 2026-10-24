@@ -28,6 +28,9 @@ export const NU_VALUES = [0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 1] as const;
 // at most NU_VALUES.length x 3 depths = 24 runs of 200 trees, so the cache is left uncapped
 const runs = new Map<string, BoostRun>();
 
+/** Range of the step-count slider m (the table and the strip stay legible up to here). */
+export const M_MAX = 20;
+
 /** The boosting run for (nu, depth), MAX_TREES trees long; computed once per pair. */
 export function runFor(nu: number, depth: number): BoostRun {
   const key = `${nu}|${depth}`;

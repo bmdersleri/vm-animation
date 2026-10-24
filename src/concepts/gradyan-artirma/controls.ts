@@ -7,14 +7,13 @@ import {
   NU_VALUES,
   SHOW_VAL_STEPS,
   TREES_STEPS,
+  M_MAX,
   nuText,
   type GbParams,
 } from './scenario';
 
 let uid = 0;
 
-/** Range of the step-count slider m (the table and the strip stay legible up to here). */
-const M_MAX = 20;
 /** Range of the depth slider. */
 const DEPTH: readonly [number, number] = [1, 3];
 

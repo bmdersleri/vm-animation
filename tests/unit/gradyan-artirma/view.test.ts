@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { stepIndex } from '../../../src/core/player';
 import { REG, BOOK } from '../../../src/concepts/boosting/data';
 import { gradyanArtirmaScenario as sc } from '../../../src/concepts/gradyan-artirma/scenario';
+import { boost } from '../../../src/concepts/boosting/boost';
+import { predictReg } from '../../../src/concepts/boosting/regtree';
 import { deriveGbView } from '../../../src/concepts/gradyan-artirma/view';
 
 const view = (id: string, over = {}) => deriveGbView(stepIndex(sc, id), { ...sc.defaults, ...over });
@@ -46,6 +48,15 @@ describe('gradyan-artirma view', () => {
     expect(p.fPrev![0].y).toBeCloseTo(REG.mean, 9);
     expect(view('kucuk-adim').strip).toContain('[2 + 0,1 · 2; 4 + 0,1 · 0] = [2,2; 4]');
     expect(view('kucuk-adim').strip).toContain('F₁ = F₀ + 0,3 · h₁');
+  });
+
+  it('step 5 in Lab at m = 5: the faint line is F4, one nu h step below F5', () => {
+    const p = view('kucuk-adim', { m: 5 }).panels!;
+    const run = boost(REG.train, REG.val, 0.3, 2, 20);
+    expect(p.fPrev![0].y).not.toBeCloseTo(REG.mean, 3);
+    for (const x of [0.3, 1.5, 4, 8]) {
+      expect(at(p.f!, x) - at(p.fPrev!, x)).toBeCloseTo(0.3 * predictReg(run.trees[4], x), 9);
+    }
   });
 
   it('steps 7 to 10 name their later scene kind', () => {

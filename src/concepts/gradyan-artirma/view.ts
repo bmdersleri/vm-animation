@@ -8,6 +8,7 @@ import { bestIndex, boostSegments, predictBoost, type BoostRun } from '../boosti
 import { predictReg } from '../boosting/regtree';
 import {
   gradyanArtirmaScenario,
+  M_MAX,
   MAX_TREES,
   nuText,
   runFor,
@@ -151,7 +152,7 @@ function meanSquare0(run: BoostRun): number {
 
 /** Trees in F per panel step: none until the first correction is applied. */
 function treesIn(id: string, p: GbParams): number {
-  if (id === 'kucuk-adim' || id === 'tekrar') return Math.max(1, Math.min(20, Math.round(p.m)));
+  if (id === 'kucuk-adim' || id === 'tekrar') return Math.max(1, Math.min(M_MAX, Math.round(p.m)));
   return 0;
 }
 
@@ -175,7 +176,7 @@ function panelsFor(id: string, p: GbParams): { panels: PanelView; strip: string 
     valPoints: p.showVal ? pts(REG.val) : [],
     sin: SIN,
     f: id === 'veri' ? null : fSegments(run, p.nu, m),
-    fPrev: id === 'kucuk-adim' ? fSegments(run, p.nu, 0) : null,
+    fPrev: id === 'kucuk-adim' ? fSegments(run, p.nu, m - 1) : null,
     residuals: showResiduals ? residualsAfter(run, p.nu, Math.max(0, m - 1)) : [],
     h: showH ? treeSegments(run, tree) : null,
     thresholds: showH ? thresholdsOf(run, tree) : [],
