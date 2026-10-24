@@ -105,15 +105,21 @@ export class MatrixLayer {
         .attr('width', r1(cellW - 4))
         .attr('height', r1(cellH - 4));
       tr(bg, 'cellbg', o.ms);
+      // a short cell writes tag and count on one baseline, a tall one stacks them
+      const stacked = cellH >= tick * 2.3;
+      const mid = y0 + row * cellH + cellH / 2;
       cell
         .select('text.cell-tag')
         .attr('x', r1(x0 + col * cellW + 8))
-        .attr('y', r1(y0 + row * cellH + tick * 1.15))
+        .attr('y', r1(stacked ? y0 + row * cellH + tick * 1.15 : mid))
+        .attr('dy', stacked ? null : '0.35em')
         .text(c.tag);
       cell
         .select('text.cell-count')
-        .attr('x', r1(x0 + col * cellW + cellW / 2))
-        .attr('y', r1(y0 + row * cellH + cellH - tick * 0.45))
+        .attr('text-anchor', stacked ? 'middle' : 'end')
+        .attr('x', r1(stacked ? x0 + col * cellW + cellW / 2 : x0 + (col + 1) * cellW - 8))
+        .attr('y', r1(stacked ? y0 + row * cellH + cellH - tick * 0.45 : mid))
+        .attr('dy', stacked ? null : '0.35em')
         .text(String(matrix[c.key]));
     });
   }

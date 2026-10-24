@@ -5,6 +5,7 @@ import { StepPlayer, stepIndex } from '../../../src/core/player';
 import { UNDEFINED_TEXT } from '../../../src/concepts/degerlendirme/ui';
 import { dengesizVeriScenario as sc } from '../../../src/concepts/dengesiz-veri/scenario';
 import { mountImbScene } from '../../../src/concepts/dengesiz-veri/scene';
+import { labelBox, overlap } from '../../../src/core/plot/label-place';
 import { splitLayout } from '../../../src/concepts/dengesiz-veri/scene-scatter';
 
 const clean: (() => void)[] = [];
@@ -97,6 +98,65 @@ describe('scatter scene', () => {
     for (const c of el.querySelectorAll('circle.pt')) {
       expect(Number(c.getAttribute('cx'))).toBeLessThanOrEqual(390);
       expect(Number(c.getAttribute('cx'))).toBeGreaterThanOrEqual(0);
+    }
+  });
+  it('step 5 labels x_i, x_zi and x_new sit apart from each other and from the marks', () => {
+    const { el, player } = setup();
+    go(player, 'sentetik');
+    const labels = [...el.querySelectorAll('text.x-label')];
+    expect(labels.map((l) => l.textContent).sort()).toEqual(['x_i', 'x_new', 'x_zi']);
+    const fs = 18;
+    const boxes = labels.map((l) =>
+      labelBox(Number(l.getAttribute('x')), Number(l.getAttribute('y')), l.textContent!.length, l.getAttribute('text-anchor') as 'start', fs),
+    );
+    for (let a = 0; a < boxes.length; a++) {
+      for (let b = a + 1; b < boxes.length; b++) {
+        expect(overlap(boxes[a], boxes[b])).toBe(0);
+      }
+    }
+    const marks = ['x-i', 'x-zi', 'x-new'].map((c) => {
+      const m = el.querySelector(`circle.${c}`)!;
+      return `${m.getAttribute('cx')}|${m.getAttribute('cy')}`;
+    });
+    expect(new Set(marks).size).toBe(3);
+    for (const c of ['x-i', 'x-zi', 'x-new']) {
+      const m = el.querySelector(`circle.${c}`)!;
+      const cx = Number(m.getAttribute('cx'));
+      const cy = Number(m.getAttribute('cy'));
+      const r = Number(m.getAttribute('r'));
+      const mark = { l: cx - r, t: cy - r, r: cx + r, b: cy + r };
+      for (const box of boxes) {
+        expect(overlap(box, mark)).toBe(0);
+      }
+    }
+  });
+
+  it('metric labels and values sit in separate columns', () => {
+    const { el, player } = setup();
+    go(player, 'azinlik');
+    const fs = 18;
+    const rows = [...el.querySelectorAll('.metric')];
+    expect(rows).toHaveLength(4);
+    for (const row of rows) {
+      const name = row.querySelector('.metric-name')!;
+      const value = row.querySelector('.metric-value')!;
+      const nameEnd = Number(name.getAttribute('x')) + name.textContent!.length * fs * 0.62;
+      expect(Number(value.getAttribute('x'))).toBeGreaterThan(nameEnd);
+      expect(name.textContent!.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('the book code line wraps at commas and never runs past the column', () => {
+    const { el, player } = setup(900, 420);
+    go(player, 'azinlik');
+    const lines = [...el.querySelectorAll('text.book-line')];
+    expect(lines.length).toBeGreaterThan(1);
+    expect(lines.map((l) => l.textContent).join(' ')).toContain('classification_report');
+    const svgW = Number(el.querySelector('svg.imb-plot')!.getAttribute('width'));
+    // the side column is 40 % of the width; the estimate is 0,62 em per character at jsdom's 16 px
+    const column = Math.max(300, Math.min(560, Math.round(svgW * 0.4)));
+    for (const l of lines) {
+      expect(l.textContent!.length * 16 * 0.62).toBeLessThanOrEqual(column - 8);
     }
   });
 });

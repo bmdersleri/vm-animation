@@ -2,6 +2,7 @@ import { select, type Selection } from 'd3-selection';
 import 'd3-transition';
 import type { Mode } from '../../core/mode';
 import { AxesLayer } from '../../core/plot/axes';
+import { chooseOffset, labelArea, offsets, type Box as LabelBox } from '../../core/plot/label-place';
 import { r1 } from '../../core/plot/marks';
 import { TextMeasure } from '../../core/plot/text-measure';
 import { tr } from '../../core/plot/transition';
@@ -148,7 +149,7 @@ export class ScatterScene {
       'imb',
     );
     this.drawDots(v, sc, tick, ms);
-    this.drawExample(v, sc, tick);
+    this.drawExample(v, sc, tick, rect);
     this.side.draw(v, { rect: lay.side, tick, axis, ms });
   }
 
@@ -186,7 +187,7 @@ export class ScatterScene {
   }
 
   /** Step 5: five neighbour lines, the chosen one thicker, x_i, x_zi and x_new. */
-  private drawExample(v: ImbView, sc: ReturnType<typeof fitViewport>, tick: number): void {
+  private drawExample(v: ImbView, sc: ReturnType<typeof fitViewport>, tick: number, rect: Rect): void {
     const e = v.example;
     const g = this.exampleG;
     const px = (p: { tenure: number }): number => r1(sc.x(p.tenure));
@@ -212,8 +213,45 @@ export class ScatterScene {
         .attr('cx', px)
         .attr('cy', py);
     };
-    ring('x-i', e ? [e.xi] : [], tick * 0.5);
-    ring('x-zi', e ? [e.xz] : [], tick * 0.5);
-    ring('x-new', e ? [e.xnew] : [], tick * 0.4);
+    const half = tick * 0.32;
+    ring('x-i', e ? [e.xi] : [], half);
+    ring('x-zi', e ? [e.xz] : [], half);
+    ring('x-new', e ? [e.xnew] : [], tick * 0.24);
+    this.drawLabels(e, px, py, half, tick, rect);
+  }
+
+  /** The names x_i, x_zi and x_new beside their marks, placed so no label covers a mark or another label. */
+  private drawLabels(
+    e: ImbView['example'],
+    px: (p: { tenure: number }) => number,
+    py: (p: { charge: number }) => number,
+    half: number,
+    tick: number,
+    rect: Rect,
+  ): void {
+    const marks = e
+      ? [
+          { name: 'x_i', at: e.xi },
+          { name: 'x_zi', at: e.xz },
+          { name: 'x_new', at: e.xnew },
+        ]
+      : [];
+    const taken: LabelBox[] = marks.map((m) => ({ l: px(m.at) - half, t: py(m.at) - half, r: px(m.at) + half, b: py(m.at) + half }));
+    const placed = marks.map((m) => {
+      const x = px(m.at);
+      const y = py(m.at);
+      const o = chooseOffset({ x, y, chars: m.name.length, cands: offsets(half, 3, tick), fs: tick, taken, area: labelArea(rect) });
+      return { name: m.name, x: r1(x + o.dx), y: r1(y + o.dy), anchor: o.anchor };
+    });
+    this.exampleG
+      .selectAll<SVGTextElement, (typeof placed)[number]>('text.x-label')
+      .data(placed, (d) => d.name)
+      .join('text')
+      .attr('class', (d) => `x-label ${d.name.replace('_', '-')}`)
+      .attr('data-chars', (d) => d.name.length)
+      .attr('text-anchor', (d) => d.anchor)
+      .attr('x', (d) => d.x)
+      .attr('y', (d) => d.y)
+      .text((d) => d.name);
   }
 }

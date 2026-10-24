@@ -23,11 +23,12 @@
 .imb-plot .pt.synthetic { fill:none; stroke:#E07B00; stroke-width:1.6; }
 
 /* step 5: neighbours, the chosen segment, x_i, x_zi and x_new */
-.imb-plot .neighbour-line { stroke:var(--navy); stroke-opacity:.45; stroke-width:1.5; }
+.imb-plot .neighbour-line { stroke:var(--navy); stroke-opacity:.6; stroke-width:2; }
 .imb-plot .chosen-line { stroke:#A85A00; stroke-width:3; }
 .imb-plot .x-i { fill:none; stroke:var(--navy); stroke-width:3; }
 .imb-plot .x-zi { fill:none; stroke:#A85A00; stroke-width:3; }
-.imb-plot .x-new { fill:none; stroke:#E07B00; stroke-width:3.5; stroke-dasharray:4 3; }
+.imb-plot .x-new { fill:#E07B00; stroke:var(--navy); stroke-width:2; }
+.imb-plot .x-label { font-weight:700; paint-order:stroke; stroke:var(--bg); stroke-width:4px; stroke-linejoin:round; }
 
 /* side panel: title, count bars, matrix, metrics, the book's code line */
 .imb-plot .sp-title { font-weight:700; }
