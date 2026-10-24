@@ -37,6 +37,7 @@ export default defineConfig({
         'boosting-ayarlari': resolve(root, 'boosting-ayarlari/index.html'),
         'dengesiz-veri': resolve(root, 'dengesiz-veri/index.html'),
         'smote-sizinti': resolve(root, 'smote-sizinti/index.html'),
+        'tfidf-kosinus': resolve(root, 'tfidf-kosinus/index.html'),
       },
     },
   },
