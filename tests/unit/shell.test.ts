@@ -378,13 +378,37 @@ describe('shell', () => {
     const { scene, q } = setup();
     expect(scene.resize).toHaveBeenCalledWith(800, 450);
     const ro = FakeRO.instances[0];
-    expect(ro.observed).toEqual([q('.stage')]);
+    expect(ro.observed).toEqual([q('.stage'), q('.top-bar'), q('.player-bar')]);
     size = { width: 1024.9, height: 600 };
     ro.fire();
     expect(scene.resize).toHaveBeenLastCalledWith(1024, 600);
     const n = (scene.resize as ReturnType<typeof vi.fn>).mock.calls.length;
     ro.fire();
     expect(scene.resize).toHaveBeenCalledTimes(n);
+  });
+
+  it('publishes the stage top and player bar height for the narrow stage height', () => {
+    const rects = new Map<string, Partial<DOMRect>>([
+      ['stage', { top: 70.2, height: 450 }],
+      ['player-bar', { top: 760, height: 83.4 }],
+      ['concept-page', { top: 0, height: 844 }],
+    ]);
+    vi.mocked(HTMLElement.prototype.getBoundingClientRect).mockImplementation(function (this: HTMLElement) {
+      const r = { x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 0, width: 800, height: 40 };
+      for (const [cls, v] of rects) if (this.classList.contains(cls)) Object.assign(r, v);
+      return { ...r, toJSON() {} } as DOMRect;
+    });
+    setup();
+    expect(root.style.getPropertyValue('--stage-top')).toBe('71px');
+    expect(root.style.getPropertyValue('--player-bar-h')).toBe('84px');
+    // a wrapped title moves the stage down: the next observed resize republishes
+    rects.set('stage', { top: 94, height: 450 });
+    FakeRO.instances[0].fire();
+    expect(root.style.getPropertyValue('--stage-top')).toBe('94px');
+    mounted!.destroy();
+    mounted = null;
+    expect(root.style.getPropertyValue('--stage-top')).toBe('');
+    expect(root.style.getPropertyValue('--player-bar-h')).toBe('');
   });
 
   it('works without ResizeObserver', () => {

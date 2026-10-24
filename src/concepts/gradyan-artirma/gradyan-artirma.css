@@ -10,11 +10,6 @@
 @media (max-width:900px) {
   .gb-scene .formula .term { white-space:normal; overflow-wrap:anywhere; }
 }
-/* narrow screens: the two-line page title pushes the stage under the sticky player bar, so the stage is
-   shorter and the formula strip below it is never covered (the strip itself grows with its text) */
-@media (max-width:900px) {
-  .concept-page .stage { height:clamp(320px, calc(60vh - 36px), 640px); }
-}
 
 /* text and ticks */
 .gb-plot text { font-size:var(--fs-tick); fill:var(--navy); font-variant-numeric:tabular-nums; }

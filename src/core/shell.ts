@@ -230,9 +230,17 @@ export function mountConceptPage<P extends object>(
     lastH = hgt;
     scene.resize(w, hgt);
   };
+  // narrow screens cap the stage at the room between its top and the sticky player bar
+  // (theme.css), so a two-line title never pushes the stage under the bar
+  const publishBars = (): void => {
+    const top = stage.getBoundingClientRect().top - root.getBoundingClientRect().top;
+    root.style.setProperty('--stage-top', `${Math.ceil(top)}px`);
+    root.style.setProperty('--player-bar-h', `${Math.ceil(playerBar.getBoundingClientRect().height)}px`);
+  };
   const RO = (globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver;
-  const observer = RO ? new RO(() => forwardSize(false)) : null;
-  observer?.observe(stage);
+  const observer = RO ? new RO(() => { publishBars(); forwardSize(false); }) : null;
+  for (const el of [stage, topBar, playerBar]) observer?.observe(el);
+  publishBars();
   forwardSize(true);
 
   const setMode = (m: Mode): void => {
@@ -241,6 +249,7 @@ export function mountConceptPage<P extends object>(
     applyMode();
     writeMode(m);
     scene.setMode(m);
+    publishBars();
     forwardSize(true);
   };
   modeBtns.ders.addEventListener('click', () => setMode('ders'));
@@ -287,6 +296,8 @@ export function mountConceptPage<P extends object>(
       player.destroy();
       root.replaceChildren();
       root.classList.remove('concept-page');
+      root.style.removeProperty('--stage-top');
+      root.style.removeProperty('--player-bar-h');
       delete root.dataset.mode;
     },
   };

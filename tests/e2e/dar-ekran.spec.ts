@@ -5,6 +5,8 @@ import { settled } from './helpers';
 test.use({ viewport: { width: 390, height: 844 } });
 
 const ready = concepts.filter((c) => c.status === 'hazir' && c.href);
+/** `<id> <mode>` whose page CSS sets its own narrow-screen stage height. */
+const TALL_STAGES = new Set(['capraz-dogrulama ders', 'capraz-dogrulama lab', 'karmasiklik-matrisi lab', 'roc-esik lab']);
 
 /** Boxes of the stage and every svg / canvas in it, read until they stop moving. */
 const stageSettled = (page: Page): Promise<void> => settled(() => page.evaluate(() =>
@@ -19,6 +21,16 @@ async function checkStep(page: Page, label: string): Promise<void> {
   const box = await page.locator('.stage').boundingBox();
   expect(box, `${label}: stage box`).not.toBeNull();
   expect(box!.width, `${label}: stage width`).toBeLessThanOrEqual(390 + 1);
+  // the whole stage shows above the sticky player bar, also under a two-line title;
+  // pages that set a taller stage of their own scroll past the bar on purpose
+  if (!TALL_STAGES.has(label.split(' step')[0])) {
+    const under = await page.evaluate(() => {
+      window.scrollTo(0, 0);
+      const bar = document.querySelector('.player-bar')!.getBoundingClientRect();
+      return document.querySelector('.stage')!.getBoundingClientRect().bottom - bar.top;
+    });
+    expect(under, `${label}: stage under the player bar`).toBeLessThanOrEqual(0.5);
+  }
   // the scene's own drawing element: the largest svg/canvas in the stage that is rendered
   // (not hidden, so a collapsed one still counts and fails), or, when a step shows
   // only HTML cards, the first rendered scene root in the stage
