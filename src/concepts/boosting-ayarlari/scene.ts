@@ -6,6 +6,8 @@ import { renderStrip } from '../../core/plot/strip';
 import { boostingAyarlariScenario, type TuneParams } from './scenario';
 import { deriveTuneView } from './view';
 import { CurveScene } from './scene-curves';
+import { GrowScene } from './scene-grow';
+import { SearchScene } from './scene-search';
 
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -19,8 +21,7 @@ const HOST_OF = { points: 'curves', curves: 'curves', grow: 'grow', search: 'sea
 
 /**
  * Scene host of the boosting settings page: a stage with three view areas above the formula strip.
- * `curves` (steps 1-5) is drawn here; `grow` (steps 6-8) and `search` (steps 9-10) are reserved
- * hosts. The stage's `data-view` is the view kind. Updates coalesce into one frame; controls render
+ * `curves` draws steps 1-5 and 8 (the leaf-limit chart), `grow` steps 6-7 and `search` steps 9-10. The stage's `data-view` is the view kind. Updates coalesce into one frame; controls render
  * without interpolation.
  */
 export function mountTuneScene(
@@ -47,6 +48,8 @@ export function mountTuneScene(
   el.append(scene);
 
   const curves = new CurveScene(hosts.curves);
+  const grow = new GrowScene(hosts.grow);
+  const search = new SearchScene(hosts.search);
 
   let mode = initialMode;
   let size: { w: number; h: number } | null = null;
@@ -86,6 +89,8 @@ export function mountTuneScene(
 
   function draw(state: PlayerState<TuneParams>, cause: ChangeCause, instant: boolean): void {
     curves.interrupt();
+    grow.interrupt();
+    search.interrupt();
     const v = deriveTuneView(state.index, state.params);
     // slider and shortcut tweaks are instant; steps and sweep stops animate
     const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
@@ -96,10 +101,17 @@ export function mountTuneScene(
     }
     lastStrip = v.strip;
     renderStrip(strip, v.strip);
-    if (v.chart) {
-      const a = area();
+    const a = area();
+    if (v.kind === 'grow') {
+      grow.resize(a.w, a.h, mode);
+      grow.update(v, ms);
+    } else if (v.kind === 'search') {
+      search.resize(a.w, a.h, mode);
+      search.update(v, ms);
+    } else if (v.chart) {
       curves.resize(a.w, a.h, mode);
-      curves.update(v, ms);
+      // sweep frames redraw faster than the axes can fade, so the axes jump instead of leaving half-faded ticks behind
+      curves.update(v, cause === 'sweep' ? 0 : ms);
     }
     rendered = true;
   }
@@ -168,6 +180,8 @@ export function mountTuneScene(
       rafId = null;
       pending = null;
       curves.destroy();
+      grow.destroy();
+      search.destroy();
       scene.remove();
     },
   };

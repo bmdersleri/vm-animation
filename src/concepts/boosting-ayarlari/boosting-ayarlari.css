@@ -32,3 +32,39 @@
 .tune-plot .cv-vline.stop { stroke:#B3261E; stroke-opacity:.9; }
 .tune-plot .cv-vlabel.best { fill:#1E8A4C; }
 .tune-plot .cv-vlabel.stop { fill:#B3261E; }
+
+/* leaf limit chart (step 8): training solid, validation dashed */
+.tune-plot .lc-series.leaf-train { stroke:var(--navy); }
+.tune-plot .lc-series.leaf-val { stroke:#C26A00; }
+.tune-plot .end-label.leaf-train { fill:var(--navy); }
+.tune-plot .end-label.leaf-val { fill:#A85A00; }
+
+/* growth scene (steps 6-7): the host scrolls vertically on a narrow screen, never sideways */
+.tune-grow-host, .tune-search-host { overflow-x:hidden; overflow-y:auto; }
+.tune-plot .tg-head { font-weight:600; }
+.tune-plot .tg-head.first { font-weight:700; }
+.tune-plot .tg-edge { fill:none; stroke:var(--navy); stroke-width:2; stroke-opacity:.5; }
+.tune-plot .tg-box { fill:var(--surface); stroke:var(--navy); stroke-width:2; }
+.tune-plot .tg-node.leaf .tg-box { fill:var(--navy-soft); stroke-width:1.5; }
+.tune-plot .tg-label { font-weight:600; }
+.tune-plot .tg-order circle, .tune-plot .tg-cut-badge circle { fill:#C26A00; stroke:var(--surface); stroke-width:2; }
+.tune-plot .tg-order text, .tune-plot .tg-cut-badge text { fill:#fff; font-weight:700; }
+.tune-plot .tg-split, .tune-plot .tg-caption { fill:var(--muted); }
+.tune-plot .tg-pt { fill:var(--navy); fill-opacity:.55; }
+.tune-plot .tg-step { fill:none; stroke:#C26A00; stroke-width:3; stroke-linejoin:round; }
+.tune-plot .tg-cut { stroke:#C26A00; stroke-width:2; stroke-dasharray:8 5; stroke-opacity:.8; }
+
+/* search scene (steps 9-10): grey = untried, blue tone = AUC, thick orange frame = best tried cell */
+.tune-plot .hm-base { fill:#E3E9F0; stroke:var(--surface); stroke-width:2; }
+.tune-plot .hm-surface { stroke:var(--surface); stroke-width:2; pointer-events:none; }
+.tune-plot .hm-tried { stroke:var(--surface); stroke-width:2; }
+.tune-plot .hm-order { font-weight:700; fill:var(--navy); }
+.tune-plot .hm-auc { fill:var(--navy); }
+.tune-plot .hm-order.on-dark, .tune-plot .hm-auc.on-dark { fill:#fff; }
+.tune-plot .hm-best { fill:none; stroke:#C26A00; stroke-width:4; pointer-events:none; }
+.tune-plot .hm-best-text { font-weight:700; }
+.tune-plot .hm-legend-bar { stroke:var(--navy); stroke-opacity:.3; }
+.tune-plot .hm-note { fill:var(--muted); }
+.tune-links { display:flex; flex-wrap:wrap; gap:4px 18px; padding:4px 8px; font-size:var(--fs-body); }
+.tune-links[hidden] { display:none; }
+.tune-links a { color:var(--navy); font-weight:600; }

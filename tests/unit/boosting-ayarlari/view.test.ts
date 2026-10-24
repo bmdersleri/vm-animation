@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { stepIndex } from '../../../src/core/player';
 import { BOOK_LRS, CURVES } from '../../../src/concepts/boosting/data';
 import { boostingAyarlariScenario as sc } from '../../../src/concepts/boosting-ayarlari/scenario';
+import { leafCount } from '../../../src/concepts/boosting/regtree';
+import { leafTree } from '../../../src/concepts/boosting-ayarlari/scenario';
 import { deriveTuneView } from '../../../src/concepts/boosting-ayarlari/view';
 
 const view = (id: string, over = {}) => deriveTuneView(stepIndex(sc, id), { ...sc.defaults, ...over });
@@ -54,5 +56,22 @@ describe('boosting-ayarlari view', () => {
       const v = deriveTuneView(i, { ...sc.defaults, trees: 500 });
       expect(JSON.stringify(v)).not.toMatch(/NaN|undefined|Infinity/);
     }
+  });
+
+  it('step 8 uses the real leaf count and stays finite beyond the data', () => {
+    const v = view('yaprak-siniri', { leaves: 500 });
+    const pts = v.chart!.series[0].pts;
+    expect(pts[pts.length - 1][0]).toBe(leafCount(leafTree(64)));
+    expect(pts.every(([x, y]) => Number.isFinite(x) && Number.isFinite(y))).toBe(true);
+    expect(v.chart!.series[1].pts.every(([, y]) => Number.isFinite(y))).toBe(true);
+    expect(view('yaprak-siniri', { leaves: 4 }).chart!.series[0].pts).toHaveLength(3);
+  });
+
+  it('step 10 shows the surface only at the last trial or when asked', () => {
+    expect(view('sirali-arama').search!.showSurface).toBe(true);
+    expect(view('sirali-arama', { trial: 7 }).search!.showSurface).toBe(false);
+    expect(view('sirali-arama', { trial: 7, showSurface: true }).search!.showSurface).toBe(true);
+    expect(view('izgara').search!.showSurface).toBe(false);
+    expect(view('izgara', { trial: 1 }).search!.cells.filter((c) => c.order !== null)).toHaveLength(1);
   });
 });

@@ -113,14 +113,9 @@ const gridLrs = [...new Set(gridCells.map(lrOf))];
 const bestOf = (cells: readonly number[]): number => cells.reduce((a, c) => (surf[c] > surf[a] ? c : a));
 const gridBest = bestOf(gridCells);
 const seqBest = bestOf(sequentialSearch(SURFACE.auc, 8, 0));
-const surfaceBest = bestOf(surf.map((_, i) => i));
 const cellText = (c: number): string => `derinlik ${depthOf(c)}, ν = ${surfaceLrText(lrOf(c))}, AUC ${f(surf[c], 3)}`;
-const seqNote =
-  surf[seqBest] > surf[gridBest]
-    ? 'sıralı arama ızgaradan daha iyi bir hücre buldu'
-    : surf[seqBest] < surf[gridBest]
-      ? 'bu tohumda sıralı arama ızgaranın gerisinde kaldı'
-      : 'ikisi aynı hücreyi buldu';
+/** Word for the sequential best against the grid best, from the data. */
+const seqWord = surf[seqBest] > surf[gridBest] ? 'daha yüksek' : surf[seqBest] < surf[gridBest] ? 'daha düşük' : 'eşit';
 
 // Book constants in the texts below (not in the data files): 3000 observations and depth 4 for the
 // step 1 experiment (make_classification(3000), max_depth=4), 800 observations for the search surface,
@@ -189,7 +184,7 @@ export const boostingAyarlariScenario: Scenario<TuneParams> = {
     {
       id: 'sirali-arama',
       title: 'Sıralı arama',
-      text: `Aynı bütçe, ${gridCells.length} deneme: ilk 3 rastgele, sonra her deneme o ana kadarki iyi sonuçların yakınına. En iyisi ${cellText(seqBest)}; ızgaranınki AUC ${f(surf[gridBest], 3)}: ${seqNote}. Bunu gerçek bir aramada bilemezdiniz; burada sonradan ${surf.length} hücrenin hepsini ölçtük (gerçek en iyisi ${cellText(surfaceBest)}).`,
+      text: `Aynı bütçe, ${gridCells.length} deneme: ilk 3 rastgele, sonra her deneme o ana kadarki iyi sonuçların yakınına. Izgara en iyisi: ${cellText(gridBest)} · Sıralı en iyisi: ${cellText(seqBest)} → sıralı arama ${seqWord} AUC buldu. Bunu gerçek bir aramada bilemezdiniz; burada sonradan ${surf.length} hücrenin hepsini ölçtük.`,
       sweep: { key: 'trial', values: trialSweep, intervalMs: 700 },
     },
   ],

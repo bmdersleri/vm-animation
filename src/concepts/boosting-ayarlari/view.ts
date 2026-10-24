@@ -1,10 +1,12 @@
-import { formatNumber as f, formatNonZero } from '../../core/plot/format';
+import { formatNumber as f, formatNonZero, formatTrim } from '../../core/plot/format';
 import type { LineChartSpec, LineSeries } from '../../core/plot/line-chart';
+import { logAxis } from '../../core/plot/log-axis';
+import { segmentsFrom, type StepSegment } from '../../core/plot/step-line';
 import { bestIndex, earlyStop } from '../boosting/boost';
-import { BOOK_LRS, CURVES, SURFACE } from '../boosting/data';
+import { BOOK_LRS, CURVES, REG, SURFACE } from '../boosting/data';
 import { lrColorClass } from '../boosting/lr-color';
-import { leafCount, treeDepth } from '../boosting/regtree';
-import { gridTrials } from '../boosting/search';
+import { leafCount, predictReg, treeDepth, type RegTree } from '../boosting/regtree';
+import { gridTrials, sequentialSearch } from '../boosting/search';
 import {
   BOOK_TREES,
   boostingAyarlariScenario,
@@ -13,7 +15,9 @@ import {
   levelTree,
   lrText,
   MAX_TREES,
+  surfaceLrText,
   trainError,
+  valError,
   type TuneParams,
 } from './scenario';
 
@@ -55,6 +59,60 @@ export interface TuneView {
   vlines: VLine[];
   gap: GapPoint[] | null;
   note: string | null;
+  /** Steps 6-7: the tree diagram and the residual scatter. */
+  grow?: GrowView;
+  /** Steps 9-10: the heatmap. */
+  search?: SearchView;
+}
+
+/** One node of the tree diagram: `l` / `r` are child ids (-1 on a leaf), `order` the split number. */
+export interface TreeNodeView {
+  id: number;
+  l: number;
+  r: number;
+  depth: number;
+  leaf: boolean;
+  label: string;
+  order: number | null;
+}
+
+/** What the growth scene draws for a tree (Ders steps 6-7). */
+export interface GrowView {
+  head: string[];
+  nodes: TreeNodeView[];
+  cuts: { t: number; order: number }[];
+  steps: StepSegment[];
+  points: [number, number][];
+  /** One line per split: number, threshold and gain. */
+  splits: string[];
+  caption: string;
+  y: [number, number];
+  yTicks: number[];
+}
+
+/** One cell of the 6 x 9 heatmap; `order` is its trial number (1-based) or null when untried. */
+export interface HeatCell {
+  cell: number;
+  row: number;
+  col: number;
+  auc: number;
+  fill: string;
+  dark: boolean;
+  order: number | null;
+  best: boolean;
+}
+
+/** What the search scene draws (Ders steps 9-10). */
+export interface SearchView {
+  rowLabels: string[];
+  colLabels: string[];
+  cells: HeatCell[];
+  /** The full surface is visible (Ders step 10 at the last trial, or the Lab toggle). */
+  showSurface: boolean;
+  aucMin: number;
+  aucMax: number;
+  bestText: string;
+  links: { href: string; text: string }[];
 }
 
 /** Spec "Hata durumları": the validation minimum sits on the last tree. */
@@ -206,30 +264,208 @@ function earlyStopping(p: TuneParams): TuneView {
   };
 }
 
-/** Steps 6-8 (Task 5 draws them): a one-line strip from the same trees the texts quote. */
-function growPlaceholder(id: string, p: TuneParams): TuneView {
-  let strip: string;
-  if (id === 'seviye') {
-    const t = levelTree(p.depth);
-    strip = `seviye-öncelikli · derinlik ${treeDepth(t)} · ${leafCount(t)} yaprak · hata = ${f(trainError(t), 3)}`;
-  } else if (id === 'yaprak') {
-    const t = leafTree(2 ** p.depth);
-    strip = `yaprak-öncelikli · ${leafCount(t)} yaprak · derinlik ${treeDepth(t)} · hata = ${f(trainError(t), 3)}`;
-  } else {
-    const l = leafTree(p.leaves);
-    strip = `yaprak-öncelikli · ${leafCount(l)} yaprak · derinlik ${treeDepth(l)} · eğitim hatası = ${formatNonZero(trainError(l), 3)}`;
-  }
-  return { stepId: id, kind: 'grow', strip, ...EMPTY };
+/** Node views of a tree in tree order; `order` is the split number (level-wise: the level, leaf-wise: split order). */
+export function treeNodes(tree: RegTree, growth: 'level' | 'leaf'): TreeNodeView[] {
+  const rank = new Map(tree.splits.map((sp, i) => [sp.node, i + 1]));
+  return tree.nodes.map((n, id) => {
+    const leaf = n.l === -1;
+    return {
+      id,
+      l: n.l,
+      r: n.r,
+      depth: n.depth,
+      leaf,
+      label: leaf ? f(n.v, 3) : `x ≤ ${f(n.t, 3)}`,
+      order: leaf ? null : growth === 'level' ? n.depth + 1 : (rank.get(id) ?? null),
+    };
+  });
 }
 
-/** Steps 9-10 (Task 5 draws them): the grid's size and the surface's cell count. */
-function searchPlaceholder(id: string, p: TuneParams): TuneView {
-  const cells = SURFACE.depths.length * SURFACE.lrs.length;
-  const strip =
-    id === 'izgara'
-      ? `ızgara · ${gridTrials(p.budget).length} deneme · ${cells} hücrelik yüzey`
-      : `sıralı arama · ${p.trial} deneme · ${cells} hücrelik yüzey`;
-  return { stepId: id, kind: 'search', strip, ...EMPTY };
+const firstResiduals = REG.train.x.map((x, i): [number, number] => [x, REG.train.y[i] - REG.mean]);
+const resLo = Math.floor(Math.min(...firstResiduals.map((q) => q[1])) * 2) / 2;
+const resHi = Math.ceil(Math.max(...firstResiduals.map((q) => q[1])) * 2) / 2;
+const resTicks = Array.from({ length: Math.floor(resHi) - Math.ceil(resLo) + 1 }, (_, i) => Math.ceil(resLo) + i);
+
+/** Steps 6-7: a first-residual tree grown level-wise (depth) or leaf-wise (2^depth leaves). */
+function growth(id: 'seviye' | 'yaprak', p: TuneParams): TuneView {
+  const depth = Math.max(1, Math.round(p.depth));
+  const kind = id === 'seviye' ? 'level' : 'leaf';
+  const tree = kind === 'level' ? levelTree(depth) : leafTree(2 ** depth);
+  const nodes = treeNodes(tree, kind);
+  const cuts = nodes.filter((n) => !n.leaf).map((n) => ({ t: tree.nodes[n.id].t, order: n.order! }));
+  const err = f(trainError(tree), 3);
+  const gain = new Map(tree.splits.map((sp) => [sp.node, sp.gain]));
+  const splits = nodes
+    .filter((n) => !n.leaf)
+    .sort((a, b) => a.order! - b.order! || a.id - b.id)
+    .map((n) => `${n.order} · ${n.label} · kazanç ${f(gain.get(n.id)!, 4)}`);
+  const first =
+    kind === 'level'
+      ? `seviye-öncelikli · derinlik ${treeDepth(tree)} · ${leafCount(tree)} yaprak`
+      : `yaprak-öncelikli · ${leafCount(tree)} yaprak · derinlik ${treeDepth(tree)}`;
+  const grow: GrowView = {
+    head: [first, `hata ${err}`],
+    nodes,
+    cuts,
+    steps: segmentsFrom(
+      cuts.map((c) => c.t),
+      (x) => predictReg(tree, x),
+      0,
+      10,
+    ),
+    points: firstResiduals,
+    splits,
+    caption:
+      kind === 'level'
+        ? 'Numara = bölünme sırası; aynı numara aynı seviye, birlikte açılır.'
+        : 'Numara = bölünme sırası; her adımda en çok kazandıran yaprak açılır.',
+    y: [resLo, resHi],
+    yTicks: resTicks,
+  };
+  return { stepId: id, kind: 'grow', strip: `${first} · hata = ${err}`, ...EMPTY, grow };
+}
+
+/** One leaf-wise tree of the step 8 sweep: the request, the real leaf count and the errors. */
+interface LeafRow {
+  asked: number;
+  leaves: number;
+  depth: number;
+  train: number;
+  val: number;
+}
+let leafRows: LeafRow[] | null = null;
+/** Trees of 2..64 requested leaves, one row per real leaf count (the data may stop short of the request). */
+function leafSweep(): LeafRow[] {
+  if (leafRows) {
+    return leafRows;
+  }
+  const out: LeafRow[] = [];
+  for (let k = 2; k <= 64; k++) {
+    const t = leafTree(k);
+    const leaves = leafCount(t);
+    if (out.length === 0 || leaves > out[out.length - 1].leaves) {
+      out.push({ asked: k, leaves, depth: treeDepth(t), train: trainError(t), val: valError(t) });
+    }
+  }
+  leafRows = out;
+  return out;
+}
+
+const ERR_FLOOR = 1e-5;
+const logErr = (v: number): number => Math.log10(Math.max(v, ERR_FLOOR));
+
+/** Step 8: training and validation error of the leaf-wise tree against its leaf count (log y). */
+function leafLimit(p: TuneParams): TuneView {
+  const rows = leafSweep();
+  const upto = rows.filter((r) => r.asked <= p.leaves);
+  const shown = upto.length > 0 ? upto : [rows[0]];
+  const cur = shown[shown.length - 1];
+  const all = rows.flatMap((r) => [r.train, r.val]);
+  const axis = logAxis(Math.max(Math.min(...all), ERR_FLOOR) * 0.3, Math.max(...all) * 1.25);
+  const maxLeaves = rows[rows.length - 1].leaves;
+  const chart: LineChartSpec = {
+    x: [2, maxLeaves],
+    y: axis.y,
+    xTitle: 'yaprak sayısı',
+    yTitle: 'hata (log ölçek)',
+    series: [
+      { id: 'train', cls: 'train leaf-train', pts: shown.map((r) => [r.leaves, logErr(r.train)]) },
+      { id: 'val', cls: 'val leaf-val', pts: shown.map((r) => [r.leaves, logErr(r.val)]), dash: '8 5' },
+    ],
+    xTicks: [2, ...[16, 32, 48, 64].filter((t) => t <= maxLeaves)],
+    yTicks: axis.ticks,
+    yFormat: axis.format,
+  };
+  return {
+    stepId: 'yaprak-siniri',
+    kind: 'curves',
+    strip: `num_leaves < 2^max_depth: max_depth=5 → ${2 ** 5}\n${cur.leaves} yaprak · derinlik ${cur.depth} · eğitim hatası = ${formatNonZero(cur.train, 3)} · doğrulama hatası = ${f(cur.val, 3)}`,
+    chart,
+    endLabels: [
+      { id: 'train', text: 'eğitim', x: cur.leaves, y: logErr(cur.train) },
+      { id: 'val', text: 'doğrulama', x: cur.leaves, y: logErr(cur.val) },
+    ],
+    // the selected leaf count and the depth it needs
+    vlines: [
+      {
+        x: cur.leaves,
+        label: `${cur.leaves} yaprak · derinlik ${cur.depth}`,
+        anchor: cur.leaves > maxLeaves / 2 ? 'end' : 'start',
+        row: 0,
+        cls: 'leaf',
+      },
+    ],
+    gap: null,
+    note: null,
+  };
+}
+
+/** Learning rate of a surface column with two significant digits: 0,01 / 0,018 / 0,1 / 1. */
+export const colLabel = (lr: number): string => formatTrim(Number(lr.toPrecision(2)), 3);
+
+const FLAT_AUC = SURFACE.auc.flat();
+const AUC_MIN = Math.min(...FLAT_AUC);
+const AUC_MAX = Math.max(...FLAT_AUC);
+const N_LR = SURFACE.lrs.length;
+
+/** Sequential palette: pale blue (low AUC) through mid blue to navy (high AUC). */
+const STOPS = [
+  [0xf1, 0xf6, 0xfb],
+  [0x7f, 0xb2, 0xdc],
+  [0x14, 0x36, 0x5c],
+];
+export function heatColor(t: number): string {
+  const u = Math.min(1, Math.max(0, Number.isFinite(t) ? t : 0)) * (STOPS.length - 1);
+  const i = Math.min(STOPS.length - 2, Math.floor(u));
+  const k = u - i;
+  const c = STOPS[i].map((v, j) => Math.round(v + (STOPS[i + 1][j] - v) * k));
+  return `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+const LINKS = [
+  { href: '../gradyan-artirma/', text: 'Gradyan artırma sayfası' },
+  { href: '../capraz-dogrulama/', text: 'Çapraz doğrulama sayfası' },
+];
+
+/** Steps 9-10: the heatmap with the first `trial` cells of the grid or of the sequential search. */
+function search(id: 'izgara' | 'sirali-arama', p: TuneParams): TuneView {
+  const budget = Math.max(1, Math.round(p.budget));
+  const trial = Math.max(0, Math.min(budget, Math.round(p.trial)));
+  const order = id === 'izgara' ? gridTrials(budget) : sequentialSearch(SURFACE.auc, budget, p.seed);
+  const tried = order.slice(0, trial);
+  let best = -1;
+  for (const c of tried) {
+    if (best < 0 || FLAT_AUC[c] > FLAT_AUC[best]) {
+      best = c;
+    }
+  }
+  const cells: HeatCell[] = FLAT_AUC.map((auc, cell) => {
+    const t = (auc - AUC_MIN) / (AUC_MAX - AUC_MIN);
+    const k = tried.indexOf(cell);
+    return { cell, row: Math.floor(cell / N_LR), col: cell % N_LR, auc, fill: heatColor(t), dark: t > 0.6, order: k < 0 ? null : k + 1, best: cell === best };
+  });
+  const bestText =
+    best < 0
+      ? 'henüz deneme yok'
+      : `en iyi: derinlik ${SURFACE.depths[Math.floor(best / N_LR)]} · ν ${surfaceLrText(SURFACE.lrs[best % N_LR])} · AUC ${f(FLAT_AUC[best], 3)}`;
+  const label = id === 'izgara' ? 'ızgara' : 'sıralı arama';
+  const searchView: SearchView = {
+    rowLabels: SURFACE.depths.map(String),
+    colLabels: SURFACE.lrs.map(colLabel),
+    cells,
+    showSurface: p.showSurface || (id === 'sirali-arama' && trial >= budget),
+    aucMin: AUC_MIN,
+    aucMax: AUC_MAX,
+    bestText,
+    links: id === 'sirali-arama' ? LINKS : [],
+  };
+  return {
+    stepId: id,
+    kind: 'search',
+    strip: `${label} · ${trial} / ${order.length} deneme · ${SURFACE.depths.length * N_LR} hücrelik yüzey`,
+    ...EMPTY,
+    search: searchView,
+  };
 }
 
 /** The view of step `index` for the parameters `p`. */
@@ -248,9 +484,13 @@ export function deriveTuneView(index: number, p: TuneParams): TuneView {
       return earlyStopping(p);
     case 'seviye':
     case 'yaprak':
+      return growth(id, p);
     case 'yaprak-siniri':
-      return growPlaceholder(id, p);
+      return leafLimit(p);
+    case 'izgara':
+    case 'sirali-arama':
+      return search(id, p);
     default:
-      return searchPlaceholder(id, p);
+      throw new Error(`unknown step ${id}`);
   }
 }

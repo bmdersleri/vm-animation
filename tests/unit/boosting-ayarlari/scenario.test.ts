@@ -78,6 +78,10 @@ describe('boosting-ayarlari scenario', () => {
     // step 10 reads the surface
     expect(SURFACE.auc.flat()).toHaveLength(54);
     expect(step('sirali-arama').text).toContain('54 hücrenin');
+    // the sequential best (0,957) beats the grid best (0,951); each best cell is named once
+    const t10 = step('sirali-arama').text;
+    expect(t10).toContain('Izgara en iyisi: derinlik 5, ν = 0,316, AUC 0,951 · Sıralı en iyisi: derinlik 5, ν = 1,0, AUC 0,957 → sıralı arama daha yüksek AUC buldu');
+    expect(t10.match(/AUC 0,957/g)).toHaveLength(1);
     for (const s of sc.steps) {
       expect(s.text).not.toMatch(/NaN|undefined|Infinity/);
     }
