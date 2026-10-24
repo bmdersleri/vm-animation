@@ -1,0 +1,219 @@
+import { select, type Selection } from 'd3-selection';
+import 'd3-transition';
+import type { Mode } from '../../core/mode';
+import { AxesLayer } from '../../core/plot/axes';
+import { r1 } from '../../core/plot/marks';
+import { TextMeasure } from '../../core/plot/text-measure';
+import { tr } from '../../core/plot/transition';
+import { fitViewport, type Rect } from '../../core/plot/viewport';
+import { SidePanel } from './side-panel';
+import type { ImbDot, ImbView } from './view';
+
+const NS = 'http://www.w3.org/2000/svg';
+type G = Selection<SVGGElement, unknown, null, undefined>;
+
+/** Outer padding (px) around the drawing. */
+const PAD = 8;
+/** Gap (px) between the scatter and the side panel. */
+const GAP = 12;
+/** Below this width the side panel flows under the scatter. */
+export const NARROW = 700;
+
+/** Tenure (months) and monthly charge ranges of the scatter. */
+export const X_DOMAIN: [number, number] = [0, 72];
+export const Y_DOMAIN: [number, number] = [15, 125];
+
+/** A rectangle in px. */
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** The two areas of the scene and the height the whole drawing needs. */
+export interface SplitLayout {
+  scatter: Box;
+  side: Box;
+  height: number;
+  narrow: boolean;
+}
+
+/**
+ * Splits a `w` x `h` stage: the side panel beside the scatter, or (under NARROW px) below it.
+ * `sideNeed` is the height the side panel wants; a narrow drawing may be taller than the stage.
+ */
+export function splitLayout(w: number, h: number, sideNeed: number): SplitLayout {
+  if (w >= NARROW) {
+    const sideW = Math.max(300, Math.min(560, Math.round(w * 0.4)));
+    return {
+      scatter: { x: 0, y: 0, w: w - sideW - GAP, h },
+      side: { x: w - sideW, y: 0, w: sideW, h },
+      height: h,
+      narrow: false,
+    };
+  }
+  const scatterH = Math.max(240, Math.min(Math.round(w * 0.85), Math.round(h * 0.75)));
+  return {
+    scatter: { x: 0, y: 0, w, h: scatterH },
+    side: { x: 0, y: scatterH + GAP, w, h: sideNeed },
+    height: Math.max(h, scatterH + GAP + sideNeed),
+    narrow: true,
+  };
+}
+
+/**
+ * The scatter and side panel of the imbalanced-data page (Ders steps 1-5): customers by tenure and
+ * monthly charge, the step-5 SMOTE example on top, and the count bars / matrix / metrics beside it.
+ */
+export class ScatterScene {
+  private readonly svg: Selection<SVGSVGElement, unknown, null, undefined>;
+  private readonly plotG: G;
+  private readonly dotsG: G;
+  private readonly exampleG: G;
+  private readonly axes: AxesLayer;
+  private readonly side: SidePanel;
+  private readonly measure: TextMeasure;
+  private w = 1;
+  private h = 1;
+  private mode: Mode = 'ders';
+
+  constructor(host: HTMLElement) {
+    const root = host.ownerDocument.createElementNS(NS, 'svg');
+    host.append(root);
+    this.svg = select(root)
+      .attr('class', 'imb-plot')
+      .attr('role', 'img')
+      .attr('aria-label', 'Müşteriler kıdem ve aylık ücret düzleminde; yanda sınıf sayıları, karışıklık matrisi ve metrikler');
+    this.plotG = this.svg.append('g').attr('class', 'imb-scatter');
+    this.axes = new AxesLayer(this.plotG.append('g').attr('class', 'imb-axes'));
+    this.dotsG = this.plotG.append('g').attr('class', 'imb-dots');
+    this.exampleG = this.plotG.append('g').attr('class', 'imb-example');
+    const probe = this.svg.append('text').attr('class', 'probe').attr('visibility', 'hidden').attr('aria-hidden', 'true');
+    this.measure = new TextMeasure(probe.node()!);
+    this.side = new SidePanel(this.svg.append('g').attr('class', 'imb-side'), this.measure);
+  }
+
+  resize(w: number, h: number, mode: Mode): void {
+    this.w = Math.max(1, w);
+    this.h = Math.max(1, h);
+    this.mode = mode;
+  }
+
+  interrupt(): void {
+    this.svg.selectAll('*').interrupt('axes').interrupt('dots').interrupt('bars').interrupt('cellbg');
+  }
+
+  destroy(): void {
+    this.interrupt();
+    this.svg.remove();
+  }
+
+  /** Draws `v`; `ms` > 0 fades points in and out and grows the bars. */
+  update(v: ImbView, ms: number): void {
+    this.interrupt();
+    const fonts = this.measure.fonts(this.mode);
+    const { tick, axis } = fonts;
+    const need = this.side.heightFor(v, this.w, tick, axis);
+    const lay = splitLayout(this.w, this.h, need);
+    this.svg.attr('width', this.w).attr('height', lay.height);
+
+    const gap = Math.round(tick * 0.45);
+    const yTickW = this.measure.maxWidth(['120'], 'tick', tick);
+    const left = lay.scatter.x + PAD + axis * 1.2 + gap + yTickW + gap;
+    const right = lay.scatter.x + lay.scatter.w - PAD - tick * 0.6;
+    const top = lay.scatter.y + PAD;
+    const below = gap + tick * 1.2 + gap + axis * 1.25 + PAD;
+    const bottom = lay.scatter.y + lay.scatter.h - below;
+    const rect: Rect = { left, top, width: Math.max(60, right - left), height: Math.max(60, bottom - top) };
+    const sc = fitViewport({ x: X_DOMAIN, y: Y_DOMAIN }, rect, false);
+    this.axes.draw(
+      sc,
+      rect,
+      {
+        xTickCount: 7,
+        yTickCount: 6,
+        xTicks: [0, 12, 24, 36, 48, 60, 72],
+        yTicks: [20, 40, 60, 80, 100, 120],
+        xTickY: rect.top + rect.height + gap + tick * 0.9,
+        yTickX: rect.left - gap,
+        xTitle: {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height + gap + tick * 1.2 + gap + axis * 0.95,
+          text: 'kıdem (ay)',
+        },
+        yTitle: { x: rect.left - gap - yTickW - gap - axis * 0.3, y: rect.top + rect.height / 2, lines: ['aylık ücret'] },
+      },
+      0,
+      'imb',
+    );
+    this.drawDots(v, sc, tick, ms);
+    this.drawExample(v, sc, tick);
+    this.side.draw(v, { rect: lay.side, tick, axis, ms });
+  }
+
+  private drawDots(v: ImbView, sc: ReturnType<typeof fitViewport>, tick: number, ms: number): void {
+    const r = Math.max(2.4, tick * 0.17);
+    const radius = (d: ImbDot): number => r1(r * Math.min(3, Math.sqrt(d.weight)));
+    const cls = (d: ImbDot): string => {
+      const parts = ['pt', d.cls === 1 ? 'pos' : 'neg'];
+      if (d.synthetic) {
+        parts.push('synthetic');
+      }
+      if (d.test && v.fadeTest) {
+        parts.push('is-test');
+      }
+      return parts.join(' ');
+    };
+    this.dotsG
+      .selectAll<SVGCircleElement, ImbDot>('circle.pt')
+      .data(v.dots, (d) => d.id)
+      .join(
+        (enter) => {
+          const c = enter.append('circle').attr('opacity', ms > 0 ? 0 : 1);
+          tr(c, 'dots', ms).attr('opacity', 1);
+          return c;
+        },
+        (update) => update.attr('opacity', 1),
+        (exit) => {
+          tr(exit, 'dots', ms).attr('opacity', 0).remove();
+        },
+      )
+      .attr('class', cls)
+      .attr('r', radius)
+      .attr('cx', (d) => r1(sc.x(d.tenure)))
+      .attr('cy', (d) => r1(sc.y(d.charge)));
+  }
+
+  /** Step 5: five neighbour lines, the chosen one thicker, x_i, x_zi and x_new. */
+  private drawExample(v: ImbView, sc: ReturnType<typeof fitViewport>, tick: number): void {
+    const e = v.example;
+    const g = this.exampleG;
+    const px = (p: { tenure: number }): number => r1(sc.x(p.tenure));
+    const py = (p: { charge: number }): number => r1(sc.y(p.charge));
+    const line = (cls: string, to: { tenure: number; charge: number }[]): void => {
+      g.selectAll<SVGLineElement, { tenure: number; charge: number }>(`line.${cls}`)
+        .data(e ? to : [])
+        .join('line')
+        .attr('class', cls)
+        .attr('x1', e ? px(e.xi) : 0)
+        .attr('y1', e ? py(e.xi) : 0)
+        .attr('x2', px)
+        .attr('y2', py);
+    };
+    line('neighbour-line', e ? e.neighbours : []);
+    line('chosen-line', e ? [e.xz] : []);
+    const ring = (cls: string, at: { tenure: number; charge: number }[], rad: number): void => {
+      g.selectAll<SVGCircleElement, { tenure: number; charge: number }>(`circle.${cls}`)
+        .data(e ? at : [])
+        .join('circle')
+        .attr('class', cls)
+        .attr('r', r1(rad))
+        .attr('cx', px)
+        .attr('cy', py);
+    };
+    ring('x-i', e ? [e.xi] : [], tick * 0.5);
+    ring('x-zi', e ? [e.xz] : [], tick * 0.5);
+    ring('x-new', e ? [e.xnew] : [], tick * 0.4);
+  }
+}

@@ -35,6 +35,7 @@ export default defineConfig({
         'random-forest': resolve(root, 'random-forest/index.html'),
         'gradyan-artirma': resolve(root, 'gradyan-artirma/index.html'),
         'boosting-ayarlari': resolve(root, 'boosting-ayarlari/index.html'),
+        'dengesiz-veri': resolve(root, 'dengesiz-veri/index.html'),
       },
     },
   },
