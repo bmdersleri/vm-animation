@@ -65,4 +65,22 @@ describe('force scene', () => {
       expect(num(t, 'x')).toBeLessThanOrEqual(width);
     }
   });
+
+  it('step 6 waterfall for customer 59 stays inside the drawn axis', () => {
+    const { el, player } = setup();
+    go(player, 'toplam');
+    player.setParam('customer', 59);
+    // the value axis line spans the drawn domain: every segment lies between its ends
+    const axis = el.querySelector('.wf-axis-line')!;
+    const x1 = num(axis, 'x1');
+    const x2 = num(axis, 'x2');
+    expect(x2).toBeGreaterThan(x1);
+    expect(texts(el, '.wf-tick').some((t) => t.startsWith('0'))).toBe(true);
+    for (const s of el.querySelectorAll('.wf-seg')) {
+      const xs = (s.getAttribute('d') ?? '').match(/-?\d+(?:\.\d+)?(?=,)/g)!.map(Number);
+      expect(Math.min(...xs)).toBeGreaterThanOrEqual(x1 - 0.5);
+      expect(Math.max(...xs)).toBeLessThanOrEqual(x2 + 0.5);
+    }
+    expect(num(el.querySelector('.wf-total')!.querySelector('line')!, 'x1')).toBeGreaterThan(0);
+  });
 });

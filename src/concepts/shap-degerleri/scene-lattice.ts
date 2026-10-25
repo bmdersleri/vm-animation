@@ -37,6 +37,7 @@ export class LatticeScene implements ViewScene {
   private readonly orders: OrdersTable;
   private readonly measure: TextMeasure;
   private w = 1;
+  private h = 1;
   private mode: Mode = 'ders';
 
   constructor(host: HTMLElement) {
@@ -56,8 +57,9 @@ export class LatticeScene implements ViewScene {
     host.append(this.root);
   }
 
-  resize(w: number, _h: number, mode: Mode): void {
+  resize(w: number, h: number, mode: Mode): void {
     this.w = Math.max(1, w);
+    this.h = Math.max(1, h);
     this.mode = mode;
   }
 
@@ -85,16 +87,30 @@ export class LatticeScene implements ViewScene {
   }
 
   private draw(view: LatticeView, ms: number): void {
-    const fs = this.measure.fonts(this.mode).tick;
-    const lh = fs * 1.3;
-    const wide = this.w >= NARROW;
-    const avail = Math.max(120, view.part === 'orders' && wide ? Math.floor(this.w * 0.54) - 12 : this.w - 24);
-    const texts = view.nodes.flatMap((n) => [...n.names, '∅', `v = ${n.v}`]);
-    const nodeW = Math.ceil(this.measure.maxWidth(texts, 'tick', fs)) + 8;
-    const gapX = 6;
+    const narrow = this.w < NARROW;
+    const fs = this.measure.fontPx('node-name', this.measure.fonts(this.mode).tick);
+    const avail = Math.max(120, view.part === 'orders' && !narrow ? Math.floor(this.w * 0.54) - 12 : this.w - (narrow ? 8 : 24));
+    const names = view.nodes.flatMap((n) => (n.names.length > 0 ? n.names : ['∅']));
+    const nameW = this.measure.maxWidth(names, 'node-name', fs);
+    const valueW = this.measure.maxWidth(view.nodes.map((n) => n.v), 'node-v', fs);
+    const nodeW = Math.ceil(Math.max(nameW, valueW)) + (narrow ? 12 : 24);
+    const gapX = narrow ? 4 : 8;
     const width = Math.max(avail, 3 * nodeW + 2 * gapX + 8);
-    const gapY = lh * 2;
     const lines = (layer: number): number => (layer === 0 ? 1 : layer) + 1;
+    // line height and tier gap shrink in steps until the four tiers fit the stage height
+    const tiers = [
+      { lh: 1.3, gap: 2 },
+      { lh: 1.2, gap: 1.6 },
+      { lh: 1.1, gap: 1.3 },
+      { lh: 1.05, gap: 1.1 },
+    ];
+    const need = (t: { lh: number; gap: number }): number => {
+      const lh = fs * t.lh;
+      return [0, 1, 2, 3].reduce((sum, l) => sum + lines(l) * lh + 10, 0) + 3 * lh * t.gap + 8;
+    };
+    const pick = tiers.find((t) => need(t) <= this.h - 20) ?? tiers[tiers.length - 1];
+    const lh = fs * pick.lh;
+    const gapY = lh * pick.gap;
     const places = new Map<number, Place>();
     let y = 4;
     LAYERS.forEach((masks, layer) => {

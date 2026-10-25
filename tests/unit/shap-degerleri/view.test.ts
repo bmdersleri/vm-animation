@@ -86,4 +86,34 @@ describe('shap view', () => {
     expect(Math.min(...own)).toBe(0);
     expect(Math.max(...own)).toBe(1);
   });
+
+  it('step 4 strip writes each sign once', () => {
+    const strip = at('marjinal').strip;
+    expect(strip).toContain('0,481 + 0,155 + 0,064');
+    expect(strip).not.toMatch(/\+ \+|\+ −|− \+|− −/);
+    // a customer with a negative marginal reads "− 0,010" style
+    for (const c of CUSTOMERS) {
+      for (let order = 0; order < 6; order++) {
+        expect(at('marjinal', { customer: c.row, order }).strip).not.toMatch(/\+ \+|\+ −|− \+|− −/);
+        expect(at('alti-siralama', { customer: c.row }).strip).not.toMatch(/\+ \+|\+ −|− \+|− −/);
+      }
+    }
+  });
+
+  it('step 6 domain holds every running total (customer 59 dips below zero)', () => {
+    for (const c of CUSTOMERS) {
+      const w = at('toplam', { customer: c.row }).waterfall!;
+      let run = w.spec.base;
+      const all = [run];
+      for (const part of w.spec.parts) {
+        run += part.value;
+        all.push(run);
+      }
+      all.push(w.spec.total);
+      expect(Math.min(...all)).toBeGreaterThanOrEqual(w.spec.domain[0] - 1e-9);
+      expect(Math.max(...all)).toBeLessThanOrEqual(w.spec.domain[1] + 1e-9);
+    }
+    expect(at('toplam', { customer: 59 }).waterfall!.spec.domain[0]).toBeLessThan(0);
+    expect(at('toplam').waterfall!.spec.domain).toEqual([0, 1]);
+  });
 });

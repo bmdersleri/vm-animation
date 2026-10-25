@@ -214,7 +214,7 @@ function formulaStrip(c: Customer, phi: number): string {
       continue;
     }
     const delta = c.v[mask | (1 << feature)] - c.v[mask];
-    terms.push(`${fraction(shapleyWeight(popcount(mask), FEATURES.length))} · ${f3(delta)}`);
+    terms.push(`${fraction(shapleyWeight(popcount(mask), FEATURES.length))} · ${delta < 0 ? `(${f3(delta)})` : f3(delta)}`);
     parts.push(shapleyWeight(popcount(mask), FEATURES.length) * delta);
   }
   return [
@@ -276,10 +276,9 @@ function latticeView(id: string, p: ShapParams): ShapView {
     ].join('\n');
   } else if (part === 'path') {
     const m = marginals(c.v, o);
-    const seq = o.map((i) => signed(m[i]));
     const sym = eq(m, c.p - c.v[0]);
     strip = [
-      `${orderText(o)}: ${seq.join(' + ')} ${sym} ${f3(c.p - c.v[0])}`,
+      `${orderText(o)}: ${sumExpr(o.map((i) => m[i]))} ${sym} ${f3(c.p - c.v[0])}`,
       `toplam ${f3(c.p - c.v[0])} = ${f3(c.p)} − ${f3(c.v[0])}`,
     ].join('\n');
     if (sym === '≈') {
@@ -312,6 +311,27 @@ function forceExtent(c: Customer): [number, number] {
   return [c.p - pos, c.p - neg];
 }
 
+/** Axis domain: [0, 1] widened outward to 0,1 steps so every value in `values` is inside it. */
+function domainOf(values: readonly number[]): [number, number] {
+  const lo = Math.min(0, ...values.map((v) => Math.floor(v * 10 + 1e-9) / 10));
+  const hi = Math.max(1, ...values.map((v) => Math.ceil(v * 10 - 1e-9) / 10));
+  return [lo, hi];
+}
+
+/** Domain of the step-6 waterfall: the base value, every running total and p. */
+function walkDomain(c: Customer): [number, number] {
+  const totals: number[] = [MODEL.base];
+  for (const v of c.shap) {
+    totals.push(totals[totals.length - 1] + v);
+  }
+  return domainOf([...totals, c.p]);
+}
+
+/** "0,481 + 0,155 − 0,064": signed numbers carry their own sign only, the first one a leading minus. */
+function sumExpr(values: readonly number[]): string {
+  return values.map((v, i) => (i === 0 ? f3(v) : v < 0 ? `− ${f3(-v)}` : `+ ${f3(v)}`)).join(' ');
+}
+
 /** Sum line "φ₀ + φ₁ + … = p" with the signs written out. */
 function sumLine(c: Customer): string {
   const terms = c.shap.map((v) => (v < 0 ? `− ${f3(-v)}` : `+ ${f3(v)}`)).join(' ');
@@ -322,9 +342,7 @@ function forceView(id: string, p: ShapParams): ShapView {
   const a = customerByRow(p.customer);
   const b = customerByRow(p.second);
   const extents = [a, b].map(forceExtent);
-  const lo = Math.min(0, ...extents.map((e) => Math.floor(e[0] * 10 + 1e-9) / 10));
-  const hi = Math.max(1, ...extents.map((e) => Math.ceil(e[1] * 10 - 1e-9) / 10));
-  const domain: [number, number] = [lo, hi];
+  const domain = domainOf(extents.flat());
   const rows = ([a, b] as const).map((c, i) => ({
     row: i as 0 | 1,
     customer: c.row,
@@ -415,7 +433,7 @@ export function deriveShapView(index: number, p: ShapParams): ShapView {
         base: MODEL.base,
         parts: FEATURES.map((name, i) => ({ id: name, label: name, value: c.shap[i] })),
         total: c.p,
-        domain: [0, 1],
+        domain: walkDomain(c),
         mode: 'waterfall',
         baseLabel: 'φ₀ temel değer',
         totalLabel: 'p(ayrılma)',

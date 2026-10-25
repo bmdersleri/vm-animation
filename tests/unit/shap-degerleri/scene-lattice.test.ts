@@ -86,4 +86,26 @@ describe('lattice scene', () => {
     expect(/\.orders-wrap\s*\{[^}]*overflow-x:\s*auto/.test(css)).toBe(true);
     expect(/@media \(max-width:900px\) \{[^@]*\.lattice-scene\[data-part='orders'\] \{ grid-template-columns:minmax\(0,1fr\)/.test(css)).toBe(true);
   });
+
+  it('the whole lattice fits the stage height in steps 3 to 5', () => {
+    for (const id of ['koalisyon', 'marjinal', 'alti-siralama']) {
+      const { el, player } = setup(1280, 540);
+      go(player, id);
+      const svg = el.querySelector<SVGSVGElement>('.lattice-plot')!;
+      const bottom = node(el, 7).querySelector('rect.node-box')!;
+      expect(num(bottom, 'y') + num(bottom, 'height'), id).toBeLessThanOrEqual(num(svg, 'height'));
+      // 540 px minus the three-line strip estimate (jsdom has no layout) leaves about 425 px for the stage
+      expect(num(svg, 'height'), id).toBeLessThanOrEqual(425 - 20);
+    }
+  });
+
+  it('node boxes are as wide as their measured text', () => {
+    const { el, player } = setup();
+    go(player, 'koalisyon');
+    const box = node(el, 7).querySelector('rect.node-box')!;
+    const names = [...node(el, 7).querySelectorAll('.node-name')];
+    expect(names).toHaveLength(3);
+    // jsdom estimates 0.62 em per character at its 16 px default: the node must exceed the longest name estimate
+    expect(num(box, 'width')).toBeGreaterThan('MonthlyCharges'.length * 16 * 0.62);
+  });
 });
