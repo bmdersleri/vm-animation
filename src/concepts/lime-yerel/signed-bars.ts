@@ -84,10 +84,12 @@ export class SignedBars {
     const geo = draw(zero - lead, lead + ref * scale + 12 + valueW, ref);
     // negative bars grow left from zero, their label sits left of the bar end
     this.barG.selectAll<SVGGElement, HBar>(`g.${itemCls}`).each(function (d) {
+      const g = select(this);
       if (d.attrs?.sign !== 'neg') {
+        // a bar that turned positive after being negative: its label goes back to starting at the bar end
+        g.select('text.bar-value').attr('text-anchor', null);
         return;
       }
-      const g = select(this);
       const len = d.value * scale;
       // a negative bar grows leftward: it starts at zero with no width, then x and width move together
       const rect = g.select<SVGRectElement>('rect.bar');

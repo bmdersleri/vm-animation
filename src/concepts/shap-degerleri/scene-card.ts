@@ -69,6 +69,8 @@ export class CardScene implements ViewScene {
   resize(w: number, _h: number, mode: Mode): void {
     this.w = Math.max(1, w);
     this.mode = mode;
+    // the layout follows the stage's own width (the Lab stage is narrow in a wide window), so the CSS keys on this, not on the viewport
+    this.root.toggleAttribute('data-narrow', this.w < NARROW);
   }
 
   interrupt(): void {

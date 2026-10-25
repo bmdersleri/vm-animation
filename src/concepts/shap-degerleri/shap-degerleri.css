@@ -43,9 +43,7 @@ code.feature-name { font-family:var(--mono, ui-monospace, Consolas, monospace); 
 .imp-bar rect.bar { fill:#8E9BAA; }
 .mean-shap-bar rect.bar { fill:var(--navy); }
 .shap-bar .bar-value { font-weight:700; }
-@media (max-width:900px) {
-  .card-scene[data-kind='bars'][data-groups='1'], .card-scene[data-groups='2'] .bars-area { grid-template-columns:minmax(0,1fr); }
-}
+.card-scene[data-narrow][data-kind='bars'][data-groups='1'], .card-scene[data-narrow][data-groups='2'] .bars-area { grid-template-columns:minmax(0,1fr); }
 
 /* coalition lattice and ordering table (steps 3-5) */
 .lattice-scene { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; padding:10px 12px; align-content:start; font-size:var(--fs-tick); }
