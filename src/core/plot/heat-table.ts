@@ -59,7 +59,8 @@ export interface HeatTableSpec {
 /**
  * A colour-coded table (`table.heat-table` in a scrolling `div.heat-wrap`): rows are documents, columns terms.
  * Every cell is a `td.heat-cell[data-row][data-col]` holding its value text; cells keep their element when the
- * values change, so the page's CSS can fade the colours. Column names are set upright-rotated by the CSS.
+ * values change, so the page's CSS can fade the colours. A column name sits in a `span.heat-col-text`, which the
+ * CSS can turn upright.
  */
 export class HeatTable {
   readonly el: HTMLDivElement;
@@ -92,7 +93,7 @@ export class HeatTable {
     this.fit(this.head, 1 + spec.cols.length, () => this.th('heat-col'));
     spec.cols.forEach((name, c) => {
       const th = this.head.children[c + 1] as HTMLTableCellElement;
-      th.textContent = name;
+      this.label(th, name);
       th.dataset.col = String(c);
       th.classList.toggle('is-focus', spec.focusCol === c);
     });
@@ -125,6 +126,17 @@ export class HeatTable {
 
   destroy(): void {
     this.el.remove();
+  }
+
+  /** Column header text in its own span (the CSS rotates the span, not the cell). */
+  private label(th: HTMLTableCellElement, name: string): void {
+    let span = th.firstElementChild;
+    if (!span) {
+      span = this.doc.createElement('span');
+      span.className = 'heat-col-text';
+      th.append(span);
+    }
+    span.textContent = name;
   }
 
   private th(cls: string): HTMLTableCellElement {

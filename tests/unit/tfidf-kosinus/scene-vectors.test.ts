@@ -29,8 +29,9 @@ describe('vector scene', () => {
     const { el, player } = setup();
     go(player, 'uzunluk-yon');
     const arrows = [...el.querySelectorAll('.vec-arrow')];
-    expect(arrows.map((a) => a.getAttribute('data-id'))).toEqual(['query', 'double']);
-    const [q, d] = arrows.map(shaft);
+    // the doubled arrow is drawn first, so the query's short arrow stays visible on top
+    expect(arrows.map((a) => a.getAttribute('data-id'))).toEqual(['double', 'query']);
+    const [d, q] = arrows.map(shaft);
     // same direction, the doubled arrow reaches twice as far from the origin
     expect(Math.abs(Math.atan2(q.dy, q.dx) - Math.atan2(d.dy, d.dx))).toBeLessThan(0.01);
     const lenQ = Math.hypot(q.dx, q.dy);

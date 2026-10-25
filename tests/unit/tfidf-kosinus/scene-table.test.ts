@@ -82,7 +82,7 @@ describe('table scene', () => {
     // jsdom has no layout: a table that would not fit scrolls inside its own wrapper, and the narrow
     // layout stacks the two tables; the real width is checked in the browser pass
     expect(/\.heat-wrap\s*\{[^}]*overflow-x:\s*auto/.test(css)).toBe(true);
-    expect(/\.heat-table\s*\{[^}]*min-width:\s*calc\(5\.2em \+ var\(--cols, 1\) \* 2\.8em\)/.test(css)).toBe(true);
+    expect(css).toContain('min-width:calc(var(--row-head) + var(--cols, 1) * var(--cell-min))');
     const narrow = /@media \(max-width:900px\) \{[^@]*\.table-scene\[data-part='both'\] \.table-area \{ grid-template-columns:minmax\(0,1fr\)/.test(css);
     expect(narrow).toBe(true);
     expect(el.querySelectorAll('.heat-block:not([hidden]) .heat-col')).toHaveLength(18);

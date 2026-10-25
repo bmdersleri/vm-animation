@@ -256,7 +256,7 @@ function tableView(id: string, p: TfidfParams): TfidfView {
   const term = t.vocab.includes(p.term) ? p.term : (t.vocab[0] ?? '');
   const col = t.vocab.indexOf(term);
   const bowSpec = (over: Partial<HeatTableSpec> = {}): HeatTableSpec =>
-    tableSpec(t, t.bow, BLUE_SCALE, bowMax, { corner: 'sayım', ...over }, (_, __, v) => ({ value: v, text: String(v) }));
+    tableSpec(t, t.bow, BLUE_SCALE, bowMax, over, (_, __, v) => ({ value: v, text: String(v) }));
   const view = (part: TableView['part'], tables: TableSpec[], strip: string): TfidfView => ({
     ...empty('table', id, strip),
     table: { part, tables, bars: null, barMax: 0, barTitle: '' },
@@ -308,7 +308,7 @@ function tableView(id: string, p: TfidfParams): TfidfView {
       if (at < 0 || at < s) return { value: v, text: cellText(v) };
       return { value: v, text: '', state: 'hidden' };
     };
-    const spec = tableSpec(t, t.raw, ORANGE_SCALE, rawMax, { corner: 'ham', focusRow: 0 }, cellOf);
+    const spec = tableSpec(t, t.raw, ORANGE_SCALE, rawMax, { focusRow: 0 }, cellOf);
     const title = done ? 'TF-IDF (L2 normlu)' : 'ham ağırlık = sayım · IDF';
     return view('norm', [{ id: done ? 'tfidf' : 'raw', title, spec }], normStrip(t, s));
   }
@@ -319,7 +319,7 @@ function tableView(id: string, p: TfidfParams): TfidfView {
     `"${term}" → sayım ${w(t.bow, term)} · TF-IDF ${f3(w(t.tfidf, term))}`,
     other === '' ? '' : `"${other}" → sayım ${w(t.bow, other)} · TF-IDF ${f3(w(t.tfidf, other))}`,
   ].filter((l) => l !== '');
-  const tfSpec = tableSpec(t, t.tfidf, ORANGE_SCALE, Math.max(0, maxOf(t.tfidf)), { corner: 'TF-IDF', focusCol: col });
+  const tfSpec = tableSpec(t, t.tfidf, ORANGE_SCALE, Math.max(0, maxOf(t.tfidf)), { focusCol: col });
   return view(
     'both',
     [

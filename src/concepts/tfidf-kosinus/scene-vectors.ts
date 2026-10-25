@@ -5,7 +5,7 @@ import { chooseOffset, labelArea, offsets, type Box } from '../../core/plot/labe
 import { r1 } from '../../core/plot/marks';
 import { TextMeasure } from '../../core/plot/text-measure';
 import { tr } from '../../core/plot/transition';
-import { fitViewport, type Rect } from '../../core/plot/viewport';
+import { fitAspect, type Rect } from '../../core/plot/viewport';
 import { el, NS, type ViewScene } from './scene-base';
 import type { Arrow, TfidfView, VectorsView } from './view';
 
@@ -97,7 +97,7 @@ export class VectorsScene implements ViewScene {
     const f = this.measure.fonts(this.mode);
     const { tick, axis } = f;
     const wide = this.w >= NARROW;
-    const width = wide ? Math.floor(this.w * 0.52) : this.w - 8;
+    const width = wide ? Math.floor(this.w * 0.52) : this.w - 24;
     const height = wide ? Math.max(220, Math.min(this.h - 8, width)) : Math.min(Math.round(width * 0.9), 340);
     this.svg.attr('width', width).attr('height', height);
     const gap = Math.round(tick * 0.4);
@@ -108,7 +108,7 @@ export class VectorsScene implements ViewScene {
     const bottom = height - (gap + tick * 1.2 + gap + axis * 1.3 + 4);
     const rect: Rect = { left, top, width: Math.max(60, right - left), height: Math.max(60, bottom - top) };
     const hi = vec.extent * 1.18;
-    const sc = fitViewport({ x: [0, hi], y: [0, hi] }, rect, true);
+    const sc = fitAspect({ x: [0, hi], y: [0, hi] }, rect, 1, 'min');
     this.axes.draw(
       sc,
       rect,
@@ -126,7 +126,8 @@ export class VectorsScene implements ViewScene {
     const ox = sc.x(0);
     const oy = sc.y(0);
     const tips = vec.arrows.map((a) => ({ a, x: sc.x(a.x), y: sc.y(a.y) }));
-    this.drawArrows(tips, ox, oy, tick, ms);
+    // the query is drawn last, so its short arrow stays visible on top of a longer one in the same direction
+    this.drawArrows([...tips].reverse(), ox, oy, tick, ms);
     const taken: Box[] = [];
     const area = labelArea(rect, 10);
     this.drawArc(vec, tips, ox, oy, tick, taken, area);
@@ -179,7 +180,8 @@ export class VectorsScene implements ViewScene {
       const [x2, y2] = pt(hi, r);
       this.arcG.append('path').attr('class', 'angle-arc').attr('d', `M${r1(x1)},${r1(y1)}A${r1(r)},${r1(r)} 0 0 0 ${r1(x2)},${r1(y2)}`);
     }
-    const mid = (lo + hi) / 2;
+    // a zero angle has no wedge to write into: the label sits just below the common direction
+    const mid = hi - lo > 0.02 ? (lo + hi) / 2 : lo - 0.5;
     const [lx, ly] = pt(mid, r + tick * 1.5);
     const cand = offsets(2, 4, tick);
     const o = chooseOffset({ x: lx, y: ly, chars: vec.angle.text.length + 3, cands: [{ dx: 0, dy: 0, anchor: 'middle' }, ...cand], fs: tick, taken, area });
