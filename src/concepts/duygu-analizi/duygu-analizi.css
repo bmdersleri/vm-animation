@@ -75,7 +75,7 @@
 .token-chip { display:inline-block; padding:0 8px; border:2px solid var(--navy); border-radius:8px; background:var(--surface); font-family:var(--mono, ui-monospace, Consolas, monospace); font-size:var(--fs-tick); line-height:1.4; max-width:100%; overflow-wrap:anywhere; }
 .token-chip.is-oov { border-style:dashed; border-color:#8896a8; color:#4b5b6e; background:var(--bg); }
 .token-chip.is-bigram { border-color:#0B7473; background:#E6F4F4; }
-.token-chip.is-negation { border-width:3px; border-color:#E07B00; background:#FBE3C4; font-weight:700; }
+.token-chip.is-negation { border-width:3px; border-color:var(--navy); background:var(--navy-soft); font-weight:700; }
 .token-chip.is-dropped { border-color:#b8c3cf; color:#6b7a8c; background:var(--bg); text-decoration:line-through; }
 .panel-note { margin:0; padding:4px 10px; border-radius:6px; background:#FBE3C4; font-weight:600; }
 .panel-note[hidden] { display:none; }

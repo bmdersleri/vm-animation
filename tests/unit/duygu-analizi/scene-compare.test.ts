@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import fs from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { formatNumber as f } from '../../../src/core/plot/format';
 import { MODELS } from '../../../src/concepts/metin/data';
@@ -31,6 +32,14 @@ describe('compare scenes (steps 6-7)', () => {
     expect(bi.querySelector('.acc-line')!.textContent).toContain(f(MODELS['bi-keep-train'].negAccuracy * 100, 1));
     expect(bi.querySelector('.acc-line')!.textContent).toContain(`${MODELS['bi-keep-train'].negN} test yorumunda`);
     expect(el.querySelector('.score-scene')!.getAttribute('data-panels')).toBe('2');
+  });
+
+  it('the negation bigram chip is highlighted in a neutral colour, not the olumsuz orange', () => {
+    // the "X değil" bigram can pull towards olumlu, so its chip must not wear the negative class colour
+    const css = fs.readFileSync('src/concepts/duygu-analizi/duygu-analizi.css', 'utf8');
+    const rule = /\.token-chip\.is-negation\s*\{([^}]*)\}/.exec(css)![1];
+    expect(rule).not.toMatch(/#E07B00|#FBE3C4|#A85A00|--accent/i);
+    expect(rule).toMatch(/border-color:\s*var\(--navy\)/);
   });
 
   it('step 7 drops degil and flips the prediction', () => {
