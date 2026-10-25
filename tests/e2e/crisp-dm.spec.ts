@@ -41,9 +41,12 @@ async function codeReachable(page: Page): Promise<string[]> {
   });
 }
 
+/** The cycle's text plus the Lab's reason box, which must not hide an edge label (it is opaque). */
+const FITTED = `${LABELS}, .path-reason`;
+
 async function geometry(page: Page, at = '') {
-  expect(await overlaps(page, LABELS), at).toEqual([]);
-  expect(await outsideStage(page, LABELS), at).toEqual([]);
+  expect(await overlaps(page, FITTED), at).toEqual([]);
+  expect(await outsideStage(page, FITTED), at).toEqual([]);
   expect((await pageOverflow(page)).x, at).toBeLessThanOrEqual(0);
 }
 
@@ -98,4 +101,39 @@ test('lab: step 8 leak passes evaluation and fails deployment, four days stop at
   // ... and the deployment column (next step) fails at least one condition
   await step(page, 9);
   await expect(page.locator('[data-col="deploy"] .cond[data-ok="false"]').first()).toBeVisible();
+});
+
+/** Lab choices for the three routes that end in a reason box, and the route that shows none. */
+const ROUTES = [
+  { end: 'yetersiz', node: 'd1', days: '4', stock: 'soran', leak: false },
+  { end: 'uygun-degil', node: 'd2', days: '56', stock: 'satis', leak: false },
+  { end: 'sahada-dustu', node: 'ya', days: '56', stock: 'soran', leak: true },
+  { end: 'yaygin', node: null, days: '56', stock: 'soran', leak: false },
+] as const;
+
+test('lab: the reason box keeps clear of the edge labels on steps 4-9 at 1280 x 720, 1280 x 740 and 390', async ({ page }) => {
+  test.setTimeout(240_000);
+  for (const [w, h] of [[1280, 720], [1280, 740], [390, 844]] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    await open(page, PAGE, 'lab', READY);
+    for (let n = 4; n <= 9; n++) {
+      await step(page, n);
+      for (const r of ROUTES) {
+        await page.locator('select[data-param="days"]').selectOption(r.days);
+        await page.locator('select[data-param="missing"]').selectOption('cikar');
+        await page.locator('select[data-param="stock"]').selectOption(r.stock);
+        await page.locator('input[data-param="leak"]').setChecked(r.leak);
+        await settled(() => page.locator('.crisp-stage').innerHTML());
+        const at = `${w}x${h} step ${n} ${r.end}`;
+        if (r.node) {
+          await expect(page.locator('.path-reason'), at).toHaveAttribute('data-node', r.node);
+        } else {
+          await expect(page.locator('.path-reason'), at).toHaveCount(0);
+        }
+        await geometry(page, at);
+        // the reason box is a scene box too: it shows all its text
+        expect((await clippedBoxes(page, '.path-reason')), at).toEqual([]);
+      }
+    }
+  }
 });
