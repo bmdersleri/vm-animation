@@ -116,6 +116,8 @@ python scripts/make_dendrogram_data.py
 python scripts/make_birliktelik_data.py
 python scripts/make_dengesiz_data.py
 python scripts/make_metin_data.py
+python scripts/make_crisp_data.py
+python scripts/make_kayma_data.py
 ```
 
 - `make_knn_data.py`: Telco churn CSV'sinden k-NN örneğini ve scikit-learn referans değerlerini üretir.
@@ -132,6 +134,8 @@ python scripts/make_metin_data.py
 - `make_dengesiz_data.py`: Bölüm 11 sayfalarının (dengesiz veri ve SMOTE sızıntısı) ortak verisini (`src/concepts/dengesiz/data/dengesiz.json`) ve `tests/fixtures/dengesiz_sklearn.json` referanslarını üretir; `imbalanced-learn` kurulmaz, SMOTE elle yazılmıştır. Girdisi kitabın veri kümesinin birebir kopyası olan `scripts/data/telco_churn_synthetic_severe.csv` dosyasıdır (üreticinin kendi kopyası); `--check` hiçbir şey yazmadan sapmayı denetler.
 - `make_metin_data.py`: Bölüm 12 sayfalarının (TF-IDF ve kosinüs benzerliği, duygu analizi) ortak verisini (`src/concepts/metin/data/metin.json`: kitabın kod 01-04 örnekleri ve Python'ın `random.Random(42)` ile şablonlardan ürettiği sentetik yorum külliyatı) ve `tests/fixtures/metin_sklearn.json` scikit-learn referanslarını üretir; CSV gerekmez; `--check` hiçbir şey yazmadan sapmayı denetler.
 - `make_xai_data.py`: Bölüm 13 sayfalarının (SHAP ve LIME) ortak verisini (`src/concepts/xai/data/xai.json`: kitabın kod 01 modeli ve 100 test müşterisi, ağaç koşullu beklentisiyle SHAP değerleri, LIME için 11 tohum x 5 örnek sayısı çalıştırmaları) ve `tests/fixtures/xai_shap_lime.json` scikit-learn referanslarını üretir; `shap` ve `lime` paketleri kurulmaz; CSV gerekmez; `--check` hiçbir şey yazmadan sapmayı denetler.
+- `make_crisp_data.py`: Bölüm 1 kafe verisini (`src/concepts/crisp-dm/data/crisp.json`: kitabın pandas sayıları, 70 günlük kafe tablosu, 32 hücrelik seçim ızgarası) ve pandas/scikit-learn referansını (`tests/fixtures/crisp_pandas.json`) üretir; CSV gerektirmez; `--check` yazmadan doğrular.
+- `make_kayma_data.py`: Bölüm 14 kayma verisini (`src/concepts/model-kaymasi/data/kayma.json`: beş senaryo x 24 ay, PSI, referans lojistik model) ve scikit-learn referansını (`tests/fixtures/kayma_sklearn.json`) üretir; CSV gerektirmez; `--check` yazmadan doğrular.
 
 ## Yeni kavram ekleme
 
