@@ -1,0 +1,20 @@
+/* Flow graph (core/plot/flow-graph.ts): nodes, forward / back / outer edges, a walking token. */
+.flow-node .flow-shape { fill:#fff; stroke:#14365C; stroke-width:2; }
+.flow-node[data-kind='end'] .flow-shape { stroke-width:3; }
+.flow-label { font-size:var(--fs-tick); fill:#14365C; font-weight:600; }
+.flow-node.is-current .flow-shape { fill:#14365C; }
+.flow-node.is-current .flow-label { fill:#fff; }
+.flow-node.is-dim { opacity:.35; }
+
+.flow-edge { fill:none; stroke:#14365C; stroke-width:2; }
+.flow-edge.is-path { stroke-width:4; }
+.flow-edge.kind-back { stroke:#F08A00; stroke-dasharray:7 5; }
+.flow-edge.kind-outer { stroke:#C9D5E3; stroke-dasharray:7 5; }
+.flow-edge.tone-alarm { stroke:#C0392B; }
+.flow-arrow.arrow-forward { fill:#14365C; }
+.flow-arrow.arrow-back { fill:#F08A00; }
+.flow-arrow.arrow-outer { fill:#C9D5E3; }
+.flow-arrow.arrow-alarm { fill:#C0392B; }
+.flow-edge-label { font-size:var(--fs-tick); fill:#14365C; }
+.flow-edge-label.tone-alarm { fill:#C0392B; }
+.flow-token { fill:#F08A00; stroke:#fff; stroke-width:2; }

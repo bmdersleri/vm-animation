@@ -8,6 +8,7 @@ export interface ConceptEntry {
 }
 
 const CH: Record<number, string> = {
+  1: 'Modern Veri Madenciliğine Giriş ve CRISP-DM Metodolojisi',
   2: 'Keşifçi Veri Analizi (EDA) ve İstatistiksel Görselleştirme',
   3: 'Veri Ön İşleme: Eksik Veriler, Aykırı Değerler ve Dönüştürme',
   4: 'Özellik Mühendisliği ve Boyut İndirgeme',
@@ -20,6 +21,7 @@ const CH: Record<number, string> = {
   11: 'Dengesiz Veri Kümeleri ve Gerçek Dünya Veri Tuzakları',
   12: 'Metin Madenciliğine Giriş: TF-IDF ve Duygu Analizi',
   13: 'Açıklanabilir Yapay Zekâ ve Model Yorumlanabilirliği (XAI)',
+  14: 'Büyük Veri, MLOps Temelleri, Etik ve Veri Gizliliği',
 };
 
 /** Placeholder for a page that is planned but not built; unused while every chapter is ready, kept exported for the next one. */
@@ -28,6 +30,7 @@ export function soon(id: string, chapter: number, title: string): ConceptEntry {
 }
 
 export const concepts: ConceptEntry[] = [
+  { id: 'crisp-dm', chapter: 1, chapterTitle: CH[1], title: 'CRISP-DM döngüsü: altı evre ve geri dönüşler', status: 'hazir', href: 'crisp-dm/' },
   {
     id: 'dagilim-carpiklik',
     chapter: 2,
@@ -114,4 +117,5 @@ export const concepts: ConceptEntry[] = [
   { id: 'duygu-analizi', chapter: 12, chapterTitle: CH[12], title: 'Duygu analizi: TF-IDF ve lojistik regresyon', status: 'hazir', href: 'duygu-analizi/' },
   { id: 'shap-degerleri', chapter: 13, chapterTitle: CH[13], title: 'SHAP: Shapley değerleriyle katkı', status: 'hazir', href: 'shap-degerleri/' },
   { id: 'lime-yerel', chapter: 13, chapterTitle: CH[13], title: 'LIME: yerel vekil model ve SHAP ile karşılaştırma', status: 'hazir', href: 'lime-yerel/' },
+  { id: 'model-kaymasi', chapter: 14, chapterTitle: CH[14], title: 'Model kayması ve izleme eşiği', status: 'hazir', href: 'model-kaymasi/' },
 ];

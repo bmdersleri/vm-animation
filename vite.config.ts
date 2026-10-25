@@ -41,6 +41,8 @@ export default defineConfig({
         'duygu-analizi': resolve(root, 'duygu-analizi/index.html'),
         'shap-degerleri': resolve(root, 'shap-degerleri/index.html'),
         'lime-yerel': resolve(root, 'lime-yerel/index.html'),
+        'crisp-dm': resolve(root, 'crisp-dm/index.html'),
+        'model-kaymasi': resolve(root, 'model-kaymasi/index.html'),
       },
     },
   },
