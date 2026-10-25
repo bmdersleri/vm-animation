@@ -1,7 +1,7 @@
 import { stepIndex, type StepPlayer } from '../../core/player';
 import { formatNumber as f } from '../../core/plot/format';
 import { SCENARIO_IDS, scenarioById } from './data';
-import { ESIK, LAB_MONTHS, THRESHOLD, modelKaymasiScenario as scenario, type KaymaParams, type Metric } from './scenario';
+import { ESIK, LAB_MONTHS, THRESHOLD, cap, modelKaymasiScenario as scenario, thresholdText, type KaymaParams, type Metric } from './scenario';
 
 let uid = 0;
 
@@ -20,8 +20,6 @@ interface Row {
   input: HTMLSelectElement | HTMLInputElement;
 }
 
-const cap = (s: string): string => s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1);
-const thresholdText = (metric: Metric, v: number): string => f(v, metric === 'mean' ? 1 : 2);
 
 /**
  * Mounts the Lab controls of the model drift page; only the current step's controls are shown: the threshold slider

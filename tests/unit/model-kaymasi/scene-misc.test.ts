@@ -53,6 +53,14 @@ describe('timeline, alarm flow and code (steps 1, 9, 10)', () => {
     player.setParams({ scan: BUGS.length + 1 });
     expect(el.querySelector('.code-error')).toBeNull();
     expect(texts(el, '.output-line')).toEqual([...OUTPUT]);
+    // the corrected code's badges: four, one per bug, each naming the fix and not the bug
+    const badges = [...el.querySelectorAll('.fix-badge')];
+    expect(badges.map(b => Number(b.getAttribute('data-bug'))).sort()).toEqual([1, 2, 3, 4]);
+    for (const b of badges) {
+      const bug = BUGS[Number(b.getAttribute('data-bug')) - 1];
+      expect(b.textContent).toBe(`${bug.n} · ${bug.fix}`);
+      expect(b.textContent).not.toContain(bug.what);
+    }
     const hrefs = [...el.querySelectorAll('a.card-link')].map((a) => a.getAttribute('href'));
     expect(hrefs).toEqual(['../crisp-dm/', '../shap-degerleri/']);
   });

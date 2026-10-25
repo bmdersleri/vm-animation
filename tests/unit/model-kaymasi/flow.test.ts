@@ -1,20 +1,41 @@
 import { describe, expect, it } from 'vitest';
 import type { TextMeasure } from '../../../src/core/plot/text-measure';
 import {
-  ALARM_EDGES, ALARM_IDS, ALARM_LABELS, ALARM_PATH, alarmLayout, alarmSizes, type AlarmId,
+  ALARM_EDGES, ALARM_IDS, ALARM_LABELS, ALARM_PATH, alarmEdges, alarmLayout, alarmSizes, edgeClear, narrowFlowHeight,
+  narrowLabels, type AlarmId,
 } from '../../../src/concepts/model-kaymasi/flow';
 
 /** A text measure that estimates widths from the character count (jsdom has no layout). */
-const estimator = (): TextMeasure =>
-  ({ maxWidth: (lines: string[], _cls: string, fs: number) => Math.max(...lines.map(l => l.length * fs * 0.6)) }) as unknown as TextMeasure;
+const estimator = (): TextMeasure => {
+  const width = (t: string, fs: number): number => t.length * fs * 0.6;
+  return {
+    maxWidth: (lines: string[], _cls: string, fs: number) => Math.max(...lines.map(l => width(l, fs))),
+    wrap: (text: string, maxW: number, _cls: string, fs: number) => {
+      const lines: string[] = [];
+      let line = '';
+      for (const word of text.split(' ')) {
+        const next = line ? `${line} ${word}` : word;
+        if (line && width(next, fs) > maxW) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = next;
+        }
+      }
+      return line ? [...lines, line] : lines;
+    },
+  } as unknown as TextMeasure;
+};
 
 const sizesAt = (fs: number) => alarmSizes(estimator(), fs);
+/** Sizes as the scene measures them in a narrow area: the labels wrapped so the chain and the column of causes fit side by side. */
+const narrowSizes = (w: number, fs: number) => alarmSizes(estimator(), fs, narrowLabels(estimator(), fs, w));
 
 // phone, Lab stage beside the controls, a wide stage; fallback sizes and measured sizes of 13 and 18 px labels
 const cases: [number, number, boolean, ReturnType<typeof sizesAt> | undefined][] = [
-  [390, 520, true, undefined],
-  [390, 520, true, sizesAt(13)],
-  [560, 520, true, sizesAt(13)],
+  [390, narrowFlowHeight(narrowSizes(390, 13)), true, narrowSizes(390, 13)],
+  [390, narrowFlowHeight(narrowSizes(390, 14)) + 40, true, narrowSizes(390, 14)],
+  [560, narrowFlowHeight(narrowSizes(560, 13)), true, narrowSizes(560, 13)],
   [900, 360, false, sizesAt(13)],
   [1280, 540, false, undefined],
   [1280, 540, false, sizesAt(18)],
@@ -44,8 +65,8 @@ describe('model-kaymasi alarm flow', () => {
 
   it('the boxes already fit their labels', () => {
     const fs = 13;
-    const need = sizesAt(fs);
-    for (const n of alarmLayout(390, 520, true, need)) {
+    const need = narrowSizes(390, fs);
+    for (const n of alarmLayout(390, 640, true, need)) {
       expect(n.w).toBeGreaterThanOrEqual(need[n.id as AlarmId].w - 1e-9);
       expect(n.h).toBeGreaterThanOrEqual(need[n.id as AlarmId].h - 1e-9);
     }
@@ -56,7 +77,7 @@ describe('model-kaymasi alarm flow', () => {
     }
   });
 
-  it('wide runs left to right with the four branches stacked on the right, narrow runs top to bottom in a 2 x 2 grid', () => {
+  it('wide runs left to right with the four branches stacked on the right, narrow runs top to bottom with the cause decision between two rows of causes', () => {
     const by = (nodes: ReturnType<typeof alarmLayout>) => Object.fromEntries(nodes.map(n => [n.id, n]));
     const wide = by(alarmLayout(1280, 540, false, sizesAt(18)));
     const chain: AlarmId[] = ['izleme', 'esik', 'alarm', 'inceleme', 'neden'];
@@ -70,16 +91,19 @@ describe('model-kaymasi alarm flow', () => {
     for (let i = 1; i < branches.length; i += 1) {
       expect(wide[branches[i]].y).toBeGreaterThan(wide[branches[i - 1]].y);
     }
-    const narrow = by(alarmLayout(390, 520, true, sizesAt(13)));
+    const narrow = by(alarmLayout(390, narrowFlowHeight(narrowSizes(390, 13)), true, narrowSizes(390, 13)));
     for (let i = 1; i < chain.length; i += 1) {
       expect(narrow[chain[i]].y).toBeGreaterThan(narrow[chain[i - 1]].y);
     }
+    // the cause decision stands centred between the two cause rows, so its edges to the lower row pass no box
     expect(narrow.kalite.y).toBeCloseTo(narrow.mevsim.y, 6);
     expect(narrow.davranis.y).toBeCloseTo(narrow.yonetisim.y, 6);
     expect(narrow.kalite.x).toBeLessThan(narrow.mevsim.x);
     expect(narrow.davranis.x).toBeCloseTo(narrow.kalite.x, 6);
-    expect(narrow.davranis.y).toBeGreaterThan(narrow.kalite.y);
-    expect(narrow.kalite.y).toBeGreaterThan(narrow.neden.y);
+    expect(narrow.neden.x).toBeCloseTo(195, 6);
+    expect(narrow.inceleme.y).toBeLessThan(narrow.kalite.y);
+    expect(narrow.kalite.y).toBeLessThan(narrow.neden.y);
+    expect(narrow.neden.y).toBeLessThan(narrow.davranis.y);
   });
 
   it('nodes carry the book labels and kinds', () => {
@@ -135,5 +159,37 @@ describe('model-kaymasi alarm flow', () => {
     });
     expect(by[ALARM_PATH[0]].from).toBe('izleme');
     expect(by[ALARM_PATH.at(-1)!].to).toBe('izleme');
+  });
+
+  it('in the narrow layout no edge runs behind a box other than its own two ends', () => {
+    for (const [w, fs] of [[390, 13], [390, 14], [560, 13], [745, 13]] as const) {
+      const sizes = narrowSizes(w, fs);
+      const h = narrowFlowHeight(sizes);
+      const nodes = alarmLayout(w, h, true, sizes);
+      expect(h).toBeGreaterThanOrEqual(0);
+      for (const e of alarmEdges(nodes, w, true)) {
+        expect(edgeClear(e, nodes, w), `${e.id} at ${w} px, ${fs} px labels`).toBe(true);
+      }
+    }
+  });
+
+  it('the narrow height covers the rows the layout draws', () => {
+    const sizes = narrowSizes(390, 16);
+    const h = narrowFlowHeight(sizes);
+    for (const n of alarmLayout(390, h, true, sizes)) {
+      expect(n.y - n.h / 2, n.id).toBeGreaterThanOrEqual(0);
+      expect(n.y + n.h / 2, n.id).toBeLessThanOrEqual(h);
+    }
+  });
+
+  it('the edge test catches an edge behind a box', () => {
+    const sizes = narrowSizes(390, 13);
+    const nodes = alarmLayout(390, narrowFlowHeight(sizes), true, sizes).map(n => ({ ...n }));
+    const by = Object.fromEntries(nodes.map(n => [n.id, n]));
+    // a cause moved onto the straight line from the decision to the last cause
+    const edge = ALARM_EDGES.find(e => e.id === 'neden-yonetisim')!;
+    by.mevsim.x = (by.neden.x + by.yonetisim.x) / 2;
+    by.mevsim.y = (by.neden.y + by.yonetisim.y) / 2;
+    expect(edgeClear({ ...edge, bend: 0 }, nodes, 390)).toBe(false);
   });
 });

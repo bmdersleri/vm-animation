@@ -3,14 +3,16 @@ import { LineChartLayer, type LineChartSpec } from '../../core/plot/line-chart';
 import type { TextMeasure } from '../../core/plot/text-measure';
 import { logistic } from './calc';
 import { META } from './data';
+import { cap } from './scenario';
 import { HistPairLayer } from './hist-pair';
 import { el, legend, makeSvg, NARROW, setLegend, type G, type Svg, type ViewScene } from './scene-base';
 import type { DriftPanel, KaymaView } from './view';
 
-const cap = (s: string): string => s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1);
 const CURVE_POINTS = 45;
 /** Smallest svg height (px) of a panel: the histogram and the curve one above the other. */
 const MIN_PLOT_H = 300;
+/** The svg height (px) of a panel in a tall stage, where the area's own height means nothing. */
+const TALL_PLOT_H = 360;
 
 /** What the panel title says about the kind of change. */
 export function verdictText(verdict: string): string {
@@ -158,7 +160,7 @@ export class DriftScene implements ViewScene {
     const chrome = fs * 1.8 + fs * 1.5 * (side ? 2.4 : 3.2) + 16;
     const stacked = side ? 1 : d.panels.length;
     const free = (this.h - (stacked - 1) * gap) / stacked - chrome;
-    const ph = Math.floor(this.tall ? Math.max(MIN_PLOT_H, 360) : Math.max(MIN_PLOT_H, free));
+    const ph = Math.floor(this.tall ? TALL_PLOT_H : Math.max(MIN_PLOT_H, free));
     d.panels.forEach((p, i) => this.panels[i].update(p, d.window, pw, ph, this.mode, ms));
   }
 }

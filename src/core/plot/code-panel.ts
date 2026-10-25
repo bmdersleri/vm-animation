@@ -13,6 +13,8 @@ export interface CodeBug {
   n: number;
   kind: string;
   what: string;
+  /** What the corrected code does about the bug; when set, the corrected code's badge reads `n · fix` instead of the bug's description. */
+  fix?: string;
 }
 
 /** What the panel shows: the faulty lines with the first `marked` bugs flagged, or the corrected lines. */
@@ -89,7 +91,7 @@ export class CodePanel {
           const badge = doc.createElement('span');
           badge.className = spec.fixed ? 'fix-badge' : 'bug-badge';
           badge.dataset.bug = String(n);
-          badge.textContent = `${n} · ${b.kind}: ${b.what}`;
+          badge.textContent = spec.fixed && b.fix ? `${n} · ${b.fix}` : `${n} · ${b.kind}: ${b.what}`;
           row.append(badge);
         }
         return row;

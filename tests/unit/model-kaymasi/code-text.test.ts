@@ -63,14 +63,25 @@ describe('model-kaymasi code text', () => {
     expect(BUGGY_CODE.find(l => l.bugs.includes(4))!.text).toBe('if kayma_farki > 10:');
   });
 
-  it('the corrected code fixes the three code errors; the design gap is not a code change', () => {
+  it('the corrected code carries each of the four bugs once; the design gap is a note on an unchanged line', () => {
     const fixed = (n: number): number => FIXED_CODE.filter(l => l.bugs.includes(n)).length;
-    for (const n of [1, 2, 3]) {
-      expect(fixed(n), `fix ${n}`).toBeGreaterThanOrEqual(1);
+    for (const n of [1, 2, 3, 4]) {
+      expect(fixed(n), `fix ${n}`).toBe(1);
     }
-    expect(fixed(4)).toBe(0);
-    for (const l of FIXED_CODE.filter(x => x.bugs.length > 0)) {
+    for (const l of FIXED_CODE.filter(x => x.bugs.length > 0 && !x.bugs.includes(4))) {
       expect(l.fix, l.text).toBe(true);
     }
+    const note = FIXED_CODE.find(l => l.bugs.includes(4))!;
+    expect(note.text).toBe('if kayma_farki > 10:');
+    expect(note.fix).toBeFalsy();
+  });
+
+  it('each bug has a fix text of its own, none repeating the bug description', () => {
+    for (const b of BUGS) {
+      expect(b.fix, `bug ${b.n}`).toBeTruthy();
+      expect(b.fix).not.toBe(b.what);
+      expect(b.fix).not.toContain(b.what);
+    }
+    expect(new Set(BUGS.map(b => b.fix)).size).toBe(BUGS.length);
   });
 });

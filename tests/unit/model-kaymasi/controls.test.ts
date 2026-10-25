@@ -118,6 +118,8 @@ describe('model-kaymasi Lab controls', () => {
     const { host, el, player } = setup(1280, 540, 'ders');
     go(player, 'veri-kavram');
     choose(select(host, 'scenario'), '0');
-    expect(el.querySelectorAll('.drift-panel')).toHaveLength(2);
+    const scenarios = [...el.querySelectorAll('.drift-panel')].map((p) => p.getAttribute('data-scenario'));
+    expect(scenarios).toEqual(['ani', 'kavram']);
+    expect(player.state.params.scenario).toBe(0);
   });
 });

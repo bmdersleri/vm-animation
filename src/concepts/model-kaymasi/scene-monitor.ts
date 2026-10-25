@@ -6,10 +6,10 @@ import { NEGATIVE, NAVY, r1, trianglePath } from '../../core/plot/marks';
 import type { TextMeasure } from '../../core/plot/text-measure';
 import { fitViewport } from '../../core/plot/viewport';
 import { META } from './data';
+import { cap, thresholdText } from './scenario';
 import { el, makeSvg, type G, type Svg, type ViewScene } from './scene-base';
 import type { KaymaView, MonitorSeries, MonitorView, ThresholdTable } from './view';
 
-const cap = (s: string): string => s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1);
 
 /** From this width (px) on, the table / readout sits beside the charts; narrower, under them. */
 const SIDE_MIN = 640;
@@ -24,7 +24,6 @@ const MIN_TWO = 190;
 const TALL_ONE = 300;
 
 const metricName = (m: MonitorView['metric']): string => (m === 'mean' ? 'ortalama farkı' : 'PSI');
-const thresholdText = (m: MonitorView['metric'], t: number): string => f(t, m === 'mean' ? 1 : 2);
 
 /** One chart block: the metric line over the months with its threshold, bands and marks, and (one series) the accuracy strip. */
 class Block {
@@ -125,12 +124,14 @@ class Block {
       const x = sc.x(firstAlarm);
       const y = sc.y(s.values[firstAlarm - 1]);
       const above = y - r * 2.2 - 4 > plot.top + fs;
-      const nearEnd = x > plot.left + plot.width - fs * 3;
+      const nearEnd = x > plot.left + plot.width - fs * 4;
+      // above the marker when there is room; else below and to its right, where the line (which rose to the marker from the left) is not
+      const anchor = above ? (nearEnd ? 'end' : 'middle') : 'start';
       this.markG.append('text')
         .attr('class', 'alarm-label tick')
-        .attr('text-anchor', nearEnd ? 'end' : 'middle')
-        .attr('x', r1(x))
-        .attr('y', r1(above ? y - r * 1.9 - 4 : y + r * 1.9 + fs))
+        .attr('text-anchor', anchor)
+        .attr('x', r1(above ? x : x + r * 1.6))
+        .attr('y', r1(above ? y - r * 1.9 - 4 : y + r * 1.6 + fs))
         .text('UYARI');
     }
     if (v.stepId === 'aylik-izleme' && !v.lab) {
@@ -184,13 +185,15 @@ class Block {
       .attr('class', 'acc-floor')
       .attr('x1', r1(left)).attr('x2', r1(left + width))
       .attr('y1', r1(y(m.accThreshold))).attr('y2', r1(y(m.accThreshold)));
-    for (const [v, base] of [[hi, dotsTop + fs * 0.9], [lo, dotsBottom]] as const) {
+    // the two ticks are the series' own highest and lowest accuracy, written where those points are
+    for (const v of [Math.max(...accs), Math.min(...accs)]) {
       this.stripG.append('text')
         .attr('class', 'strip-tick tick')
         .attr('text-anchor', 'end')
         .attr('x', r1(left - 5))
-        .attr('y', r1(base))
-        .text(formatPercent(v, 0));
+        .attr('y', r1(y(v)))
+        .attr('dy', '0.35em')
+        .text(formatPercent(v, 1));
     }
     const pending = s.accuracy.filter((a) => a.month <= s.shown && !a.known);
     if (pending.length > 0) {

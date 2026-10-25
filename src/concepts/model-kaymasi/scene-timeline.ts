@@ -57,7 +57,10 @@ export class TimelineScene implements ViewScene {
     const rows = this.w < TWO_ROWS_BELOW ? 2 : 1;
     const perRow = Math.ceil(t.months / rows);
     const cw = (this.w - 2 * PAD) / perRow;
-    const ch = Math.max(fs * 2.2, Math.min(fs * 3.6, cw * 1.1));
+    // one row: tall cells that use the area (a wide stage is mostly empty otherwise); two rows: as tall as the width allows
+    const ch = rows === 1
+      ? Math.max(fs * 2.2, Math.min(this.h * 0.28, cw * 1.7, fs * 7))
+      : Math.max(fs * 2.2, Math.min(fs * 3.6, cw * 1.1));
     // the longest band label decides the label block: wrapped to the band's width, one line when it fits
     const refW = Math.min(perRow, t.refMonths) * cw - 12;
     const refLines = this.measure.wrap(REF_LABEL, refW, 'tick', fs);

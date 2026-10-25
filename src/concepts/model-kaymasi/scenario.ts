@@ -109,7 +109,10 @@ export function psiNote(): string {
 }
 
 /** A sentence start: the scenario names are lower case. */
-const cap = (s: string): string => s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1);
+export const cap = (s: string): string => s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1);
+
+/** A threshold as the page writes it: one decimal for the mean difference, two for the PSI. */
+export const thresholdText = (metric: Metric, v: number): string => f(v, metric === 'mean' ? 1 : 2);
 
 /** The label of a node of the alarm flow as one sentence part. */
 const flowWords = (id: keyof typeof ALARM_LABELS): string => ALARM_LABELS[id].join(' ');

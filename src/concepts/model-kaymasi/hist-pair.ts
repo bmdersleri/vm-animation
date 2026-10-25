@@ -1,4 +1,3 @@
-import { scaleLinear } from 'd3-scale';
 import { AxesLayer } from '../../core/plot/axes';
 import { formatNumber as f } from '../../core/plot/format';
 import { r1 } from '../../core/plot/marks';

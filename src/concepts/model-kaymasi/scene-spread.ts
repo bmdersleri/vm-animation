@@ -1,11 +1,11 @@
 import type { Mode } from '../../core/mode';
 import type { TextMeasure } from '../../core/plot/text-measure';
 import { META } from './data';
+import { cap } from './scenario';
 import { HistPairLayer } from './hist-pair';
 import { el, legend, makeSvg, NARROW, setLegend, type Svg, type ViewScene } from './scene-base';
 import type { KaymaView } from './view';
 
-const cap = (s: string): string => s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1);
 const MIN_PLOT_H = 260;
 
 /**

@@ -143,6 +143,14 @@ describe('narrow layout', () => {
     const widest = Math.max(...[...el.querySelectorAll('.psi-bar rect.bar')].map((r) => num(r, 'x') + num(r, 'width')));
     const termX = Math.min(...[...el.querySelectorAll('.psi-term')].map((t) => num(t, 'x')));
     expect(widest).toBeLessThanOrEqual(termX);
+    // the value written after each bar ("0,256", "q = 0") also ends before the term column: bar end + 6 px gap + its text
+    for (const g of el.querySelectorAll('.psi-bar')) {
+      const bar = g.querySelector('rect.bar')!;
+      const value = g.querySelector('.bar-value')!;
+      const end = num(value, 'x') + (value.textContent ?? '').length * 16 * 0.62;
+      expect(end, `${g.getAttribute('data-kind')}${g.getAttribute('data-bin')} value`).toBeLessThanOrEqual(termX + 0.5);
+      expect(num(value, 'x')).toBeGreaterThanOrEqual(num(bar, 'x') + num(bar, 'width'));
+    }
   });
 
   for (const [w, h, mode] of [[390, 520, 'lab'], [745, 530, 'lab'], [1280, 540, 'ders']] as const) {
