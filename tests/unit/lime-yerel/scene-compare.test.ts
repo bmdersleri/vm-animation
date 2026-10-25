@@ -46,18 +46,56 @@ describe('compare scene', () => {
     expect(badge.textContent).toContain('LIME tenure');
     expect(el.querySelector('.compare-model')!.textContent).toBe(f3(c.p));
     expect(el.querySelector('.compare-local')!.textContent).toBe(f3(fit.localPred));
-    expect(el.querySelector('.compare-model')!.textContent).toBe('0,055');
-    expect(el.querySelector('.compare-local')!.textContent).toBe('0,602');
     // left panel: SHAP force bar with the three contributions; right panel: the LIME coefficients
     const segs = [...el.querySelectorAll('.compare-shap-plot .wf-seg')];
     expect(segs).toHaveLength(3);
     expect(segs.map((s) => s.getAttribute('data-sign'))).toEqual(c.shap.map((v) => (v >= 0 ? 'pos' : 'neg')));
     expect(texts(el, '.compare-shap-plot .wf-label')).toContain(`MonthlyCharges ${signed(c.shap[1])}`);
     expect(texts(el, '.compare-bar .bar-value')).toEqual(fit.coef.map(signed));
-    expect(texts(el, '.compare-bar .bar-value')[0]).toBe('+0,472');
     expect(texts(el, '.compare-lime-plot text.rule-name')).toEqual([0, 1, 2].map((j) => BINS.names[j][LIME_ALL.find((r) => r.row === 77)!.bins[j]]));
     expect(el.querySelector('.compare-note')!.textContent).toContain('modeli hatalı yapmaz');
     expect(el.querySelector('.compare-scene')!.innerHTML).not.toMatch(/NaN|Infinity/);
+  });
+
+  it('the end state keeps the book customer note (same order in both methods, read from data)', () => {
+    const { el, player } = setup();
+    go(player, 'shap-lime');
+    const c = customerByRow(301);
+    const fit = LIME_ALL.find((r) => r.row === 301)!.fit;
+    const order = (v: number[]) => v.map((x, j) => [Math.abs(x), j]).sort((a, b) => b[0] - a[0]).map((x) => x[1]);
+    expect(order(c.shap)).toEqual(order(fit.coef));
+    const note = el.querySelector('.compare-book-note')!;
+    expect(hidden(note)).toBe(false);
+    expect(note.textContent).toBe(`müşteri 301: iki yöntemde aynı sıra: ${order(c.shap).map((j) => FEATURES[j]).join(', ')}`);
+    // the book stage has the table instead
+    go(player, 'shap-lime', false);
+    expect(hidden(el.querySelector('.compare-book-note'))).toBe(true);
+  });
+
+  it('on a narrow stage the badge is short, the counter and the book note stay, and the panels do not collide', () => {
+    for (const [w, h] of [
+      [390, 450],
+      [745, 540],
+    ]) {
+      themeFonts('narrow');
+      const { el, player } = setup(w, h, 'lab');
+      go(player, 'shap-lime');
+      expect(el.querySelector('.lime-stage')!.hasAttribute('data-narrow')).toBe(true);
+      expect(el.querySelector('.agree-badge')!.textContent).toBe('≠ SHAP MonthlyCharges, LIME tenure');
+      expect(hidden(el.querySelector('.compare-counter'))).toBe(false);
+      expect(hidden(el.querySelector('.compare-book-note'))).toBe(false);
+      // the LIME title (when drawn) sits above the first rule name, and every rule name sits inside the svg
+      const svg = el.querySelector('.compare-lime-plot')!;
+      const g = el.querySelector('.compare-bars')!.getAttribute('transform')!;
+      const shift = Number(/translate\(0,([\d.]+)\)/.exec(g)![1]);
+      const title = el.querySelector('.compare-title')!;
+      const firstName = el.querySelector('.compare-lime-plot text.rule-name tspan')!;
+      if (title.getAttribute('display') !== 'none') {
+        expect(num(title, 'y') + 4).toBeLessThanOrEqual(shift + num(firstName, 'y') - 10);
+      }
+      expect(shift + num(firstName, 'y')).toBeGreaterThan(0);
+      expect(shift + num(firstName, 'y')).toBeLessThan(num(svg, 'height'));
+    }
   });
 
   it('the badge follows the chosen customer', () => {

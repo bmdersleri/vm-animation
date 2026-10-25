@@ -264,7 +264,7 @@ export class WaterfallLayer {
     const xb = box.x + box.w - pad;
     const [d0, d1] = spec.domain;
     const xOf = (v: number): number => xa + ((v - d0) / (d1 - d0 || 1)) * (xb - xa);
-    const lh = fs * 1.3;
+    const lh = fs * 1.4;
     const bandH = Math.max(fs * 1.9, 24);
     const titleH = spec.title ? fs * 1.7 : 0;
 
@@ -331,11 +331,11 @@ export class WaterfallLayer {
       lanes[side] = placed.length;
     }
 
-    const bandTop = box.y + titleH + lanes.up * lh + 6;
+    const bandTop = box.y + titleH + lanes.up * lh + 10;
     const bandBot = bandTop + bandH;
-    const axisY = bandBot + lanes.down * lh + 10;
+    const axisY = bandBot + lanes.down * lh + 12;
     const labels: LabelGeom[] = items.map((it) => {
-      const y = it.side === 'up' ? bandTop - 8 - it.lane * lh : bandBot + 6 + fs + it.lane * lh;
+      const y = it.side === 'up' ? bandTop - 12 - it.lane * lh : bandBot + 7 + fs + it.lane * lh;
       const leader = it.side === 'up' ? { x: it.cx, y1: y + 3, y2: bandTop } : { x: it.cx, y1: bandBot, y2: y - fs };
       return { id: it.id, text: it.text, x: it.anchor === 'start' ? it.l + 2 : it.r - 2, y, anchor: it.anchor, leader };
     });

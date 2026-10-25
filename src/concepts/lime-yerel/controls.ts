@@ -2,6 +2,7 @@ import { stepIndex, type StepPlayer } from '../../core/player';
 import { formatNumber as f } from '../../core/plot/format';
 import { CUSTOMERS, PRESETS, SAMPLE_SIZES } from '../xai/data';
 import { SCAN_DONE, limeYerelScenario as scenario, type LimeParams } from './scenario';
+import { BUGS } from './code-text';
 import { codeState } from './view';
 
 let uid = 0;
@@ -130,7 +131,7 @@ export function mountLimeParams(host: HTMLElement, player: StepPlayer<LimeParams
   fixedBox.append(fixed, label('Düzeltilmiş kodu göster', fixed));
   wrap.append(fixedBox);
   rows.push({ steps: FIXED_STEPS, box: fixedBox, input: fixed });
-  fixed.addEventListener('change', () => player.setParams(fixed.checked ? { fixed: true } : { fixed: false, scan: 5 }));
+  fixed.addEventListener('change', () => player.setParams(fixed.checked ? { fixed: true } : { fixed: false, scan: BUGS.length }));
 
   // arrow keys, space and letters on a control belong to the control, not to the step shortcuts
   wrap.addEventListener('keydown', (e) => {

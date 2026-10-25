@@ -28,6 +28,7 @@ import {
   cutTexts,
   limeYerelScenario as scenario,
   plainCharge,
+  rangeText,
   sumExpr,
   type LimeParams,
 } from './scenario';
@@ -191,6 +192,8 @@ export interface CompareView {
   customer: number;
   agree: boolean;
   agreeText: string;
+  /** The badge text of a narrow stage: the two top features only. */
+  agreeShort: string;
   table: CompareRow[] | null;
   spec: WaterfallSpec;
   bars: HBar[];
@@ -200,6 +203,8 @@ export interface CompareView {
   localText: string;
   counterText: string;
   noteText: string;
+  /** The book customer's agreement, kept in the end state: "müşteri 301: iki yöntemde aynı sıra: tenure, …". */
+  bookNote: string;
 }
 
 /** Step 10: the debugging code with its marks. */
@@ -468,7 +473,7 @@ function stabilityView(p: LimeParams, stepId: string): LimeView {
         dots,
         min,
         max,
-        rangeText: `${f3(min)}–${f3(max)}`,
+        rangeText: rangeText(min, max),
         selected: samples === p.samples,
       };
     });
@@ -512,6 +517,17 @@ function forceDomain(c: Customer): [number, number] {
   ];
 }
 
+/** One line on the book customer: whether SHAP and LIME rank the three features alike, and in which order. */
+export function bookNote(): string {
+  const row = PRESETS[0];
+  const shapOrder = absOrder(customerByRow(row).shap);
+  const limeOrder = absOrder(limeOfRow(row).fit.coef);
+  const names = shapOrder.map((j) => FEATURES[j]).join(', ');
+  return shapOrder.join() === limeOrder.join()
+    ? `müşteri ${row}: iki yöntemde aynı sıra: ${names}`
+    : `müşteri ${row}: iki yöntemde sıra farklı; SHAP: ${names}`;
+}
+
 /** Step 9 of one customer: SHAP force bar, LIME bars, the agreement of the most influential feature. */
 export function compareOf(row: number, stage: 'book' | 'pair'): CompareView {
   const c = customerByRow(row);
@@ -537,6 +553,7 @@ export function compareOf(row: number, stage: 'book' | 'pair'): CompareView {
     agreeText: agree
       ? `en etkili özellik aynı: ${FEATURES[shapOrder[0]]}`
       : `en etkili özellik farklı: SHAP ${FEATURES[shapOrder[0]]}, LIME ${FEATURES[limeOrder[0]]}`,
+    agreeShort: agree ? `= SHAP ve LIME: ${FEATURES[shapOrder[0]]}` : `≠ SHAP ${FEATURES[shapOrder[0]]}, LIME ${FEATURES[limeOrder[0]]}`,
     table: stage === 'book' ? shapOrder.map((_, k) => ({ rank: k + 1, shap: FEATURES[shapOrder[k]], rule: rules[limeOrder[k]] })) : null,
     spec: {
       base: MODEL.base,
@@ -556,6 +573,7 @@ export function compareOf(row: number, stage: 'book' | 'pair'): CompareView {
     localText: f3(fit.localPred),
     counterText: `${CUSTOMERS.length} müşterinin ${MODEL.topDisagree} tanesinde en etkili özellik farklı`,
     noteText: 'Uyuşmazlık modeli hatalı yapmaz; veri, bağımlılık ve örnekleme incelenir.',
+    bookNote: bookNote(),
   };
 }
 
@@ -566,7 +584,7 @@ function compareView(p: LimeParams, stepId: string): LimeView {
   const strip =
     stage === 'book'
       ? `kitabın kod06 tablosu · müşteri ${row} · ${cmp.agreeText}`
-      : [`müşteri ${row} · model p = ${cmp.modelText} · vekil tahmini ${cmp.localText}`, `${cmp.agreeText} · ${cmp.counterText}`].join('\n');
+      : `müşteri ${row} · model p = ${cmp.modelText} · vekil tahmini ${cmp.localText}`;
   const view = empty('compare', stepId, strip, row);
   view.compare = cmp;
   return view;

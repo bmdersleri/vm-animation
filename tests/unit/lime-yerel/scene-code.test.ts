@@ -61,13 +61,24 @@ describe('code scene', () => {
     // the output comment carries this data's probability, not the book's printed number
     expect(code[code.length - 1]).toBe(`# Çıktı: Olasılık: %${(BOOK.fixedCodeP * 100).toFixed(1)}`);
     expect(el.querySelectorAll('.code-line.is-fix')).toHaveLength(4);
+    // each changed line carries the bug number and type it fixes (the iloc[[0]] line fixes bugs 2 and 5)
+    const tags = [...el.querySelectorAll('.code-line.is-fix')].map((l) => [...l.querySelectorAll('.fix-badge')].map((b) => b.textContent));
+    expect(tags).toEqual([
+      ['1 · tür hatası: sınıf örneklenmemiş'],
+      ['2 · mantık hatası: tek satır iki boyutlu değil', '5 · veri biçimi hatası: DataFrame yerine Series'],
+      ['3 · indeksleme hatası: predict_proba eksenleri eksik'],
+      ['4 · mantık hatası: tanımsız tahmin_olasiligi'],
+    ]);
+    expect(el.querySelectorAll('.code-line:not(.is-fix) .fix-badge')).toHaveLength(0);
+    expect(css).not.toMatch(/\.fix-badge[^{]*\{[^}]*#E07B00/i);
     expect(el.querySelector('.formula')!.textContent).toContain('0,960');
     player.setParam('fixed', false);
     expect(el.querySelectorAll('.code-fixed')).toHaveLength(0);
     expect(el.querySelectorAll('.code-line.is-bug')).toHaveLength(5);
-    // sweep position six brings the corrected code in the Ders as well
+    // sweep position six brings the corrected code in the Ders as well, with the same bug tags (the end state under reduced motion)
     player.setParams({ scan: 6 });
     expect(el.querySelectorAll('.code-fixed')).toHaveLength(20);
+    expect(el.querySelectorAll('.fix-badge')).toHaveLength(5);
   });
 
   it('the closing tip and the two page links sit beside the code', () => {

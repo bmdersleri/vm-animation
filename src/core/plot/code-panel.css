@@ -7,5 +7,5 @@
 .code-line .code-text { flex:1 1 12em; min-width:0; white-space:pre-wrap; overflow-wrap:anywhere; }
 .code-line.is-bug { background:#FBE3C4; border-left-color:#E07B00; }
 .code-line.is-current { background:#F7CF9B; }
-.bug-badge { font-family:var(--font); font-weight:700; color:#7A3E00; background:var(--surface); border:2px solid #E07B00; border-radius:6px; padding:0 6px; margin-left:auto; max-width:100%; box-sizing:border-box; overflow-wrap:anywhere; }
+.bug-badge, .fix-badge { font-family:var(--font); font-weight:700; color:#7A3E00; background:var(--surface); border:2px solid #E07B00; border-radius:6px; padding:0 6px; margin-left:auto; max-width:100%; box-sizing:border-box; overflow-wrap:anywhere; }
 .code-line.is-fix { background:var(--navy-soft); border-left-color:var(--navy); }

@@ -101,7 +101,8 @@ export class StabilityScene implements ViewScene {
     const labelW = this.measure.maxWidth(labels, 'tick', fs);
     const rangeW = this.measure.maxWidth(ranges, 'tick', fs);
     // wide: label | dots | range on one line; narrow: label and range on a line above the dots
-    const rowH = narrow ? lh + 2 * r + 8 : Math.max(lh * 1.4, 2 * r + 10);
+    // narrow: the text line (label left, range right) sits wholly above the dots and the seed-42 ring (r + 3)
+    const rowH = narrow ? Math.ceil(1.2 * lh + 2 * (r + 3) + 6) : Math.max(lh * 1.4, 2 * (r + 3) + 10);
     const groupH = lh + 2 * rowH + lh * 1.15;
     const xa = narrow ? 14 : labelW + 24;
     const xb = narrow ? width - 14 : width - rangeW - 20;
@@ -163,7 +164,7 @@ export class StabilityScene implements ViewScene {
       .attr('class', (d) => `stab-row${d.selected ? ' is-selected' : ''}`)
       .attr('data-samples', (d) => d.samples)
       .attr('transform', (_d, i) => `translate(0,${r1(lh + i * rowH)})`);
-    const dotY = narrow ? lh + r + 2 : rowH / 2;
+    const dotY = narrow ? 1.2 * lh + r + 3 + 2 : rowH / 2;
     const textY = narrow ? lh * 0.8 : rowH / 2;
     rows
       .select('rect.stab-band')
@@ -210,7 +211,7 @@ export class StabilityScene implements ViewScene {
         .join((enter) => enter.append('circle').attr('cx', (d) => r1(x(d.value))))
         .attr('class', 'stab-ring')
         .attr('cy', r1(dotY))
-        .attr('r', r1(r + 4));
+        .attr('r', r1(r + 3));
       tr(ring, 'stab', ms).attr('cx', (d) => r1(x((d as { value: number }).value)));
     });
 

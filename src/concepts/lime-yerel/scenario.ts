@@ -80,10 +80,13 @@ const FACTOR = KERNEL_WIDTH / Math.sqrt(FEATURES.length);
 /** Kernel weights of the patterns that differ in 0, 1, 2 and 3 bins (masks 7, 6, 4, 0 have 3, 2, 1, 0 matches). */
 export const WEIGHTS = [7, 6, 4, 0].map((mask) => kernelWeight(patternDistance(mask), KERNEL_WIDTH));
 
+/** A range as the page writes it: "0,525 … 0,551" with thin spaces (a negative end keeps its minus: "−0,023 … −0,008"). */
+export const rangeText = (min: number, max: number): string => `${f3(min)} … ${f3(max)}`;
+
 /** Range of the tenure coefficient over the eleven seeds at one sample size, for the book customer. */
 function tenureRange(samples: number): string {
   const xs = LIME_RUNS.filter((r) => r.row === BOOK_ROW && r.samples === samples).map((r) => r.fit.coef[0]);
-  return `${f3(Math.min(...xs))}–${f3(Math.max(...xs))}`;
+  return rangeText(Math.min(...xs), Math.max(...xs));
 }
 
 const describe = (c: Customer): string =>

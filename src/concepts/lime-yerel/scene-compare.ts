@@ -37,6 +37,8 @@ export class CompareScene implements ViewScene {
   private readonly panels: HTMLDivElement;
   private readonly counter: HTMLParagraphElement;
   private readonly note: HTMLParagraphElement;
+  private readonly bookNote: HTMLParagraphElement;
+  private readonly numbers: HTMLParagraphElement;
   private readonly shapSvg: Selection<SVGSVGElement, unknown, null, undefined>;
   private readonly limeSvg: Selection<SVGSVGElement, unknown, null, undefined>;
   private readonly limeTitle: Selection<SVGTextElement, unknown, null, undefined>;
@@ -55,6 +57,7 @@ export class CompareScene implements ViewScene {
     const head = el(doc, 'div', 'compare-head');
     this.badge = el(doc, 'p', 'agree-badge');
     const numbers = el(doc, 'p', 'compare-numbers');
+    this.numbers = numbers;
     this.modelValue = el(doc, 'strong', 'compare-model');
     this.localValue = el(doc, 'strong', 'compare-local');
     numbers.append('model p ', this.modelValue, ' · vekil tahmini ', this.localValue);
@@ -90,8 +93,9 @@ export class CompareScene implements ViewScene {
     this.panels.append(shapBox, limeBox);
 
     this.counter = el(doc, 'p', 'compare-counter');
+    this.bookNote = el(doc, 'p', 'compare-book-note');
     this.note = el(doc, 'p', 'compare-note');
-    this.root.append(head, this.tableWrap, this.panels, this.counter, this.note);
+    this.root.append(head, this.tableWrap, this.panels, this.counter, this.bookNote, this.note);
     host.append(this.root);
   }
 
@@ -118,11 +122,15 @@ export class CompareScene implements ViewScene {
     }
     this.root.dataset.stage = c.stage;
     this.badge.dataset.agree = String(c.agree);
-    this.badge.textContent = `${c.agree ? '=' : '≠'} ${c.agreeText}`;
+    const narrow = this.w < NARROW;
+    this.badge.textContent = narrow ? c.agreeShort : `${c.agree ? '=' : '≠'} ${c.agreeText}`;
+    this.badge.title = c.agreeText;
     this.modelValue.textContent = c.modelText;
     this.localValue.textContent = c.localText;
     this.counter.textContent = c.counterText;
     this.note.textContent = c.noteText;
+    this.bookNote.textContent = c.bookNote;
+    this.bookNote.hidden = c.table !== null;
     this.tableWrap.hidden = c.table === null;
     this.panels.hidden = c.table !== null;
     if (c.table) {
@@ -159,11 +167,18 @@ export class CompareScene implements ViewScene {
     const gap = narrow ? CMP_GAP_NARROW : CMP_GAP;
     const cellPad = narrow ? CMP_CELL_PAD_NARROW : CMP_CELL_PAD;
     const inner = Math.max(240, this.w - (narrow ? 8 : 24));
-    // text blocks: head (badge on one line, numbers beside it or under it), counter, note
-    const headH = Math.ceil(lh + (narrow ? CMP_BADGE_PAD_NARROW : CMP_BADGE_PAD) + (narrow ? lh + gap : 0));
+    // text blocks. The badge wraps (bold text, padding and border around it); model p and the surrogate's
+    // prediction sit beside it on a wide stage and live in the strip on a narrow one.
+    const badgeText = narrow ? c.agreeShort : `${c.agree ? '=' : '≠'} ${c.agreeText}`;
+    const badgePad = narrow ? CMP_BADGE_PAD_NARROW : CMP_BADGE_PAD;
+    const badgeH = Math.ceil(this.lines(badgeText, inner - 24, fs) * lh + badgePad);
+    this.numbers.hidden = narrow;
+    const headH = badgeH;
     const counterH = Math.ceil(this.lines(c.counterText, inner, fs) * lh);
+    const pair = c.table === null;
+    const bookNoteH = pair ? Math.ceil(this.lines(c.bookNote, inner, fs) * lh) : 0;
     const noteH = Math.ceil(this.lines(c.noteText, inner, fs) * lh);
-    const fixed = padV + headH + gap + counterH;
+    const fixed = padV + headH + gap + counterH + (pair ? gap + bookNoteH : 0);
 
     let body = 0;
     if (c.table) {
@@ -174,7 +189,7 @@ export class CompareScene implements ViewScene {
     } else {
       body = this.drawPanels(c, inner, fs, Math.max(0, this.h - fixed - gap), narrow, ms);
     }
-    // the note is the first block to go when the stage is short
+    // the misunderstanding note (also in the step text) is the first block to go when the stage is short
     const showNote = fixed + gap + body + gap + noteH <= this.h;
     this.note.hidden = !showNote;
     const used = fixed + gap + body + (showNote ? gap + noteH : 0);
@@ -191,29 +206,33 @@ export class CompareScene implements ViewScene {
     const gap = narrow ? CMP_GAP_NARROW : 16;
     const panelW = narrow ? inner : Math.floor((inner - gap) / 2);
     const animate = ms > 0;
-    // SHAP force bar: its own layout decides the height; a narrow stage drops the value axis, then the title, until the LIME bars fit
-    const titleH = Math.ceil(fs * 1.7);
+    // the LIME panel: a title, then the bars with each rule name above its bar (a name needs half its height above the first bar)
+    const fullTitleH = Math.ceil(fs * 1.7);
     const names = this.signed.names(c.rules, panelW, fs);
+    const lead = Math.ceil(names.nameH / 2) + 4;
     const barsMin = Math.ceil((names.nameH + 14) * c.bars.length);
+    // SHAP force bar: its own layout decides the height; a narrow stage drops the value axis, then the title, until the LIME bars fit
     const variants = [c.spec, { ...c.spec, axis: false }, { ...c.spec, axis: false, title: undefined }];
     let shapH = 0;
     for (const spec of narrow ? variants : variants.slice(0, 1)) {
       shapH = Math.ceil(this.force.update(spec, { x: 0, y: 0, w: panelW, h: 0 }, animate));
-      if (!narrow || shapH + gap + titleH + barsMin <= room) {
+      if (!narrow || shapH + gap + fullTitleH + lead + barsMin <= room) {
         break;
       }
     }
+    // still no room: the LIME panel loses its title too (the rule names say what the bars are)
+    const titleH = narrow && shapH + gap + fullTitleH + lead + barsMin > room ? 0 : fullTitleH;
+    this.limeTitle.attr('display', titleH > 0 ? null : 'none');
     this.shapSvg.attr('width', panelW).attr('height', shapH);
 
-    // LIME bars: the rule names above their bars; the stage gives them what the SHAP panel leaves (narrow) or its own row
     const natural = names.nameH + fs * 1.5 + 14;
-    const roomForBars = narrow ? room - shapH - gap - titleH : room - titleH;
+    const roomForBars = (narrow ? room - shapH - gap : room) - titleH - lead;
     const groupH = Math.max(names.nameH + 6 + 8, Math.min(natural, roomForBars / c.bars.length));
     const barsH = Math.ceil(groupH * c.bars.length);
-    const limeH = titleH + barsH;
+    const limeH = titleH + lead + barsH;
     this.limeSvg.attr('width', panelW).attr('height', limeH);
     this.limeTitle.attr('x', 4).attr('y', Math.round(fs * 1.1));
-    this.limeG.attr('transform', `translate(0,${titleH})`);
+    this.limeG.attr('transform', `translate(0,${titleH + lead})`);
     this.signed.draw(c.bars, names, { width: panelW, height: barsH, fs, ms, itemCls: 'compare-bar' });
     return narrow ? shapH + gap + limeH : Math.max(shapH, limeH);
   }

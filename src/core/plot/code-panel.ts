@@ -4,7 +4,7 @@ import './code-panel.css';
 export interface CodeLine {
   text: string;
   bugs: number[];
-  /** True in the corrected code for the lines that changed. */
+  /** True in the corrected code for the lines that changed. In the corrected code `bugs` lists the bugs the line fixes (tagged `.fix-badge`). */
   fix?: boolean;
 }
 
@@ -83,15 +83,14 @@ export class CodePanel {
         text.className = 'code-text';
         text.textContent = line.text;
         row.append(no, text);
-        if (!spec.fixed) {
-          for (const n of shown) {
-            const b = spec.bugs[n - 1];
-            const badge = doc.createElement('span');
-            badge.className = 'bug-badge';
-            badge.dataset.bug = String(n);
-            badge.textContent = `${n} · ${b.kind}: ${b.what}`;
-            row.append(badge);
-          }
+        // the faulty code tags the marked bugs (`.bug-badge`); the corrected code tags the bugs each changed line fixes (`.fix-badge`)
+        for (const n of spec.fixed ? line.bugs : shown) {
+          const b = spec.bugs[n - 1];
+          const badge = doc.createElement('span');
+          badge.className = spec.fixed ? 'fix-badge' : 'bug-badge';
+          badge.dataset.bug = String(n);
+          badge.textContent = `${n} · ${b.kind}: ${b.what}`;
+          row.append(badge);
         }
         return row;
       }),

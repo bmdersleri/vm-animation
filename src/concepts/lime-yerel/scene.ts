@@ -4,7 +4,7 @@ import type { Mode } from '../../core/mode';
 import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { renderStrip } from '../../core/plot/strip';
 import { limeYerelScenario, type LimeParams } from './scenario';
-import type { ViewScene } from './scene-base';
+import { NARROW, type ViewScene } from './scene-base';
 import { BinsScene } from './scene-bins';
 import { CloudScene } from './scene-cloud';
 import { CodeScene } from './scene-code';
@@ -16,6 +16,26 @@ import { SurrogateScene } from './scene-surrogate';
 import { deriveLimeView, type LimeKind } from './view';
 
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Lets a long code term of the strip wrap after "(" and between the parts of a dotted name, so an identifier such as
+ * "musteri" is never cut mid-word (the term wraps at spaces otherwise).
+ */
+function allowCodeBreaks(strip: HTMLElement): void {
+  if (strip.dataset.breaks === strip.dataset.strip) {
+    return;
+  }
+  strip.dataset.breaks = strip.dataset.strip;
+  for (const term of strip.querySelectorAll('.term')) {
+    const text = term.textContent ?? '';
+    if (!/\(\S|[A-Za-z_]\.[A-Za-z_]/.test(text)) {
+      continue;
+    }
+    const doc = term.ownerDocument;
+    const parts = text.split(/(?<=\()(?=\S)|(?<=[A-Za-z_]\.)(?=[A-Za-z_])/);
+    term.replaceChildren(...parts.flatMap((part, i) => (i === 0 ? [doc.createTextNode(part)] : [doc.createElement('wbr'), doc.createTextNode(part)])));
+  }
+}
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 
@@ -116,7 +136,10 @@ export function mountLimeScene(
     }
     lastStrip = v.strip;
     renderStrip(strip, v.strip);
+    allowCodeBreaks(strip);
     const a = area();
+    // the layout follows the stage's own width, not the window: the Lab stage is narrow in a wide window
+    stage.toggleAttribute('data-narrow', a.w < NARROW);
     stage.dataset.avail = String(a.h);
     scenes[target].resize(a.w, a.h, mode);
     scenes[target].update(v, ms);

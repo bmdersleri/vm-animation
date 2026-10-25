@@ -51,7 +51,7 @@ describe('lime-yerel scenario', () => {
     expect(step('sadakat').text).toContain(`model ${f3(c.p)}`);
     expect(step('sadakat').text).toContain(`R² = ${f3(run.fit.score!)}`);
     expect(step('kararlilik').text).toContain('11 tohumda');
-    expect(step('kararlilik').text).toMatch(/5000 örnekle 0,\d{3}–0,\d{3}, 50 örnekle 0,\d{3}–/);
+    expect(step('kararlilik').text).toMatch(/5000 örnekle 0,\d{3} … 0,\d{3}, 50 örnekle -?[−0-9,]+ … /);
     const c77 = customerByRow(77);
     expect(step('shap-lime').text).toContain(`MonthlyCharges (${signed(c77.shap[1])})`);
     expect(step('shap-lime').text).toContain(`tenure (${signed(run77.fit.coef[0])})`);

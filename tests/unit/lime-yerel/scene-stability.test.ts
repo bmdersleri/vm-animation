@@ -2,12 +2,13 @@
 import { describe, it, expect } from 'vitest';
 import { formatNumber as f } from '../../../src/core/plot/format';
 import { LIME_RUNS, SAMPLE_SIZES, SEEDS } from '../../../src/concepts/xai/data';
+import { rangeText } from '../../../src/concepts/lime-yerel/scenario';
 import { go, num, setup, texts, themeFonts } from './harness';
 
 const f3 = (v: number) => f(v, 3);
 const coefs = (row: number, samples: number, feature: number) =>
   SEEDS.map((seed) => LIME_RUNS.find((r) => r.row === row && r.seed === seed && r.samples === samples)!.fit.coef[feature]);
-const range = (xs: number[]) => `${f3(Math.min(...xs))}–${f3(Math.max(...xs))}`;
+const range = (xs: number[]) => rangeText(Math.min(...xs), Math.max(...xs));
 const spread = (row: Element) => {
   const xs = [...row.querySelectorAll('.stab-dot')].map((d) => num(d, 'cx'));
   return Math.max(...xs) - Math.min(...xs);
@@ -37,7 +38,14 @@ describe('stability scene', () => {
       ['5000', '50'],
     ]);
     expect(texts(groups[0], '.stab-range')).toEqual([range(coefs(301, 5000, 0)), range(coefs(301, 50, 0))]);
-    expect(texts(groups[0], '.stab-range')[0]).toBe('0,525–0,551');
+    // ranges read "lo … hi" with thin spaces; a negative end keeps its minus sign and never doubles it
+    for (const t of texts(el, '.stab-range')) {
+      expect(t).toMatch(/^−?\d,\d{3} … −?\d,\d{3}$/);
+    }
+    const negative = coefs(301, 5000, 2);
+    expect(Math.max(...negative)).toBeLessThan(0);
+    expect(texts(groups[2], '.stab-range')[0]).toBe(`${f3(Math.min(...negative))} … ${f3(Math.max(...negative))}`);
+    expect(texts(groups[2], '.stab-range')[0]).not.toContain('−−');
     expect(texts(groups[2], '.stab-range')).toEqual([range(coefs(301, 5000, 2)), range(coefs(301, 50, 2))]);
     expect(texts(el, '.stab-name')).toEqual(['tenure', 'MonthlyCharges', 'TotalCharges']);
     expect(el.querySelector('.stability-scene')!.innerHTML).not.toMatch(/NaN|Infinity/);
@@ -49,6 +57,30 @@ describe('stability scene', () => {
     for (const group of el.querySelectorAll('.stab-group')) {
       const [big, small] = [...group.querySelectorAll('.stab-row')];
       expect(spread(small), group.getAttribute('data-feature')!).toBeGreaterThan(spread(big));
+    }
+  });
+
+  it('the range text never sits on a dot, narrow or wide', () => {
+    for (const [w, h, font] of [
+      [390, 450, 'narrow'],
+      [745, 540, 'narrow'],
+      [1280, 540, 'wide'],
+    ] as const) {
+      themeFonts(font);
+      const { el, player } = setup(w, h, font === 'wide' ? 'ders' : 'lab');
+      go(player, 'kararlilik');
+      const fs = font === 'wide' ? 18 : 13;
+      for (const row of el.querySelectorAll('.stab-row')) {
+        const range = row.querySelector('.stab-range')!;
+        const textW = range.textContent!.length * 0.62 * fs;
+        const box = { x0: num(range, 'x') - textW, x1: num(range, 'x'), y0: num(range, 'y') - fs * 0.6, y1: num(range, 'y') + fs * 0.6 };
+        for (const d of row.querySelectorAll('.stab-dot, .stab-ring')) {
+          const r = num(d, 'r');
+          const inX = num(d, 'cx') + r > box.x0 && num(d, 'cx') - r < box.x1;
+          const inY = num(d, 'cy') + r > box.y0 && num(d, 'cy') - r < box.y1;
+          expect(inX && inY, `${w}: ${row.getAttribute('data-samples')} ${range.textContent}`).toBe(false);
+        }
+      }
     }
   });
 

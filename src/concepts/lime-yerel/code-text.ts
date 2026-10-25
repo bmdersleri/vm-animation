@@ -33,7 +33,7 @@ export const BUGGY_CODE: readonly CodeLine[] = [
   line('print(f"Olasılık: {tahmin_olasiligi}")', { bugs: [4] }),
 ];
 
-/** The book's corrected code; its output comment carries the probability this data gives (the book prints another number). */
+/** The book's corrected code; each changed line lists the bugs it fixes (bug 5, Series instead of DataFrame, is fixed by the `iloc[[0]]` line); its output comment carries the probability this data gives (the book prints another number). */
 export const FIXED_CODE: readonly CodeLine[] = [
   line('# File: HataAyiklama.python'),
   line('# Model örneklenir ve eğitim verisiyle eğitilir.'),
@@ -43,16 +43,16 @@ export const FIXED_CODE: readonly CodeLine[] = [
   line('import shap'),
   line('from sklearn.ensemble import RandomForestClassifier'),
   line(''),
-  line('model = RandomForestClassifier(n_estimators=100, random_state=42)', { fix: true }),
+  line('model = RandomForestClassifier(n_estimators=100, random_state=42)', { fix: true, bugs: [1] }),
   line('model.fit(egitim_ozellikleri, egitim_hedefi)'),
   line(''),
-  line('musteri = test_ozellikleri.iloc[[0]]', { fix: true }),
-  line('olasilik = model.predict_proba(musteri)[0, 1]', { fix: true }),
+  line('musteri = test_ozellikleri.iloc[[0]]', { fix: true, bugs: [2, 5] }),
+  line('olasilik = model.predict_proba(musteri)[0, 1]', { fix: true, bugs: [3] }),
   line(''),
   line('aciklayici = shap.TreeExplainer(model)'),
   line('degerler = aciklayici.shap_values(musteri)'),
   line(''),
-  line('print(f"Olasılık: %{olasilik * 100:.1f}")', { fix: true }),
+  line('print(f"Olasılık: %{olasilik * 100:.1f}")', { fix: true, bugs: [4] }),
   line(''),
   line(`# Çıktı: Olasılık: %${(BOOK.fixedCodeP * 100).toFixed(1)}`),
 ];

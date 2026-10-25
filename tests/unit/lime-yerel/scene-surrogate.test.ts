@@ -86,9 +86,12 @@ describe('surrogate scene', () => {
     expect([...grown.el.querySelectorAll('.lime-bar rect.bar')].map((b) => num(b, 'width'))).toEqual([0, 0, 0]);
     document.body.replaceChildren();
     vi.stubGlobal('matchMedia', () => ({ matches: true }));
-    const still = setup(1280, 540, 'ders', { durationScale: 1, at: 'vekil' });
-    expect([...still.el.querySelectorAll('.lime-bar rect.bar')].every((b) => num(b, 'width') > 1)).toBe(true);
-    vi.unstubAllGlobals();
+    try {
+      const still = setup(1280, 540, 'ders', { durationScale: 1, at: 'vekil' });
+      expect([...still.el.querySelectorAll('.lime-bar rect.bar')].every((b) => num(b, 'width') > 1)).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('the zero line is drawn per bar and crosses no rule name or value label', () => {

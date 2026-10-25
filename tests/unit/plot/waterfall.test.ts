@@ -85,4 +85,19 @@ describe('WaterfallLayer', () => {
     expect(Number.isFinite(used)).toBe(true);
     expect(svg.querySelectorAll('.wf-name')).toHaveLength(0);
   });
+
+  it('force labels clear the bar band and the base label does not sit on a segment', () => {
+    const { svg, layer } = setup();
+    layer.update(spec({ mode: 'force', domain: [0, 1] }), BOX, false);
+    const ys = [...svg.querySelectorAll('.wf-seg')].flatMap((s) => (s.getAttribute('d') ?? '').match(/,(-?\d+(?:\.\d+)?)/g)!.map((m) => Number(m.slice(1))));
+    const top = Math.min(...ys);
+    const bot = Math.max(...ys);
+    const text = 13;
+    for (const l of svg.querySelectorAll('.wf-label')) {
+      const y = Number(l.getAttribute('y'));
+      const up = y < top;
+      // half a text height plus a clear gap between the glyphs and the bar
+      expect(up ? top - (y + text / 2) : y - text / 2 - bot, l.textContent!).toBeGreaterThanOrEqual(5);
+    }
+  });
 });

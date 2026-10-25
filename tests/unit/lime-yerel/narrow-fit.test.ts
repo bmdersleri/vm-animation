@@ -44,6 +44,43 @@ describe('narrow layout', () => {
     }
   });
 
+  it('every scene of steps 1-10 fits the Lab stage of a 1280 px window (about 745 x 530)', () => {
+    // the Lab stage is narrower than the window: the layout follows the stage box, and the stage flag is set
+    themeFonts('narrow');
+    const { el, player } = setup(745, 530, 'lab');
+    for (const [id, sel] of [['yerel-soru', '.flow-scene'], ...SCENES]) {
+      go(player, id);
+      expect(el.querySelector('.lime-stage')!.hasAttribute('data-narrow'), id).toBe(true);
+      const avail = Number(el.querySelector('.lime-stage')!.getAttribute('data-avail'));
+      const used = Number(el.querySelector(sel)!.getAttribute('data-used') ?? 0);
+      expect(used, `${id}: ${used} <= ${avail}`).toBeLessThanOrEqual(avail);
+    }
+  });
+
+  it('the stage flag follows the stage width, not the window', () => {
+    themeFonts('wide');
+    const wide = setup(1280, 540, 'ders');
+    go(wide.player, 'cekirdek');
+    expect(wide.el.querySelector('.lime-stage')!.hasAttribute('data-narrow')).toBe(false);
+    // only the strip and its window-wide wrapping stay in a media query; every scene rule keys on the stage flag
+    const media = [...css.matchAll(/@media \(max-width:900px\) \{\n([\s\S]*?)\n\}\n/g)].map((m) => m[1]);
+    expect(media).toHaveLength(1);
+    expect(media[0]).toMatch(/\.formula \.term/);
+    expect(media[0]).not.toMatch(/(flow|bins|cloud|kernel|surrogate|stability|compare|codeview)-scene|\.pattern|\.compare|\.code/);
+  });
+
+  it('the step 1 strip breaks only at spaces and after a bracket or a dot, never inside an identifier', () => {
+    const { el } = setup(390, 450, 'lab');
+    const terms = [...el.querySelectorAll('.formula .term')];
+    const code = terms.find((t) => t.textContent!.includes('explain_instance'))!;
+    expect(code.querySelectorAll('wbr').length).toBeGreaterThanOrEqual(2);
+    for (const w of code.querySelectorAll('wbr')) {
+      expect(w.previousSibling!.textContent).toMatch(/(\(|[A-Za-z_]\.)$/);
+    }
+    expect(css).toMatch(/\.formula \.term \{ white-space:normal; overflow-wrap:normal; \}/);
+    expect(el.querySelector('.formula')!.textContent).toContain('explain_instance(musteri, predict_proba, num_features=3)');
+  });
+
   it('narrow table height follows its metrics', () => {
     // caption + two-line header + eight rows of one line with padding and spacing
     expect(narrowTableHeight(12)).toBe(Math.ceil(14.4 + 2 + (2 * 11 * 1.2 + 3) + 8 * (14.4 + 3) + 1 + 6));
@@ -52,10 +89,10 @@ describe('narrow layout', () => {
   });
 
   it('the narrow css keeps the table metrics, the two-column flow and the camel-case header', () => {
-    expect(css).toMatch(/\.pattern-table \{[^}]*line-height:1\.2; border-spacing:1px/);
-    expect(css).toMatch(/\.pattern-head, \.pattern-mark[^}]*padding:1px 2px/);
-    expect(css).toMatch(/\.flow-scene \{ display:grid; grid-template-columns:repeat\(2/);
-    expect(css).toMatch(/\.pattern-head \{ overflow-wrap:normal; word-break:keep-all/);
+    expect(css).toMatch(/\[data-narrow\] \.pattern-table \{[^}]*line-height:1\.2; border-spacing:1px/);
+    expect(css).toMatch(/\[data-narrow\] \.pattern-head, [^{]*\{[^}]*padding:1px 2px/);
+    expect(css).toMatch(/\[data-narrow\] \.flow-scene \{ display:grid; grid-template-columns:repeat\(2/);
+    expect(css).toMatch(/\[data-narrow\] \.pattern-head \{ overflow-wrap:normal; word-break:keep-all/);
   });
 
   it('the pattern header breaks only at the camel-case capital', () => {
