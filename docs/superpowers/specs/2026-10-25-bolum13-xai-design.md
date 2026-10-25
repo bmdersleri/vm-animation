@@ -274,7 +274,9 @@ Adım 10'da **kod paneli** (`core/plot/code-panel.ts`).
 ### Laboratuvar
 
 - **Adım 2–7:** hazır müşteri seçimi (4 müşteri); adım 5–7'de çekirdek genişliği kaydırıcısı
-  (0,3–4,0; varsayılan 1,299): ağırlıklar, katsayılar, vekil tahmini ve R² canlı (TS `limeFit`).
+  (0,3–4,0; varsayılan 1,299) ve örnek sayısı seçimi (tohum 42): adım 5'in desen tablosu seçilen
+  çalıştırmayı gösterir; ağırlıklar, katsayılar, vekil tahmini ve R² canlı (TS `limeFit`). Adım
+  3–4'ün bulutu ve tablosu her zaman tohum 42 / 5000 örnek çalıştırmasıdır.
 - **Adım 8:** hazır müşteri ve örnek sayısı seçimi (50 / 100 / 500 / 1000 / 5000); seçilen örnek
   sayısının satırı vurgulu, 11 tohumun katsayıları üç özellik için.
 - **Adım 9:** 100 test müşterisinden seçim; iki pano ve uyuşma rozeti canlı (veriden).
