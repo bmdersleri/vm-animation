@@ -8,7 +8,7 @@ import { contrastTerm, docsWith, docTable, doubledQuery, nonZero, similarity } f
  * Parameters of the TF-IDF page. Steps 1-3 read `text`, `stop` (the book's stop words) and `degil` ("değil" as a
  * stop word); steps 4-7 read `docs` (the three documents), `term` (the highlighted term) and `scan` (how far the
  * step-6 sweep has come); steps 8-9 read `comments` plus the optional fourth `extra`, the `query` index and the
- * chosen `plane` terms (empty strings: the page picks them); step 10 reads `separate`.
+ * chosen `plane` terms (empty strings: the page picks them); step 10 reads `separate`. `scan` is `SCAN_DONE` once the sweep has finished.
  */
 export interface TfidfParams {
   text: string;
@@ -53,6 +53,16 @@ const sharedTerms = sim.common[second];
 const sharedWeights = sharedTerms.map((t) => [sim.rows[0][sim.vocab.indexOf(t)], sim.rows[second][sim.vocab.indexOf(t)]]);
 const sharedCos = sharedWeights.reduce((s, [a, b]) => s + a * b, 0);
 const badPair = BOOK.cosPair;
+
+/**
+ * The finished value of the step-6 sweep (`scan`): past every cell, the norm and the division, whatever the number
+ * of terms in row zero. The sweep's last value and the Lab's document boxes on step 6 write it, so a row that gains
+ * terms after the sweep stays finished instead of falling back to the raw weights.
+ */
+export const SCAN_DONE = Number.POSITIVE_INFINITY;
+
+/** How many numbered sweep values come before `SCAN_DONE`; a longer row ends the sweep on `SCAN_DONE` itself. */
+const SCAN_STEPS = 99;
 
 /** The step scenario of the TF-IDF page (Ders steps 1-10). */
 export const tfidfKosinusScenario: Scenario<TfidfParams> = {
@@ -115,9 +125,10 @@ export const tfidfKosinusScenario: Scenario<TfidfParams> = {
       text: `0. belgenin satırı: ham ağırlık = sayım · IDF (${rawPairs.join('; ')} …); norm ${f3(dt.norms[0])}; bölünce ${normed.join(' / ')}. Tarama hücre hücre ilerler.`,
       sweep: {
         key: 'scan',
-        values: Array.from({ length: 30 }, (_, i) => i + 1),
+        values: [...Array.from({ length: SCAN_STEPS }, (_, i) => i + 1), SCAN_DONE],
         intervalMs: 1100,
-        count: (p) => Math.min(30, nonZero(docTable(p.docs).raw[0]).length + 2),
+        // one value per non-zero cell, then the norm and the division; the player stops at the end of `values`
+        count: (p) => nonZero(docTable(p.docs).raw[0]).length + 2,
       },
       labText:
         'Belgeleri değiştirin: ilk belgenin satırı için ham ağırlıklar, norm ve bölme yeniden hesaplanır.',

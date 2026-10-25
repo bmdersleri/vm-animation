@@ -2,7 +2,7 @@ import { stepIndex, type StepPlayer } from '../../core/player';
 import { addTextInput, type TextPreset } from '../../core/text-input';
 import { BOOK } from '../metin/data';
 import { docTable, similarity } from './calc';
-import { tfidfKosinusScenario as scenario, type TfidfParams } from './scenario';
+import { SCAN_DONE, tfidfKosinusScenario as scenario, type TfidfParams } from './scenario';
 import { commentDocs } from './view';
 
 let uid = 0;
@@ -15,6 +15,7 @@ export const DOC_STEPS = indices('bow', 'idf', 'tfidf-norm', 'yan-yana');
 export const TERM_STEPS = indices('bow', 'idf', 'yan-yana');
 export const QUERY_STEPS = indices('kosinus', 'uzunluk-yon');
 export const SEPARATE_STEPS = indices('ortak-sozluk');
+const NORM_STEP = stepIndex(scenario, 'tfidf-norm');
 
 /** Ready examples of the comment box: the book's comment, a negation and a shouting one. */
 export const TEXT_PRESETS: TextPreset[] = [
@@ -113,11 +114,16 @@ export function mountTfidfParams(host: HTMLElement, player: StepPlayer<TfidfPara
   const degil = addToggle('degil', '"değil" stop-word olsun', TEXT_STEPS, (on) => player.setParam('degil', on));
 
   // steps 4-7: three documents, the book's documents, the highlighted term
+  /** Writes the documents; on step 6 the row is shown finished (norm and division) for the new documents at once. */
+  const setDocs = (docs: TfidfParams['docs']): void => {
+    if (player.state.index === NORM_STEP) player.setParams({ docs, scan: SCAN_DONE });
+    else player.setParam('docs', docs);
+  };
   const docBoxes = [0, 1, 2].map((i) =>
     addText(`doc-${i}`, `Belge ${i}`, DOC_STEPS, params().docs[i], (v) => {
       const next = [...params().docs] as TfidfParams['docs'];
       next[i] = v;
-      player.setParam('docs', next);
+      setDocs(next);
     }),
   );
   const reset = doc.createElement('div');
@@ -130,7 +136,7 @@ export function mountTfidfParams(host: HTMLElement, player: StepPlayer<TfidfPara
   reset.append(resetBtn);
   wrap.append(reset);
   rows.push({ steps: DOC_STEPS, box: reset, input: resetBtn });
-  resetBtn.addEventListener('click', () => player.setParam('docs', [...BOOK.kod02.docs] as TfidfParams['docs']));
+  resetBtn.addEventListener('click', () => setDocs([...BOOK.kod02.docs] as TfidfParams['docs']));
   const term = addSelect('term', 'Vurgulanan terim', TERM_STEPS, (v) => player.setParam('term', v));
 
   // steps 8-9: query, fourth document, plane terms

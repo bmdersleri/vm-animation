@@ -143,6 +143,25 @@ describe('tfidf-kosinus Lab controls', () => {
     expect(cols()).toEqual(BOOK.kod02.vocab);
   });
 
+  it('editing a document after the step-6 sweep keeps the finished row', () => {
+    const { host, el, player } = setup();
+    player.goto(step('tfidf-norm'));
+    vi.advanceTimersByTime(1100 * 120);
+    const title = () => el.querySelector('.heat-block:not([hidden]) .heat-title')!.textContent;
+    const strip = () => el.querySelector('.formula')!.textContent ?? '';
+    expect(title()).toBe('TF-IDF (L2 normlu)');
+    expect(strip()).toContain('bölme →');
+    // more terms in row zero than the sweep counted: the norm and the division are recalculated, not dropped
+    type(ctl(host, 'doc-0'), 'internet yavaş destek yetersiz fiyat pahalı');
+    expect(title()).toBe('TF-IDF (L2 normlu)');
+    expect(strip()).toContain('pahalı');
+    expect(strip()).toMatch(/norm ‖v‖/);
+    expect(strip()).toContain('bölme →');
+    host.querySelector<HTMLButtonElement>('[data-action=docs-reset]')!.click();
+    expect(title()).toBe('TF-IDF (L2 normlu)');
+    expect(strip()).toContain('bölme →');
+  });
+
   it('one document left still draws the table', () => {
     const { host, el, player } = setup();
     player.goto(step('yan-yana'));

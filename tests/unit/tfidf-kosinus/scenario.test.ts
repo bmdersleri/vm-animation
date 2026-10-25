@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { StepPlayer, stepIndex } from '../../../src/core/player';
 import { formatNumber as f } from '../../../src/core/plot/format';
 import { BOOK } from '../../../src/concepts/metin/data';
-import { tfidfKosinusScenario as sc } from '../../../src/concepts/tfidf-kosinus/scenario';
+import { tfidfKosinusScenario as sc, type TfidfParams } from '../../../src/concepts/tfidf-kosinus/scenario';
+import { deriveTfidfView } from '../../../src/concepts/tfidf-kosinus/view';
 
 const step = (id: string) => sc.steps.find((s) => s.id === id)!;
 const k2 = BOOK.kod02;
@@ -69,5 +71,29 @@ describe('tfidf-kosinus scenario', () => {
     ]);
     expect(step('tfidf-norm').sweep?.key).toBe('scan');
     expect(step('tfidf-norm').sweep?.count?.(sc.defaults)).toBe(6);
+  });
+
+  it('a first document with many distinct terms still finishes the step-6 sweep', () => {
+    vi.useFakeTimers();
+    try {
+      // 35 distinct two-letter-and-more terms: more than the old 30-value cap
+      const words = Array.from({ length: 35 }, (_, i) => `k${String.fromCharCode(97 + Math.floor(i / 26))}${String.fromCharCode(97 + (i % 26))}`);
+      const docs: TfidfParams['docs'] = [words.join(' '), k2.docs[1], k2.docs[2]];
+      const player = new StepPlayer(sc);
+      player.setParam('docs', docs);
+      player.goto(stepIndex(sc, 'tfidf-norm'));
+      vi.advanceTimersByTime(1100 * 200);
+      const v = deriveTfidfView(player.state.index, player.state.params);
+      expect(v.table!.tables[0].id).toBe('tfidf');
+      expect(v.strip).toContain('bölme →');
+      // the reduced-motion landing (the last value the sweep would play) is the finished state as well
+      const sw = step('tfidf-norm').sweep!;
+      const n = Math.min(sw.values.length, sw.count!(player.state.params));
+      const landed = deriveTfidfView(player.state.index, { ...player.state.params, scan: sw.values[n - 1] as number });
+      expect(landed.table!.tables[0].id).toBe('tfidf');
+      player.destroy();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
