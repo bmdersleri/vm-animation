@@ -75,6 +75,8 @@ export const tfidfKosinusScenario: Scenario<TfidfParams> = {
       title: "Ham yorumdan token'a",
       term: 'token',
       text: `Kitabın yorumu "${k1.text}": her harf küçültülür (İ → i), rakam ve noktalama atılır, tek harfli parçalar düşer ve ${tokens.length} token kalır. Kitabın kod01 satırları şeritte.`,
+      labText:
+        'Yorumu kutuya yazın ya da hazır örnek seçin; çipler her tuşta yeniden kurulur. Kitabın stop-word kümesini ve "değil" anahtarını açıp kapatarak hangi çiplerin süzüldüğünü izleyin.',
     },
     {
       id: 'turkce-karakter',
@@ -87,18 +89,24 @@ export const tfidfKosinusScenario: Scenario<TfidfParams> = {
       term: 'stop-word',
       text: `Kitabın kümesi {${stopList.join(', ')}} (${stopList.length} sözcük): süzülen çipler üstü çizili gri (${dropped.join(', ')}), kalanlar Counter ile sayılır. Uyarı: "değil" listeye girerse "hizmet kötü değil" → [hizmet, kötü] kalır ve anlam ters döner.`,
       params: { stop: true },
+      labText:
+        'Yorumu değiştirin ve iki anahtarı deneyin: süzülen çipler üstü çizili kalır, Counter satırı yalnızca kalanları sayar. "değil" anahtarı açıkken olumsuzlama kaybolur.',
     },
     {
       id: 'bow',
       title: 'Bag-of-Words',
       term: 'Bag-of-Words (BoW)',
       text: `Kitabın kod02 belgeleri: ${nDocs} belge, ${dt.vocab.length} terim. Satırlar belge, sütunlar terim; "${TERM}" ${joinWith(whereA.map((i) => `${i}.`), 've')} belgede ${countAt(TERM, whereA[0])}, "${TERM_B}" yalnız ${whereB[0]}. belgede ${countAt(TERM_B, whereB[0])}. Sayım her terimi eşit tartar.`,
+      labText:
+        'Üç belgeyi kendi cümlelerinizle değiştirin; sözlük ve sayımlar yeniden kurulur. Terim seçimi vurgulanan sütunu belirler.',
     },
     {
       id: 'idf',
       title: 'IDF: nadir terim ağır',
       term: 'IDF',
       text: `Her terimin belge sıklığı (df) ve IDF çubukları: df ${dfValues[0]} → ${f3(idfOfDf(dfValues[0]))}, df ${dfValues[1]} → ${f3(idfOfDf(dfValues[1]))}. IDF = ln((1 + N) / (1 + df)) + 1; kitabın ders kitabı tanımı log(N / df) alttaki satırda. sklearn 1 ekleyerek sıfıra bölmeyi ve sıfır ağırlığı önler.`,
+      labText:
+        'Belgeleri değiştirin: bir terim ne kadar çok belgede geçerse IDF çubuğu o kadar kısalır. Terim seçimi vurgulanan çubuğu belirler.',
     },
     {
       id: 'tfidf-norm',
@@ -111,27 +119,38 @@ export const tfidfKosinusScenario: Scenario<TfidfParams> = {
         intervalMs: 1100,
         count: (p) => Math.min(30, nonZero(docTable(p.docs).raw[0]).length + 2),
       },
+      labText:
+        'Belgeleri değiştirin: ilk belgenin satırı için ham ağırlıklar, norm ve bölme yeniden hesaplanır.',
     },
     {
       id: 'yan-yana',
       title: 'BoW ile TF-IDF yan yana',
       text: `Aynı belgeler iki tabloda: sayım (mavi) ve TF-IDF (turuncu). "${TERM}" sayımda "${TERM_B}" kadar (${countAt(TERM, 0)} ve ${countAt(TERM_B, 0)}), TF-IDF'te daha hafif (${f3(dt.tfidf[0][dt.vocab.indexOf(TERM)])} ve ${f3(dt.tfidf[0][dt.vocab.indexOf(TERM_B)])}).`,
+      labText:
+        'Belgeleri ve terimi değiştirin: aynı terimin sayımı ile TF-IDF ağırlığı iki tabloda yan yana okunur.',
     },
     {
       id: 'kosinus',
       title: 'Kosinüs benzerliği',
       term: 'kosinüs benzerliği',
       text: `Kitabın kod03'ü: sorgu "${sim.docs[0]}"; skorlar ${sim.order.map((i) => f3(sim.scores[i])).join(' / ')}. Ortak terim yalnız ${joinWith(sharedTerms.map((t) => `"${t}"`), 've')}: ${sharedWeights.map(([a, b]) => `${f3(a)} · ${f3(b)}`).join(' + ')} = ${f3(sharedCos)}. "bağlantısı" ile "bağlantı" ayrı terim: ek, ortak kelimeyi böldü.`,
+      labText:
+        'Sorgu belgesini seçin, dördüncü belge kutusuna kendi yorumunuzu yazın ve düzlemin iki terimini değiştirin; skorlar, sıralama ve oklar yeniden çizilir.',
     },
     {
       id: 'uzunluk-yon',
       title: 'Uzunluk değil yön',
       text: `Sorgunun iki kez yazılmış hâli: kosinüs ${f3(dbl.cos)}, Öklid uzaklığı (ham sayımlarda) ${f3(dbl.euclidSelf)} iken ${f3(dbl.euclid)} olur. Aynı yönde iki farklı uzunlukta ok. Uzun ve kısa yorum aynı konuyu anlatıyorsa yönleri aynıdır.`,
+      labText:
+        'Sorguyu, dördüncü belgeyi ve düzlemin terimlerini değiştirin: sorgu iki kez yazılsa da kosinüs yöne baktığı için aynı kalır.',
     },
     {
       id: 'ortak-sozluk',
       title: 'Ortak sözlük ve sınır',
       text: `İki kart. Kitabın "her belge ayrı sözlük" hatası: iki ayrı vektörleştiricinin sütunları farklı anlama gelir, karşılaştırma anlamsızdır; doğrusu tek vektörleştirici. Sık yanlış anlama: "${badPair.a}" ile "${badPair.b}" kosinüsü ${f3(badPair.cos)}, duyguları zıt.`,
+      labText:
+        '"Ayrı sözlük" anahtarını kapatın: iki belge tek vektörleştiriciyle kurulur, sütun adları iki belgede aynı olur ve kosinüs anlamlıdır.',
+      params: { separate: true },
     },
   ],
 };

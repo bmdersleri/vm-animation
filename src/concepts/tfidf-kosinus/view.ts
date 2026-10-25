@@ -3,6 +3,7 @@ import type { HBar } from '../../core/plot/hbars';
 import { BLUE_SCALE, ORANGE_SCALE, type HeatCell, type HeatTableSpec } from '../../core/plot/heat-table';
 import { BOOK, STOP_WORDS } from '../metin/data';
 import { clean, DEGIL_STOP, tokenize } from '../metin/tokenize';
+import { tfidfMatrix } from '../metin/vectorize';
 import {
   charState,
   contrastTerm,
@@ -58,6 +59,8 @@ export interface TokensView {
   counter: { term: string; count: number }[] | null;
   stopSet: string[] | null;
   warn: WarnRow | null;
+  /** Shown when the comment has no token left (empty, or only stop words); the page analyses nothing then. */
+  note: string | null;
 }
 
 /** One heat table with its title; `id` tells the CSS which of the three it is. */
@@ -113,7 +116,8 @@ export interface VectorsView {
 
 /** Step 10's two cards. */
 export interface CardsView {
-  separate: { docs: [string, string]; pairs: [string, string][]; aligned: string; shared: string };
+  /** `on`: the two documents have a vectoriser each (the book's mistake), so the column names differ; off: one shared vocabulary. */
+  separate: { on: boolean; docs: [string, string]; pairs: [string, string][]; aligned: string; shared: string };
   pair: { a: string; b: string; cos: string };
   links: { href: string; text: string }[];
 }
@@ -169,6 +173,9 @@ function chipsOf(text: string, stop: ReadonlySet<string> | undefined): Chip[] {
     .map((w) => ({ text: w, dropped: stop?.has(w) ?? false, broken: false }));
 }
 
+/** The note of an empty comment (the book's mini application says the same). */
+export const EMPTY_NOTE = 'Boş yorum analiz edilemez.';
+
 const counterLine = (counter: { term: string; count: number }[]): string =>
   `Counter({${counter.map((c) => `'${c.term}': ${c.count}`).join(', ')}})`;
 
@@ -176,7 +183,8 @@ const counterLine = (counter: { term: string; count: number }[]): string =>
 function tokensView(id: string, p: TfidfParams): TfidfView {
   const stop = stopSetOf(p);
   const chips = chipsOf(p.text, stop);
-  const base: TokensView = { part: 'tokens', raw: null, chips, patterns: null, counter: null, stopSet: null, warn: null };
+  const note = chips.some((c) => !c.dropped) ? null : EMPTY_NOTE;
+  const base: TokensView = { part: 'tokens', raw: null, chips, patterns: null, counter: null, stopSet: null, warn: null, note };
   if (id === 'token') {
     const raw = [...p.text].map((ch): RawChar => ({ ch, state: charState(ch) }));
     return { ...empty('tokens', id, KOD01_LINES.join('\n')), tokens: { ...base, raw } };
@@ -202,7 +210,7 @@ function tokensView(id: string, p: TfidfParams): TfidfView {
       },
     ];
     const strip = [`${WRONG_PATTERN} → "${wrong}"`, `${RIGHT_PATTERN} → "${input}"`].join('\n');
-    return { ...empty('tokens', id, strip), tokens: { ...base, part: 'patterns', chips: [], patterns } };
+    return { ...empty('tokens', id, strip), tokens: { ...base, part: 'patterns', chips: [], patterns, note: null } };
   }
   const counts = new Map<string, number>();
   for (const c of chips) {
@@ -343,15 +351,30 @@ const degrees = (a: Arrow, b: Arrow): number | null => {
   return (Math.acos(c) * 180) / Math.PI;
 };
 
+/**
+ * The plane's two terms: a chosen term that is in the vocabulary wins, an empty or unknown one is filled from the
+ * automatic pair (so choosing only one of the two still works).
+ */
+function planeOf(s: ReturnType<typeof similarity>, p: TfidfParams, from: 'neighbour' | 'query'): [string, string] {
+  const auto = planeTerms(s, ['', ''], from);
+  const pick = (i: 0 | 1): string => (s.vocab.includes(p.plane[i]) ? p.plane[i] : auto[i]);
+  return [pick(0), pick(1)];
+}
+
+/** The documents of steps 8-9: the three comments plus the fourth one when its box is not blank. */
+export function commentDocs(p: TfidfParams): string[] {
+  return p.extra.trim() === '' ? [...p.comments] : [...p.comments, p.extra];
+}
+
 /** Steps 8-9. */
 function vectorsView(id: string, p: TfidfParams): TfidfView {
-  const docs = p.extra.trim() === '' ? [...p.comments] : [...p.comments, p.extra];
+  const docs = commentDocs(p);
   const s = similarity(docs, p.query);
   const q = s.query;
   const nearest = s.order.find((i) => i !== q);
   if (id === 'uzunluk-yon') {
     const d = doubledQuery(docs, q);
-    const [tx, ty] = planeTerms(s, p.plane, 'query');
+    const [tx, ty] = planeOf(s, p, 'query');
     const jx = d.vocab.indexOf(tx);
     const jy = d.vocab.indexOf(ty);
     const at = (row: number[], j: number): number => (j < 0 ? 0 : row[j]);
@@ -384,7 +407,7 @@ function vectorsView(id: string, p: TfidfParams): TfidfView {
       },
     };
   }
-  const [tx, ty] = planeTerms(s, p.plane, 'neighbour');
+  const [tx, ty] = planeOf(s, p, 'neighbour');
   const jx = s.vocab.indexOf(tx);
   const jy = s.vocab.indexOf(ty);
   const coord = (i: number, j: number): number => (j < 0 || s.rows[i] === undefined ? 0 : s.rows[i][j]);
@@ -425,15 +448,24 @@ function vectorsView(id: string, p: TfidfParams): TfidfView {
 /** Step 10. */
 function cardsView(id: string, p: TfidfParams): TfidfView {
   const sep = separateVocab(p.docs[0], p.docs[2]);
+  const shared = tfidfMatrix([p.docs[0], p.docs[2]]).vocab;
   const pair = BOOK.cosPair;
   const strip = [
-    `ayrı sözlük: sütun sütuna kosinüs = ${f3(sep.aligned)} · tek sözlük = ${f3(sep.shared)}`,
+    p.separate
+      ? `ayrı sözlük: sütun sütuna kosinüs = ${f3(sep.aligned)} · tek sözlük = ${f3(sep.shared)}`
+      : `tek sözlük: ortak sütunlarda kosinüs = ${f3(sep.shared)}`,
     `"${pair.a}" · "${pair.b}" → kosinüs = ${f3(pair.cos)}`,
   ].join('\n');
   return {
     ...empty('cards', id, strip),
     cards: {
-      separate: { docs: [p.docs[0], p.docs[2]], pairs: sep.pairs, aligned: f3(sep.aligned), shared: f3(sep.shared) },
+      separate: {
+        on: p.separate,
+        docs: [p.docs[0], p.docs[2]],
+        pairs: p.separate ? sep.pairs : shared.map((t): [string, string] => [t, t]),
+        aligned: f3(sep.aligned),
+        shared: f3(sep.shared),
+      },
       pair: { a: pair.a, b: pair.b, cos: f3(pair.cos) },
       links: [
         { href: '../duygu-analizi/', text: 'Duygu analizi: TF-IDF ve lojistik regresyon' },

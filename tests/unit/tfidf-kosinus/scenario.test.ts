@@ -62,8 +62,11 @@ describe('tfidf-kosinus scenario', () => {
     }
   });
 
-  it('only step 3 and the step-6 sweep set parameters', () => {
-    expect(sc.steps.filter((s) => s.params).map((s) => [s.id, s.params])).toEqual([['stop-word', { stop: true }]]);
+  it('only the stop-word and separate-vocabulary steps set parameters, and the step-6 sweep scans', () => {
+    expect(sc.steps.filter((s) => s.params).map((s) => [s.id, s.params])).toEqual([
+      ['stop-word', { stop: true }],
+      ['ortak-sozluk', { separate: true }],
+    ]);
     expect(step('tfidf-norm').sweep?.key).toBe('scan');
     expect(step('tfidf-norm').sweep?.count?.(sc.defaults)).toBe(6);
   });

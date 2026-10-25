@@ -102,7 +102,7 @@ describe('tfidf-kosinus view', () => {
   });
 
   it('step 10 cards read the book pair and the separate vocabularies', () => {
-    const v = view('ortak-sozluk');
+    const v = view('ortak-sozluk', { separate: true });
     expect(v.cards!.pair.cos).toBe('0,603');
     expect(v.cards!.separate.pairs.every(([a, b]) => a !== b)).toBe(true);
     expect(v.cards!.separate.aligned).toBe('1,000');

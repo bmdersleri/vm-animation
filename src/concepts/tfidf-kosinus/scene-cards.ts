@@ -35,23 +35,34 @@ export class CardsScene implements ViewScene {
   }
 
   private separateCard(doc: Document, c: CardsView): HTMLElement {
+    const sep = c.separate;
     const card = el(doc, 'section', 'text-card');
     card.dataset.kind = 'ayri-sozluk';
+    card.dataset.separate = String(sep.on);
     const pairs = el(doc, 'div', 'vocab-pairs');
     pairs.append(el(doc, 'span', 'vocab-head', 'sütun'), el(doc, 'span', 'vocab-head', 'belge 0'), el(doc, 'span', 'vocab-head', 'belge 2'));
-    c.separate.pairs.forEach(([a, b], i) => {
+    sep.pairs.forEach(([a, b], i) => {
       pairs.append(el(doc, 'span', 'vocab-no', String(i)), el(doc, 'code', 'vocab-term', a), el(doc, 'code', 'vocab-term', b));
     });
-    const wrong = el(doc, 'p', 'card-result is-wrong');
-    wrong.append('Ayrı vektörleştirici, sütun sütuna kosinüs: ', el(doc, 'strong', 'card-num', c.separate.aligned), ' (anlamsız)');
-    const right = el(doc, 'p', 'card-result is-right');
-    right.append('Tek vektörleştirici, ortak sözlük: ', el(doc, 'strong', 'card-num', c.separate.shared));
+    const result = (cls: string, label: string, num: string, tail = ''): HTMLElement => {
+      const p = el(doc, 'p', `card-result ${cls}`);
+      p.append(label, el(doc, 'strong', 'card-num', num), tail);
+      return p;
+    };
+    const wrong = result('is-wrong', 'Ayrı vektörleştirici, sütun sütuna kosinüs: ', sep.aligned, ' (anlamsız)');
+    const right = result('is-right', 'Tek vektörleştirici, ortak sözlük: ', sep.shared);
     card.append(
-      el(doc, 'h3', 'card-title', 'Her belge ayrı sözlük'),
-      el(doc, 'p', 'card-text', 'İki ayrı vektörleştiricinin aynı numaralı sütunları farklı terimlerdir; karşılaştırma anlamsızdır. Doğrusu tek vektörleştirici.'),
+      el(doc, 'h3', 'card-title', sep.on ? 'Her belge ayrı sözlük' : 'Ortak sözlük'),
+      el(
+        doc,
+        'p',
+        'card-text',
+        sep.on
+          ? 'İki ayrı vektörleştiricinin aynı numaralı sütunları farklı terimlerdir; karşılaştırma anlamsızdır. Doğrusu tek vektörleştirici.'
+          : 'Tek vektörleştirici iki belge için de aynı sütunları kurar: her sütun her iki belgede aynı terimdir, kosinüs anlamlıdır.',
+      ),
       pairs,
-      wrong,
-      right,
+      ...(sep.on ? [wrong, right] : [right]),
     );
     return card;
   }

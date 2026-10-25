@@ -131,3 +131,20 @@ tr.is-focus > .heat-row { color:#A85A00; }
 @media (max-width:900px) {
   .text-cards { grid-template-columns:minmax(0,1fr); }
 }
+
+/* Lab controls and note */
+.tf-params { display:grid; gap:8px; }
+.tf-params .ctl { min-width:0; }
+.tf-params .ctl.text { display:grid; grid-template-columns:minmax(0,1fr); gap:4px; }
+.tf-params .ctl.select { display:grid; grid-template-columns:minmax(0,1fr); gap:4px; }
+.tf-params .ctl.toggle { display:flex; align-items:center; gap:8px; min-height:var(--ctl); }
+.tf-params .ctl.toggle input { width:20px; height:20px; accent-color:var(--navy); }
+.tf-params .ctl-label { font-weight:600; }
+.tf-params input[type='text'] { width:100%; min-height:var(--ctl); padding:0 .6em; border:2px solid var(--navy); border-radius:8px; background:var(--surface); font:inherit; box-sizing:border-box; }
+.tf-params select, .tf-params button { min-height:var(--ctl); padding:0 .5em; border:2px solid var(--navy); border-radius:8px; background:var(--surface); font:inherit; }
+.tf-params .ctl[data-off], .tf-params[data-off] { display:none; }
+/* a step with no control (step 2) hides the whole params card (controls.ts sets data-off on the host) */
+[data-mode='lab'] .params[data-off] { display:none; }
+[data-mode='lab'] .tf-params { gap:4px; }
+.tf-extra p { margin:0 0 8px; }
+.empty-note { margin:0; padding:6px 10px; border-radius:6px; background:#FBE3C4; font-weight:600; }

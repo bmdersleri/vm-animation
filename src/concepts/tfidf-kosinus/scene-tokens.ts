@@ -67,6 +67,7 @@ export class TokensScene implements ViewScene {
     if (t.part !== 'patterns') {
       out.push(el(doc, 'p', 'tokens-label', 'token çipleri'), chipRow(doc, t.chips));
     }
+    if (t.note) out.push(el(doc, 'p', 'empty-note', t.note));
     if (t.stopSet) {
       out.push(el(doc, 'p', 'tokens-label', 'kitabın stop-word kümesi'));
       const set = el(doc, 'div', 'token-chips stop-set');
