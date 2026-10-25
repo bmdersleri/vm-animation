@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import fs from 'node:fs';
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect } from 'vitest';
 import { formatNumber as f } from '../../../src/core/plot/format';
 import { MODEL, customerByRow } from '../../../src/concepts/xai/data';
 import { go, num, setup, texts } from './harness';
@@ -107,5 +107,50 @@ describe('lattice scene', () => {
     expect(names).toHaveLength(3);
     // jsdom estimates 0.62 em per character at its 16 px default: the node must exceed the longest name estimate
     expect(num(box, 'width')).toBeGreaterThan('MonthlyCharges'.length * 16 * 0.62);
+  });
+
+  describe('with realistic text widths', () => {
+    // jsdom has no text layout: give every probe 9 px per character, wider than the 390 px stage can hold in one row
+    const proto = SVGElement.prototype as unknown as { getComputedTextLength?: () => number };
+    const saved = proto.getComputedTextLength;
+    beforeEach(() => {
+      proto.getComputedTextLength = function (this: Element) {
+        return (this.textContent ?? '').length * 9;
+      };
+    });
+    afterEach(() => {
+      proto.getComputedTextLength = saved;
+    });
+
+    it('the lattice fits the 390 px stage, strokes included, wrapping long names', () => {
+      for (const id of ['koalisyon', 'marjinal', 'alti-siralama']) {
+        const { el, player } = setup(390, 520, 'lab');
+        go(player, id);
+        const svg = el.querySelector<SVGSVGElement>('.lattice-plot')!;
+        const width = num(svg, 'width');
+        expect(width, id).toBeLessThanOrEqual(390);
+        expect(el.querySelectorAll('.lattice-node'), id).toHaveLength(8);
+        for (const rect of el.querySelectorAll('.lattice-node rect.node-box')) {
+          expect(num(rect, 'x'), id).toBeGreaterThanOrEqual(3);
+          expect(num(rect, 'x') + num(rect, 'width') + 3, id).toBeLessThanOrEqual(width);
+        }
+        // the long name wraps into two lines but keeps its full text
+        const name = [...node(el, 7).querySelectorAll('.node-name')].find((n) => n.textContent === 'MonthlyCharges')!;
+        expect(name.querySelectorAll('tspan')).toHaveLength(2);
+        // wrapped text stays within its node
+        const box = node(el, 7).querySelector('rect.node-box')!;
+        expect(num(box, 'y') + num(box, 'height')).toBeLessThanOrEqual(num(svg, 'height'));
+      }
+    });
+
+    it('a very short stage keeps the whole lattice in the SVG and lets the host scroll', () => {
+      const { el, player } = setup(1280, 150);
+      go(player, 'marjinal');
+      const svg = el.querySelector<SVGSVGElement>('.lattice-plot')!;
+      const bottom = node(el, 7).querySelector('rect.node-box')!;
+      expect(num(bottom, 'y') + num(bottom, 'height')).toBeLessThanOrEqual(num(svg, 'height'));
+      expect(num(svg, 'height')).toBeGreaterThan(150);
+      expect(/\.shap-host\s*\{[^}]*overflow-y:\s*auto/.test(css)).toBe(true);
+    });
   });
 });

@@ -92,11 +92,33 @@ export class LatticeScene implements ViewScene {
     const avail = Math.max(120, view.part === 'orders' && !narrow ? Math.floor(this.w * 0.54) - 12 : this.w - (narrow ? 8 : 24));
     const names = view.nodes.flatMap((n) => (n.names.length > 0 ? n.names : ['∅']));
     const nameW = this.measure.maxWidth(names, 'node-name', fs);
-    const valueW = this.measure.maxWidth(view.nodes.map((n) => n.v), 'node-v', fs);
-    const nodeW = Math.ceil(Math.max(nameW, valueW)) + (narrow ? 12 : 24);
+    const valueW = this.measure.maxWidth(
+      view.nodes.map((n) => n.v),
+      'node-v',
+      fs,
+    );
+    const padX = narrow ? 12 : 24;
     const gapX = narrow ? 4 : 8;
-    const width = Math.max(avail, 3 * nodeW + 2 * gapX + 8);
-    const lines = (layer: number): number => (layer === 0 ? 1 : layer) + 1;
+    // room for the node and path strokes at the left and right edge
+    const margin = 8;
+    const measured = Math.ceil(Math.max(nameW, valueW)) + padX;
+    // a narrow stage fits three nodes exactly; a wide one keeps the measured width and scrolls if it must
+    const nodeW = narrow ? Math.min(measured, Math.floor((avail - 2 * gapX - 2 * margin) / 3)) : measured;
+    const width = narrow ? avail : Math.max(avail, 3 * nodeW + 2 * gapX + 8);
+    const inner = nodeW - padX;
+    const pieces = (name: string): string[] => {
+      if (this.measure.width(name, 'node-name', fs) <= inner) {
+        return [name];
+      }
+      // break a camel-case name at its capital: "MonthlyCharges" -> "Monthly" / "Charges"
+      const parts = name.split(/(?<=[a-z])(?=[A-Z])/);
+      return parts.length > 1 ? parts : [name];
+    };
+    const wrapped = new Map<number, string[][]>(
+      view.nodes.map((n) => [n.mask, (n.names.length > 0 ? n.names : ['∅']).map(pieces)]),
+    );
+    const lineCount = (mask: number): number => wrapped.get(mask)!.reduce((sum, ps) => sum + ps.length, 0) + 1;
+    const lines = (layer: number): number => Math.max(...LAYERS[layer].map(lineCount));
     // line height and tier gap shrink in steps until the four tiers fit the stage height
     const tiers = [
       { lh: 1.3, gap: 2 },
@@ -179,20 +201,33 @@ export class LatticeScene implements ViewScene {
       )
       .join('text')
       .attr('class', 'node-name')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em')
-      .text((name) => name);
+      .attr('text-anchor', 'middle');
     nodeSel.each(function (n) {
       const p = places.get(n.mask)!;
       const g = select(this);
-      g.selectAll<SVGTextElement, string>('text.node-name')
-        .attr('x', r1(p.x + p.w / 2))
-        .attr('y', (_, i) => r1(p.y + 5 + lh * (i + 0.5)));
+      const cx = r1(p.x + p.w / 2);
+      let line = 0;
+      const starts = wrapped.get(n.mask)!.map((ps) => {
+        const at = line;
+        line += ps.length;
+        return at;
+      });
+      g.selectAll<SVGTextElement, string>('text.node-name').each(function (_, i) {
+        const ps = wrapped.get(n.mask)![i];
+        select(this)
+          .selectAll<SVGTSpanElement, string>('tspan')
+          .data(ps)
+          .join('tspan')
+          .attr('x', cx)
+          .attr('y', (_p, k) => r1(p.y + 5 + lh * (starts[i] + k + 0.5)))
+          .attr('dy', '0.35em')
+          .text((piece) => piece);
+      });
       g.select('text.node-v')
         .attr('text-anchor', 'middle')
         .attr('dy', '0.35em')
-        .attr('x', r1(p.x + p.w / 2))
-        .attr('y', r1(p.y + 5 + lh * (Math.max(1, n.names.length) + 0.5)))
+        .attr('x', cx)
+        .attr('y', r1(p.y + 5 + lh * (lineCount(n.mask) - 1 + 0.5)))
         .text(n.filled ? n.v : '');
     });
     tr(nodeSel, 'lat', ms).attr('opacity', (n) => (n.filled ? 1 : 0.4));
