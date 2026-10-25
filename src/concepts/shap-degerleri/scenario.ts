@@ -23,8 +23,8 @@ export interface ShapParams {
 /** The finished value of a sweep (and the default, so a view derived without a sweep shows everything). */
 export const SCAN_DONE = Number.POSITIVE_INFINITY;
 
-/** Trees of the book's forest (`RandomForestClassifier(n_estimators=200)`); the data file does not carry it. */
-export const TREES = 200;
+/** Trees of the book's forest (`n_estimators`), written by `scripts/make_xai_data.py`. */
+export const TREES = MODEL.nEstimators;
 
 const f3 = (v: number): string => f(v, 3);
 const signed = (v: number): string => (v > 0 ? `+${f3(v)}` : f3(v));

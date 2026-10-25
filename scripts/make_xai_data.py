@@ -16,7 +16,8 @@ Writes (relative to the repo root):
 Data (xai.json; display numbers 6 decimals, numbers that enter a calculation full precision):
   model      split sizes and class counts, test accuracy, feature_importances_, base value v(empty),
              mean |SHAP| per feature, topDisagree (test customers whose most influential feature
-             differs between SHAP and LIME at seed 42 / 5000 samples).
+             differs between SHAP and LIME at seed 42 / 5000 samples), nEstimators (the forest's
+             tree count, n_estimators).
   customers  The 100 test customers in test order: row (data row = DataFrame index), values, label,
              p, shap, v (8 coalition values, index = feature bit mask: bit 0 tenure, bit 1
              MonthlyCharges, bit 2 TotalCharges).
@@ -383,6 +384,7 @@ def generate():
         "testCounts": [int((yte == 0).sum()), int((yte == 1).sum())],
         "accuracy": acc, "importances": imps, "base": base, "meanAbsShap": mean_abs,
         "topDisagree": int(sum(disagree)),
+        "nEstimators": int(model.n_estimators),
     }
 
     print("base", base, "acc", acc, "imp", [round(v, 3) for v in imps])

@@ -20,6 +20,10 @@ describe('shap view', () => {
     ]);
   });
 
+  it('the step 1 strip quotes the generated tree count', () => {
+    expect(at('kara-kutu').strip).toContain(`RandomForestClassifier(n_estimators=${MODEL.nEstimators}, random_state=42)`);
+  });
+
   it('step 4 marginals for the book order', () => {
     const c = customerByRow(301);
     const v = at('marjinal').lattice!;

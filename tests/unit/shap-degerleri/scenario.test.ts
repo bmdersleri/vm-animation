@@ -34,6 +34,8 @@ describe('shap-degerleri scenario', () => {
     expect(step('kara-kutu').text).toContain(`p(ayrılma) = ${f3(c.p)}`);
     expect(step('kara-kutu').text).toContain(`tenure ${c.values[0]}, MonthlyCharges ${f(c.values[1], 2)}, TotalCharges 2366,05`);
     expect(step('kara-kutu').text).toContain(formatPercent(MODEL.accuracy, 1));
+    // the tree count is the generator's n_estimators, not a typed literal
+    expect(step('kara-kutu').text).toContain(`${MODEL.nEstimators} ağaçlı orman`);
     expect(step('genel-onem').text).toContain(MODEL.importances.map(f3).join(' / '));
     expect(step('koalisyon').text).toContain(`v(∅) = ${f3(c.v[0])}`);
     expect(step('koalisyon').text).toContain(`v({tenure}) = ${f3(c.v[1])}`);

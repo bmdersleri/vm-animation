@@ -21,6 +21,8 @@ export interface Model {
   meanAbsShap: Triple;
   /** Test customers whose most influential feature differs between SHAP and LIME (seed 42, 5000 samples). */
   topDisagree: number;
+  /** Trees of the forest (`n_estimators`). */
+  nEstimators: number;
 }
 
 /** One test customer; `v[mask]` is the coalition value (bit 0 tenure, bit 1 MonthlyCharges, bit 2 TotalCharges). */
