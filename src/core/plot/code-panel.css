@@ -4,8 +4,8 @@
 .code-pre { margin:0; padding:8px 4px; border-radius:6px; background:var(--bg); overflow-x:auto; font-family:var(--mono, ui-monospace, Consolas, monospace); font-size:var(--fs-tick); line-height:1.5; }
 .code-line { display:flex; flex-wrap:wrap; align-items:baseline; gap:0 10px; padding:0 8px; border-left:5px solid transparent; }
 .code-no { flex:none; width:2em; text-align:right; opacity:.55; }
-.code-line .code-text { white-space:pre; }
+.code-line .code-text { flex:1 1 12em; min-width:0; white-space:pre-wrap; overflow-wrap:anywhere; }
 .code-line.is-bug { background:#FBE3C4; border-left-color:#E07B00; }
 .code-line.is-current { background:#F7CF9B; }
-.bug-badge { font-family:var(--font); font-weight:700; color:#7A3E00; background:var(--surface); border:2px solid #E07B00; border-radius:6px; padding:0 6px; margin-left:auto; }
+.bug-badge { font-family:var(--font); font-weight:700; color:#7A3E00; background:var(--surface); border:2px solid #E07B00; border-radius:6px; padding:0 6px; margin-left:auto; max-width:100%; box-sizing:border-box; overflow-wrap:anywhere; }
 .code-line.is-fix { background:var(--navy-soft); border-left-color:var(--navy); }

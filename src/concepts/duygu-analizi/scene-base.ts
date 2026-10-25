@@ -45,3 +45,11 @@ export function mountSvg(
 
 /** Below this stage width (px) the page is one column. */
 export const NARROW = 900;
+
+/** From this stage width (px) two columns fit; the window must also be wider than `NARROW` (the page is one column below). */
+export const WIDE = 700;
+
+/** True when a stage `w` px wide draws two columns: a Lab stage is narrower than the window, so the stage width decides. */
+export function isWide(w: number): boolean {
+  return w >= WIDE && (typeof innerWidth === 'undefined' || innerWidth > NARROW);
+}

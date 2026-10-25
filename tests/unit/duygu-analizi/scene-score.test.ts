@@ -124,6 +124,8 @@ describe('score scene', () => {
     expect(css).toMatch(/\.token-chip \{[^}]*overflow-wrap:anywhere/);
     expect(css).toMatch(/\.z-line, \.prob-line, \.compare-line \{[^}]*overflow-wrap:anywhere/);
     expect(css).toMatch(/\.sa-host \{[^}]*overflow-x:hidden/);
-    expect(css).toMatch(/@media \(max-width:900px\) \{\s*\.score-scene\[data-panels='2'\] \.score-panels \{ grid-template-columns:minmax\(0,1fr\)/);
+    // two columns only when the scene says the stage is wide (a Lab stage is narrower than the window)
+    expect(css).toMatch(/\.score-scene\[data-wide='true'\]\[data-panels='2'\] \.score-panels \{ grid-template-columns:repeat\(2/);
+    expect(el.querySelector('.score-scene')!.getAttribute('data-wide')).toBe('false');
   });
 });

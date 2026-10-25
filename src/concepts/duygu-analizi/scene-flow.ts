@@ -2,7 +2,7 @@ import type { Selection } from 'd3-selection';
 import type { Mode } from '../../core/mode';
 import { HBarsLayer } from '../../core/plot/hbars';
 import type { TextMeasure } from '../../core/plot/text-measure';
-import { el, mountSvg, NARROW, type ViewScene } from './scene-base';
+import { el, isWide, mountSvg, type ViewScene } from './scene-base';
 import type { FlowView, SentimentView } from './view';
 
 /**
@@ -83,7 +83,8 @@ export class FlowScene implements ViewScene {
   private drawBars(flow: FlowView, ms: number): void {
     this.barTitle.textContent = flow.barTitle;
     const tick = this.measure.fonts(this.mode).tick;
-    const wide = this.w >= NARROW;
+    const wide = isWide(this.w);
+    this.root.dataset.wide = String(wide);
     const width = Math.max(200, wide ? Math.floor(this.w * 0.46) : this.w - 24);
     const rowH = Math.round(tick * 1.9);
     const height = rowH * flow.bars.length;

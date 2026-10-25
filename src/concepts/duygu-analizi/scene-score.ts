@@ -6,7 +6,7 @@ import { LineChartLayer, type LineChartSpec } from '../../core/plot/line-chart';
 import { MatrixLayer, matrixHeight } from '../../core/plot/matrix';
 import type { TextMeasure } from '../../core/plot/text-measure';
 import { sigmoid } from '../metin/score';
-import { el, mountSvg, NARROW, type G, type ViewScene } from './scene-base';
+import { el, isWide, mountSvg, type G, type ViewScene } from './scene-base';
 import { DriftStrip, driftHeight } from './scene-vocab';
 import type { PanelView, ResultView, SentimentView } from './view';
 
@@ -16,8 +16,9 @@ export const Z_RANGE = 4;
 /** Horizontal padding and border (px) of a score panel. */
 const PANEL_CHROME = 28;
 
-/** Smallest sigmoid plot height (px). */
+/** Smallest sigmoid plot height (px); two panels on one stage may go down to `SIG_MIN_TWO`. */
 const SIG_MIN = 130;
+const SIG_MIN_TWO = 96;
 
 /** Panel width (px) from which the contribution bars and the sigmoid sit side by side. */
 const SIDE_BY_SIDE = 560;
@@ -112,7 +113,7 @@ class ScorePanel {
     this.el.remove();
   }
 
-  update(pv: PanelView, width: number, room: number, mode: Mode, ms: number): void {
+  update(pv: PanelView, width: number, room: number, mode: Mode, ms: number, two = false): void {
     const doc = this.el.ownerDocument;
     this.el.dataset.model = pv.model;
     this.title.textContent = pv.title;
@@ -167,7 +168,7 @@ class ScorePanel {
     const fixed = this.overhead(pv, width, fonts.tick, fonts.axis, solo);
     const fit = Math.round(room - fixed);
     const cap = side || solo ? sigW * 0.85 : sigW * 0.6;
-    const sigH = Math.max(SIG_MIN, Math.min(260, cap, side ? Math.max(fit, barH) : fit));
+    const sigH = Math.max(two ? SIG_MIN_TWO : SIG_MIN, Math.min(260, cap, side ? Math.max(fit, barH) : solo ? fit : fit - barH));
     if (hasP) {
       this.sigSvg.attr('width', sigW).attr('height', Math.round(sigH));
       const spec = sigmoidSpec(pv.z, pv.p);
@@ -252,7 +253,10 @@ export class ScoreScene implements ViewScene {
     for (const [id, panel] of this.made) panel.el.hidden = !wanted.has(id);
     const two = s.panels.length > 1;
     this.root.dataset.panels = String(s.panels.length);
-    const width = Math.max(200, two && this.w >= NARROW ? Math.floor((this.w - 36) / 2) : this.w - 24);
+    const wide = isWide(this.w);
+    this.root.dataset.wide = String(wide);
+    const cols = two && wide;
+    const width = Math.max(200, cols ? Math.floor((this.w - 36) / 2) : this.w - 24);
     // room the panel may use: the stage less the comment line
     const axis = parseFloat(getComputedStyle(this.comment).fontSize) || (this.mode === 'ders' ? 19 : 14);
     this.drift.update(v.drift);
@@ -265,7 +269,7 @@ export class ScoreScene implements ViewScene {
         this.made.set(pv.id, panel);
       }
       panel.el.hidden = false;
-      panel.update(pv, width, this.h - commentH, this.mode, ms);
+      panel.update(pv, width, this.h - commentH, this.mode, ms, two);
       order.push(panel.el);
     }
     const hidden = [...this.made.values()].filter((p) => p.el.hidden).map((p) => p.el);
@@ -321,6 +325,7 @@ export class ResultScene implements ViewScene {
     const r = v.result;
     if (!r) return;
     this.root.dataset.model = r.model;
+    this.root.dataset.wide = String(isWide(this.w));
     this.drawMatrix(r, ms);
     const doc = this.root.ownerDocument;
     this.metricList.replaceChildren(
@@ -336,7 +341,7 @@ export class ResultScene implements ViewScene {
 
   private drawMatrix(r: ResultView, ms: number): void {
     const fonts = this.measure.fonts(this.mode);
-    const width = Math.max(220, Math.min(460, this.w >= NARROW ? Math.floor(this.w * 0.42) : this.w - 24));
+    const width = Math.max(220, Math.min(460, isWide(this.w) ? Math.floor(this.w * 0.42) : this.w - 24));
     const cellH = Math.round(fonts.tick * 3);
     const height = Math.ceil(matrixHeight(fonts.tick, cellH)) + 4;
     this.svg.attr('width', width).attr('height', height);

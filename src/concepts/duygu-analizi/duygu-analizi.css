@@ -51,18 +51,15 @@
 .flow-scene .code-text { font-family:var(--mono, ui-monospace, Consolas, monospace); white-space:pre-wrap; overflow-wrap:anywhere; }
 .flow-warning { margin:0; padding:8px 12px; border-left:4px solid #E07B00; border-radius:6px; background:#FBE3C4; font-weight:600; font-size:var(--fs-axis); }
 .flow-warning[hidden] { display:none; }
-@media (max-width:900px) {
-  .flow-body { grid-template-columns:minmax(0,1fr); }
-  .flow-stage { padding:4px 8px; }
-}
+/* one column on a narrow stage: scenes set data-wide from the stage width (a Lab stage is narrower than the window) */
+.flow-scene[data-wide='false'] .flow-body { grid-template-columns:minmax(0,1fr); }
+.flow-scene[data-wide='false'] .flow-stage { padding:4px 8px; }
 
 /* coefficient bars (step 3) */
 .coef-scene { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; padding:8px 12px; align-items:start; }
 .coef-group { min-width:0; display:grid; gap:6px; }
 .coef-bar .bar-value { font-weight:700; }
-@media (max-width:900px) {
-  .coef-scene { grid-template-columns:minmax(0,1fr); }
-}
+.coef-scene[data-wide='false'] { grid-template-columns:minmax(0,1fr); }
 
 /* score panels (steps 4, 6, 7, 9) */
 .score-scene { display:grid; gap:8px; padding:8px 12px; align-content:start; font-size:var(--fs-tick); }
@@ -70,7 +67,7 @@
 .score-comment[hidden] { display:none; }
 .comment-label { font-weight:700; opacity:.7; }
 .score-panels { display:grid; gap:12px; grid-template-columns:minmax(0,1fr); align-items:start; }
-.score-scene[data-panels='2'] .score-panels { grid-template-columns:repeat(2, minmax(0,1fr)); }
+.score-scene[data-wide='true'][data-panels='2'] .score-panels { grid-template-columns:repeat(2, minmax(0,1fr)); }
 .score-panel { display:grid; gap:6px; align-content:start; min-width:0; padding:8px 12px; border:2px solid var(--navy-soft); border-radius:10px; background:var(--surface); }
 .score-panel[hidden] { display:none; }
 .token-chips { display:flex; flex-wrap:wrap; gap:4px 6px; }
@@ -100,9 +97,6 @@
 .sig-plot line.lc-ref.ref-half { stroke:#8896a8; stroke-width:1.5; }
 .sig-plot circle.lc-marker.p-point { fill:#E07B00; stroke:var(--navy); stroke-width:2; }
 .sig-plot text.lc-label { font-weight:700; paint-order:stroke; stroke:var(--surface); stroke-width:4px; stroke-linejoin:round; }
-@media (max-width:900px) {
-  .score-scene[data-panels='2'] .score-panels { grid-template-columns:minmax(0,1fr); }
-}
 
 /* test result (step 5) */
 .result-scene { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; padding:8px 12px; align-items:start; font-size:var(--fs-tick); }
@@ -124,12 +118,10 @@
 .report-col { font-weight:700; opacity:.75; border-bottom:1px solid var(--navy-soft); }
 .report-note { margin:0; padding:4px 10px; border-radius:6px; background:#FBE3C4; font-weight:600; }
 .card-link { color:var(--navy); font-weight:600; }
-@media (max-width:900px) {
-  .result-scene { grid-template-columns:minmax(0,1fr); }
-  /* five report columns in about 340 px: the dense table size and tighter cells */
-  .report-table { font-size:var(--fs-cell); }
-  .report-col, .report-name, .report-cell { padding:2px 4px; }
-}
+.result-scene[data-wide='false'] { grid-template-columns:minmax(0,1fr); }
+/* five report columns in about 340 px: the dense table size and tighter cells */
+.result-scene[data-wide='false'] .report-table { font-size:var(--fs-cell); }
+.result-scene[data-wide='false'] .report-col, .result-scene[data-wide='false'] .report-name, .result-scene[data-wide='false'] .report-cell { padding:2px 4px; }
 
 /* vocabulary strip (step 8) */
 .vocab-scene { display:grid; gap:10px; padding:10px 12px; align-content:start; font-size:var(--fs-tick); }

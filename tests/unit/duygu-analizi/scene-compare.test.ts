@@ -51,4 +51,16 @@ describe('compare scenes (steps 6-7)', () => {
     expect(acc).toContain(f(MODELS['bi-drop-train'].negAccuracy * 100, 1));
     expect(acc).toContain(`süzülmeden %${f(MODELS['bi-keep-train'].negAccuracy * 100, 1)}`);
   });
+
+  it('the two panels share a row on a Lab-sized stage (745 px) and stack below 700 px', () => {
+    for (const [w, wide] of [[745, 'true'], [600, 'false']] as const) {
+      const { el, player } = setup(w, 540);
+      go(player, 'bigram');
+      expect(el.querySelector('.score-scene')!.getAttribute('data-wide'), String(w)).toBe(wide);
+      for (const svg of el.querySelectorAll('.score-panel svg')) {
+        expect(Number(svg.getAttribute('width'))).toBeLessThanOrEqual(w - 24 - 28);
+      }
+      document.body.replaceChildren();
+    }
+  });
 });

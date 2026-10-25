@@ -2,7 +2,7 @@ import type { Selection } from 'd3-selection';
 import type { Mode } from '../../core/mode';
 import { HBarsLayer, type HBar, type HBarsGeometry } from '../../core/plot/hbars';
 import type { TextMeasure } from '../../core/plot/text-measure';
-import { el, mountSvg, NARROW, type ViewScene } from './scene-base';
+import { el, isWide, mountSvg, type ViewScene } from './scene-base';
 import type { SentimentView } from './view';
 
 /** One side of the coefficient bars: a heading and an svg with its own `HBarsLayer`. */
@@ -80,8 +80,10 @@ export class CoefScene implements ViewScene {
     const c = v.coef;
     if (!c) return;
     this.root.dataset.model = c.model;
+    const wide = isWide(this.w);
+    this.root.dataset.wide = String(wide);
     const tick = this.pos.measure.fonts(this.mode).tick;
-    const width = Math.max(180, this.w >= NARROW ? Math.floor((this.w - 36) / 2) : this.w - 24);
+    const width = Math.max(180, wide ? Math.floor((this.w - 36) / 2) : this.w - 24);
     const gp = this.pos.draw(c.pos, c.max, width, tick, ms);
     const gn = this.neg.draw(c.neg, c.max, width, tick, ms);
     // the name columns differ in width, so the two groups would scale differently: the longer group is
