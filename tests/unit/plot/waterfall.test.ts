@@ -100,4 +100,24 @@ describe('WaterfallLayer', () => {
       expect(up ? top - (y + text / 2) : y - text / 2 - bot, l.textContent!).toBeGreaterThanOrEqual(5);
     }
   });
+  it('base and total bars start at 0 when the domain starts below 0, and at the axis start when it starts above 0', () => {
+    const { svg, layer } = setup();
+    const num = (sel: string, a: string): number => Number(svg.querySelector(sel)!.getAttribute(a));
+    // a walk that dips below 0 widens the domain to -0.1; the value bars still start at 0
+    layer.update(spec({ domain: [-0.1, 1] }), BOX, false);
+    const xBase = num('.wf-base-line', 'x1');
+    const xTotal = num('.wf-total-line', 'x1');
+    const perUnit = (xTotal - xBase) / (0.65 - 0.25);
+    const x0 = xBase - 0.25 * perUnit;
+    expect(num('rect.wf-start', 'x')).toBeCloseTo(x0, 0);
+    expect(num('rect.wf-total-bar', 'x')).toBeCloseTo(x0, 0);
+    expect(num('rect.wf-start', 'x') + num('rect.wf-start', 'width')).toBeCloseTo(xBase, 0);
+    expect(num('rect.wf-total-bar', 'x') + num('rect.wf-total-bar', 'width')).toBeCloseTo(xTotal, 0);
+    // a domain that starts above 0 clamps the bar start to the axis start
+    layer.update(spec({ domain: [0.1, 1] }), BOX, false);
+    const xb = num('.wf-base-line', 'x1');
+    const xt = num('.wf-total-line', 'x1');
+    const x01 = xb - (0.25 - 0.1) * ((xt - xb) / (0.65 - 0.25));
+    expect(num('rect.wf-start', 'x')).toBeCloseTo(x01, 0);
+  });
 });

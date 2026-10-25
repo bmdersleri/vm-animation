@@ -241,14 +241,16 @@ export class WaterfallLayer {
     names.push({ id: 'total', text: t.totalLabel, x: xa - 8, y: rowMid(last) });
     labels.push({ id: 'total', text: t.totalText, x: xOf(spec.total) + 6, y: rowMid(last), anchor: 'start', leader: null });
     const axisY = top + rowsH;
+    // the base and total are values: their bars start at 0 (clamped into the domain), not at the axis start
+    const x0 = xOf(Math.min(Math.max(0, d0), d1));
     return {
       segs,
       labels,
       names,
       links,
       ticks: showAxis ? this.ticks(spec, xOf, top, axisY, axisY + fs * 1.3) : [],
-      base: { x: xOf(spec.base), y1: top, y2: axisY, bar: { x: xOf(d0), y: rowTop(0), w: Math.max(1, xOf(spec.base) - xOf(d0)), h: barH } },
-      total: { x: xOf(spec.total), y1: top, y2: axisY, bar: { x: xOf(d0), y: rowTop(last), w: Math.max(1, xOf(spec.total) - xOf(d0)), h: barH } },
+      base: { x: xOf(spec.base), y1: top, y2: axisY, bar: { x: x0, y: rowTop(0), w: Math.max(1, xOf(spec.base) - x0), h: barH } },
+      total: { x: xOf(spec.total), y1: top, y2: axisY, bar: { x: x0, y: rowTop(last), w: Math.max(1, xOf(spec.total) - x0), h: barH } },
       title: spec.title ? { x: box.x + 4, y: box.y + fs * 1.1 } : null,
       axisY: showAxis ? axisY : null,
       axisX: [xa, xb],
