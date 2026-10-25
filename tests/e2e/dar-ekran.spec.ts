@@ -15,8 +15,12 @@ const stageSettled = (page: Page): Promise<void> => settled(() => page.evaluate(
     return [r.x, r.y, r.width, r.height];
   })));
 
-/** Pages whose first and last steps are HTML (flow strip, sample cards, code panel) with at most a small bar svg: the scene root counts. */
-const HTML_SCENES = new Set(['duygu-analizi']);
+/**
+ * `<page> <step id>` of steps that are HTML (flow strip, sample cards, vocabulary strip, code panel) with at most a
+ * small bar svg: the scene root counts. Every other step of the page is still measured by its largest svg, so a
+ * collapsed sigmoid or matrix fails.
+ */
+const HTML_STEPS = new Set(['duygu-analizi gorev', 'duygu-analizi boru-hatti', 'duygu-analizi sizinti', 'duygu-analizi hata-ayiklama']);
 
 async function checkStep(page: Page, label: string): Promise<void> {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -37,7 +41,8 @@ async function checkStep(page: Page, label: string): Promise<void> {
   // the scene's own drawing element: the largest svg/canvas in the stage that is rendered
   // (not hidden, so a collapsed one still counts and fails), or, when a step shows
   // only HTML cards, the first rendered scene root in the stage
-  const htmlScene = HTML_SCENES.has(label.split(' ')[0]);
+  const stepId = await page.evaluate(() => document.querySelector('.stage [data-step]')?.getAttribute('data-step') ?? '');
+  const htmlScene = HTML_STEPS.has(`${label.split(' ')[0]} ${stepId}`);
   const drawn = await page.evaluate((htmlOnly) => {
     const stage = document.querySelector('.stage')!;
     const boxes = [...stage.querySelectorAll('svg, canvas')]
