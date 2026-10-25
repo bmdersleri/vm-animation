@@ -27,6 +27,11 @@ export interface TfidfParams {
 const k1 = BOOK.kod01;
 const tokens = tokenize(k1.text).tokens;
 const wrongTokens = k1.trap.wrongPattern.split(/\s+/).filter((t) => t !== '');
+/** Words of the trap phrase whose pieces under the wrong pattern are all one letter long: they vanish entirely. */
+const lostWords = k1.trap.rightPattern
+  .split(/\s+/)
+  .map((word) => ({ word, pieces: word.replace(/[^a-z\s]/g, ' ').split(/\s+/).filter((t) => t !== '') }))
+  .filter((w) => w.pieces.length > 0 && w.pieces.every((t) => t.length < 2));
 const dt = docTable(BOOK.kod02.docs);
 const nDocs = BOOK.kod02.docs.length;
 const nz0 = nonZero(dt.raw[0]);
@@ -91,7 +96,7 @@ export const tfidfKosinusScenario: Scenario<TfidfParams> = {
     {
       id: 'turkce-karakter',
       title: 'Türkçe karakter tuzağı',
-      text: `[^a-z\\s] deseni "${k1.trap.rightPattern}" ifadesini ${joinWith(wrongTokens.filter((t) => t.length > 1).map((t) => `"${t}"`), 've')} parçalarına böler; [^a-zçğıöşü\\s] ise sözcükleri korur. Python'un lower() işlevi ayrıca "İ" harfini iki karaktere çevirir ("${k1.text.split(' ')[0]}" → "${k1.naiveTokens[0]}"); kitabın replace adımı bunu önler ("${tokens[0]}").`,
+      text: `[^a-z\\s] deseni "${k1.trap.rightPattern}" ifadesini ${joinWith(wrongTokens.filter((t) => t.length > 1).map((t) => `"${t}"`), 've')} parçalarına böler${lostWords.map((w) => `, "${w.word}" tamamen kaybolur (${joinWith(w.pieces.map((t) => `"${t}"`), 've')} tek harfli parçalar olarak düşer)`).join('')}; [^a-zçğıöşü\\s] ise sözcükleri korur. Python'un lower() işlevi ayrıca "İ" harfini iki karaktere (i + birleşen nokta) çevirir; temizlik noktayı boşluğa çevirince tek harfli "i" düşer ve token "${k1.naiveTokens[0]}" olur ("${k1.text.split(' ')[0]}" → "${k1.naiveTokens[0]}"). Kitabın replace adımı bunu önler ("${tokens[0]}").`,
     },
     {
       id: 'stop-word',

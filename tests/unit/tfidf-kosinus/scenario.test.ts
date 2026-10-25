@@ -33,6 +33,12 @@ describe('tfidf-kosinus scenario', () => {
     expect(step('token').text).toContain(BOOK.kod01.text);
     expect(step('turkce-karakter').text).toContain('"ba" ve "lant"');
     expect(step('turkce-karakter').text).toContain(`"${BOOK.kod01.naiveTokens[0]}"`);
+    // "kötü" leaves only one-letter pieces under the wrong pattern, so it disappears entirely
+    expect(BOOK.kod01.trap.wrongPattern.slice('bağlantı '.length).split(/\s+/).every((t) => t.length < 2)).toBe(true);
+    expect(step('turkce-karakter').text).toContain('"ba" ve "lant" parçalarına böler, "kötü" tamamen kaybolur ("k" ve "t" tek harfli parçalar olarak düşer)');
+    // lower() itself gives "i" + a combining dot; the token "nternetim" comes from the cleaning after it
+    expect([...'İ'.toLowerCase()].map((c) => c.codePointAt(0))).toEqual([0x69, 0x307]);
+    expect(step('turkce-karakter').text).toContain('"İ" harfini iki karaktere (i + birleşen nokta) çevirir; temizlik noktayı boşluğa çevirince tek harfli "i" düşer ve token "nternetim" olur');
     expect(step('stop-word').text).toContain('(8 sözcük)');
     expect(step('stop-word').text).toContain('çok');
     expect(step('bow').text).toContain(`${k2.docs.length} belge, ${k2.vocab.length} terim`);
