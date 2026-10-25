@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { stepIndex } from '../../../src/core/player';
-import { cellOf } from '../../../src/concepts/crisp-dm/data';
-import { crispDmScenario as sc } from '../../../src/concepts/crisp-dm/scenario';
+import { formatNumber } from '../../../src/core/plot/format';
+import { BOOK, cellOf } from '../../../src/concepts/crisp-dm/data';
+import { crispDmScenario as sc, examStockNote } from '../../../src/concepts/crisp-dm/scenario';
 import { deriveCrispView } from '../../../src/concepts/crisp-dm/view';
 
 const at = (id: string, over: Partial<typeof sc.defaults> = {}, lab = false) =>
@@ -73,7 +74,7 @@ describe('crisp-dm view', () => {
     expect(ok.route!.end).toBe('yaygin');
     expect(ok.hypothetical).toBe(false);
     expect(at('sizinti', { leak: true }, true).leak!.coefficient).toBe(
-      String(cellOf(56, 'cikar', 'soran', true).leakCoef!.toFixed(3)).replace('-', '−').replace('.', ','),
+      formatNumber(cellOf(56, 'cikar', 'soran', true).leakCoef!, 3),
     );
   });
 
@@ -109,5 +110,40 @@ describe('crisp-dm view', () => {
     expect(at('hata-ayiklama', { scan: 3 }).code!.marked).toBe(3);
     expect(at('hata-ayiklama').code!.fixed).toBe(true);
     expect(at('hata-ayiklama').code!.output).toEqual(['Ortalama: 90.0', 'Kayıt sayısı: 2']);
+  });
+
+  it('the book Kahve means print with one decimal in Ders and Lab', () => {
+    const want = {
+      zero: formatNumber(BOOK.hamVeri.kahveFillna0, 1),
+      skip: formatNumber(BOOK.hamVeri.kahveAtlanir, 1),
+    };
+    expect(at('eksik-sifir-degil').clean!.kahve).toEqual(want);
+    expect(at('eksik-sifir-degil', {}, true).clean!.kahve).toEqual(want);
+    expect(want).toEqual({ zero: '40,0', skip: '80,0' });
+  });
+
+  it('step 8 note and the scenario text share one helper', () => {
+    const v = at('degerlendirme', { scan: 3 });
+    expect(v.results!.note).toBe(examStockNote());
+    expect(sc.steps[stepIndex(sc, 'degerlendirme')].text).toContain(examStockNote());
+    expect(examStockNote()).toMatch(/satış (hep|en çok) \d+$/);
+  });
+
+  it('step 9 strips and rule read the deployment once it is shown', () => {
+    const cell = cellOf(56, 'cikar', 'soran', false);
+    expect(at('ikinci-tur', { scan: 6 }).strip).toContain(`${cell.deploy.wasted} / ${cell.deploy.prepared}`);
+  });
+
+  it('Ders views ignore the Lab choices on every step', () => {
+    const choices = [
+      { days: 4 as const }, { days: 14 as const, missing: 'sifir' as const },
+      { stock: 'satis' as const }, { leak: true }, { days: 28 as const, missing: 'sifir' as const, stock: 'satis' as const, leak: true },
+    ];
+    sc.steps.forEach((_s, i) => {
+      const plain = JSON.stringify(deriveCrispView(i, sc.defaults, false));
+      for (const c of choices) {
+        expect(JSON.stringify(deriveCrispView(i, { ...sc.defaults, ...c }, false)), `step ${i + 1}`).toBe(plain);
+      }
+    });
   });
 });

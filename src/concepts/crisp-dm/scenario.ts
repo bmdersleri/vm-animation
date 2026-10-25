@@ -35,6 +35,18 @@ const examSandwich = sandwich.filter(r => r.sinav_haftasi);
 const poolExam = POOL.filter(d => d.sinav);
 const stockOut = POOL.filter(d => d.stokTukendi);
 const missing = POOL.filter(d => d.satis === null);
+/** Pool counts shared by the step texts and the view. */
+export const NORMAL_COUNT = POOL.filter(d => !d.sinav).length;
+export const EXAM_COUNT = poolExam.length;
+
+/** Step 8's note: stocked-out exam days of the pool and what their sales read ("hep v" only when all are v, else "en çok v"). */
+export function examStockNote(): string {
+  const sales = poolExam.map(d => d.satis).filter((v): v is number => v !== null);
+  const top = Math.max(...sales);
+  const wording = sales.every(v => v === top) ? `satış hep ${top}` : `satış en çok ${top}`;
+  return `eğitimdeki ${poolExam.filter(d => d.stokTukendi).length} sınav günü stok tükenmiş; ${wording}`;
+}
+
 const pct = (v: number | null): string => (v === null ? '—' : formatPercent(v));
 
 /** The deployment rule of the second round, as step 9 and the Lab card write it. */
@@ -64,7 +76,7 @@ export const crispDmScenario: Scenario<CrispParams> = {
     {
       id: 'veri-yeterli',
       title: 'Veri yeterli mi? Hayır',
-      text: `Veri yetmiyor: sandviç için ${sandwich.length} kayıt, sınav haftasında ${examSandwich.length}. Geri kenar İş anlama'ya döner, veri sorusu "8 haftalık günlük kayıt" olur. Yeni tablo ${POOL.length} gün: ${POOL.length - poolExam.length} normal, ${poolExam.length} sınav günü; ${stockOut.length} gününde stok tükenmiş, ${missing.length} kayıt eksik. Her grupta en az ${META.minGroup} gün var: Evet.`,
+      text: `Veri yetmiyor: sandviç için ${sandwich.length} kayıt, sınav haftasında ${examSandwich.length}. Geri kenar İş anlama'ya döner, veri sorusu "8 haftalık günlük kayıt" olur. Yeni tablo ${POOL.length} gün: ${NORMAL_COUNT} normal, ${EXAM_COUNT} sınav günü; ${stockOut.length} gününde stok tükenmiş, ${missing.length} kayıt eksik. Her grupta en az ${META.minGroup} gün var: Evet.`,
       labText:
         'Gün sayısını seçin: kart her grubun kalan gün sayısını gösterir ve yol, veri yetmiyorsa ilk karardan İş anlama evresine geri döner.',
       sweep: { key: 'scan', values: [1, 2, 3, 4], intervalMs: 2500 },
@@ -97,7 +109,7 @@ export const crispDmScenario: Scenario<CrispParams> = {
       id: 'degerlendirme',
       title: 'Değerlendirme: sonuç uygun mu? Hayır',
       term: 'değerlendirme',
-      text: `Test penceresinde sabit ${META.oldOrder} siparişin israf oranı ${pct(BASELINE.wasteRate)}. Kural israfı düşürür (düşüş ${pct(STORY.first.eval.reduction)}) ama kaçan talep ${pct(STORY.first.eval.lostShare)}: hizmet koşulu tutmaz. Geri kenar Veri anlama'ya döner. Eğitimdeki ${poolExam.filter(d => d.stokTukendi).length} sınav günü stok tükenmişti; satış hep ${Math.max(...poolExam.map(d => d.satis ?? 0))}: sınav talebi bu sayı sanıldı.`,
+      text: `Test penceresinde sabit ${META.oldOrder} siparişin israf oranı ${pct(BASELINE.wasteRate)}. Kural israfı düşürür (düşüş ${pct(STORY.first.eval.reduction)}) ama kaçan talep ${pct(STORY.first.eval.lostShare)}: hizmet koşulu tutmaz. Geri kenar Veri anlama'ya döner. Sınav talebi, stok tükenen günlerin satışından sanıldı; ${examStockNote()}.`,
       labText:
         'Dört seçimi değiştirin: pano taban, değerlendirme ve yaygınlaştırma sütunlarını yeniden hesaplar; iki koşul işaretle gösterilir.',
       sweep: { key: 'scan', values: [1, 2, 3], intervalMs: 2500 },
@@ -106,7 +118,7 @@ export const crispDmScenario: Scenario<CrispParams> = {
       id: 'ikinci-tur',
       title: 'İkinci tur ve yaygınlaştırma',
       term: 'yaygınlaştırma',
-      text: `Veri anlama'da tükenince soran sütunu açılır: sınav tahmini ${f(STORY.second.pred.sinav!, 2)} olur. Değerlendirme yeniden: düşüş ${pct(STORY.second.eval.reduction)}, kaçan talep ${pct(STORY.second.eval.lostShare)}; iki koşul tutar. Yaygınlaştırma kuralı: ${ruleText(orderText(STORY.second, true), orderText(STORY.second, false))}. İzleme dış döngüyle İş anlama'ya döner. Kural kullanılırken bozulabilir: Bölüm 14, model kayması.`,
+      text: `Veri anlama'da tükenince soran sütunu açılır: sınav tahmini ${f(STORY.second.pred.sinav!, 2)} olur. Değerlendirme yeniden: düşüş ${pct(STORY.second.eval.reduction)}, kaçan talep ${pct(STORY.second.eval.lostShare)}; iki koşul tutar. Yaygınlaştırma kuralı: ${ruleText(orderText(STORY.second, true, 'deploy'), orderText(STORY.second, false, 'deploy'))}. İzleme dış döngüyle İş anlama'ya döner. Kural kullanılırken bozulabilir: Bölüm 14, model kayması.`,
       labText:
         'Dört seçimi değiştirin: yol seçimin tek turunu izler; sızıntı açıksa değerlendirme tutsa da sahadaki sonuç tutmaz ve dış döngü uyarı rengine döner.',
       sweep: { key: 'scan', values: [1, 2, 3, 4, 5, 6, 7], intervalMs: 2200 },

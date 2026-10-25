@@ -6,7 +6,7 @@ import {
 } from './calc';
 import { BUGGY_CODE, BUGS, FIXED_CODE, OUTPUT } from './code-text';
 import { BASELINE, BOOK, DAYS, META, cellOf, type Cell, type Outcome } from './data';
-import { POOL, SCAN_DONE, STORY, crispDmScenario as scenario, ruleText, type CrispParams } from './scenario';
+import { EXAM_COUNT, NORMAL_COUNT, POOL, SCAN_DONE, STORY, examStockNote, crispDmScenario as scenario, ruleText, type CrispParams } from './scenario';
 
 /** Which card the right (narrow: lower) area shows. */
 export type CardKind = 'intro' | 'goal' | 'table' | 'summary' | 'clean' | 'leak' | 'groups' | 'results' | 'code';
@@ -261,7 +261,8 @@ function cleanCard(days: 4 | 14 | 28 | 56, stock: 'satis' | 'soran'): CleanCard 
       before: { urun: row.urun, satis: value(row.satis_adedi) },
       after: { urun: BOOK.hamVeri.sonra[i].urun, satis: value(BOOK.hamVeri.sonra[i].satis_adedi) },
     })),
-    kahve: { zero: f(BOOK.hamVeri.kahveFillna0, 2), skip: f(BOOK.hamVeri.kahveAtlanir, 2) },
+    // the book's own one decimal, as in the step text
+    kahve: { zero: f(BOOK.hamVeri.kahveFillna0, 1), skip: f(BOOK.hamVeri.kahveAtlanir, 1) },
     normal: { zero: groupText(zero.pred.normal), skip: groupText(skip.pred.normal) },
     exam: { zero: groupText(zero.pred.sinav), skip: groupText(skip.pred.sinav) },
     missing: gone.length,
@@ -383,8 +384,8 @@ function storyView(index: number, p: CrispParams): CrispView {
 function dataEnoughView(id: string, p: CrispParams): CrispView {
   const stage = clampStage(p.scan, 4);
   const strip = `Veri yeterli mi? Her grupta en az ${META.minGroup} gün gerekir.`;
-  const normal = POOL.filter(d => !d.sinav).length;
-  const exam = POOL.length - normal;
+  const normal = NORMAL_COUNT;
+  const exam = EXAM_COUNT;
   if (stage === 1) {
     const v = empty(id, 'table', graphOf({ current: 'd1', path: ['ia-va', 'va-d1'], token: { at: 'd1', via: 'va-d1' } }), strip);
     const sandwich = BOOK.kafeVerisi.filter(r => r.urun === 'Sandvic');
@@ -409,8 +410,7 @@ function evaluationView(id: string, p: CrispParams): CrispView {
   const stage = clampStage(p.scan, 3);
   const cell = STORY.first;
   const strip = stripOf(cell.eval);
-  const examStock = POOL.filter(d => d.sinav && d.stokTukendi).length;
-  const note = `eğitimdeki ${examStock} sınav günü stok tükenmiş; satış hep ${Math.max(...POOL.filter(d => d.sinav).map(d => d.satis ?? 0))}`;
+  const note = examStockNote();
   if (stage === 1) {
     const v = empty(id, 'table', graphOf({ current: 'de', path: ['mo-de'], token: { at: 'de', via: 'mo-de' } }), strip);
     const tests = DAYS.filter(d => d.test);
@@ -446,12 +446,12 @@ function secondRoundView(id: string, p: CrispParams): CrispView {
   const cell = STORY.second;
   const s = SECOND_ROUND[stage - 1];
   const graph = graphOf({ current: s.current, path: s.path, token: { at: s.current, ...(s.via ? { via: s.via } : {}) } });
-  const strip = stripOf(cell.eval);
-  const rule = ruleText(orderText(cell, true), orderText(cell, false));
+  const strip = stripOf(stage >= 6 ? cell.deploy : cell.eval);
+  const rule = ruleText(orderText(cell, true, 'deploy'), orderText(cell, false, 'deploy'));
   if (stage === 1) {
     const v = empty(id, 'summary', graph, 'Tükenince soran müşteriler de talebe eklenir.');
     const asked = POOL.reduce((sum, d) => sum + d.soran, 0);
-    v.summary = windowSummary(POOL.length, POOL.filter(d => !d.sinav).length, POOL.filter(d => d.sinav).length, null, `tükenince soran: ${asked} müşteri`);
+    v.summary = windowSummary(POOL.length, NORMAL_COUNT, EXAM_COUNT, null, `tükenince soran: ${asked} müşteri`);
     return v;
   }
   if (stage <= 3) {
