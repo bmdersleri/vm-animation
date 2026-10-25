@@ -1,17 +1,10 @@
 import type { Mode } from '../../core/mode';
+import { CodePanel, type CodeBug, type CodeLine } from '../../core/plot/code-panel';
 import type { ViewScene } from './scene-base';
 import type { LeakView } from './view';
 
-/** One numbered code line; `bugs` are the numbers of the bugs found on it. */
-interface CodeLine {
-  text: string;
-  bugs: number[];
-  /** True in the corrected code for the lines that changed. */
-  fix?: boolean;
-}
-
 /** The five bugs of the book's debugging exercise (its "Hata türleri" list, in the book's order). */
-export const BUGS: readonly { n: number; kind: string; what: string }[] = [
+export const BUGS: readonly CodeBug[] = [
   { n: 1, kind: 'Mantık hatası', what: 'SMOTE, eğitim/test ayrımından önce uygulanmış' },
   { n: 2, kind: 'Mantık hatası', what: 'model test verisi üzerinde eğitilmiş' },
   { n: 3, kind: 'Değerlendirme hatası', what: 'yalnızca doğruluk raporlanmış' },
@@ -54,24 +47,13 @@ export const FIXED_CODE: readonly CodeLine[] = [
 /**
  * The code area (step 9): the faulty code as numbered lines; the sweep marks the bug lines one by one with a
  * number and the bug's kind at the line's edge. Once all five are marked (or the Lab switch is on), the
- * corrected code takes its place.
+ * corrected code takes its place. The panel itself is the shared `CodePanel` (core/plot/code-panel.ts).
  */
 export class CodeScene implements ViewScene {
-  private readonly root: HTMLDivElement;
-  private readonly title: HTMLDivElement;
-  private readonly pre: HTMLPreElement;
-  private lastKey = '';
+  private readonly panel: CodePanel;
 
   constructor(host: HTMLElement) {
-    const doc = host.ownerDocument;
-    this.root = doc.createElement('div');
-    this.root.className = 'code-scene';
-    this.title = doc.createElement('div');
-    this.title.className = 'code-title';
-    this.pre = doc.createElement('pre');
-    this.pre.className = 'code-pre';
-    this.root.append(this.title, this.pre);
-    host.append(this.root);
+    this.panel = new CodePanel(host);
   }
 
   resize(_w: number, _h: number, _mode: Mode): void {}
@@ -79,7 +61,7 @@ export class CodeScene implements ViewScene {
   interrupt(): void {}
 
   destroy(): void {
-    this.root.remove();
+    this.panel.destroy();
   }
 
   update(v: LeakView, _ms: number): void {
@@ -87,47 +69,6 @@ export class CodeScene implements ViewScene {
     if (!code) {
       return;
     }
-    const key = `${code.fixed}|${code.bug}`;
-    if (key === this.lastKey) {
-      return;
-    }
-    this.lastKey = key;
-    const doc = this.root.ownerDocument;
-    this.title.textContent = code.fixed ? 'Düzeltilmiş kod' : 'Hatalı kod';
-    this.pre.classList.toggle('code-fixed-pre', code.fixed);
-    const lines = code.fixed ? FIXED_CODE : BUGGY_CODE;
-    this.pre.replaceChildren(
-      ...lines.map((line, i) => {
-        const shown = line.bugs.filter((n) => n <= code.bug);
-        const el = doc.createElement('span');
-        const cls = ['code-line'];
-        if (code.fixed) {
-          cls.push('code-fixed');
-          if (line.fix) cls.push('is-fix');
-        } else if (shown.length > 0) {
-          cls.push('is-bug');
-          if (shown.includes(code.bug)) cls.push('is-current');
-        }
-        el.className = cls.join(' ');
-        const no = doc.createElement('span');
-        no.className = 'code-no';
-        no.textContent = String(i + 1);
-        const text = doc.createElement('span');
-        text.className = 'code-text';
-        text.textContent = line.text;
-        el.append(no, text);
-        if (!code.fixed) {
-          for (const n of shown) {
-            const b = BUGS[n - 1];
-            const badge = doc.createElement('span');
-            badge.className = 'bug-badge';
-            badge.dataset.bug = String(n);
-            badge.textContent = `${n} · ${b.kind}: ${b.what}`;
-            el.append(badge);
-          }
-        }
-        return el;
-      }),
-    );
+    this.panel.update({ faulty: BUGGY_CODE, fixedLines: FIXED_CODE, bugs: BUGS, marked: code.bug, fixed: code.fixed });
   }
 }
