@@ -21,7 +21,7 @@ export interface FlowNode {
   h: number;
 }
 
-/** An edge between two nodes; `bend` shifts the curve's midpoint off the chord by that many px (signed). */
+/** An edge between two nodes; `bend` shifts the curve's midpoint off the chord by that many px (positive: to the right of the direction from -> to on screen). */
 export interface FlowEdge {
   id: string;
   from: string;
@@ -45,6 +45,8 @@ export interface FlowGraphSpec {
   dim?: string[];
   /** The token sits on `at`; with `via` (an edge id) and motion it walks along that edge first. */
   token?: { at: string; via?: string };
+  /** Boxes (px) the page keeps for its own overlays: edge labels are placed clear of them. */
+  avoid?: Box[];
 }
 
 export interface EdgeGeometry {
@@ -63,7 +65,7 @@ function borderDistance(n: FlowNode, ux: number, uy: number): number {
 /**
  * Pure curve of an edge: a quadratic Bezier from the border of `a` to the border of `b` (along the line
  * between their centres). The curve's midpoint (`mid`, also `at(0.5)`) lies `bend` px off the chord, to the
- * left of the direction a to b for positive `bend` (in screen coordinates, y down).
+ * right of the direction a to b for positive `bend` as seen on screen (y down): a rightward chord bows down.
  */
 export function edgeGeometry(a: FlowNode, b: FlowNode, bend = 0): EdgeGeometry {
   const dx = b.x - a.x;
@@ -214,7 +216,7 @@ export class FlowGraphLayer {
     }
 
     for (const n of spec.nodes) this.drawNode(n, lineOf.get(n.id)!, spec.current === n.id, dim.has(n.id), fontPx);
-    this.placeLabels(drawn, geos, spec.nodes, fontPx);
+    this.placeLabels(drawn, geos, spec.nodes, fontPx, spec.avoid ?? []);
     this.drawToken(spec, byId, geos, ms);
   }
 
@@ -247,10 +249,14 @@ export class FlowGraphLayer {
     });
   }
 
-  private placeLabels(edges: FlowEdge[], geos: Map<string, EdgeGeometry>, nodes: FlowNode[], fontPx: number): void {
+  private placeLabels(edges: FlowEdge[], geos: Map<string, EdgeGeometry>, nodes: FlowNode[], fontPx: number, avoid: Box[]): void {
     // labels keep a few px clear of every node border
     const taken: Box[] = nodes.map((n) => grow(boxOf(n), LABEL_CLEAR));
     const area = this.area(taken, 60);
+    // and of the page's own overlays
+    for (const b of avoid) {
+      taken.push(grow(b, LABEL_CLEAR));
+    }
     // and clear of the edge lines: points along every curve count as taken
     for (const e of edges) {
       const geo = geos.get(e.id)!;
@@ -311,6 +317,11 @@ export class FlowGraphLayer {
     this.tokenAt = end;
   }
 
+  /** Stops the token's walk and its landing (both named transitions), leaving the token where it is. */
+  interrupt(): void {
+    this.tokenG.selectAll('*').interrupt('flow-token').interrupt('flow-token-end');
+  }
+
   /** Box of a node of the last draw (empty box at the origin if unknown). */
   nodeBox(id: string): Box {
     return this.boxes.get(id) ?? { l: 0, t: 0, r: 0, b: 0 };
@@ -322,6 +333,7 @@ export class FlowGraphLayer {
   }
 
   clear(): void {
+    this.interrupt();
     this.edgesG.selectAll('*').remove();
     this.labelsG.selectAll('*').remove();
     this.nodesG.selectAll('*').remove();

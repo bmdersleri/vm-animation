@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import fs from 'node:fs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { select } from 'd3-selection';
 import {
@@ -134,6 +135,31 @@ describe('FlowGraphLayer', () => {
     }
   });
 
+  it('edge labels keep out of the avoid boxes', () => {
+    const { layer } = setup();
+    layer.draw(spec(), 0, 14);
+    const free = layer.labelBoxes();
+    // reserve the spot each label took when nothing was reserved: every label must move off it
+    const avoid = free.map((b) => ({ l: b.l - 2, t: b.t - 2, r: b.r + 2, b: b.b + 2 }));
+    layer.draw(spec({ avoid }), 0, 14);
+    const moved = layer.labelBoxes();
+    expect(moved).toHaveLength(3);
+    for (const b of moved) {
+      for (const r of avoid) expect(overlap(b, r)).toBe(0);
+      for (const n of nodes) expect(overlap(b, layer.nodeBox(n.id))).toBe(0);
+    }
+  });
+
+  it('interrupt stops a token walk: the token does not jump to the end later', async () => {
+    const { svg, layer } = setup();
+    layer.draw(spec({ token: { at: 'a' } }), 0, 14);
+    const start = svg.querySelector('circle.flow-token')!.getAttribute('transform');
+    layer.draw(spec({ token: { at: 'b', via: 'ab' } }), 40, 14);
+    layer.interrupt();
+    await new Promise((r) => setTimeout(r, 150));
+    expect(svg.querySelector('circle.flow-token')!.getAttribute('transform')).toBe(start);
+  });
+
   it('labels wrap inside the node box', () => {
     const { svg, layer } = setup();
     const long = { ...node('x', 100, 100, 'phase', ['Veri hazırlama ve temizleme evresi']), w: 200 };
@@ -161,13 +187,22 @@ describe('edgeGeometry', () => {
     expect(onBorder(a, bent.at(0))).toBe(true);
     expect(onBorder(b, bent.at(1))).toBe(true);
     // the chord is horizontal at y = 100: the midpoint sits `bend` px off it, signed
-    const up = edgeGeometry(a, b, 60);
-    expect(Math.abs(up.mid[1] - 100)).toBeCloseTo(60, 5);
-    expect(Math.sign(up.mid[1] - 100)).toBe(-Math.sign(bent.mid[1] - 100));
-    expect(up.mid[0]).toBeCloseTo(200, 5);
+    const right = edgeGeometry(a, b, 60);
+    expect(Math.abs(right.mid[1] - 100)).toBeCloseTo(60, 5);
+    expect(Math.sign(right.mid[1] - 100)).toBe(-Math.sign(bent.mid[1] - 100));
+    expect(right.mid[0]).toBeCloseTo(200, 5);
     expect(edgeGeometry(a, b, 0).mid[1]).toBeCloseTo(100, 5);
-    expect(up.d).toMatch(/^M[-\d.]+,[-\d.]+Q[-\d.]+,[-\d.]+ [-\d.]+,[-\d.]+$/);
-    expect(up.at(0.5)[1]).toBeCloseTo(up.mid[1], 5);
+    expect(right.d).toMatch(/^M[-\d.]+,[-\d.]+Q[-\d.]+,[-\d.]+ [-\d.]+,[-\d.]+$/);
+    expect(right.at(0.5)[1]).toBeCloseTo(right.mid[1], 5);
+  });
+
+  it('a positive bend bows the curve to the right of the direction a to b on screen', () => {
+    const [a, b] = nodes;
+    // a to b points right (+x): its right-hand side on screen (y down) is below the chord
+    expect(edgeGeometry(a, b, 60).mid[1]).toBeGreaterThan(100);
+    expect(edgeGeometry(a, b, -60).mid[1]).toBeLessThan(100);
+    // b to a points left: its right-hand side is above the chord
+    expect(edgeGeometry(b, a, 60).mid[1]).toBeLessThan(100);
   });
 
   it('arrow heads keep their size whatever the stroke width', () => {
@@ -216,5 +251,25 @@ describe('edgeGeometry', () => {
     const x = (id: string) => Number(svg.querySelector(`text.flow-edge-label[data-edge="${id}"]`)!.getAttribute('x'));
     expect(x('ab')).toBeLessThan(250);
     expect(x('ba')).toBeGreaterThan(250);
+  });
+});
+
+describe('flow-graph.css', () => {
+  /** WCAG contrast of a #rrggbb colour against white. */
+  const contrast = (hex: string): number => {
+    const lin = [1, 3, 5].map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    const l = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+    return 1.05 / (l + 0.05);
+  };
+
+  it('outer edges and their arrow heads reach 3:1 against white', () => {
+    const css = fs.readFileSync('src/core/plot/flow-graph.css', 'utf8');
+    const stroke = /\.flow-edge\.kind-outer \{[^}]*stroke:(#[0-9A-Fa-f]{6})/.exec(css)![1];
+    const fill = /\.flow-arrow\.arrow-outer \{[^}]*fill:(#[0-9A-Fa-f]{6})/.exec(css)![1];
+    expect(contrast(stroke)).toBeGreaterThanOrEqual(3);
+    expect(contrast(fill)).toBeGreaterThanOrEqual(3);
   });
 });

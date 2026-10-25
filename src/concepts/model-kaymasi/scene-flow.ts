@@ -39,8 +39,7 @@ export class FlowScene implements ViewScene {
   }
 
   interrupt(): void {
-    this.svg.selectAll('*').interrupt('flow-token');
-    this.svg.selectAll('*').interrupt('flow-token-end');
+    this.layer.interrupt();
   }
 
   destroy(): void {
