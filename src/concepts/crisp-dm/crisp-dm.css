@@ -24,8 +24,9 @@
 }
 code, .goal-key { font-family:var(--mono, ui-monospace, Consolas, monospace); font-weight:600; }
 
-/* the reason line the Lab writes inside the circle, beside the node that sends the project back */
-.path-reason { position:absolute; transform:translate(-50%,-50%); padding:4px 8px; border:2px solid #F08A00; border-radius:8px; background:var(--surface); font-size:var(--fs-tick); line-height:1.3; text-align:center; box-sizing:border-box; overflow-wrap:anywhere; }
+/* the reason line the Lab writes inside the circle; the scene wraps it into lines and sizes the box (padding + border = REASON_PAD_X / _Y in scene-cycle.ts) */
+.path-reason { position:absolute; transform:translate(-50%,-50%); padding:4px 8px; border:2px solid #F08A00; border-radius:8px; background:var(--surface); font-size:var(--fs-tick); line-height:1.3; text-align:center; box-sizing:border-box; }
+.path-reason .reason-line { display:block; white-space:nowrap; }
 .path-reason[data-node='ya'] { border-color:#C0392B; }
 
 /* intro, goal dictionary, service row (steps 1, 2, 4) */

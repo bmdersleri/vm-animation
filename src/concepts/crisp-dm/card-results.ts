@@ -85,7 +85,7 @@ function column(doc: Document, c: ResultColumn): HTMLElement {
   col.append(el(doc, 'p', 'col-title', c.title));
   const rows: [string, string][] = [['israf oranı', c.wasteRate], ['kaçan talep', c.lostShare]];
   if (c.reduction !== null) {
-    rows.push(['israf düşüşü', c.reduction]);
+    rows.push([c.reduction.label, c.reduction.value]);
   }
   for (const [label, value] of rows) {
     const row = el(doc, 'p', 'col-row');

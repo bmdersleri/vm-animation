@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { stepIndex } from '../../../src/core/player';
-import { formatNumber } from '../../../src/core/plot/format';
-import { BOOK, cellOf } from '../../../src/concepts/crisp-dm/data';
+import { formatNumber, formatPercent } from '../../../src/core/plot/format';
+import { BOOK, META, cellOf } from '../../../src/concepts/crisp-dm/data';
 import { crispDmScenario as sc, examStockNote } from '../../../src/concepts/crisp-dm/scenario';
 import { deriveCrispView } from '../../../src/concepts/crisp-dm/view';
 
@@ -66,13 +66,18 @@ describe('crisp-dm view', () => {
     expect(v.route!.end).toBe('uygun-degil');
     expect(v.graph.path).toEqual(['ia-va', 'va-d1', 'd1-vh', 'vh-mo', 'mo-de', 'de-d2', 'd2-va']);
     expect(v.graph.token).toEqual({ at: 'd2' });
-    expect(v.route!.text).toContain('Sonuç uygun mu? Hayır');
+    const lost = cellOf(56, 'cikar', 'satis', false).eval.lostShare!;
+    expect(v.route!.reason).toEqual({
+      node: 'd2',
+      text: `Sonuç uygun mu? Hayır: kaçan talep ${formatPercent(lost)} > ${formatPercent(META.criteria.service, 0)}`,
+    });
     const leak = at('ikinci-tur', { leak: true }, true);
     expect(leak.route!.end).toBe('sahada-dustu');
     expect(leak.graph.edges.find(e => e.id === 'ya-ia')!.tone).toBe('alarm');
     expect(leak.graph.path).toContain('ya-ia');
     const ok = at('ikinci-tur', {}, true);
     expect(ok.route!.end).toBe('yaygin');
+    expect(ok.route!.reason).toBeNull();
     expect(ok.hypothetical).toBe(false);
     expect(at('sizinti', { leak: true }, true).leak!.coefficient).toBe(
       formatNumber(cellOf(56, 'cikar', 'soran', true).leakCoef!, 3),
@@ -83,11 +88,34 @@ describe('crisp-dm view', () => {
     const v = at('degerlendirme', { days: 4 }, true);
     expect(v.hypothetical).toBe(true);
     expect(v.route!.end).toBe('yetersiz');
+    const four = cellOf(4, 'cikar', 'soran', false);
+    const exam = four.usable.sinav <= four.usable.normal;
+    expect(v.route!.reason).toEqual({
+      node: 'd1',
+      text: `Veri yeterli mi? Hayır: ${exam ? 'sınav günü' : 'normal gün'} ${exam ? four.usable.sinav : four.usable.normal} < ${META.minGroup}`,
+    });
     expect(v.graph.path).toEqual(['ia-va', 'va-d1', 'd1-ia']);
     expect(v.results!.title).toContain('yine de denenseydi');
     const groups = at('modelleme', { days: 4 }, true);
     expect(groups.groups!.bars[1].text).toBe('veri yok');
     expect(groups.groups!.bars[1].value).toBeNull();
+  });
+
+  it('a waste rise reads israf artışı on the board and in the reason line', () => {
+    const cell = cellOf(56, 'cikar', 'soran', true);
+    const r = cell.deploy.reduction!;
+    expect(r).toBeLessThan(0);
+    const v = at('ikinci-tur', { leak: true }, true);
+    const deploy = v.results!.columns.find(c => c.id === 'deploy')!;
+    expect(deploy.reduction).toEqual({ label: 'israf artışı', value: formatPercent(-r) });
+    expect(v.route!.reason).toEqual({
+      node: 'ya',
+      text: `Sahada tutmadı: israf artışı ${formatPercent(-r)} (en az ${formatPercent(META.criteria.waste, 0)} düşüş gerekir)`,
+    });
+    // a fall keeps the old wording
+    const evalCol = v.results!.columns.find(c => c.id === 'eval')!;
+    expect(evalCol.reduction).toEqual({ label: 'israf düşüşü', value: formatPercent(cell.eval.reduction!) });
+    expect(JSON.stringify(v)).not.toContain('%−');
   });
 
   it('no view text carries NaN or Infinity in any cell', () => {
@@ -97,7 +125,7 @@ describe('crisp-dm view', () => {
           for (const leak of [false, true]) {
             for (let i = 0; i < sc.steps.length; i += 1) {
               const v = deriveCrispView(i, { ...sc.defaults, days, missing, stock, leak }, true);
-              expect(JSON.stringify(v)).not.toMatch(/NaN|Infinity|undefined/);
+              expect(JSON.stringify(v)).not.toMatch(/NaN|Infinity|undefined|%−/);
             }
           }
         }

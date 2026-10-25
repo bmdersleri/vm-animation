@@ -1,14 +1,14 @@
 import type { CodeBug, CodeLine } from '../../core/plot/code-panel';
 import { BOOK } from './data';
 
-/** The six bugs of the book's `KafeAnalizi` exercise ("Hata türleri", in the book's order). */
+/** The six bugs of the book's `KafeAnalizi` exercise ("Hata türleri", in the book's order); `fix` is the corrected code's badge. */
 export const BUGS: readonly CodeBug[] = [
-  { n: 1, kind: 'sözdizimi hatası', what: '= karşılaştırma değil atama' },
-  { n: 2, kind: 'tür hatası', what: '"100" metin, ortalamaya katılamaz' },
-  { n: 3, kind: 'mantık hatası', what: 'mean çağrılmamış (parantez yok)' },
-  { n: 4, kind: 'tür hatası', what: 'metin ile sayı + ile birleşmez' },
-  { n: 5, kind: 'anahtar hatası', what: 'olmayan_sutun diye sütun yok' },
-  { n: 6, kind: 'veri kalitesi hatası', what: 'eksik değer ele alınmamış' },
+  { n: 1, kind: 'sözdizimi hatası', what: '= karşılaştırma değil atama', fix: '== ile karşılaştırılır' },
+  { n: 2, kind: 'tür hatası', what: '"100" metin, ortalamaya katılamaz', fix: 'pd.to_numeric ile sayıya çevrildi' },
+  { n: 3, kind: 'mantık hatası', what: 'mean çağrılmamış (parantez yok)', fix: 'mean() parantezle çağrıldı' },
+  { n: 4, kind: 'tür hatası', what: 'metin ile sayı + ile birleşmez', fix: 'f-string sayıyı metne yazar' },
+  { n: 5, kind: 'anahtar hatası', what: 'olmayan_sutun diye sütun yok', fix: 'var olan kayıtların sayısı yazdırılır' },
+  { n: 6, kind: 'veri kalitesi hatası', what: 'eksik değer ele alınmamış', fix: 'dropna() eksik değeri çıkarır' },
 ];
 
 const line = (text: string, extra: Partial<CodeLine> = {}): CodeLine => ({ text, bugs: [], ...extra });

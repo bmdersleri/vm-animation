@@ -51,4 +51,13 @@ describe('crisp-dm code text', () => {
       expect(placed(FIXED_CODE, b.n), `fix ${b.n}`).toBeGreaterThanOrEqual(1);
     }
   });
+
+  it('each bug has a fix text of its own, none repeating the bug description', () => {
+    for (const b of BUGS) {
+      expect(b.fix, `bug ${b.n}`).toBeTruthy();
+      expect(b.fix).not.toBe(b.what);
+      expect(b.fix).not.toContain(b.what);
+    }
+    expect(new Set(BUGS.map(b => b.fix)).size).toBe(BUGS.length);
+  });
 });

@@ -5,9 +5,8 @@ import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { allowCodeBreaks, renderStrip } from '../../core/plot/strip';
 import { GroupsPlot, resultsCard } from './card-results';
 import { cleanCard, goalCard, highlightOf, introCard, leakCard, summaryCard, tableCard } from './card-tables';
-import { cellOf } from './data';
 import { crispDmScenario, type CrispParams } from './scenario';
-import { CycleScene, pathReason } from './scene-cycle';
+import { CycleScene } from './scene-cycle';
 import { CodeSection } from './scene-code';
 import { el, NARROW } from './scene-base';
 import { deriveCrispView, type CrispView } from './view';
@@ -180,8 +179,7 @@ export function mountCrispScene(
     cycle.interrupt();
     card.interrupt();
     const lab = mode === 'lab';
-    const p = state.params;
-    const v = deriveCrispView(state.index, p, lab);
+    const v = deriveCrispView(state.index, state.params, lab);
     // slider and shortcut tweaks are instant; steps and sweep stops animate
     const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
     stage.dataset.step = v.stepId;
@@ -205,9 +203,13 @@ export function mountCrispScene(
     }
     stage.style.setProperty('--cycle-w', `${cycleW}px`);
     stage.style.setProperty('--cycle-h', `${cycleH}px`);
-    cycle.resize(cycleW, cycleH, mode);
+    cycle.resize(cycleW, cycleH, mode, tall);
     card.resize(narrow ? a.w : a.w - cycleW - GAP, mode);
-    cycle.update(v, ms, lab && v.route ? pathReason(cellOf(p.days, p.missing, p.stock, p.leak)) : null);
+    // a phone's cycle grows by the Lab's reason band
+    const usedH = cycle.update(v, ms);
+    if (usedH !== cycleH) {
+      stage.style.setProperty('--cycle-h', `${usedH}px`);
+    }
     card.update(v, ms);
     rendered = true;
   }

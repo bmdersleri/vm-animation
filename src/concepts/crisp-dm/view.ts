@@ -80,7 +80,8 @@ export interface ResultColumn {
   title: string;
   wasteRate: string;
   lostShare: string;
-  reduction: string | null;
+  /** The waste change against the baseline: "israf düşüşü" or, when the waste rose, "israf artışı" (always a positive value); null for the baseline. */
+  reduction: WasteChange | null;
   /** True / false once judged; null for the baseline. */
   wasteOk: boolean | null;
   serviceOk: boolean | null;
@@ -103,11 +104,23 @@ export interface CodeCard {
   note: string;
 }
 
-/** The Lab's one-round route and why it turns back. */
+/** "israf düşüşü %23,1", or "israf artışı %80,0" when the waste rose. */
+export interface WasteChange {
+  label: 'israf düşüşü' | 'israf artışı';
+  value: string;
+}
+
+/** The reason line the Lab writes in the cycle, with the node that sends the project back. */
+export interface RouteReason {
+  node: NodeId;
+  text: string;
+}
+
+/** The Lab's one-round route and why it turns back (`reason` null when the project is deployed and stays). */
 export interface Route {
   end: PathEnd;
   stopAt: NodeId;
-  text: string;
+  reason: RouteReason | null;
 }
 
 export interface CrispView {
@@ -140,6 +153,14 @@ export function dateText(iso: string): string {
 const pct = (v: number | null): string => (v === null ? '—' : formatPercent(v));
 const stepId = (index: number): string => scenario.steps[index].id;
 const yesNo = (v: boolean): string => (v ? 'Evet' : 'Hayır');
+
+/** The waste change of an outcome against the baseline; a rise is written as "israf artışı" with a positive value. */
+export function wasteChange(reduction: number | null): WasteChange {
+  if (reduction !== null && reduction < 0) {
+    return { label: 'israf artışı', value: pct(-reduction) };
+  }
+  return { label: 'israf düşüşü', value: pct(reduction) };
+}
 
 interface GraphOptions {
   current?: NodeId;
@@ -188,7 +209,7 @@ function column(id: ResultColumn['id'], title: string, o: Outcome, base: boolean
     title,
     wasteRate: pct(o.wasteRate),
     lostShare: pct(o.lostShare),
-    reduction: base ? null : pct(o.reduction),
+    reduction: base ? null : wasteChange(o.reduction),
     wasteOk: base ? null : o.wasteOk,
     serviceOk: base ? null : o.serviceOk,
   };
@@ -303,26 +324,36 @@ function codeCard(marked: number, fixed: boolean): CodeCard {
   };
 }
 
-/** What the Lab route says: where the project turns back and which condition failed. */
+/** The failed conditions of an outcome: "kaçan talep %6,5 > %3", "israf düşüşü %12,0 < %15" or "israf artışı %80,0 (en az %15 düşüş gerekir)". */
+function conditions(o: Outcome, failed: readonly ('waste' | 'service')[]): string {
+  const need = formatPercent(META.criteria.waste, 0);
+  return failed
+    .map(k => {
+      if (k === 'service') {
+        return `kaçan talep ${pct(o.lostShare)} > ${formatPercent(META.criteria.service, 0)}`;
+      }
+      const c = wasteChange(o.reduction);
+      return c.label === 'israf artışı' ? `${c.label} ${c.value} (en az ${need} düşüş gerekir)` : `${c.label} ${c.value} < ${need}`;
+    })
+    .join('; ');
+}
+
+/** What the Lab route says: where the project turns back and the one-line reason (numbers from the data and `META`). */
 function routeOf(cell: Cell): Route {
   const path = projectPath(cell);
-  const cond = (o: Outcome): string =>
-    path.failed
-      .map(k => (k === 'waste'
-        ? `israf düşüşü ${pct(o.reduction)} (en az ${formatPercent(META.criteria.waste, 0)} gerekir)`
-        : `kaçan talep ${pct(o.lostShare)} (en çok ${formatPercent(META.criteria.service, 0)} olabilir)`))
-      .join('; ');
-  let text: string;
+  let reason: RouteReason | null = null;
   if (path.end === 'yetersiz') {
-    text = `Veri yeterli mi? Hayır: normal ${cell.usable.normal} gün, sınav ${cell.usable.sinav} gün; her grupta en az ${META.minGroup} gün gerekir. Yol İş anlama evresine döner.`;
+    const exam = cell.usable.sinav <= cell.usable.normal;
+    reason = {
+      node: 'd1',
+      text: `Veri yeterli mi? Hayır: ${exam ? 'sınav günü' : 'normal gün'} ${exam ? cell.usable.sinav : cell.usable.normal} < ${META.minGroup}`,
+    };
   } else if (path.end === 'uygun-degil') {
-    text = `Sonuç uygun mu? Hayır: ${cond(cell.eval)}. Yol Veri anlama evresine döner.`;
+    reason = { node: 'd2', text: `Sonuç uygun mu? Hayır: ${conditions(cell.eval, path.failed)}` };
   } else if (path.end === 'sahada-dustu') {
-    text = `Değerlendirme tuttu, yaygınlaştırma tutmadı: ${cond(cell.deploy)}. Dış döngü İş anlama evresine döner.`;
-  } else {
-    text = 'Sonuç uygun mu? Evet: kural yaygınlaştırıldı; dış döngü sonraki tur için İş anlama evresine döner.';
+    reason = { node: 'ya', text: `Sahada tutmadı: ${conditions(cell.deploy, path.failed)}` };
   }
-  return { end: path.end, stopAt: path.stopAt, text };
+  return { end: path.end, stopAt: path.stopAt, reason };
 }
 
 /** The edges of stages 1..stage together (each stage lists the edges it walks): the end state keeps the whole route marked. */

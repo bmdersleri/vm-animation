@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { OUTPUT } from '../../../src/concepts/crisp-dm/code-text';
+import { BUGS, FIXED_CODE, OUTPUT } from '../../../src/concepts/crisp-dm/code-text';
 import { BOOK } from '../../../src/concepts/crisp-dm/data';
 import { go, setup, texts } from './harness';
 
@@ -30,6 +30,12 @@ describe('code scene', () => {
     player.setParams({ fixed: true });
     expect(el.querySelectorAll('.code-fixed').length).toBeGreaterThan(0);
     expect(texts(el, '.code-output .output-line')).toEqual([...OUTPUT]);
+    // the corrected code's badges name the fix, not the bug
+    const tagged = FIXED_CODE.flatMap(l => l.bugs);
+    expect(texts(el, '.fix-badge')).toEqual(tagged.map(n => `${n} · ${BUGS[n - 1].fix}`));
+    for (const b of BUGS) {
+      expect(texts(el, '.fix-badge').join(' ')).not.toContain(b.what);
+    }
     player.setParams({ fixed: false });
     expect(el.querySelector('.code-fixed')).toBeNull();
   });

@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { formatPercent } from '../../../src/core/plot/format';
+import { labelBox, overlap, type Anchor, type Box } from '../../../src/core/plot/label-place';
 import { META, cellOf } from '../../../src/concepts/crisp-dm/data';
-import { go, setup, texts } from './harness';
+import { go, num, setup, texts } from './harness';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -104,4 +105,88 @@ describe('cycle scene', () => {
     go(player, 'degerlendirme');
     expect(el.querySelector('.path-reason')).toBeNull();
   });
+
+  /** Boxes of the drawn nodes (a rhombus: its bounding box), from the DOM. */
+  const nodeBoxes = (el: Element): Box[] => [...el.querySelectorAll('.flow-node')].map((n) => {
+    const [x, y] = point(n.getAttribute('transform')!);
+    const shape = n.querySelector('.flow-shape')!;
+    const d = shape.getAttribute('d') ?? '';
+    const rect = shape.tagName === 'rect';
+    const hw = rect ? num(shape, 'width') / 2 : Math.max(...[...d.matchAll(/(-?[\d.]+),0/g)].map((m) => Math.abs(Number(m[1]))));
+    const hh = rect ? num(shape, 'height') / 2 : Math.abs(Number(/M0,(-?[\d.]+)/.exec(d)![1]));
+    return { l: x - hw, t: y - hh, r: x + hw, b: y + hh };
+  });
+
+  /** The reason box as the scene placed it: `left` / `top` are its centre (the CSS translates it by half its size). */
+  const reasonBox = (r: HTMLElement): Box => {
+    const w = parseFloat(r.style.width);
+    const h = parseFloat(r.style.height);
+    const x = parseFloat(r.style.left);
+    const y = parseFloat(r.style.top);
+    return { l: x - w / 2, t: y - h / 2, r: x + w / 2, b: y + h / 2 };
+  };
+
+  const ENDS = [
+    ['yetersiz', { days: 4 as const }, 'd1'],
+    ['uygun-degil', { stock: 'satis' as const }, 'd2'],
+    ['sahada-dustu', { leak: true }, 'ya'],
+  ] as const;
+
+  // the Lab stage of a 1280 x 720 and a 1280 x 740 window, a phone, and a wide Lab stage
+  for (const [w, h] of [[745, 530], [745, 550], [390, 520], [1280, 540]] as const) {
+    it(`the Lab reason box keeps clear of the edge labels and the nodes at ${w} x ${h}`, () => {
+      // jsdom has no theme: give the cycle text the sizes the CSS gives it in the Lab (a narrow stage: --fs-cell)
+      const style = document.createElement('style');
+      style.textContent = '.flow-label, .flow-edge-label { font-size:13px; } .crisp-stage[data-narrow] .flow-label, .crisp-stage[data-narrow] .flow-edge-label { font-size:12px; }';
+      document.head.append(style);
+      const { el, player } = setup(w, h, 'lab');
+      const fs = w < 900 ? 12 : 13;
+      const svg = el.querySelector('svg.crisp-cycle')!;
+      for (const id of ['veri-yeterli', 'degerlendirme', 'ikinci-tur']) {
+        for (const [end, over, node] of ENDS) {
+          go(player, id);
+          player.setParams({ days: 56, missing: 'cikar', stock: 'soran', leak: false, ...over });
+          const name = `${id} ${end}`;
+          const r = el.querySelector<HTMLElement>('.path-reason')!;
+          expect(r.getAttribute('data-node'), name).toBe(node);
+          const box = reasonBox(r);
+          // the grid row holds the whole cycle: a phone's cycle grows by the reason band, a stacked or wide one keeps its height
+          const stage = el.querySelector<HTMLElement>('.crisp-stage')!;
+          expect(parseFloat(stage.style.getPropertyValue('--cycle-h')), name).toBe(num(svg, 'height'));
+          if (w === 390) {
+            expect(num(svg, 'height'), name).toBeGreaterThan(340);
+            expect(box.t, `${name} band under the cycle`).toBeGreaterThanOrEqual(340);
+          } else {
+            expect(num(svg, 'height'), name).toBeLessThanOrEqual(h);
+          }
+          // inside the cycle's svg
+          expect(box.l, name).toBeGreaterThanOrEqual(0);
+          expect(box.t, name).toBeGreaterThanOrEqual(0);
+          expect(box.r, name).toBeLessThanOrEqual(num(svg, 'width'));
+          expect(box.b, name).toBeLessThanOrEqual(num(svg, 'height'));
+          // every line of the reason fits the box (jsdom measures 0.62 em per character at the 13 px tick size)
+          for (const line of texts(r, '.reason-line')) {
+            expect(line.trim().length * 13 * 0.62 + 20, `${name} "${line}"`).toBeLessThanOrEqual(box.r - box.l);
+          }
+          expect(texts(r, '.reason-line').length * 13 * 1.3 + 12, name).toBeLessThanOrEqual(box.b - box.t + 0.5);
+          const nodes = nodeBoxes(el);
+          for (const n of nodes) {
+            expect(overlap(box, n), `${name} node`).toBe(0);
+            expect(n.t, `${name} node inside`).toBeGreaterThanOrEqual(0);
+          }
+          // the cycle may move up to make room for the box: its nodes still keep apart
+          for (let i = 0; i < nodes.length; i += 1) {
+            for (let j = i + 1; j < nodes.length; j += 1) {
+              expect(overlap(nodes[i], nodes[j]), `${name} nodes ${i} / ${j}`).toBe(0);
+            }
+          }
+          for (const t of el.querySelectorAll('text.flow-edge-label')) {
+            const lb = labelBox(num(t, 'x'), num(t, 'y'), (t.textContent ?? '').length, t.getAttribute('text-anchor') as Anchor, fs);
+            expect(overlap(box, { l: lb.l + 0.5, t: lb.t + 0.5, r: lb.r - 0.5, b: lb.b - 0.5 }), `${name} label ${t.getAttribute('data-edge')}`).toBe(0);
+          }
+        }
+      }
+      style.remove();
+    });
+  }
 });
