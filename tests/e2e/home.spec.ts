@@ -92,3 +92,17 @@ test('both pages link a favicon that loads', async ({ page, request }) => {
     expect(res.headers()['content-type']).toContain('svg');
   }
 });
+
+test('the chapter 1 and 14 cards open their pages', async ({ page }) => {
+  const pages = [
+    { href: 'crisp-dm/', steps: 10, scene: '.crisp-stage g.flow-node' },
+    { href: 'model-kaymasi/', steps: 10, scene: '.kayma-stage svg.timeline' },
+  ];
+  for (const p of pages) {
+    await page.goto('/');
+    await page.locator(`a.card.hazir[href$="${p.href}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`/${p.href}$`));
+    await expect(page.locator('.step-count')).toHaveText(`Adım 1 / ${p.steps}`);
+    await expect(page.locator(p.scene).first()).toBeVisible();
+  }
+});

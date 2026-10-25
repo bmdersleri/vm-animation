@@ -1,6 +1,6 @@
 # VM Animasyon
 
-Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme**, **Özellik Seçimi (filtre ve sarmalayıcı)**, **Karmaşıklık Matrisi ve Metrikler**, **ROC, PR ve Karar Eşiği**, **Çapraz Doğrulama ve Veri Sızıntısı**, **K-Means Döngüsü**, **k Sayısının Seçimi**, **DBSCAN**, **Hiyerarşik Kümeleme ve Dendrogram**, **Destek, Güven ve Kaldıraç**, **Apriori ve FP-Growth**, **Bootstrap ve Bagging**, **Random Forest, OOB ve Öznitelik Önemi**, **Gradyan Artırma (artıklarla düzeltme)**, **Boosting Ayarları (öğrenme oranı, erken durdurma, arama)**, **Dağılım, Ortalama–Medyan ve Çarpıklık**, **Normal Dağılım ve Standart Sapma**, **Korelasyon, Isı Haritası ve Anscombe Dörtlüsü** ile **Kutu Grafiği (çeyrekler ve aykırı değerler)**.
+Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sırasında kullanılmak üzere hazırlanmış statik bir Türkçe öğretim sitesi. Yayındaki kavramlar: **k-En Yakın Komşu (k-NN)**, **Karar Ağacı**, **Naive Bayes**, **Eksik Veri ve IQR Aykırı Değer** ile **Ölçekleme ve Veri Sızıntısı**, **PCA ve t-SNE ile Boyut İndirgeme**, **Özellik Seçimi (filtre ve sarmalayıcı)**, **Karmaşıklık Matrisi ve Metrikler**, **ROC, PR ve Karar Eşiği**, **Çapraz Doğrulama ve Veri Sızıntısı**, **K-Means Döngüsü**, **k Sayısının Seçimi**, **DBSCAN**, **Hiyerarşik Kümeleme ve Dendrogram**, **Destek, Güven ve Kaldıraç**, **Apriori ve FP-Growth**, **Bootstrap ve Bagging**, **Random Forest, OOB ve Öznitelik Önemi**, **Gradyan Artırma (artıklarla düzeltme)**, **Boosting Ayarları (öğrenme oranı, erken durdurma, arama)**, **Dağılım, Ortalama–Medyan ve Çarpıklık**, **Normal Dağılım ve Standart Sapma**, **Korelasyon, Isı Haritası ve Anscombe Dörtlüsü** **Kutu Grafiği (çeyrekler ve aykırı değerler)**, **CRISP-DM döngüsü (altı evre ve geri dönüşler)** ile **Model Kayması ve İzleme Eşiği**.
 
 İçerik, "Modern Veri Madenciliğine Giriş" kitabına (Prof. Dr. İsmail KIRBAŞ) dayanır.
 
@@ -27,6 +27,8 @@ Veri madenciliği kavramlarını adım adım animasyonlarla anlatan, ders sıras
 - Random Forest, OOB ve öznitelik önemi: https://bmdersleri.github.io/vm-animation/random-forest/
 - Gradyan artırma: https://bmdersleri.github.io/vm-animation/gradyan-artirma/
 - Boosting ayarları: https://bmdersleri.github.io/vm-animation/boosting-ayarlari/
+- CRISP-DM döngüsü: https://bmdersleri.github.io/vm-animation/crisp-dm/
+- Model kayması ve izleme eşiği: https://bmdersleri.github.io/vm-animation/model-kaymasi/
 - Dengesiz veri (doğruluk tuzağı, SMOTE, sınıf ağırlığı): https://bmdersleri.github.io/vm-animation/dengesiz-veri/
 - SMOTE sızıntısı ve PR-AUC: https://bmdersleri.github.io/vm-animation/smote-sizinti/
 - TF-IDF ve kosinüs benzerliği: https://bmdersleri.github.io/vm-animation/tfidf-kosinus/

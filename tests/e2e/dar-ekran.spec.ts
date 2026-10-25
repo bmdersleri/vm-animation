@@ -30,7 +30,7 @@ const stageSettled = (page: Page): Promise<void> => settled(() => page.evaluate(
  * collapsed sigmoid or matrix fails.
  */
 const HTML_STEPS = new Set(['duygu-analizi gorev', 'duygu-analizi boru-hatti', 'duygu-analizi sizinti', 'duygu-analizi hata-ayiklama',
-  'shap-degerleri kara-kutu', 'shap-degerleri sinirlar', 'lime-yerel yerel-soru', 'lime-yerel hata-ayiklama']);
+  'shap-degerleri kara-kutu', 'shap-degerleri sinirlar', 'lime-yerel yerel-soru', 'lime-yerel hata-ayiklama', 'model-kaymasi hata-ayiklama']);
 
 async function checkStep(page: Page, label: string): Promise<void> {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
