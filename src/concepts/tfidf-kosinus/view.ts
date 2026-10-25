@@ -98,7 +98,12 @@ export interface VectorsView {
   terms: [string, string];
   arrows: Arrow[];
   /** Angle between the two arrows in the plane (degrees), `text` is how it is written. */
+  /** Angle of the two-term projection (what the arc shows), written "izdüşümde 53°". */
   angle: { deg: number; text: string } | null;
+  /** Step 8: the true angle between the full vectors, arccos of the cosine. */
+  trueAngle: number | null;
+  /** Step 9: distance of the two arrows in the plane (a two-term slice of the Euclidean distance). */
+  sliceDistance: number | null;
   /** The largest coordinate the axes must reach. */
   extent: number;
   /** `unit`: rows normalised to length 1 (step 8); `raw`: raw counts (step 9). */
@@ -355,17 +360,24 @@ function vectorsView(id: string, p: TfidfParams): TfidfView {
       { id: 'double', label: 'sorgu ×2', x: at(d.counts[1], jx), y: at(d.counts[1], jy) },
     ];
     const deg = degrees(arrows[0], arrows[1]);
+    const slice = Math.hypot(arrows[1].x - arrows[0].x, arrows[1].y - arrows[0].y);
     const list: SimRow[] = [
       { id: 'cos', label: 'kosinüs benzerliği', score: f3(d.cos), note: 'yön aynı, uzunluk yok sayılır', query: false },
-      { id: 'euclid', label: 'Öklid uzaklığı', score: f3(d.euclid), note: `ham sayımlarda; sorgunun kendisiyle ${f3(d.euclidSelf)}`, query: false },
+      { id: 'euclid', label: 'Öklid uzaklığı', score: f3(d.euclid), note: `ham sayımlarda, tüm terimlerde ölçülür (kendisiyle ${f3(d.euclidSelf)}); düzlemdeki iki terimlik kesitte ${f3(slice)}`, query: false },
     ];
-    const strip = [`cos(sorgu, sorgu ×2) = ${f3(d.cos)}`, `Öklid uzaklığı (ham sayım) → ${f3(d.euclidSelf)} · ${f3(d.euclid)}`].join('\n');
+    const strip = [
+      `cos(sorgu, sorgu ×2) = ${f3(d.cos)}`,
+      `Öklid uzaklığı (ham sayım, tüm terimler) → ${f3(d.euclidSelf)} · ${f3(d.euclid)}`,
+      `düzlemde yalnız iki terim: ${f3(slice)}`,
+    ].join('\n');
     return {
       ...empty('vectors', id, strip),
       vectors: {
         terms: [tx, ty],
         arrows,
-        angle: deg === null ? null : { deg, text: `${f(deg, 0)}°` },
+        angle: deg === null ? null : { deg, text: `izdüşümde ${f(deg, 0)}°` },
+        trueAngle: null,
+        sliceDistance: slice,
         extent: Math.max(1, ...arrows.flatMap((a) => [a.x, a.y])),
         scale: 'raw',
         list,
@@ -389,16 +401,20 @@ function vectorsView(id: string, p: TfidfParams): TfidfView {
   const common = nearest === undefined ? [] : s.common[nearest];
   const products = common.map((t) => `${f3(weightOf(s.vocab, s.rows[q], t))} · ${f3(weightOf(s.vocab, s.rows[nearest!], t))}`);
   const total = nearest === undefined ? 0 : s.scores[nearest];
+  const trueAngle = nearest === undefined ? null : (Math.acos(Math.max(-1, Math.min(1, total))) * 180) / Math.PI;
   const strip = [
     'cos = A · B / (‖A‖ ‖B‖) → satırlar birim uzunlukta: ‖A‖ = ‖B‖ = 1',
     common.length > 0 ? `ortak terim ${common.map((t) => `"${t}"`).join(', ')}: ${products.join(' + ')} = ${f3(total)}` : `ortak terim yok = ${f3(total)}`,
-  ].join('\n');
+    trueAngle === null ? '' : `açı = arccos(${f3(total)}) = ${f(trueAngle, 1)}° · düzlemde yalnız iki terim: izdüşümde ${deg === null ? '-' : f(deg, 0)}°`,
+  ].filter((l) => l !== '').join('\n');
   return {
     ...empty('vectors', id, strip),
     vectors: {
       terms: [tx, ty],
       arrows,
-      angle: deg === null ? null : { deg, text: `${f(deg, 0)}°` },
+      angle: deg === null ? null : { deg, text: `izdüşümde ${f(deg, 0)}°` },
+      trueAngle,
+      sliceDistance: null,
       extent: Math.max(0.5, ...arrows.flatMap((a) => [a.x, a.y])),
       scale: 'unit',
       list,

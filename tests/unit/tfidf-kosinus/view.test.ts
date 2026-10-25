@@ -73,6 +73,15 @@ describe('tfidf-kosinus view', () => {
     close(a.x, BOOK.kod03.tfidf[0][BOOK.kod03.vocab.indexOf('internet')]);
     close(b.y, BOOK.kod03.tfidf[1][BOOK.kod03.vocab.indexOf('bağlantı')]);
     close(a.y, 0);
+    // the arc is the projection's angle; the true angle is arccos of the cosine in the data
+    const cos = BOOK.kod03.scores[1];
+    const trueDeg = (Math.acos(cos) * 180) / Math.PI;
+    close(v.vectors!.trueAngle!, trueDeg, 1e-4);
+    expect(Math.round(trueDeg * 10) / 10).toBe(81.8);
+    expect(v.vectors!.angle!.text).toBe('izdüşümde 53°');
+    close(v.vectors!.angle!.deg, (Math.atan2(b.y, b.x) * 180) / Math.PI, 1e-6);
+    expect(v.strip).toContain('açı = arccos(0,143) = 81,8°');
+    expect(v.strip).toContain('izdüşümde 53°');
   });
 
   it('step 9 doubled query keeps cosine one', () => {
@@ -82,7 +91,13 @@ describe('tfidf-kosinus view', () => {
     const [q, d] = v.vectors!.arrows;
     close(d.x, 2 * q.x);
     close(d.y, 2 * q.y);
-    expect(v.vectors!.angle!.text).toBe('0°');
+    expect(v.vectors!.angle!.text).toBe('izdüşümde 0°');
+    // the plane shows a two-term slice: (1,1) to (2,2) is sqrt(2), the list distance runs over all terms
+    close(v.vectors!.sliceDistance!, Math.SQRT2);
+    expect(v.vectors!.list[1].note).toContain('tüm terimlerde');
+    expect(v.vectors!.list[1].note).toContain('1,414');
+    expect(v.strip).toContain('düzlemde yalnız iki terim: 1,414');
+    expect(v.strip).toContain('tüm terimler) → 0,000 · 2,000');
     expect(v.vectors!.terms).toEqual(['internet', 'bağlantısı']);
   });
 

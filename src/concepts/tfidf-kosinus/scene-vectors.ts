@@ -181,7 +181,7 @@ export class VectorsScene implements ViewScene {
       this.arcG.append('path').attr('class', 'angle-arc').attr('d', `M${r1(x1)},${r1(y1)}A${r1(r)},${r1(r)} 0 0 0 ${r1(x2)},${r1(y2)}`);
     }
     // a zero angle has no wedge to write into: the label sits just below the common direction
-    const mid = hi - lo > 0.02 ? (lo + hi) / 2 : lo - 0.5;
+    const mid = hi - lo > 0.02 ? (lo + hi) / 2 : lo - 0.8;
     const [lx, ly] = pt(mid, r + tick * 1.5);
     const cand = offsets(2, 4, tick);
     const o = chooseOffset({ x: lx, y: ly, chars: vec.angle.text.length + 3, cands: [{ dx: 0, dy: 0, anchor: 'middle' }, ...cand], fs: tick, taken, area });
@@ -191,7 +191,7 @@ export class VectorsScene implements ViewScene {
       .attr('x', r1(lx + o.dx))
       .attr('y', r1(ly + o.dy))
       .attr('text-anchor', o.anchor)
-      .text(`açı ${vec.angle.text}`);
+      .text(vec.angle.text);
   }
 
   private drawLabels(

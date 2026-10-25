@@ -21,7 +21,8 @@ describe('vector scene', () => {
     expect(el.querySelectorAll('.vec-arrow')).toHaveLength(2);
     expect(el.querySelectorAll('path.angle-arc')).toHaveLength(1);
     expect(texts(el, '.axis-title')).toEqual(['internet', 'bağlantı']);
-    expect(texts(el, 'text.angle-label')[0]).toMatch(/^açı \d+°$/);
+    expect(texts(el, 'text.angle-label')[0]).toBe('izdüşümde 53°');
+    expect(el.querySelector('.formula')!.textContent).toContain('açı = arccos(0,143) = 81,8°');
     expect(el.querySelector('.formula')!.textContent).toContain('0,402 · 0,355 = 0,143');
   });
 
@@ -39,7 +40,7 @@ describe('vector scene', () => {
     expect(lenD).toBeGreaterThan(lenQ * 1.6);
     expect(lenD).toBeLessThan(lenQ * 2.4);
     expect(el.querySelectorAll('path.angle-arc')).toHaveLength(0);
-    expect(texts(el, 'text.angle-label')).toEqual(['açı 0°']);
+    expect(texts(el, 'text.angle-label')).toEqual(['izdüşümde 0°']);
     expect(texts(el, '.sim-label')).toEqual(['kosinüs benzerliği', 'Öklid uzaklığı']);
     expect(texts(el, '.sim-score')).toEqual(['1,000', '2,000']);
   });
