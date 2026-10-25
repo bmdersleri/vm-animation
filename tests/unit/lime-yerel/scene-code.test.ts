@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { BOOK } from '../../../src/concepts/xai/data';
 import { BOOK_TIP } from '../../../src/concepts/lime-yerel/view';
+import { CODE_LINE, PRE_PAD } from '../../../src/concepts/lime-yerel/scene-code';
 import { go, setup, texts, themeFonts } from './harness';
 
 const css = fs.readFileSync('src/concepts/lime-yerel/lime-yerel.css', 'utf8');
@@ -107,5 +108,21 @@ describe('code scene', () => {
     }
     // long lines wrap inside the panel, the page never scrolls sideways
     expect(css).toMatch(/\.codeview-scene[^{]*\.code-pre[^}]*overflow-x:auto/);
+  });
+  it('the code box counts the fix badges: the corrected code with every badge fits a tall 1280 px stage unscrolled', () => {
+    themeFonts('wide');
+    const { el, player } = setup(1280, 1200, 'ders');
+    // sweep position six is the reduced-motion end state: the corrected code with its fix badges
+    go(player, 'hata-ayiklama', false);
+    player.setParams({ scan: 6 });
+    const lh = 15 * CODE_LINE;
+    const lines = el.querySelectorAll('.code-line').length;
+    const badges = el.querySelectorAll('.fix-badge').length;
+    expect(badges).toBe(5);
+    const pre = el.querySelector<HTMLElement>('.code-pre')!;
+    expect(Number.parseFloat(pre.style.maxHeight)).toBeGreaterThanOrEqual(Math.ceil((lines + badges) * lh + PRE_PAD));
+    // the faulty code with all five bug badges gets the same room
+    player.setParams({ scan: 5 });
+    expect(Number.parseFloat(pre.style.maxHeight)).toBeGreaterThanOrEqual(Math.ceil((17 + 5) * lh + PRE_PAD));
   });
 });

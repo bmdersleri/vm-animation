@@ -109,7 +109,9 @@ export class CodeScene implements ViewScene {
     const linkLines = narrow ? 1 : code.links.length;
     const sideH = Math.ceil(tipLines * fonts.tick * 1.35 + CODE_GAP + linkLines * fonts.tick * 1.6);
     const lines = code.fixed ? code.fixedLines.length : code.faulty.length;
-    const natural = Math.ceil(lines * lh + PRE_PAD + (code.fixed ? 0 : code.marked * lh));
+    // each badge takes a line of its own: the marked bug badges of the faulty code, the fix badges of the corrected one
+    const badges = code.fixed ? code.fixedLines.reduce((sum, line) => sum + line.bugs.length, 0) : code.marked;
+    const natural = Math.ceil((lines + badges) * lh + PRE_PAD);
     const chrome = PANEL_CHROME + Math.ceil(fonts.axis * 1.4);
     const room = this.h - padV - chrome - (narrow ? sideH + CODE_GAP : 0);
     const preH = Math.max(Math.ceil(MIN_LINES * lh + PRE_PAD), Math.min(natural, Math.floor(room)));
