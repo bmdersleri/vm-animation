@@ -68,6 +68,8 @@ export const shapDegerleriScenario: Scenario<ShapParams> = {
       id: 'kara-kutu',
       title: 'Kara kutu',
       text: `Müşteri ${book.row} (tenure ${f(book.values[0], 0)}, MonthlyCharges ${f(book.values[1], 2)}, TotalCharges ${plainCharge(f(book.values[2], 2))}): ${TREES} ağaçlı orman p(ayrılma) = ${f3(book.p)} der; test doğruluğu ${formatPercent(MODEL.accuracy, 1)}. Tahmin var; gerekçe yok. Kitabın kod01 satırları şeritte.`,
+      labText:
+        'Müşteri seçiminden bir müşteri seçin: kart, değerler ve ormanın olasılığı o müşteriye göre yenilenir.',
     },
     {
       id: 'genel-onem',
@@ -80,11 +82,15 @@ export const shapDegerleriScenario: Scenario<ShapParams> = {
       term: 'koalisyon değeri v(S)',
       text: `Kafesin ${coalitions} düğümü (${coalitions} koalisyon) sırayla dolar: v(∅) = ${f3(book.v[0])} temel değer (ağaçların kök düğümlerindeki ayrılma oranının ortalaması), v({${FEATURES[0]}}) = ${f3(book.v[1])} … v(hepsi) = ${f3(book.v[coalitions - 1])}. v(S): yalnız S içindeki özellikler bilinirken ormanın beklenen tahmini; bilinmeyen özellikte ağaç iki dala da gider, eğitim örneği sayısıyla ağırlıklı ortalanır.`,
       sweep: { key: 'scan', values: Array.from({ length: coalitions }, (_, i) => i + 1), intervalMs: 700 },
+      labText:
+        'Müşteri seçimini değiştirin: kafesin her düğümündeki koalisyon değeri seçilen müşteri için yeniden dolar.',
     },
     {
       id: 'marjinal',
       title: 'Bir sıralamada marjinal katkı',
       text: `${orderText(order[0])} yolu kafeste vurgulu: ${m0.map(signed).join(', ')}; toplam ${f3(book.p - MODEL.base)} = ${f3(book.p)} − ${f3(MODEL.base)}. Başka bir sırada tenure'un katkısı farklıdır: ${orderText(order[order.length - 1])} sırasında ${signed(m5[0])}.`,
+      labText:
+        'Müşteriyi ve sıralamayı seçin: vurgulu yol ve kenar etiketleri seçilen sıralamadaki marjinal katkıları gösterir.',
     },
     {
       id: 'alti-siralama',
@@ -92,18 +98,24 @@ export const shapDegerleriScenario: Scenario<ShapParams> = {
       term: 'Shapley değeri',
       text: `Altı sıralamanın her biri üç marjinal katkı verir; tablo satır satır dolar. Her sütunun ortalaması o özelliğin Shapley değeri φ: ${book.shap.map(f3).join(' / ')}. Formül şeridi kitabın formülü; ağırlıklar ${weights.join(', ')}.`,
       sweep: { key: 'scan', values: Array.from({ length: order.length }, (_, i) => i + 1), intervalMs: 900 },
+      labText:
+        'Müşteri seçimini değiştirin: altı satırın marjinal katkıları ve sütun ortalamaları seçilen müşteriye göre yenilenir.',
     },
     {
       id: 'toplam',
       title: 'Toplama: temel değerden tahmine',
       term: 'temel değer φ₀',
       text: `Şelale: ${f3(MODEL.base)} → ${signed(book.shap[0])} → ${signed(book.shap[1])} → ${signed(book.shap[2])} → ${f3(book.p)}. Katkılar temel değerden tahmine tam toplanır: φ₀ + Σ φ = p. Kitabın kod04 tablosu aynı üç katkıyı verir.`,
+      labText:
+        'Müşteri seçimini değiştirin: şelale temel değerden o müşterinin olasılığına yürür; eksen gerekirse sıfırın altına uzar.',
     },
     {
       id: 'kuvvet',
       title: 'Kuvvet grafiği: iki müşteri',
       term: 'kuvvet grafiği',
       text: `Müşteri ${book.row} (p = ${f3(book.p)}: ${describeParts(book)}) ve müşteri ${second.row} (p = ${f3(second.p)}: ${describeParts(second)}) iki kuvvet çubuğunda, ortak eksende ve temel değer çizgisiyle. Turuncu ayrılmaya iter, mavi kalmaya çeker.`,
+      labText:
+        'Birinci ve ikinci müşteriyi seçin: iki kuvvet çubuğu ortak eksende yeniden çizilir.',
     },
     {
       id: 'global',
@@ -115,6 +127,8 @@ export const shapDegerleriScenario: Scenario<ShapParams> = {
       title: 'Özet grafiği',
       term: 'özet grafiği (summary plot)',
       text: `${CUSTOMERS.length} test müşterisi, her özellik bir satır; nokta konumu SHAP, rengi özellik değeri. tenure satırında yüksek değerler (kırmızı-pembe) sağda: bu sentetik veride uzun süre ayrılma tahminini artırır (değer ile katkı arasındaki korelasyon ${f(tenureCorrelation(), 2)}).`,
+      labText:
+        'Vurgulanacak müşteriyi ve noktaların rengini belirleyen özelliği seçin: halkalı nokta üç satırda da aynı müşteridir.',
     },
     {
       id: 'sinirlar',

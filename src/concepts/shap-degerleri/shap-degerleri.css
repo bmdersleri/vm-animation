@@ -111,3 +111,14 @@ code.feature-name { font-family:var(--mono, ui-monospace, Consolas, monospace); 
 @media (max-width:900px) {
   .text-cards { grid-template-columns:minmax(0,1fr); }
 }
+
+/* Lab controls (controls.ts); a control outside its steps is hidden, a step with none hides the card */
+.shap-params { display:grid; gap:8px; }
+.shap-params .ctl { min-width:0; }
+.shap-params .ctl.select { display:grid; grid-template-columns:minmax(0,1fr); gap:4px; }
+.shap-params .ctl-label { font-weight:600; }
+.shap-params select { min-height:var(--ctl); max-width:100%; padding:0 .5em; border:2px solid var(--navy); border-radius:8px; background:var(--surface); font:inherit; }
+.shap-params .ctl[data-off], .shap-params[data-off] { display:none; }
+[data-mode='lab'] .params[data-off] { display:none; }
+[data-mode='lab'] .shap-params { gap:4px; }
+.shap-extra p { margin:0 0 8px; }

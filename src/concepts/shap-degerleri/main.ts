@@ -1,6 +1,8 @@
 import '../../core/theme.css';
 import './shap-degerleri.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
+import { mountShapParams } from './controls';
+import { mountShapExtra } from './extra';
 import { shapDegerleriScenario, type ShapParams } from './scenario';
 import { mountShapScene } from './scene';
 
@@ -9,8 +11,8 @@ const shapDegerleriPage: ConceptPage<ShapParams> = {
   chapter: 'Bölüm 13 · Açıklanabilir yapay zekâ',
   scenario: shapDegerleriScenario,
   mountScene: mountShapScene,
-  // the Lab controls come with the controls task
-  mountParams: () => {},
+  mountParams: mountShapParams,
+  mountExplainExtra: mountShapExtra,
 };
 
 const app = document.querySelector<HTMLElement>('#app');
