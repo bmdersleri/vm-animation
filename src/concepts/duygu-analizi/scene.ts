@@ -4,10 +4,12 @@ import type { Mode } from '../../core/mode';
 import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { renderStrip } from '../../core/plot/strip';
 import type { SentimentParams } from './scenario';
-import { el, type ViewScene } from './scene-base';
+import type { ViewScene } from './scene-base';
 import { CoefScene } from './scene-coef';
+import { DebugCodeScene } from './scene-code';
 import { FlowScene } from './scene-flow';
 import { ResultScene, ScoreScene } from './scene-score';
+import { VocabScene } from './scene-vocab';
 import { deriveSentimentView, type SentimentKind } from './view';
 
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -16,26 +18,6 @@ const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 
 /** Milliseconds a step change animates. */
 const MS_STEP = 600;
-
-/** The areas of steps 8 and 10 (vocabulary strip, code panel) are drawn by the Lab task; until then they hold a quiet note. */
-class PlaceholderScene implements ViewScene {
-  private readonly root: HTMLDivElement;
-
-  constructor(host: HTMLElement, kind: 'vocab' | 'code') {
-    this.root = el(host.ownerDocument, 'div', `${kind}-scene`, 'Bu adımın sahnesi hazırlanıyor.');
-    host.append(this.root);
-  }
-
-  resize(): void {}
-
-  update(): void {}
-
-  interrupt(): void {}
-
-  destroy(): void {
-    this.root.remove();
-  }
-}
 
 /** Every area the stage can show, in DOM order. */
 const KINDS: SentimentKind[] = ['flow', 'coef', 'score', 'result', 'vocab', 'code'];
@@ -74,8 +56,8 @@ export function mountSentimentScene(
     coef: new CoefScene(hosts.coef),
     score: new ScoreScene(hosts.score),
     result: new ResultScene(hosts.result),
-    vocab: new PlaceholderScene(hosts.vocab, 'vocab'),
-    code: new PlaceholderScene(hosts.code, 'code'),
+    vocab: new VocabScene(hosts.vocab),
+    code: new DebugCodeScene(hosts.code),
   };
 
   let mode = initialMode;

@@ -21,7 +21,7 @@ describe('duygu-analizi scenario', () => {
       'sozluk-kaymasi',
       'hata-ayiklama',
     ]);
-    expect(sc.defaults).toEqual({ bigram: null, degilStop: null, leaky: null, topN: 10, text: null, fixed: false });
+    expect(sc.defaults).toEqual({ bigram: null, degilStop: null, leaky: null, topN: 10, text: null, fixed: false, bug: 0 });
   });
 
   it('step texts read numbers from data', () => {

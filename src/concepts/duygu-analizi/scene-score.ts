@@ -7,6 +7,7 @@ import { MatrixLayer, matrixHeight } from '../../core/plot/matrix';
 import type { TextMeasure } from '../../core/plot/text-measure';
 import { sigmoid } from '../metin/score';
 import { el, mountSvg, NARROW, type G, type ViewScene } from './scene-base';
+import { DriftStrip, driftHeight } from './scene-vocab';
 import type { PanelView, ResultView, SentimentView } from './view';
 
 /** z range of the sigmoid plot; a larger |z| puts the point on the edge (its label keeps the true p). */
@@ -63,6 +64,7 @@ class ScorePanel {
   private readonly probValue: HTMLElement;
   private readonly lean: HTMLElement;
   private readonly compare: HTMLElement;
+  private readonly acc: HTMLElement;
   private readonly barSvg: Selection<SVGSVGElement, unknown, null, undefined>;
   private readonly sigSvg: Selection<SVGSVGElement, unknown, null, undefined>;
   private readonly barMeasure: TextMeasure;
@@ -85,6 +87,7 @@ class ScorePanel {
     this.probValue = el(doc, 'strong', 'prob-value');
     this.lean = el(doc, 'span', 'prob-lean');
     this.compare = el(doc, 'p', 'compare-line');
+    this.acc = el(doc, 'p', 'acc-line');
     this.probLine.append(el(doc, 'span', 'prob-label', 'p (olumlu) = '), this.probValue, this.lean);
     const b = mountSvg(this.barBox, 'contrib-plot', 'Terim katkıları: ağırlık çarpı katsayı');
     const s = mountSvg(this.sigBox, 'sig-plot', 'Sigmoid eğrisi ve olasılık noktası');
@@ -95,7 +98,7 @@ class ScorePanel {
     this.bars = new HBarsLayer(this.barSvg.append('g').attr('class', 'contrib-bars'), this.barMeasure);
     this.chart = new LineChartLayer(this.sigSvg.append('g').attr('class', 'sig-chart') as G, this.sigMeasure);
     this.body.append(this.barBox, this.sigBox);
-    this.foot.append(this.zLine, this.probLine, this.compare);
+    this.foot.append(this.zLine, this.probLine, this.compare, this.acc);
     this.el.append(this.title, this.chips, this.note, this.body, this.foot);
   }
 
@@ -115,8 +118,8 @@ class ScorePanel {
     this.title.textContent = pv.title;
     this.chips.replaceChildren(
       ...pv.chips.map((c) => {
-        const chip = el(doc, 'code', `token-chip${c.oov ? ' is-oov' : ''}${c.dropped ? ' is-dropped' : ''}`, c.text);
-        return chip;
+        const cls = `token-chip${c.oov ? ' is-oov' : ''}${c.dropped ? ' is-dropped' : ''}${c.bigram ? ' is-bigram' : ''}${c.negation ? ' is-negation' : ''}`;
+        return el(doc, 'code', cls, c.text);
       }),
     );
     this.note.textContent = pv.note ?? '';
@@ -129,6 +132,8 @@ class ScorePanel {
     this.lean.textContent = pv.lean ? ` · ${pv.lean}` : '';
     this.compare.textContent = pv.compare ? `${pv.compare.label}: p = ${pv.compare.p}` : '';
     this.compare.hidden = pv.compare === null || !hasP;
+    this.acc.textContent = pv.accuracy ?? '';
+    this.acc.hidden = pv.accuracy === null;
     this.sigBox.hidden = !hasP;
 
     const fonts = this.barMeasure.fonts(mode);
@@ -187,7 +192,7 @@ class ScorePanel {
     const chips = rows * (tick * 1.45 + 6);
     const noteLines = pv.note ? Math.ceil((pv.note.length * tick * 0.55) / Math.max(120, width - 24)) : 0;
     const note = noteLines > 0 ? noteLines * tick * 1.4 + 10 : 0;
-    const foot = solo ? 0 : axis * 1.45 + tick * 1.4 + (pv.compare ? tick * 1.4 : 0) + 8;
+    const foot = solo ? 0 : axis * 1.45 + tick * 1.4 + (pv.compare ? tick * 1.4 : 0) + (pv.accuracy ? Math.ceil((pv.accuracy.length * tick * 0.55) / Math.max(120, width - 24)) * tick * 1.4 : 0) + 8;
     return 22 + axis * 1.5 + chips + note + foot + 18;
   }
 }
@@ -201,6 +206,7 @@ export class ScoreScene implements ViewScene {
   private readonly comment: HTMLParagraphElement;
   private readonly quote: HTMLElement;
   private readonly panels: HTMLDivElement;
+  private readonly drift: DriftStrip;
   private readonly made = new Map<PanelView['id'], ScorePanel>();
   private w = 1;
   private h = 1;
@@ -213,7 +219,8 @@ export class ScoreScene implements ViewScene {
     this.quote = el(doc, 'q', 'comment-text');
     this.comment.append(el(doc, 'span', 'comment-label', 'Yorum: '), this.quote);
     this.panels = el(doc, 'div', 'score-panels');
-    this.root.append(this.comment, this.panels);
+    this.drift = new DriftStrip(this.root);
+    this.root.append(this.comment, this.drift.el, this.panels);
     host.append(this.root);
   }
 
@@ -230,6 +237,7 @@ export class ScoreScene implements ViewScene {
   destroy(): void {
     this.interrupt();
     for (const p of this.made.values()) p.destroy();
+    this.drift.destroy();
     this.root.remove();
   }
 
@@ -247,7 +255,8 @@ export class ScoreScene implements ViewScene {
     const width = Math.max(200, two && this.w >= NARROW ? Math.floor((this.w - 36) / 2) : this.w - 24);
     // room the panel may use: the stage less the comment line
     const axis = parseFloat(getComputedStyle(this.comment).fontSize) || (this.mode === 'ders' ? 19 : 14);
-    const commentH = this.comment.hidden ? 0 : Math.round(axis * 1.5 + 20 + 8);
+    this.drift.update(v.drift);
+    const commentH = (this.comment.hidden ? 0 : Math.round(axis * 1.5 + 20 + 8)) + (v.drift ? driftHeight(axis) + 8 : 0);
     const order: HTMLElement[] = [];
     for (const pv of s.panels) {
       let panel = this.made.get(pv.id);

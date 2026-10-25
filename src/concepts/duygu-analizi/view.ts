@@ -4,7 +4,7 @@ import { metrics, type Confusion } from '../degerlendirme/metrics';
 import { BOOK, CORPUS, MODELS, type ModelKey } from '../metin/data';
 import { score } from '../metin/score';
 import { DEGIL_STOP, tokenize } from '../metin/tokenize';
-import { asNegative, corpusCounts, explainLean, f2, f3, lean, signed, DRIFT_COMMENT, keyOf, modelOf, NEGATION, NEW_COMMENT, rankTerms, settingsOf } from './calc';
+import { asNegative, corpusCounts, driftRates, explainLean, f2, f3, gapSentence, HATALAR, lean, signed, DRIFT_COMMENT, keyOf, modelOf, NEGATION, NEW_COMMENT, rankTerms, settingsOf } from './calc';
 import { duyguAnaliziScenario as scenario, type SentimentParams } from './scenario';
 
 /** Which scene area draws the step. */
@@ -47,11 +47,16 @@ export interface CoefView {
   n: number;
 }
 
-/** One token chip of the commented text; `oov` is out of the vocabulary, `dropped` was removed as a stop word. */
+/**
+ * One token chip of the commented text; `oov` is out of the vocabulary, `dropped` was removed as a stop word,
+ * `bigram` is a word pair and `negation` a pair that holds "değil".
+ */
 export interface ChipView {
   text: string;
   oov: boolean;
   dropped: boolean;
+  bigram: boolean;
+  negation: boolean;
 }
 
 /** One score panel: chips, contribution bars, the z line and the sigmoid point. */
@@ -74,6 +79,8 @@ export interface PanelView {
   note: string | null;
   /** Extra line under the probability (step 4: the book's model; step 7: the probability with "değil" kept). */
   compare: { label: string; p: string } | null;
+  /** Steps 6-7: the accuracy on the negation test comments, as one line. */
+  accuracy: string | null;
 }
 
 /** Steps 4, 6, 7, 9: one or two panels. */
@@ -100,7 +107,52 @@ export interface ResultView {
   link: { href: string; text: string };
 }
 
-/** What a step draws. The `vocab` and `code` areas belong to steps 8 and 10 and are filled by the Lab task. */
+/** One test-only term of step 8; `idf` is the leaky model's IDF as text, null when the chosen vectoriser never saw the term. */
+export interface VocabTerm {
+  term: string;
+  idf: string | null;
+}
+
+/** Step 8: the leaky and clean vocabularies, the test-only terms (at most `MAX_VOCAB_CHIPS`) and both accuracies. */
+export interface VocabView {
+  /** The chosen vectoriser: fitted on all the data (leaky) or on the training part. */
+  leaky: boolean;
+  model: ModelKey;
+  trainSize: number;
+  allSize: number;
+  testOnlyCount: number;
+  terms: VocabTerm[];
+  more: number;
+  accuracy: { leaky: string; clean: string };
+  gap: string;
+}
+
+/** One row of step 9's drift strip: the out-of-vocabulary token share of a comment set. */
+export interface DriftRow {
+  id: 'test' | 'new';
+  label: string;
+  oov: number;
+  tokens: number;
+  rate: number;
+  rateText: string;
+}
+
+/** Step 9: out-of-vocabulary rates of the model's test comments and of the new period. */
+export interface DriftView {
+  model: ModelKey;
+  title: string;
+  rows: DriftRow[];
+}
+
+/** Step 10: how many bugs are marked (0-4), whether the corrected code shows, the exam note and the links. */
+export interface CodeView {
+  marked: number;
+  fixed: boolean;
+  exam: string;
+  links: { href: string; text: string }[];
+}
+
+/** What a step draws. */
 export interface SentimentView {
   kind: SentimentKind;
   stepId: string;
@@ -109,8 +161,19 @@ export interface SentimentView {
   coef: CoefView | null;
   score: ScoreView | null;
   result: ResultView | null;
+  vocab: VocabView | null;
+  drift: DriftView | null;
+  code: CodeView | null;
 }
 
+/** Test-only term chips drawn before "ve N terim daha". */
+export const MAX_VOCAB_CHIPS = 24;
+
+/** The book's exam note (end of the debugging example). */
+export const EXAM_NOTE = "'Model çalıştı' ifadesi, modelin güvenilir olduğu anlamına gelmez.";
+
+
+const pc = (v: number): string => pct(v, 1);
 
 const empty = (kind: SentimentKind, stepId: string, strip = ''): SentimentView => ({
   kind,
@@ -120,6 +183,9 @@ const empty = (kind: SentimentKind, stepId: string, strip = ''): SentimentView =
   coef: null,
   score: null,
   result: null,
+  vocab: null,
+  drift: null,
+  code: null,
 });
 
 // ---- steps 1-2: flow strip ----
@@ -236,8 +302,8 @@ export function panelOf(panelId: PanelView['id'], key: ModelKey, title: string, 
   const droppedWords = model.dropDegil ? tokenize(text, DEGIL_STOP).dropped : [];
   const inVocab = new Set(sc.terms.map((t) => t.term));
   const chips: ChipView[] = [
-    ...sc.tokens.map((t) => ({ text: t, oov: !inVocab.has(t), dropped: false })),
-    ...droppedWords.map((t) => ({ text: t, oov: false, dropped: true })),
+    ...sc.tokens.map((t) => ({ text: t, oov: !inVocab.has(t), dropped: false, bigram: t.includes(' '), negation: t.includes(' ') && t.split(' ').includes('değil') })),
+    ...droppedWords.map((t) => ({ text: t, oov: false, dropped: true, bigram: false, negation: false })),
   ];
   const nothing = sc.tokens.length === 0;
   const sorted = [...sc.terms].sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
@@ -278,10 +344,38 @@ export function panelOf(panelId: PanelView['id'], key: ModelKey, title: string, 
     lean: nothing ? null : lean(sc.p),
     note: notes,
     compare: null,
+    accuracy: null,
   };
 }
 
 const modelName = (key: ModelKey): string => (MODELS[key].ngram === 2 ? 'unigram + bigram' : 'unigram') + (MODELS[key].dropDegil ? ', "değil" süzülür' : '');
+
+/** The negation-subset accuracy line of a panel; with "değil" dropped it also names the accuracy without the drop. */
+function negationLine(key: ModelKey): string {
+  const m = MODELS[key];
+  const base = `Olumsuzlama içeren ${m.negN} test yorumunda doğruluk ${pc(m.negAccuracy)}`;
+  if (!m.dropDegil) return base;
+  const kept = MODELS[key.replace('-drop-', '-keep-') as ModelKey];
+  return `${base} (süzülmeden ${pc(kept.negAccuracy)})`;
+}
+
+/** Step 9's drift strip: out-of-vocabulary token shares under the page's model. */
+function driftView(key: ModelKey): DriftView {
+  const r = driftRates(key);
+  const row = (id: DriftRow['id'], label: string, v: { oov: number; tokens: number; rate: number }): DriftRow => ({
+    id,
+    label,
+    oov: v.oov,
+    tokens: v.tokens,
+    rate: v.rate,
+    rateText: pc(v.rate),
+  });
+  return {
+    model: key,
+    title: 'Sözlük dışı token oranı',
+    rows: [row('test', 'eğitim dönemi · test yorumları', r.test), row('new', 'yeni dönem yorumları', r.new)],
+  };
+}
 
 function scoreView(id: string, p: SentimentParams): SentimentView {
   const text = commentOf(id, p);
@@ -290,6 +384,8 @@ function scoreView(id: string, p: SentimentParams): SentimentView {
   if (id === 'bigram') {
     const k = (bigram: boolean): ModelKey => keyOf({ ...s, bigram });
     panels = [panelOf('uni', k(false), modelName(k(false)), text), panelOf('bi', k(true), modelName(k(true)), text)];
+    panels[0].accuracy = negationLine(k(false));
+    panels[1].accuracy = negationLine(k(true));
   } else {
     const key = keyOf(s);
     const main = panelOf('main', key, modelName(key), text);
@@ -299,8 +395,11 @@ function scoreView(id: string, p: SentimentParams): SentimentView {
       const own = p.text === null && main.p !== null;
       main.compare = own ? { label: `Kitabın ${BOOK.kod04.docs.length} yorumluk modeli`, p: f3(book.p) } : null;
       if (own && main.note === null) main.note = explainLean(MODELS[key], text);
-    } else if (id === 'degil-tuzagi' && s.degilStop && main.p !== null) {
-      main.compare = { label: '"değil" süzülmeden', p: f3(score(MODELS[keyOf({ ...s, degilStop: false })], text).p) };
+    } else if (id === 'degil-tuzagi') {
+      main.accuracy = negationLine(key);
+      if (s.degilStop && main.p !== null) {
+        main.compare = { label: '"değil" süzülmeden', p: f3(score(MODELS[keyOf({ ...s, degilStop: false })], text).p) };
+      }
     }
     panels = [main];
   }
@@ -308,7 +407,64 @@ function scoreView(id: string, p: SentimentParams): SentimentView {
     pn.p === null || pn.z === null ? [pn.note ?? EMPTY_NOTE] : [`p = 1 / (1 + e^−z) = 1 / (1 + e^${f3(-pn.z)}) = ${pn.pText}`],
   );
   const strip = panels.length > 1 ? panels.map((pn, i) => `${i === 0 ? 'unigram' : 'bigram'}: ${lines[i]}`).join('\n') : lines.join('\n');
-  return { ...empty('score', id, strip), score: { panels } };
+  return { ...empty('score', id, strip), score: { panels }, drift: id === 'sozluk-kaymasi' ? driftView(keyOf(s)) : null };
+}
+
+// ---- step 8: vocabulary strip ----
+
+function vocabView(id: string, p: SentimentParams): SentimentView {
+  const s = settingsOf(id, p);
+  const leakyKey = keyOf({ ...s, leaky: true });
+  const cleanKey = keyOf({ ...s, leaky: false });
+  const all = MODELS[leakyKey];
+  const train = MODELS[cleanKey];
+  const terms: VocabTerm[] = all.testOnly.slice(0, MAX_VOCAB_CHIPS).map((term) => ({
+    term,
+    idf: s.leaky ? f2(all.idf[all.vocab.indexOf(term)]) : null,
+  }));
+  const gap = gapSentence(all.accuracy, train.accuracy);
+  const strip = [
+    `sözlük: eğitim ${train.vocabSize} terim · tüm veri ${all.vocabSize} terim = ${train.vocabSize} + ${all.testOnly.length} yalnız testte`,
+    `test doğruluğu: sızıntılı ${pc(all.accuracy)} · sızıntısız ${pc(train.accuracy)}`,
+  ].join('\n');
+  return {
+    ...empty('vocab', id, strip),
+    vocab: {
+      leaky: s.leaky,
+      model: s.leaky ? leakyKey : cleanKey,
+      trainSize: train.vocabSize,
+      allSize: all.vocabSize,
+      testOnlyCount: all.testOnly.length,
+      terms,
+      more: Math.max(0, all.testOnly.length - terms.length),
+      accuracy: { leaky: pc(all.accuracy), clean: pc(train.accuracy) },
+      gap,
+    },
+  };
+}
+
+// ---- step 10: debugging code ----
+
+/** Bugs marked at the sweep position `bug` (0-4); the sweep value 5 or the Lab switch brings the corrected code. */
+function codeView(id: string, p: SentimentParams): SentimentView {
+  const bug = Number.isFinite(p.bug) ? Math.trunc(p.bug) : 0;
+  const marked = Math.max(0, Math.min(HATALAR.length, bug));
+  const fixed = p.fixed || bug > HATALAR.length;
+  const strip = fixed
+    ? 'düzeltilmiş: liste · yalnız anlamlı belgelerle fit_transform · geçerli satır · doğrulanmış stop-word listesi'
+    : `işaretlenen hata: ${marked} / ${HATALAR.length}`;
+  return {
+    ...empty('code', id, strip),
+    code: {
+      marked,
+      fixed,
+      exam: EXAM_NOTE,
+      links: [
+        { href: '../tfidf-kosinus/', text: 'TF-IDF ve kosinüs benzerliği' },
+        { href: '../smote-sizinti/', text: 'Bölüm 11: SMOTE sızıntısı ve PR-AUC' },
+      ],
+    },
+  };
 }
 
 // ---- step 5: test result ----
@@ -372,9 +528,9 @@ export function deriveSentimentView(index: number, p: SentimentParams): Sentimen
     case 'test-sonuc':
       return resultView(id, p);
     case 'sizinti':
-      return empty('vocab', id);
+      return vocabView(id, p);
     case 'hata-ayiklama':
-      return empty('code', id);
+      return codeView(id, p);
     default:
       throw new RangeError(`no view for step "${id}"`);
   }

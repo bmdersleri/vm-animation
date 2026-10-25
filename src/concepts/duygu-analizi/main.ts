@@ -1,6 +1,8 @@
 import '../../core/theme.css';
 import './duygu-analizi.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
+import { mountSentimentParams } from './controls';
+import { mountSentimentExtra } from './extra';
 import { duyguAnaliziScenario, type SentimentParams } from './scenario';
 import { mountSentimentScene } from './scene';
 
@@ -9,7 +11,8 @@ const duyguAnaliziPage: ConceptPage<SentimentParams> = {
   chapter: 'Bölüm 12 · Metin madenciliğine giriş',
   scenario: duyguAnaliziScenario,
   mountScene: mountSentimentScene,
-  mountParams: () => {},
+  mountParams: mountSentimentParams,
+  mountExplainExtra: mountSentimentExtra,
 };
 
 const app = document.querySelector<HTMLElement>('#app');

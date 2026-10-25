@@ -155,3 +155,38 @@ export function explainLean(model: Model, text: string): string | null {
   if (neg.length > 0) parts.push(`${neg.map((t) => `"${t.term}" (${signed(t.contribution, 3)})`).join(' ve ')} olumsuza çeker`);
   return parts.length > 0 ? `${parts.join('; ')}.` : null;
 }
+
+/** Out-of-vocabulary token count, token count and rate of a set of comments under one model. */
+export interface OovRate {
+  oov: number;
+  tokens: number;
+  rate: number;
+}
+
+function oovRate(key: ModelKey, texts: readonly string[]): OovRate {
+  const model = MODELS[key];
+  let oov = 0;
+  let tokens = 0;
+  for (const text of texts) {
+    const sc = score(model, text);
+    oov += sc.oov.length;
+    tokens += sc.tokens.length;
+  }
+  return { oov, tokens, rate: tokens > 0 ? oov / tokens : 0 };
+}
+
+/** Step 9: the model's out-of-vocabulary rate on its own test comments and on the new-period comments. */
+export function driftRates(key: ModelKey): { test: OovRate; new: OovRate } {
+  return {
+    test: oovRate(key, CORPUS.filter((c) => c.split === 'test').map((c) => c.text)),
+    new: oovRate(key, DRIFT.comments.map((c) => c.text)),
+  };
+}
+
+/** Step 8's sentence on the accuracy gap between the leaky and the clean vectoriser (a gap up to 2 points is "small"). */
+export function gapSentence(leakyAccuracy: number, cleanAccuracy: number): string {
+  const gap = leakyAccuracy - cleanAccuracy;
+  return Math.abs(gap) <= 0.02
+    ? 'Fark küçük; ama test artık görülmemiş veri değil.'
+    : `Fark ${f(Math.abs(gap) * 100, 1)} puan; test artık görülmemiş veri değil.`;
+}

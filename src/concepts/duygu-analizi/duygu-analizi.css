@@ -20,7 +20,6 @@
 .panel-heading { margin:0; font-size:var(--fs-axis); font-weight:700; }
 .panel-heading.is-pos { color:#0B7473; }
 .panel-heading.is-neg { color:#A85A00; }
-.vocab-scene, .code-scene { padding:14px; font-size:var(--fs-tick); opacity:.7; }
 
 /* shared SVG text in the bar plots */
 .count-plot, .coef-plot, .contrib-plot, .sig-plot, .matrix-plot { display:block; overflow:visible; }
@@ -49,7 +48,7 @@
 .label-tag.is-neg { background:#A85A00; }
 .sample-text { overflow-wrap:anywhere; }
 .code-lines { margin:0; padding:10px 12px; border-radius:10px; background:var(--bg); font-size:var(--fs-tick); line-height:1.5; }
-.code-text { font-family:var(--mono, ui-monospace, Consolas, monospace); white-space:pre-wrap; overflow-wrap:anywhere; }
+.flow-scene .code-text { font-family:var(--mono, ui-monospace, Consolas, monospace); white-space:pre-wrap; overflow-wrap:anywhere; }
 .flow-warning { margin:0; padding:8px 12px; border-left:4px solid #E07B00; border-radius:6px; background:#FBE3C4; font-weight:600; font-size:var(--fs-axis); }
 .flow-warning[hidden] { display:none; }
 @media (max-width:900px) {
@@ -77,6 +76,8 @@
 .token-chips { display:flex; flex-wrap:wrap; gap:4px 6px; }
 .token-chip { display:inline-block; padding:0 8px; border:2px solid var(--navy); border-radius:8px; background:var(--surface); font-family:var(--mono, ui-monospace, Consolas, monospace); font-size:var(--fs-tick); line-height:1.4; max-width:100%; overflow-wrap:anywhere; }
 .token-chip.is-oov { border-style:dashed; border-color:#8896a8; color:#4b5b6e; background:var(--bg); }
+.token-chip.is-bigram { border-color:#0B7473; background:#E6F4F4; }
+.token-chip.is-negation { border-width:3px; border-color:#E07B00; background:#FBE3C4; font-weight:700; }
 .token-chip.is-dropped { border-color:#b8c3cf; color:#6b7a8c; background:var(--bg); text-decoration:line-through; }
 .panel-note { margin:0; padding:4px 10px; border-radius:6px; background:#FBE3C4; font-weight:600; }
 .panel-note[hidden] { display:none; }
@@ -93,6 +94,8 @@
 .prob-value { font-size:var(--fs-axis); font-weight:800; }
 .prob-lean { opacity:.85; }
 .compare-line { opacity:.85; }
+.acc-line { margin:0; padding:2px 8px; border-left:4px solid var(--navy-soft); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.acc-line[hidden] { display:none; }
 .sig-plot path.lc-series.sigmoid-curve { stroke:var(--navy); stroke-width:3; }
 .sig-plot line.lc-ref.ref-half { stroke:#8896a8; stroke-width:1.5; }
 .sig-plot circle.lc-marker.p-point { fill:#E07B00; stroke:var(--navy); stroke-width:2; }
@@ -127,3 +130,58 @@
   .report-table { font-size:var(--fs-cell); }
   .report-col, .report-name, .report-cell { padding:2px 4px; }
 }
+
+/* vocabulary strip (step 8) */
+.vocab-scene { display:grid; gap:10px; padding:10px 12px; align-content:start; font-size:var(--fs-tick); }
+.vocab-counts { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
+.vocab-count { display:grid; padding:4px 14px; border-radius:8px; background:var(--bg); }
+.vocab-count-label, .vocab-acc-label { opacity:.8; }
+.vocab-count-value, .vocab-acc-value { font-size:var(--fs-axis); font-variant-numeric:tabular-nums; }
+.vocab-count[data-count='test-only'] { background:#FBE3C4; }
+.vocab-lead, .vocab-gap { margin:0; overflow-wrap:anywhere; }
+.vocab-gap { padding:6px 12px; border-left:4px solid #E07B00; border-radius:6px; background:#FBE3C4; font-weight:600; }
+.vocab-chips { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.vocab-test-only { display:inline-block; padding:0 8px; border:2px solid var(--navy); border-radius:8px; background:var(--surface); font-family:var(--mono, ui-monospace, Consolas, monospace); font-size:var(--fs-tick); line-height:1.5; max-width:100%; overflow-wrap:anywhere; }
+.vocab-test-only.is-oov { border-style:dashed; border-color:#8896a8; color:#4b5b6e; background:var(--bg); }
+.vocab-idf { font-family:var(--font); opacity:.75; }
+.vocab-more { font-weight:600; opacity:.8; }
+.vocab-accs { display:flex; flex-wrap:wrap; gap:8px; }
+.vocab-acc { display:grid; padding:4px 14px; border:2px solid var(--navy-soft); border-radius:8px; background:var(--surface); }
+.vocab-acc.is-chosen { border-color:var(--navy); background:var(--bg); }
+
+/* drift strip (step 9) */
+.drift-strip { display:grid; gap:4px; padding:6px 12px; border-radius:8px; background:var(--bg); }
+.drift-strip[hidden] { display:none; }
+.drift-title { margin:0; font-weight:700; }
+.drift-rows { display:grid; gap:4px; }
+.drift-row { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1fr) auto; gap:4px 12px; align-items:center; }
+.drift-track { height:14px; border-radius:7px; background:var(--surface); box-shadow:inset 0 0 0 1px var(--navy-soft); overflow:hidden; }
+.drift-bar { display:block; height:100%; background:#E07B00; }
+.drift-row[data-row='test'] .drift-bar { background:#0EA5A4; }
+.drift-value { font-variant-numeric:tabular-nums; font-weight:700; }
+@media (max-width:900px) {
+  .drift-row { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  .drift-row .drift-label { grid-column:1 / -1; }
+}
+
+/* debugging code (step 10); the numbered panel itself is core/plot/code-panel.css */
+.debug-scene { display:grid; gap:10px; padding:0 0 8px; }
+.exam-note { margin:0 12px; padding:8px 14px; border-left:4px solid var(--navy); border-radius:6px; background:var(--bg); font-size:var(--fs-tick); line-height:1.35; }
+.code-links { display:flex; flex-wrap:wrap; gap:6px 18px; margin:0 12px; font-size:var(--fs-tick); }
+
+/* Lab controls; a step with no control hides the whole params card (controls.ts sets data-off on the host) */
+.sa-params { display:grid; gap:8px; }
+.sa-params .ctl { min-width:0; }
+.sa-params .ctl.text { display:grid; grid-template-columns:minmax(0,1fr); gap:4px; }
+.sa-params .ctl.range { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 8px; }
+.sa-params .ctl.toggle { display:flex; align-items:center; gap:8px; min-height:var(--ctl); }
+.sa-params .ctl.toggle input { width:20px; height:20px; accent-color:var(--navy); flex:none; }
+.sa-params .ctl-label { font-weight:600; }
+.sa-params .sa-value { font-variant-numeric:tabular-nums; font-weight:700; }
+.sa-params input[type='range'] { grid-column:1 / -1; width:100%; min-height:var(--ctl); margin:0; accent-color:var(--navy); }
+.sa-params input[type='text'] { width:100%; min-height:var(--ctl); padding:0 .6em; border:2px solid var(--navy); border-radius:8px; background:var(--surface); font:inherit; box-sizing:border-box; }
+.sa-params select { min-height:var(--ctl); padding:0 .5em; border:2px solid var(--navy); border-radius:8px; background:var(--surface); font:inherit; }
+.sa-params .ctl[data-off], .sa-params[data-off] { display:none; }
+[data-mode='lab'] .params[data-off] { display:none; }
+[data-mode='lab'] .sa-params { gap:4px; }
+.sa-extra p { margin:0 0 8px; }
