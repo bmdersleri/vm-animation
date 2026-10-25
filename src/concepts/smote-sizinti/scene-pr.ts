@@ -3,7 +3,7 @@ import type { Mode } from '../../core/mode';
 import { LineChartLayer, type LineChartSpec } from '../../core/plot/line-chart';
 import { r1 } from '../../core/plot/marks';
 import type { TextMeasure } from '../../core/plot/text-measure';
-import { MatrixLayer, matrixHeight } from '../dengesiz/matrix';
+import { MatrixLayer, matrixHeight } from '../../core/plot/matrix';
 import { precisionAt } from './model';
 import { mountSvg, PAD, type G, type ViewScene } from './scene-base';
 import type { LeakView, PrView } from './view';

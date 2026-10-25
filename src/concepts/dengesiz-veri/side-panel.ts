@@ -2,7 +2,7 @@ import type { Selection } from 'd3-selection';
 import { HBarsLayer, type HBar } from '../../core/plot/hbars';
 import { r1 } from '../../core/plot/marks';
 import type { TextMeasure } from '../../core/plot/text-measure';
-import { MatrixLayer } from '../dengesiz/matrix';
+import { MatrixLayer } from '../../core/plot/matrix';
 import type { ImbView, MetricRow } from './view';
 
 type G = Selection<SVGGElement, unknown, null, undefined>;

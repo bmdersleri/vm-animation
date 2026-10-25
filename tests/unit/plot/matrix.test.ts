@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { select } from 'd3-selection';
-import { MatrixLayer } from '../../../src/concepts/dengesiz/matrix';
+import { MatrixLayer } from '../../../src/core/plot/matrix';
 import { TextMeasure } from '../../../src/core/plot/text-measure';
 
 function draw(matrix: { tn: number; fp: number; fn: number; tp: number }) {
@@ -33,5 +33,27 @@ describe('confusion matrix layer', () => {
     expect(cols).toEqual(['kalan', 'ayrılan']);
     expect(rows).toEqual(['kalan', 'ayrılan']);
     expect(svg.textContent).not.toMatch(/Kaldı|Ayrıldı/);
+  });
+
+  it('custom class names and tags replace the churn wording', () => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    document.body.append(svg);
+    const probe = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    svg.append(probe);
+    const layer = new MatrixLayer(select(svg).append('g'), new TextMeasure(probe as SVGTextElement));
+    layer.draw(
+      { tn: 33, fp: 17, fn: 17, tp: 33 },
+      {
+        rect: { x: 0, y: 0, w: 300, h: 240 },
+        tick: 14,
+        axis: 15,
+        focusPositive: false,
+        ms: 0,
+        names: ['olumsuz', 'olumlu'],
+        tags: { tn: 'doğru olumsuz', fp: 'yanlış olumlu', fn: 'yanlış olumsuz', tp: 'doğru olumlu' },
+      },
+    );
+    expect([...svg.querySelectorAll('.matrix-col-name')].map((t) => t.textContent)).toEqual(['olumsuz', 'olumlu']);
+    expect(svg.querySelector('[data-cell="tp"] .cell-tag')!.textContent).toBe('doğru olumlu');
   });
 });

@@ -1,8 +1,8 @@
 import type { Selection } from 'd3-selection';
-import type { Confusion } from '../degerlendirme/metrics';
-import { r1 } from '../../core/plot/marks';
-import type { TextMeasure } from '../../core/plot/text-measure';
-import { tr } from '../../core/plot/transition';
+import type { Confusion } from '../../concepts/degerlendirme/metrics';
+import { r1 } from './marks';
+import type { TextMeasure } from './text-measure';
+import { tr } from './transition';
 
 type G = Selection<SVGGElement, unknown, null, undefined>;
 
@@ -31,6 +31,9 @@ export interface MatrixOptions {
   ms: number;
   /** Drops the "tahmin" / "gerçek" titles and their room (a stack of matrices explains them once). */
   compact?: boolean;
+  /** Axis class names and cell tags of another task (default: the churn wording above). */
+  names?: readonly [string, string];
+  tags?: Readonly<Record<CellKey, string>>;
 }
 
 /** Height (px) the matrix needs for a given tick size and cell height. */
@@ -39,7 +42,7 @@ export function matrixHeight(tick: number, cellH: number, compact = false): numb
 }
 
 /**
- * The small 2x2 confusion matrix shared by the two imbalance pages: predicted class across,
+ * The small 2x2 confusion matrix shared by the imbalance and text-mining pages: predicted class across,
  * actual class down, class names "kalan" / "ayrılan", every cell a `g[data-cell]` with its tag and
  * count. Cells are drawn once and updated in place.
  */
@@ -66,7 +69,9 @@ export class MatrixLayer {
   draw(matrix: Confusion, o: MatrixOptions): void {
     const { rect, tick, axis } = o;
     const gap = Math.round(tick * 0.4);
-    const nameW = this.measure.maxWidth([...CLASS_NAMES], 'tick', tick) + gap;
+    const names = o.names ?? CLASS_NAMES;
+    const tagOf = (key: CellKey, fallback: string): string => o.tags?.[key] ?? fallback;
+    const nameW = this.measure.maxWidth([...names], 'tick', tick) + gap;
     const head = tick * (o.compact ? 1.7 : 3.1);
     const cellW = Math.max(40, (rect.w - nameW) / 2);
     const cellH = Math.max(tick * 1.6, (rect.h - head) / 2);
@@ -86,14 +91,14 @@ export class MatrixLayer {
       const i = Number(this.getAttribute('data-class'));
       this.setAttribute('x', String(r1(x0 + cellW * (i + 0.5))));
       this.setAttribute('y', String(r1(rect.y + head - tick * 0.5)));
-      this.textContent = CLASS_NAMES[i];
+      this.textContent = names[i];
     });
     this.g.selectAll<SVGTextElement, unknown>('text.matrix-row-name').each(function () {
       const i = Number(this.getAttribute('data-class'));
       this.setAttribute('x', String(r1(x0 - gap)));
       this.setAttribute('y', String(r1(y0 + cellH * (i + 0.5))));
       this.setAttribute('dy', '0.35em');
-      this.textContent = CLASS_NAMES[i];
+      this.textContent = names[i];
     });
     CELLS.forEach((c, n) => {
       const col = n % 2;
@@ -112,14 +117,15 @@ export class MatrixLayer {
       const mid = y0 + row * cellH + cellH / 2;
       // on one line the tag gives way to the count when the cell is too narrow for both
       const countW = this.measure.width(String(matrix[c.key]), 'cell-count', axis);
-      const tagW = this.measure.width(c.tag, 'cell-tag', tick);
+      const tag = tagOf(c.key, c.tag);
+      const tagW = this.measure.width(tag, 'cell-tag', tick);
       const showTag = stacked || (tagW + countW) * 1.15 + 24 <= cellW;
       cell
         .select('text.cell-tag')
         .attr('x', r1(x0 + col * cellW + 8))
         .attr('y', r1(stacked ? y0 + row * cellH + tick * 1.15 : mid))
         .attr('dy', stacked ? null : '0.35em')
-        .text(showTag ? c.tag : '');
+        .text(showTag ? tag : '');
       cell
         .select('text.cell-count')
         .attr('text-anchor', stacked ? 'middle' : 'end')

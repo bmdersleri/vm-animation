@@ -2,7 +2,7 @@ import type { Selection } from 'd3-selection';
 import { labelArea, labelBox, overlap, type Box as LabelBox } from '../../core/plot/label-place';
 import { r1 } from '../../core/plot/marks';
 import type { TextMeasure } from '../../core/plot/text-measure';
-import { MatrixLayer } from '../dengesiz/matrix';
+import { MatrixLayer } from '../../core/plot/matrix';
 import { ScatterScene, type Box, type PlotFrame, type SideLike } from './scene-scatter';
 import type { ViewScene } from './scene-smote';
 import type { BoundaryView, ImbView, LineView, TableView } from './view';
