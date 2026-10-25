@@ -15,6 +15,9 @@ const stageSettled = (page: Page): Promise<void> => settled(() => page.evaluate(
     return [r.x, r.y, r.width, r.height];
   })));
 
+/** Pages whose first and last steps are HTML (flow strip, sample cards, code panel) with at most a small bar svg: the scene root counts. */
+const HTML_SCENES = new Set(['duygu-analizi']);
+
 async function checkStep(page: Page, label: string): Promise<void> {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow, `${label}: horizontal overflow`).toBeLessThanOrEqual(1);
@@ -34,16 +37,17 @@ async function checkStep(page: Page, label: string): Promise<void> {
   // the scene's own drawing element: the largest svg/canvas in the stage that is rendered
   // (not hidden, so a collapsed one still counts and fails), or, when a step shows
   // only HTML cards, the first rendered scene root in the stage
-  const drawn = await page.evaluate(() => {
+  const htmlScene = HTML_SCENES.has(label.split(' ')[0]);
+  const drawn = await page.evaluate((htmlOnly) => {
     const stage = document.querySelector('.stage')!;
     const boxes = [...stage.querySelectorAll('svg, canvas')]
-      .filter((e) => e.checkVisibility({ checkVisibilityCSS: true, checkOpacity: true }))
+      .filter((e) => !htmlOnly && e.checkVisibility({ checkVisibilityCSS: true, checkOpacity: true }))
       .map((e) => e.getBoundingClientRect());
     const biggest = boxes.sort((a, b) => b.width * b.height - a.width * a.height)[0];
     const root = [...stage.children].find((e) => e.checkVisibility({ checkVisibilityCSS: true }));
     const r = biggest ?? root?.getBoundingClientRect();
     return r ? { w: r.width, h: r.height } : null;
-  });
+  }, htmlScene);
   expect(drawn, `${label}: scene element`).not.toBeNull();
   expect(drawn!.w, `${label}: scene width`).toBeGreaterThan(100);
   expect(drawn!.h, `${label}: scene height`).toBeGreaterThan(100);
