@@ -189,3 +189,20 @@ code.feature-name { font-family:var(--mono, ui-monospace, Consolas, monospace); 
   .code-side { padding:0 4px; }
   .code-links { flex-direction:row; flex-wrap:wrap; gap:4px 18px; }
 }
+
+/* Lab controls (controls.ts); a control outside its steps is hidden, a step with none hides the card */
+.lime-params { display:grid; gap:8px; }
+.lime-params .ctl { min-width:0; }
+.lime-params .ctl.select { display:grid; grid-template-columns:minmax(0,1fr); gap:4px; }
+.lime-params .ctl.range { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 8px; }
+.lime-params .ctl.toggle { display:flex; align-items:center; gap:8px; min-height:var(--ctl); }
+.lime-params .ctl.toggle input { width:20px; height:20px; margin:0; accent-color:var(--navy); }
+.lime-params .ctl-label { font-weight:600; }
+.lime-params .width-value { font-weight:700; font-variant-numeric:tabular-nums; }
+.lime-params input[type='range'] { grid-column:1 / -1; width:100%; min-height:var(--ctl); margin:0; accent-color:var(--navy); }
+.lime-params select { min-height:var(--ctl); max-width:100%; padding:0 .5em; border:2px solid var(--navy); border-radius:8px; background:var(--surface); font:inherit; }
+.lime-params .ctl[data-off], .lime-params[data-off] { display:none; }
+[data-mode='lab'] .params[data-off] { display:none; }
+[data-mode='lab'] .lime-params { gap:4px; }
+[data-mode='lab'] .lime-params input[type='range'] { min-height:30px; }
+.lime-extra p { margin:0 0 8px; }
