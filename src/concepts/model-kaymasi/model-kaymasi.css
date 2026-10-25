@@ -1,0 +1,165 @@
+/* Model drift page; every text size is a theme token. Navy = reference, orange = current / a change, red = alarm (always with a triangle and the word UYARI). */
+.kayma-scene { width:100%; height:100%; min-height:0; display:flex; flex-direction:column; gap:10px; font-family:var(--font); color:var(--navy); }
+.kayma-stage { position:relative; flex:1 1 0; min-height:0; overflow:hidden; }
+.kayma-host { position:absolute; inset:0; overflow-x:hidden; overflow-y:auto; }
+.kayma-host[hidden] { display:none; }
+/* a stage narrower than 900 px (measured by the scene, not the window) uses the Lab text tokens and one column */
+.kayma-stage[data-narrow] { --fs-tick:13px; --fs-axis:14px; --fs-cell:12px; }
+/* a phone: the stage is tall, it grows to the scene's content and the page scrolls (as capraz-dogrulama and crisp-dm) */
+.stage:has(.kayma-stage[data-tall]) { height:auto; overflow:visible; }
+.stage:has(.kayma-stage[data-tall]) .kayma-scene { height:auto; }
+.kayma-stage[data-tall] { flex:0 0 auto; overflow:visible; }
+.kayma-stage[data-tall] .kayma-host { position:static; overflow:visible; }
+.kayma-scene .formula { margin:0; padding:6px 14px; border-left:4px solid var(--navy); border-radius:6px; background:var(--bg); font-size:var(--fs-body); line-height:1.35; font-variant-numeric:tabular-nums; min-height:calc(2 * 1.35em + 12px); }
+.kayma-scene .formula .line { display:block; }
+.kayma-scene .formula .term { display:inline; white-space:normal; }
+code { font-family:var(--mono, ui-monospace, Consolas, monospace); font-weight:600; }
+
+/* svg text and labels */
+.kayma-host svg { display:block; max-width:100%; overflow:visible; }
+.kayma-host svg text { font-variant-numeric:tabular-nums; fill:var(--navy); }
+.kayma-host svg .tick { font-size:var(--fs-tick); }
+.mean-label, .bridge-label, .diff-label, .esik-label, .alarm-label, .today-label, .lc-ref-label, .strip-title { paint-order:stroke; stroke:var(--surface); stroke-width:4px; stroke-linejoin:round; }
+.scene-note, .monitor-note, .fluct-note, .psi-footnote, .psi-total { margin:6px 0 0; padding:4px 10px; border-left:4px solid var(--navy); border-radius:6px; background:var(--navy-soft); font-size:var(--fs-tick); line-height:1.35; }
+.psi-footnote[hidden] { display:none; }
+
+/* legends */
+.line-legend, .drift-legend, .spread-legend, .psi-legend { display:flex; flex-wrap:wrap; gap:2px 16px; margin:4px 0; padding:0 6px; font-size:var(--fs-tick); line-height:1.3; }
+.legend-item { display:inline-flex; align-items:center; gap:6px; }
+.legend-swatch { flex:none; display:inline-block; width:14px; height:14px; box-sizing:border-box; }
+.sw-ref { border-radius:50%; background:var(--navy); }
+.sw-cur { border-radius:50%; background:#F08A00; }
+.sw-hist-ref, .sw-psi-p { background:var(--navy); opacity:.8; border-radius:2px; }
+.sw-hist-cur { border:3px solid #F08A00; border-radius:2px; }
+.sw-curve-ref { height:0; border-top:4px solid var(--navy); }
+.sw-curve-refit { height:0; border-top:4px dashed #F08A00; }
+.sw-psi-p { background:#8E9BAA; opacity:1; }
+.sw-psi-q { background:#F08A00; border-radius:2px; }
+
+/* timeline (step 1) */
+.timeline-scene, .line-scene { padding:0; }
+.timeline .ref-band { fill:var(--navy-soft); stroke:var(--navy); stroke-width:2; }
+.timeline .watch-band { fill:var(--accent-soft); fill-opacity:.55; stroke:#F08A00; stroke-width:2; stroke-dasharray:7 5; }
+.timeline .month-cell { fill:var(--surface); stroke:var(--line); stroke-width:1.5; }
+.timeline .month-cell.is-ref { fill:var(--surface); stroke:var(--navy); stroke-width:2; }
+.timeline .ref-band-label, .timeline .watch-band-label { font-weight:700; }
+.timeline .month-no { font-weight:600; }
+
+/* number lines (steps 2-3) */
+.line-plot .nl-axis { stroke:var(--navy); stroke-width:2; }
+.line-plot .axis-title { font-size:var(--fs-axis); font-weight:600; }
+.line-plot .nl-dot { stroke:var(--surface); stroke-width:2; }
+.line-plot .nl-dot[data-period='ref'] { fill:var(--navy); }
+.line-plot .nl-dot[data-period='cur'] { fill:#F08A00; }
+.line-plot .mean-mark line { stroke-width:3; }
+.line-plot .mean-mark[data-period='ref'] line { stroke:var(--navy); }
+.line-plot .mean-mark[data-period='cur'] line { stroke:#F08A00; }
+.line-plot .mean-label, .line-plot .bridge-label { font-weight:700; }
+.line-plot .diff-bridge line { stroke:var(--navy); stroke-width:2.5; }
+.line-plot .esik-line { stroke:var(--navy); stroke-width:2.5; stroke-dasharray:8 5; }
+.line-plot .esik-label, .line-plot .diff-label { font-weight:700; }
+.line-plot .badge-text { font-weight:700; font-size:var(--fs-axis); }
+.line-plot .status-badge[data-status='UYARI'] .badge-text { fill:#8E2A1F; }
+
+/* drift panels (step 4) */
+.drift-scene { display:flex; gap:16px; }
+.kayma-stage[data-narrow] .drift-scene { flex-direction:column; }
+.drift-panel { flex:1 1 0; min-width:0; }
+.drift-title { margin:0 0 4px; font-size:var(--fs-axis); }
+.hist-ref { fill:var(--navy); fill-opacity:.8; }
+.hist-cur { fill:none; stroke:#F08A00; stroke-width:2.5; }
+.curve-ref { stroke:var(--navy); stroke-width:3.5; }
+.curve-refit { stroke:#F08A00; stroke-width:3.5; }
+.drift-plot .axis-title, .spread-plot .axis-title, .monitor-plot .axis-title { font-size:var(--fs-axis); font-weight:600; }
+
+/* spread (step 7) */
+.spread-title { margin:0 0 4px; font-size:var(--fs-axis); }
+.spread-body { display:flex; gap:16px; align-items:flex-start; }
+.spread-plot-wrap { flex:1 1 0; min-width:0; }
+.stat-boxes { flex:0 0 min(300px, 28%); display:grid; gap:10px; }
+.kayma-stage[data-narrow] .spread-body { flex-direction:column; align-items:stretch; }
+.kayma-stage[data-narrow] .stat-boxes { flex:none; width:100%; grid-template-columns:repeat(2, minmax(0,1fr)); }
+.stat-box { padding:8px 12px; border:2px solid var(--line); border-radius:10px; min-width:0; }
+.stat-label { opacity:.85; font-size:var(--fs-tick); }
+.stat-value { font-size:var(--fs-axis); font-weight:700; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+
+/* monitoring chart, accuracy strip, threshold table, readout (steps 5-6) */
+.monitor-scene { display:grid; grid-template-columns:minmax(0,1fr) var(--side-w, 0px); gap:12px; align-items:start; }
+.monitor-scene[data-stack] { grid-template-columns:minmax(0,1fr); }
+.monitor-charts { display:grid; grid-template-columns:repeat(var(--cols, 1), minmax(0,1fr)); gap:12px; min-width:0; }
+.monitor { min-width:0; }
+.monitor-title { margin:0 0 2px; font-size:var(--fs-axis); }
+.monitor-side { display:grid; gap:10px; min-width:0; }
+.monitor-side:empty { display:none; }
+.monitor-line { stroke:var(--navy); stroke-width:3; }
+.monitor-plot .ref-band { fill:var(--navy-soft); fill-opacity:.7; }
+.monitor-plot .lc-ref-label { font-weight:700; }
+.ok-mark { fill:var(--surface); stroke:var(--navy); stroke-width:2; }
+.alarm-mark path { stroke:var(--surface); stroke-width:1.5; }
+.alarm-label { fill:#8E2A1F; font-weight:700; }
+.today-line { stroke:#F08A00; stroke-width:2.5; stroke-dasharray:3 4; }
+.today-label { fill:var(--accent-text); font-weight:700; }
+.strip-title { fill:var(--navy); font-weight:600; }
+.acc-frame { fill:none; stroke:var(--line); stroke-width:1.5; }
+.acc-floor { stroke:var(--navy); stroke-width:2; stroke-dasharray:6 4; }
+.acc-pending { fill:none; stroke:var(--navy); stroke-width:2; stroke-dasharray:4 3; }
+.monitor-plot .acc-pending-label, .monitor-plot .strip-tick { fill:var(--muted); }
+.acc-dot.is-low { stroke:var(--surface); stroke-width:1.2; }
+.threshold-table { border-collapse:separate; border-spacing:2px; width:100%; font-size:var(--fs-tick); font-variant-numeric:tabular-nums; }
+.threshold-table .cell-head { padding:2px 6px; text-align:left; font-weight:600; border-bottom:2px solid var(--navy); }
+.threshold-table td:first-child { white-space:nowrap; }
+.threshold-table .cell { padding:.2em .5em; background:var(--bg); border-radius:4px; }
+.threshold-table tr.is-current .cell { background:var(--accent-soft); font-weight:700; }
+.threshold-table tr.is-current td:first-child::before { content:'\25B6  '; }
+.readout { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:6px; margin:0; font-size:var(--fs-tick); }
+.read-box { padding:6px 10px; border:2px solid var(--line); border-radius:8px; min-width:0; }
+.read-box[data-read='alarms'], .read-box[data-read='acc'] { grid-column:1 / -1; }
+.read-label { opacity:.85; }
+.read-value { margin:0; font-weight:700; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+
+/* PSI (step 8): wide, the legend, total and notes stand in a column beside the bars */
+.psi-scene[data-side] { display:grid; grid-template-columns:minmax(0,1fr) var(--side-w); grid-template-rows:repeat(4, auto) 1fr; gap:0 16px; align-items:start; }
+.psi-scene[data-side] > .psi-plot { grid-column:1; grid-row:1 / span 5; }
+.psi-scene[data-side] > :not(.psi-plot) { grid-column:2; }
+.psi-scene[data-side] .psi-legend { flex-direction:column; }
+.psi-plot .bar-p rect.bar { fill:#8E9BAA; }
+.psi-plot .bar-q rect.bar { fill:#F08A00; }
+.psi-plot .bar-value { font-weight:600; }
+.psi-plot .psi-term { font-weight:700; }
+.psi-plot .psi-head { font-weight:600; }
+.psi-total { font-weight:700; }
+
+/* alarm flow (step 9) */
+.flow-scene { padding:0; }
+.alarm-flow .flow-label, .alarm-flow .flow-edge-label { font-size:var(--fs-tick); }
+
+/* code (step 10) */
+.code-card { display:grid; gap:8px; }
+.code-card .code-scene { padding:0; }
+/* the corrected code is 22 lines: the smaller cell size keeps most of it on a projector stage */
+.code-card .code-pre { font-size:var(--fs-cell); line-height:1.35; }
+.code-card .bug-badge, .code-card .fix-badge { font-size:var(--fs-cell); }
+.code-extra { display:grid; gap:6px; }
+.code-output { padding:6px 10px; border-radius:6px; background:var(--bg); font-family:var(--mono, ui-monospace, Consolas, monospace); font-size:var(--fs-tick); }
+.code-error { padding:6px 10px; border:2px solid #8E2A1F; border-radius:6px; background:var(--surface); font-size:var(--fs-tick); }
+.code-error .error-text { font-family:var(--mono, ui-monospace, Consolas, monospace); color:#8E2A1F; overflow-wrap:anywhere; }
+.code-error .error-note { font-weight:700; color:#8E2A1F; }
+.code-links { display:flex; flex-wrap:wrap; gap:10px; }
+.card-link { display:inline-block; padding:4px 12px; border:2px solid var(--navy); border-radius:999px; color:var(--navy); font-size:var(--fs-tick); font-weight:600; text-decoration:none; }
+.card-link:hover, .card-link:focus-visible { background:var(--navy); color:var(--surface); }
+
+/* Lab controls (controls.ts); a control outside its steps is hidden, a step with none hides the card */
+.kayma-params { display:grid; gap:8px; }
+.kayma-params .ctl { min-width:0; }
+.kayma-params .ctl.select { display:grid; grid-template-columns:minmax(0,1fr); gap:4px; }
+.kayma-params .ctl.range { display:grid; gap:4px; }
+.kayma-params .ctl-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.kayma-params .ctl-head output { font-weight:700; font-variant-numeric:tabular-nums; }
+.kayma-params .ctl.check { display:flex; align-items:center; gap:8px; min-height:var(--ctl); }
+.kayma-params .ctl-label { font-weight:600; }
+.kayma-params select { min-height:var(--ctl); max-width:100%; padding:0 .5em; border:2px solid var(--navy); border-radius:8px; background:var(--surface); font:inherit; }
+.kayma-params input[type='range'] { width:100%; }
+.kayma-params input[type='checkbox'] { width:1.3em; height:1.3em; }
+.kayma-params .ctl[data-off], .kayma-params[data-off] { display:none; }
+[data-mode='lab'] .params[data-off] { display:none; }
+[data-mode='lab'] .kayma-params { gap:4px; }

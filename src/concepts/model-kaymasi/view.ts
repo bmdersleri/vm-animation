@@ -8,7 +8,7 @@ import {
 } from './data';
 import { ALARM_EDGES, ALARM_IDS, ALARM_LABELS, ALARM_PATH, type AlarmId } from './flow';
 import {
-  ESIK, LAB_MONTHS, NOTE_ADVICE, NOTE_CONCEPT, NOTE_DIFF, NOTE_INPUT, NOTE_SEGMENT, NOTE_TABLE, NOTE_THRESHOLD, NOTE_TRAP,
+  ESIK, LAB_MONTHS, LAB_TABLE_THRESHOLDS, NOTE_ADVICE, NOTE_CONCEPT, NOTE_DIFF, NOTE_INPUT, NOTE_SEGMENT, NOTE_TABLE, NOTE_THRESHOLD, NOTE_TRAP,
   ORDER_THRESHOLDS, SCAN_DONE, THRESHOLD, modelKaymasiScenario as scenario, psiNote, readout, scenarioIdAt, valuesOf,
   type KaymaParams, type Metric, type Readout,
 } from './scenario';
@@ -92,6 +92,12 @@ export interface ThresholdRow {
   current: boolean;
 }
 
+/** The threshold table of step 6: three column heads and one row per threshold. */
+export interface ThresholdTable {
+  heads: [string, string, string];
+  rows: ThresholdRow[];
+}
+
 export interface MonitorView {
   metric: Metric;
   threshold: number;
@@ -159,7 +165,7 @@ export interface KaymaView {
   line?: LineView;
   drift?: DriftView;
   monitor?: MonitorView;
-  table?: { rows: ThresholdRow[] };
+  table?: ThresholdTable;
   spread?: SpreadView;
   psi?: PsiView;
   graph?: FlowGraphSpec;
@@ -287,13 +293,28 @@ function monitorOf(ids: ScenarioId[], metric: Metric, threshold: number, today: 
   };
 }
 
+/** Lab table of step 6: the usual thresholds of the measure and the slider's value, for the chosen scenario. */
+function labTable(chosen: ScenarioId, metric: Metric, threshold: number): ThresholdTable {
+  const list = new Set<number>([...LAB_TABLE_THRESHOLDS[metric], threshold]);
+  const rows = [...list].sort((a, b) => a - b).map(t => {
+    const r = readout(chosen, metric, t);
+    return { threshold: t, falseAlarms: r.falseAlarms, delay: r.delayText, current: t === threshold };
+  });
+  return { heads: ['Eşik', 'Yanlış alarm', 'Gecikme'], rows };
+}
+
 function monitorView(id: string, p: KaymaParams, lab: boolean): KaymaView {
   const strip = id === 'esik-secimi' ? NOTE_THRESHOLD : NOTE_ADVICE;
   if (lab) {
     const metric = p.metric;
     const threshold = shownThreshold(scenario.steps.findIndex(s => s.id === id), p, true);
-    const monitor = monitorOf([scenarioIdAt(p.scenario)], metric, threshold, META.months, true);
-    return { stepId: id, kind: 'monitor', lab: true, strip, note: monitor.note, monitor };
+    const chosen = scenarioIdAt(p.scenario);
+    const monitor = monitorOf([chosen], metric, threshold, META.months, true);
+    const view: KaymaView = { stepId: id, kind: 'monitor', lab: true, strip, note: monitor.note, monitor };
+    if (id === 'esik-secimi') {
+      view.table = labTable(chosen, metric, threshold);
+    }
+    return view;
   }
   if (id === 'aylik-izleme') {
     const today = clamp(Math.floor(p.today), MONITOR_FROM, META.months);
@@ -303,13 +324,16 @@ function monitorView(id: string, p: KaymaParams, lab: boolean): KaymaView {
   const stage = clampStage(p.scan, ORDER_THRESHOLDS.length);
   const threshold = ORDER_THRESHOLDS[stage - 1];
   const monitor = monitorOf(['yok', 'yavas'], 'mean', threshold, META.months, false);
+  const yok = scenarioById('yok');
+  const yavas = scenarioById('yavas');
   const rows = ORDER_THRESHOLDS.map(t => ({
     threshold: t,
     falseAlarms: readout('yok', 'mean', t).falseAlarms,
     delay: readout('yavas', 'mean', t).delayText,
     current: t === threshold,
   }));
-  return { stepId: id, kind: 'monitor', lab: false, strip, note: null, monitor, table: { rows } };
+  const heads: ThresholdTable['heads'] = ['Eşik', `Yanlış alarm (${yok.name})`, `Gecikme (${yavas.name})`];
+  return { stepId: id, kind: 'monitor', lab: false, strip, note: null, monitor, table: { heads, rows } };
 }
 
 function spreadView(id: string, scenarioId: ScenarioId, month: number, lab: boolean): KaymaView {
@@ -328,23 +352,32 @@ function spreadView(id: string, scenarioId: ScenarioId, month: number, lab: bool
   return { stepId: id, kind: 'spread', lab, strip: NOTE_TABLE, note: NOTE_SEGMENT, spread };
 }
 
-function psiView(id: string, scenarioId: ScenarioId, month: number, scan: number, lab: boolean): KaymaView {
-  const m = monthOf(scenarioId, month);
-  const terms = psiTerms(m.psiCounts, META.perMonth, REFERENCE.psiCounts, REFERENCE.n);
-  const shown = lab ? terms.length : clampStage(scan, terms.length);
+/**
+ * The PSI bars of `counts` (a current histogram of the ten reference bins, `n` values) with the first `shown` bars
+ * reached by the sweep. An empty count raises q to the floor and marks the bar `empty` (the scene writes "q = 0").
+ */
+export function psiFromCounts(scenarioId: ScenarioId, month: number, counts: readonly number[], shown = counts.length, n = META.perMonth): PsiView {
+  const terms = psiTerms(counts, n, REFERENCE.psiCounts, REFERENCE.n);
+  const count = clamp(shown, 0, terms.length);
   const total = terms.reduce((a, t) => a + t.term, 0);
-  const bars: PsiBar[] = terms.map((t, i) => ({ bin: i + 1, ...t, shown: i < shown }));
+  const bars: PsiBar[] = terms.map((t, i) => ({ bin: i + 1, ...t, shown: i < count }));
   const hasEmpty = bars.some(b => b.shown && b.empty);
-  const sum = terms.slice(0, shown).map(t => f(t.term, 3)).join(' + ');
-  const strip = `PSI = Σ (qᵢ − pᵢ) ln(qᵢ / pᵢ) = ${sum}${shown < terms.length ? ' + …' : ` = ${f(total, 3)}`}`;
-  const psi: PsiView = {
+  return {
     scenario: scenarioId,
     month,
     bars,
-    shown,
+    shown: count,
     total,
     footnote: hasEmpty ? `q = 0 olan bölmede q ${f(META.psiFloor, 4)} alınır` : null,
   };
+}
+
+function psiView(id: string, scenarioId: ScenarioId, month: number, scan: number, lab: boolean): KaymaView {
+  const m = monthOf(scenarioId, month);
+  const shown = lab ? m.psiCounts.length : clampStage(scan, m.psiCounts.length);
+  const psi = psiFromCounts(scenarioId, month, m.psiCounts, shown);
+  const sum = psi.bars.slice(0, shown).map(b => f(b.term, 3)).join(' + ');
+  const strip = `PSI = Σ (qᵢ − pᵢ) ln(qᵢ / pᵢ) = ${sum}${shown < psi.bars.length ? ' + …' : ` = ${f(psi.total, 3)}`}`;
   return { stepId: id, kind: 'psi', lab, strip, note: psiNote(), psi };
 }
 

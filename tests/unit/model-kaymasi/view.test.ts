@@ -133,7 +133,11 @@ describe('model-kaymasi view', () => {
     expect(m5.series[0].shown).toBe(META.months);
     const m6 = at('esik-secimi', { scan: 1, threshold: 6 }, true).monitor!;
     expect(m6.threshold).toBe(6);
-    expect(at('esik-secimi', { scan: 1, threshold: 6 }, true).table).toBeUndefined();
+    // the Lab table lists the usual thresholds and the slider's value, whatever the sweep position
+    const labRows = at('esik-secimi', { scan: 1, threshold: 6 }, true).table!.rows;
+    expect(labRows.map(r => r.threshold)).toEqual([4, 6, 8, 12]);
+    expect(labRows.filter(r => r.current).map(r => r.threshold)).toEqual([6]);
+    expect(at('esik-secimi', { metric: 'psi', threshold: 0.3 }, true).table!.rows.map(r => r.threshold)).toEqual([0.1, 0.25, 0.3, 0.5]);
     expect(shownThreshold(idx('esik-secimi'), { ...sc.defaults, scan: 1, threshold: 6 }, true)).toBe(6);
     expect(at('psi', { scan: 3 }, true).psi!.shown).toBe(10);
     expect(at('iki-donem', { scan: 1 }, true).line!.showCurrent).toBe(true);

@@ -43,6 +43,9 @@ export const THRESHOLD = {
 /** The thresholds step 6 sweeps. */
 export const ORDER_THRESHOLDS: readonly number[] = [4, 8, 12];
 
+/** The thresholds the Lab table of step 6 lists besides the slider's value, per measure. */
+export const LAB_TABLE_THRESHOLDS: Record<Metric, readonly number[]> = { mean: [4, 8, 12], psi: [0.1, 0.25, 0.5] };
+
 /** The usual PSI limits (common practice; the book gives none). */
 export const PSI_CONVENTION: readonly [number, number] = [0.1, 0.25];
 

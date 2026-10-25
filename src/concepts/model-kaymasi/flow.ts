@@ -62,10 +62,30 @@ export const ALARM_PATH: readonly string[] = [
 type Sizes = Record<AlarmId, { w: number; h: number }>;
 
 /** The smallest box of every node for its label at `fontPx` (what the scene measures; tests pass an estimating `TextMeasure`). */
-export function alarmSizes(measure: TextMeasure, fontPx: number): Sizes {
+export function alarmSizes(measure: TextMeasure, fontPx: number, labels: Record<AlarmId, string[]> = ALARM_LABELS): Sizes {
   return Object.fromEntries(
-    ALARM_IDS.map(id => [id, naturalSize({ kind: KIND[id], label: ALARM_LABELS[id] }, measure, fontPx)]),
+    ALARM_IDS.map(id => [id, naturalSize({ kind: KIND[id], label: labels[id] }, measure, fontPx)]),
   ) as Sizes;
+}
+
+/** Box padding on each side (`flow-graph.ts` PAD), which a wrapped label line must leave room for. */
+const BOX_PAD = 8;
+
+/** The widest a branch box may be in a narrow area of width `w`: two of them side by side with the minimum gap. */
+export function narrowBranchWidth(w: number): number {
+  return Math.floor((w - 2 * ALARM_MARGIN - MIN_GAP) / 2);
+}
+
+/**
+ * The labels with the four branch labels wrapped so each box is at most `maxW` wide (a narrow area cannot hold two
+ * of the long ones side by side); the chain labels stay as written. A word wider than the room stays whole.
+ */
+export function wrapBranchLabels(measure: TextMeasure, fontPx: number, maxW: number): Record<AlarmId, string[]> {
+  const out = { ...ALARM_LABELS };
+  for (const id of BRANCHES) {
+    out[id] = ALARM_LABELS[id].flatMap(line => measure.wrap(line, maxW - 2 * BOX_PAD, 'flow-label', fontPx));
+  }
+  return out;
 }
 
 /** Character-count estimate, for a layout asked for before the scene has measured the labels. */
