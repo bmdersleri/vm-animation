@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { BOOK, CORPUS, DRIFT, MODELS, STOP_WORDS } from '../../../src/concepts/metin/data';
 import { tokenize } from '../../../src/concepts/metin/tokenize';
@@ -65,5 +66,12 @@ describe('metin data', () => {
     expect(DRIFT.oovRateNew).toBeGreaterThan(DRIFT.oovRateTest);
     expect(DRIFT.model).toBe('uni-keep-train');
     expect(DRIFT.comments.every(c => c.p > 0 && c.p < 1)).toBe(true);
+  });
+
+  it('the README names the files make_metin_data.py writes where they are', () => {
+    const line = fs.readFileSync('README.md', 'utf8').split('\n').find((l) => l.startsWith('- `make_metin_data.py`'))!;
+    const paths = [...line.matchAll(/`([^`]+\.json)`/g)].map((m) => m[1]);
+    expect(paths).toEqual(['src/concepts/metin/data/metin.json', 'tests/fixtures/metin_sklearn.json']);
+    for (const p of paths) expect(fs.existsSync(p), p).toBe(true);
   });
 });

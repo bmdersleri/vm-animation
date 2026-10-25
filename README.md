@@ -128,7 +128,7 @@ python scripts/make_metin_data.py
 - `make_dendrogram_data.py`: Hiyerarşik kümeleme ve dendrogram sayfasının verisini ve SciPy/scikit-learn referanslarını üretir (`src/concepts/dendrogram/data/`); CSV gerekmez.
 - `make_birliktelik_data.py`: Bölüm 8 sayfalarının (destek/güven/kaldıraç ve Apriori/FP-Growth) ortak 18 fişlik sepet verisini ve mlxtend referanslarını üretir (`src/concepts/birliktelik/data/`); CSV gerekmez.
 - `make_dengesiz_data.py`: Bölüm 11 sayfalarının (dengesiz veri ve SMOTE sızıntısı) ortak verisini (`src/concepts/dengesiz/data/dengesiz.json`) ve `tests/fixtures/dengesiz_sklearn.json` referanslarını üretir; `imbalanced-learn` kurulmaz, SMOTE elle yazılmıştır. Girdisi kitabın veri kümesinin birebir kopyası olan `scripts/data/telco_churn_synthetic_severe.csv` dosyasıdır (üreticinin kendi kopyası); `--check` hiçbir şey yazmadan sapmayı denetler.
-- `make_metin_data.py`: Bölüm 12 sayfalarının (TF-IDF ve kosinüs benzerliği, duygu analizi) ortak verisini (`src/concepts/metin/data/metin.json`: kitabın kod 01-04 örnekleri ve Python'ın `random.Random(42)` ile şablonlardan ürettiği sentetik yorum külliyatı) ve `src/concepts/metin/data/metin_sklearn.json` scikit-learn referanslarını üretir; CSV gerekmez; `--check` hiçbir şey yazmadan sapmayı denetler.
+- `make_metin_data.py`: Bölüm 12 sayfalarının (TF-IDF ve kosinüs benzerliği, duygu analizi) ortak verisini (`src/concepts/metin/data/metin.json`: kitabın kod 01-04 örnekleri ve Python'ın `random.Random(42)` ile şablonlardan ürettiği sentetik yorum külliyatı) ve `tests/fixtures/metin_sklearn.json` scikit-learn referanslarını üretir; CSV gerekmez; `--check` hiçbir şey yazmadan sapmayı denetler.
 
 ## Yeni kavram ekleme
 

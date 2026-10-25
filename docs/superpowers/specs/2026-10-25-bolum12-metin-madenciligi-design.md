@@ -277,6 +277,14 @@ sözlüğü / yalnız testte geçen terimler). Adım 10'da **kod paneli**.
   eşittir; "Duygu tahmini: olumlu" ve "En benzer yorum" çıktısı eşitlik kırılmasından gelir.
 - Kod04'ün 2 yorumluk test kümesi bir ölçüm değildir (kitap da küçük veri uyarısı verir); sayfa
   külliyatla ölçer, kitabın raporunu yalnız karşılaştırma olarak gösterir.
+- Kitabın `DuyguHata` kodundaki üç `# Hata:` yorum satırı, duygu analizi sayfasının adım 10'unda
+  gösterilmez: hataları tarama işaretlemeden önce adlandırırlar. Hatalar tarama sırasında rozetle
+  işaretlenir.
+
+Not (görünüm kararı, kitap düzeltmesi değil): duygu analizi sayfasında olumlu renk lacivert değil
+camgöbeğidir (teal). Lacivert iki sayfada da arayüz mürekkebi ve ok rengidir; camgöbeği ile turuncu
+iki sınıf olarak okunur. Olumsuzlama bigram'ının çip vurgusu da turuncu kullanmaz, nötr kalın
+lacivert çerçevedir: olumluya çeken bir bigram olumsuz renkle boyanmaz.
 
 ## Arayüzler
 
