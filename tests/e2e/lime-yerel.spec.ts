@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { open, outsideStage, overlaps, pageOverflow, paramsOutside, settled, type Stack } from './helpers';
+import { clippedBoxes, open, outsideStage, overlaps, pageOverflow, paramsOutside, settled, type Stack } from './helpers';
 
 const PAGE = '/lime-yerel/';
 const READY = '.lime-stage';
@@ -24,11 +24,13 @@ async function step(page: Page, n: number) {
  */
 const WEIGHT_STACK: Stack = { upper: 'text', lower: '.kernel-weight', within: 'svg', maxShare: 0.15 };
 const overlapsOf = (page: Page) => overlaps(page, LABELS, [WEIGHT_STACK]);
+/** Scene boxes that must show all their content; the code box scrolls on purpose, its content must stay reachable. */
+const BOXES = '.lime-host, .pattern-wrap, .pattern-table, .code-pre, .code-side, .flow-box';
 
-async function geometry(page: Page) {
-  expect(await overlapsOf(page)).toEqual([]);
-  expect(await outsideStage(page, `${LABELS}, .lime-scene .formula`)).toEqual([]);
-  expect((await pageOverflow(page)).x).toBeLessThanOrEqual(0);
+async function geometry(page: Page, at = '') {
+  expect(await overlapsOf(page), at).toEqual([]);
+  expect(await outsideStage(page, `${LABELS}, .lime-scene .formula`), at).toEqual([]);
+  expect((await pageOverflow(page)).x, at).toBeLessThanOrEqual(0);
 }
 
 test('lime-yerel: page opens', async ({ page }) => {
@@ -52,8 +54,8 @@ test('lab: every step fits and shows only its controls inside the card', async (
   await open(page, PAGE, 'lab', READY);
   for (let n = 1; n <= STEPS; n++) {
     await step(page, n);
-    expect(await overlapsOf(page), `step ${n}`).toEqual([]);
-    expect((await pageOverflow(page)).x).toBeLessThanOrEqual(0);
+    await geometry(page, `step ${n}`);
+    expect(await clippedBoxes(page, BOXES, '.code-pre'), `step ${n}`).toEqual([]);
     expect(await paramsOutside(page), `step ${n}`).toEqual([]);
   }
 });

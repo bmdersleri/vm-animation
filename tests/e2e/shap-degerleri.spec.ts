@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { open, outsideStage, overlaps, pageOverflow, paramsOutside, settled, type Stack } from './helpers';
+import { clippedBoxes, open, outsideStage, overlaps, pageOverflow, paramsOutside, settled, type Stack } from './helpers';
 
 const PAGE = '/shap-degerleri/';
 const READY = '.shap-stage';
@@ -24,11 +24,13 @@ async function step(page: Page, n: number) {
  */
 const NODE_STACK: Stack = { upper: '.node-name', lower: '.node-v', within: 'svg', maxShare: 0.15 };
 const overlapsOf = (page: Page) => overlaps(page, LABELS, [NODE_STACK]);
+/** Scene boxes that must show all their content: the host, the lattice and table wrappers, the cards. */
+const BOXES = '.shap-host, .lattice-wrap, .orders-wrap, .order-table, .bars-panel, .customer-card, .text-card, .swarm-legend';
 
-async function geometry(page: Page) {
-  expect(await overlapsOf(page)).toEqual([]);
-  expect(await outsideStage(page, `${LABELS}, .shap-scene .formula`)).toEqual([]);
-  expect((await pageOverflow(page)).x).toBeLessThanOrEqual(0);
+async function geometry(page: Page, at = '') {
+  expect(await overlapsOf(page), at).toEqual([]);
+  expect(await outsideStage(page, `${LABELS}, .shap-scene .formula`), at).toEqual([]);
+  expect((await pageOverflow(page)).x, at).toBeLessThanOrEqual(0);
 }
 
 test('shap-degerleri: page opens', async ({ page }) => {
@@ -59,8 +61,8 @@ test('lab: every step fits and shows only its controls inside the card', async (
   await open(page, PAGE, 'lab', READY);
   for (let n = 1; n <= STEPS; n++) {
     await step(page, n);
-    expect(await overlapsOf(page), `step ${n}`).toEqual([]);
-    expect((await pageOverflow(page)).x).toBeLessThanOrEqual(0);
+    await geometry(page, `step ${n}`);
+    expect(await clippedBoxes(page, BOXES), `step ${n}`).toEqual([]);
     expect(await paramsOutside(page), `step ${n}`).toEqual([]);
   }
 });

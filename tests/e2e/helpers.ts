@@ -65,6 +65,32 @@ export function outsideStage(page: Page, selector: string): Promise<string[]> {
 }
 
 /**
+ * Scene boxes that hide part of their content (class + reason): a visible match that sticks out of the `.stage`
+ * box, scrolls sideways, or scrolls down. A box that matches `scrollers` is meant to scroll down: its content must
+ * then stay reachable through its own scrollbar (computed `overflow-y` auto or scroll) instead.
+ */
+export function clippedBoxes(page: Page, selector: string, scrollers = ''): Promise<string[]> {
+  return page.evaluate(([sel, scroll]) => {
+    const s = document.querySelector('.stage')!.getBoundingClientRect();
+    const out: string[] = [];
+    for (const el of document.querySelectorAll<HTMLElement>(sel)) {
+      const r = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      if (r.width === 0 || r.height === 0 || cs.display === 'none' || el.closest('[hidden]')) continue;
+      const name = el.getAttribute('class') ?? el.tagName;
+      if (r.left < s.left - 1 || r.right > s.right + 1 || r.top < s.top - 1 || r.bottom > s.bottom + 1) out.push(`${name}: outside the stage`);
+      if (el.scrollWidth > el.clientWidth + 1) out.push(`${name}: scrolls sideways (${el.scrollWidth} > ${el.clientWidth})`);
+      if (el.scrollHeight > el.clientHeight + 1) {
+        const meant = scroll !== '' && el.matches(scroll);
+        if (!meant) out.push(`${name}: scrolls down (${el.scrollHeight} > ${el.clientHeight})`);
+        else if (!['auto', 'scroll'].includes(cs.overflowY)) out.push(`${name}: content below the box is unreachable`);
+      }
+    }
+    return out;
+  }, [selector, scrollers] as const);
+}
+
+/**
  * A pair that stacks on purpose: an `upper` text directly above a `lower` text inside the same `within`
  * ancestor, whose line boxes may touch by at most `maxShare` of the smaller box height. Text on one
  * baseline (the same top) never matches, so a tag drawn over its count still counts as an overlap.
