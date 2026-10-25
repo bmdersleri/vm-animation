@@ -1,0 +1,15 @@
+/* Waterfall / force bar (core/plot/waterfall.ts): positive parts push towards "ayrılır" (orange), negative towards "kalır" (blue). */
+.wf-seg[data-sign='pos'] { fill:#E07B00; }
+.wf-seg[data-sign='neg'] { fill:#2F6FB2; }
+.wf-start { fill:#9AA5B1; }
+.wf-total-bar { fill:#14365C; }
+.wf-total-line { stroke:#14365C; stroke-width:3; }
+.wf-base-line { stroke:#14365C; stroke-width:2; stroke-dasharray:5 4; }
+.wf-link, .wf-leader { stroke:#9AA5B1; stroke-width:1.5; fill:none; }
+.wf-link { stroke-dasharray:3 3; }
+.wf-grid { stroke:#E3E9F0; stroke-width:1; }
+.wf-axis-line { stroke:#C9D5E3; stroke-width:1.5; }
+.wf-label, .wf-name, .wf-tick, .wf-title { font-size:var(--fs-tick); fill:#14365C; font-variant-numeric:tabular-nums; }
+.wf-label { font-weight:700; paint-order:stroke; stroke:#fff; stroke-width:4px; stroke-linejoin:round; }
+.wf-title { font-size:var(--fs-axis); font-weight:700; }
+.wf-tick { fill:#3f526a; }
