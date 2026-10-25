@@ -2,7 +2,10 @@ import type { Mode } from '../../core/mode';
 import { el, type ViewScene } from './scene-base';
 import type { CardsView, TfidfView } from './view';
 
-/** Step 10: the "separate vocabularies" card and the "high similarity is not the same meaning" card, then the links. */
+/**
+ * Step 10: the "separate vocabularies" card (the two document texts, then their columns side by side) and the
+ * "high similarity is not the same meaning" card, then the links.
+ */
 export class CardsScene implements ViewScene {
   private readonly root: HTMLDivElement;
 
@@ -39,8 +42,15 @@ export class CardsScene implements ViewScene {
     const card = el(doc, 'section', 'text-card');
     card.dataset.kind = 'ayri-sozluk';
     card.dataset.separate = String(sep.on);
+    // the two texts the card compares (a Lab edit of the documents reaches them)
+    const texts = el(doc, 'div', 'card-docs');
+    sep.names.forEach((name, i) => {
+      const line = el(doc, 'p', 'card-doc');
+      line.append(el(doc, 'span', 'card-doc-name', name), ': ', el(doc, 'q', 'card-doc-text', sep.docs[i]));
+      texts.append(line);
+    });
     const pairs = el(doc, 'div', 'vocab-pairs');
-    pairs.append(el(doc, 'span', 'vocab-head', 'sütun'), el(doc, 'span', 'vocab-head', 'belge 0'), el(doc, 'span', 'vocab-head', 'belge 2'));
+    pairs.append(el(doc, 'span', 'vocab-head', 'sütun'), el(doc, 'span', 'vocab-head', sep.names[0]), el(doc, 'span', 'vocab-head', sep.names[1]));
     sep.pairs.forEach(([a, b], i) => {
       pairs.append(el(doc, 'span', 'vocab-no', String(i)), el(doc, 'code', 'vocab-term', a), el(doc, 'code', 'vocab-term', b));
     });
@@ -61,6 +71,7 @@ export class CardsScene implements ViewScene {
           ? 'İki ayrı vektörleştiricinin aynı numaralı sütunları farklı terimlerdir; karşılaştırma anlamsızdır. Doğrusu tek vektörleştirici.'
           : 'Tek vektörleştirici iki belge için de aynı sütunları kurar: her sütun her iki belgede aynı terimdir, kosinüs anlamlıdır.',
       ),
+      texts,
       pairs,
       ...(sep.on ? [wrong, right] : [right]),
     );

@@ -19,6 +19,10 @@ describe('vector scene', () => {
     expect(rows[0].classList.contains('is-query')).toBe(true);
     expect(rows[1].querySelector('.sim-note')!.textContent).toBe('ortak terim: internet');
     expect(el.querySelectorAll('.vec-arrow')).toHaveLength(2);
+    // the other arrow is named as the list names it: its rank and the start of its text
+    const other = rows[1].querySelector('.sim-label')!.textContent!;
+    expect(texts(el, 'text.vec-label.is-other')).toEqual([`2. ${other.split(' ')[0]}…`]);
+    expect(texts(el, 'text.vec-label.is-query')).toEqual(['sorgu']);
     expect(el.querySelectorAll('path.angle-arc')).toHaveLength(1);
     expect(texts(el, '.axis-title')).toEqual(['internet', 'bağlantı']);
     expect(texts(el, 'text.angle-label')[0]).toBe('izdüşümde 53°');

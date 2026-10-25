@@ -3,11 +3,8 @@ import type { Mode } from '../../core/mode';
 import { HBarsLayer } from '../../core/plot/hbars';
 import { HeatTable } from '../../core/plot/heat-table';
 import { TextMeasure } from '../../core/plot/text-measure';
-import { el, NS, type ViewScene } from './scene-base';
+import { el, NARROW, NS, type ViewScene } from './scene-base';
 import type { TableSpec, TableView, TfidfView } from './view';
-
-/** Below this width (px) the page is one column and the IDF bars go under the table. */
-const NARROW = 900;
 
 /**
  * The heat tables (steps 4-7): one or two `HeatTable`s (rows documents, columns terms), and in step 5 the IDF

@@ -235,6 +235,13 @@ describe('tfidf-kosinus Lab controls', () => {
     const right = (): string[] => terms().filter((_, i) => i % 2 === 1);
     expect(left()).not.toEqual(right());
     expect(card().querySelector('.card-result.is-wrong')).not.toBeNull();
+    // the card shows the two texts it compares, and a Lab edit of document 0 reaches it
+    expect(texts(card(), '.card-doc-text')).toEqual([BOOK.kod02.docs[0], BOOK.kod02.docs[2]]);
+    expect(texts(card(), '.card-doc-name')).toEqual(['belge 0', 'belge 2']);
+    player.goto(step('bow'));
+    type(ctl(host, 'doc-0'), 'yeni fiber hat');
+    player.goto(step('ortak-sozluk'));
+    expect(texts(card(), '.card-doc-text')).toEqual(['yeni fiber hat', BOOK.kod02.docs[2]]);
     flip(toggle);
     expect(player.state.params.separate).toBe(false);
     expect(card().getAttribute('data-separate')).toBe('false');

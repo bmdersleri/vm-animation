@@ -100,7 +100,6 @@ export interface SimRow {
 export interface VectorsView {
   terms: [string, string];
   arrows: Arrow[];
-  /** Angle between the two arrows in the plane (degrees), `text` is how it is written. */
   /** Angle of the two-term projection (what the arc shows), written "izdüşümde 53°". */
   angle: { deg: number; text: string } | null;
   /** Step 8: the true angle between the full vectors, arccos of the cosine. */
@@ -116,8 +115,11 @@ export interface VectorsView {
 
 /** Step 10's two cards. */
 export interface CardsView {
-  /** `on`: the two documents have a vectoriser each (the book's mistake), so the column names differ; off: one shared vocabulary. */
-  separate: { on: boolean; docs: [string, string]; pairs: [string, string][]; aligned: string; shared: string };
+  /**
+   * `on`: the two documents have a vectoriser each (the book's mistake), so the column names differ; off: one shared
+   * vocabulary. `names` and `docs` are the two documents compared ("belge 0" and "belge 2") and their texts.
+   */
+  separate: { on: boolean; names: [string, string]; docs: [string, string]; pairs: [string, string][]; aligned: string; shared: string };
   pair: { a: string; b: string; cos: string };
   links: { href: string; text: string }[];
 }
@@ -422,7 +424,13 @@ function vectorsView(id: string, p: TfidfParams): TfidfView {
   const jy = s.vocab.indexOf(ty);
   const coord = (i: number, j: number): number => (j < 0 || s.rows[i] === undefined ? 0 : s.rows[i][j]);
   const arrows: Arrow[] = [{ id: 'query', label: 'sorgu', x: coord(q, jx), y: coord(q, jy) }];
-  if (nearest !== undefined) arrows.push({ id: 'other', label: docName(nearest), x: coord(nearest, jx), y: coord(nearest, jy) });
+  if (nearest !== undefined) {
+    // named as the ranked list names it: the rank number and the start of the text
+    const words = s.docs[nearest].trim().split(/\s+/).filter((w) => w !== '');
+    const start = words.length === 0 ? '' : ` ${words[0]}${words.length > 1 ? '…' : ''}`;
+    const label = `${s.order.indexOf(nearest) + 1}.${start}`;
+    arrows.push({ id: 'other', label, x: coord(nearest, jx), y: coord(nearest, jy) });
+  }
   const deg = arrows.length === 2 ? degrees(arrows[0], arrows[1]) : null;
   const list: SimRow[] = s.order.map((i) => ({
     id: `doc-${i}`,
@@ -455,10 +463,14 @@ function vectorsView(id: string, p: TfidfParams): TfidfView {
   };
 }
 
+/** The two documents step 10's first card compares. */
+const CARD_DOCS: [number, number] = [0, 2];
+
 /** Step 10. */
 function cardsView(id: string, p: TfidfParams): TfidfView {
-  const sep = separateVocab(p.docs[0], p.docs[2]);
-  const shared = tfidfMatrix([p.docs[0], p.docs[2]]).vocab;
+  const [ia, ib] = CARD_DOCS;
+  const sep = separateVocab(p.docs[ia], p.docs[ib]);
+  const shared = tfidfMatrix([p.docs[ia], p.docs[ib]]).vocab;
   const pair = BOOK.cosPair;
   const strip = [
     p.separate
@@ -471,7 +483,8 @@ function cardsView(id: string, p: TfidfParams): TfidfView {
     cards: {
       separate: {
         on: p.separate,
-        docs: [p.docs[0], p.docs[2]],
+        names: [docName(ia), docName(ib)],
+        docs: [p.docs[ia], p.docs[ib]],
         pairs: p.separate ? sep.pairs : shared.map((t): [string, string] => [t, t]),
         aligned: f3(sep.aligned),
         shared: f3(sep.shared),

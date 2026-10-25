@@ -1,6 +1,9 @@
 import type { Mode } from '../../core/mode';
 import type { TfidfView } from './view';
 
+/** Below this width (px) the page is one column: the IDF bars go under the table and the list under the plane. */
+export const NARROW = 900;
+
 /** The SVG namespace. */
 export const NS = 'http://www.w3.org/2000/svg';
 

@@ -6,11 +6,8 @@ import { r1 } from '../../core/plot/marks';
 import { TextMeasure } from '../../core/plot/text-measure';
 import { tr } from '../../core/plot/transition';
 import { fitAspect, type Rect } from '../../core/plot/viewport';
-import { el, NS, type ViewScene } from './scene-base';
+import { el, NARROW, NS, type ViewScene } from './scene-base';
 import type { Arrow, TfidfView, VectorsView } from './view';
-
-/** Below this width (px) the plane sits above the list. */
-const NARROW = 900;
 
 type G = Selection<SVGGElement, unknown, null, undefined>;
 

@@ -87,4 +87,17 @@ describe('table scene', () => {
     expect(narrow).toBe(true);
     expect(el.querySelectorAll('.heat-block:not([hidden]) .heat-col')).toHaveLength(18);
   });
+
+  it('page 1 keeps one NARROW constant in scene-base and no dead CSS rules', () => {
+    const dir = 'src/concepts/tfidf-kosinus';
+    const sources = ['scene-base.ts', 'scene-cards.ts', 'scene-table.ts', 'scene-tokens.ts', 'scene-vectors.ts', 'scene.ts', 'view.ts'];
+    const defs = sources.filter((f) => /const NARROW\s*=/.test(fs.readFileSync(`${dir}/${f}`, 'utf8')));
+    expect(defs).toEqual(['scene-base.ts']);
+    const css = fs.readFileSync(`${dir}/tfidf-kosinus.css`, 'utf8');
+    // the heat table writes each cell colour inline; the vector scene has no prediction probe and no dashes
+    expect(css).not.toMatch(/\.heat-cell\.is-zero|text\.probe\.prediction|stroke-dasharray:\s*none/);
+    // VectorsView.angle has one doc comment, the one about the projection
+    const view = fs.readFileSync(`${dir}/view.ts`, 'utf8');
+    expect(view).not.toContain('Angle between the two arrows in the plane (degrees)');
+  });
 });
