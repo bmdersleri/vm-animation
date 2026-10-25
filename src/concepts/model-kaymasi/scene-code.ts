@@ -1,11 +1,7 @@
 import { CodePanel } from '../../core/plot/code-panel';
 import { el, type ViewScene } from './scene-base';
+import { END_LINKS } from './scenario';
 import type { KaymaView } from './view';
-
-const LINKS = [
-  { href: '../crisp-dm/', text: 'CRISP-DM döngüsü (Bölüm 1, yaygınlaştırma)' },
-  { href: '../shap-degerleri/', text: 'SHAP değerleri (Bölüm 13)' },
-];
 
 /**
  * Step 10: the book's `HataAyiklama` code in a `CodePanel` (the bugs flagged up to the sweep position, or the
@@ -24,7 +20,7 @@ export class CodeScene implements ViewScene {
     this.panel = new CodePanel(panelHost);
     this.extra = el(doc, 'div', 'code-extra');
     const links = el(doc, 'div', 'code-links');
-    for (const l of LINKS) {
+    for (const l of END_LINKS) {
       const a = doc.createElement('a');
       a.className = 'card-link';
       a.setAttribute('href', l.href);

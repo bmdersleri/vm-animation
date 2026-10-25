@@ -8,7 +8,7 @@ import {
 } from './data';
 import { ALARM_EDGES, ALARM_IDS, ALARM_LABELS, ALARM_PATH, type AlarmId } from './flow';
 import {
-  ESIK, LAB_MONTHS, LAB_TABLE_THRESHOLDS, NOTE_ADVICE, NOTE_CONCEPT, NOTE_DIFF, NOTE_INPUT, NOTE_SEGMENT, NOTE_TABLE, NOTE_THRESHOLD, NOTE_TRAP,
+  ESIK, LAB_MONTHS, LAB_TABLE_THRESHOLDS, NOTE_ADVICE, NOTE_CONCEPT, NOTE_DIFF, NOTE_NOISE, NOTE_INPUT, NOTE_SEGMENT, NOTE_TABLE, NOTE_THRESHOLD, NOTE_TRAP,
   ORDER_THRESHOLDS, SCAN_DONE, THRESHOLD, modelKaymasiScenario as scenario, psiNote, readout, scenarioIdAt, valuesOf,
   type KaymaParams, type Metric, type Readout,
 } from './scenario';
@@ -280,6 +280,14 @@ function monitorOf(ids: ScenarioId[], metric: Metric, threshold: number, today: 
   const series = ids.map(id => seriesOf(id, metric, threshold, today));
   const main = readout(ids[0], metric, threshold);
   const concept = lab && ids[0] === 'kavram' && main.alarms.length === 0 && main.acc !== null;
+  // with no change month, a performance alarm can only be sampling noise
+  const noise = lab && scenarioById(ids[0]).changeMonth === null && main.acc !== null;
+  let note: string | null = null;
+  if (concept) {
+    note = NOTE_CONCEPT;
+  } else if (noise) {
+    note = NOTE_NOISE;
+  }
   return {
     metric,
     threshold,
@@ -289,7 +297,7 @@ function monitorOf(ids: ScenarioId[], metric: Metric, threshold: number, today: 
     refAccuracy: REFERENCE.accuracy,
     series,
     readout: lab ? main : null,
-    note: concept ? NOTE_CONCEPT : null,
+    note,
   };
 }
 

@@ -6,7 +6,7 @@ import {
 } from '../../../src/concepts/model-kaymasi/data';
 import { BUGS, OUTPUT } from '../../../src/concepts/model-kaymasi/code-text';
 import {
-  ESIK, NOTE_ADVICE, NOTE_DIFF, NOTE_THRESHOLD, NOTE_TRAP, ORDER_THRESHOLDS, SCAN_DONE, THRESHOLD, modelKaymasiScenario as sc,
+  END_LINKS, ESIK, NOTE_ADVICE, NOTE_DIFF, NOTE_THRESHOLD, NOTE_TRAP, ORDER_THRESHOLDS, SCAN_DONE, THRESHOLD, modelKaymasiScenario as sc,
   psiNote, readout, scenarioIdAt,
 } from '../../../src/concepts/model-kaymasi/scenario';
 import { labTextTests } from '../lab-text';
@@ -73,6 +73,10 @@ describe('model-kaymasi scenario', () => {
     for (const line of OUTPUT) {
       expect(step('hata-ayiklama').text).toContain(`"${line}"`);
     }
+    // the end-of-lesson links by their titles, as the scene links them, not by their slugs
+    expect(END_LINKS.map(l => l.href)).toEqual(['../crisp-dm/', '../shap-degerleri/']);
+    expect(step('hata-ayiklama').text).toContain(`Ders sonu bağlantıları: ${END_LINKS.map(l => l.text).join(' ve ')}.`);
+    expect(step('hata-ayiklama').text).not.toMatch(/crisp-dm|shap-degerleri/);
     for (const s of sc.steps) {
       expect(s.text, s.id).not.toMatch(/NaN|undefined|Infinity/);
     }

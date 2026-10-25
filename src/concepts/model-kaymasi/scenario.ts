@@ -89,6 +89,12 @@ export function readout(id: ScenarioId, metric: Metric, threshold: number): Read
   };
 }
 
+/** The links the lesson ends with (step 10's text names them, the code scene links them). */
+export const END_LINKS: readonly { href: string; text: string }[] = [
+  { href: '../crisp-dm/', text: 'CRISP-DM döngüsü (Bölüm 1, yaygınlaştırma)' },
+  { href: '../shap-degerleri/', text: 'SHAP değerleri (Bölüm 13)' },
+];
+
 /** Sentences the step text and the view's strips share, so each is written once. */
 export const NOTE_DIFF = 'Mutlak fark yönü değil büyüklüğü ölçer; tek başına bozulmayı kanıtlamaz.';
 export const NOTE_INPUT = 'Kitabın üçüncü kodu girdiyi izler: veri kaymasını görür.';
@@ -101,6 +107,9 @@ export const NOTE_TRAP =
   'Bir uyarı veri kalitesinde geçici bir bozulmayı da işaret edebilir; kaynağı incelenmeden yapılan otomatik yeniden eğitim, hatalı veriyi modele kalıcı olarak öğretebilir.';
 /** Lab card of the `kavram` scenario when only the performance alarm fires. */
 export const NOTE_CONCEPT = 'Girdi izlemesi kavram kaymasını görmez.';
+/** Lab note when "kayma yok" still raises a performance alarm: the monthly accuracy dips below the line by sampling noise. */
+export const NOTE_NOISE =
+  'Kayma yokken de aylık doğruluk örneklem dalgalanmasıyla payın altına inebilir: başarım alarmı da yanlış alarm olabilir.';
 
 /** The PSI limits and the caution the book adds, as step 8 and the view's note line write them. */
 export function psiNote(): string {
@@ -204,7 +213,7 @@ export const modelKaymasiScenario: Scenario<KaymaParams> = {
     {
       id: 'hata-ayiklama',
       title: 'Hata ayıklama',
-      text: `Kitabın HataAyiklama kodunda ${BUGS.length} hata sırayla işaretlenir (${BUGS.map(b => b.kind).join(', ')}); ilk hatada program TypeError ile durur, sonuncusu kod hatası değil tasarım eksiğidir. Düzeltilmiş kod ${OUTPUT.map(o => `"${o}"`).join(' ve ')} yazar. Ders sonu bağlantıları: crisp-dm (Bölüm 1, yaygınlaştırma) ve shap-degerleri (Bölüm 13).`,
+      text: `Kitabın HataAyiklama kodunda ${BUGS.length} hata sırayla işaretlenir (${BUGS.map(b => b.kind).join(', ')}); ilk hatada program TypeError ile durur, sonuncusu kod hatası değil tasarım eksiğidir. Düzeltilmiş kod ${OUTPUT.map(o => `"${o}"`).join(' ve ')} yazar. Ders sonu bağlantıları: ${END_LINKS.map(l => l.text).join(' ve ')}.`,
       labText: 'Düzeltilmiş kodu göster anahtarıyla hatalı ve düzeltilmiş kod arasında geçin.',
       sweep: { key: 'scan', values: [1, 2, 3, 4, 5], intervalMs: 1800 },
     },

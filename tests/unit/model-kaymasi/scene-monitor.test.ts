@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { formatNumber as f, formatTrim } from '../../../src/core/plot/format';
+import { formatNumber as f, formatPercent, formatTrim } from '../../../src/core/plot/format';
 import { META, REFERENCE, scenarioById } from '../../../src/concepts/model-kaymasi/data';
 import { ORDER_THRESHOLDS, readout } from '../../../src/concepts/model-kaymasi/scenario';
 import { go, num, setup, texts } from './harness';
@@ -43,6 +43,27 @@ describe('monitoring chart (steps 5-6)', () => {
     const expected = scenarioById('ani').months.filter((m) => m.month + META.labelDelay <= 24 && m.accuracy < floor).map((m) => m.month);
     expect(low).toEqual(expected);
     expect(low.length).toBeGreaterThan(0);
+  });
+
+  it('the accuracy strip ticks name only months already known', () => {
+    const { el, player } = setup();
+    go(player, 'aylik-izleme', false);
+    const ani = scenarioById('ani').months;
+    for (const today of [10, 16, 24]) {
+      player.setParams({ today });
+      const known = ani.filter((m) => m.month + META.labelDelay <= today).map((m) => m.accuracy);
+      const ticks = texts(el, '.strip-tick');
+      expect(ticks.length, String(today)).toBeGreaterThan(0);
+      expect(ticks[0], String(today)).toBe(formatPercent(Math.max(...known), 1));
+      // every tick is the value of a drawn point
+      for (const t of ticks) {
+        expect(known.map((v) => formatPercent(v, 1)), `${today} ${t}`).toContain(t);
+      }
+    }
+    // early in the sweep the series' lowest month (not known yet) is not given away
+    player.setParams({ today: 10 });
+    const lowest = formatPercent(Math.min(...ani.map((m) => m.accuracy)), 1);
+    expect(texts(el, '.strip-tick')).not.toContain(lowest);
   });
 
   it('step 6 table reads false alarms and delays from data', () => {

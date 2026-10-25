@@ -8,7 +8,7 @@ import {
 } from '../../../src/concepts/model-kaymasi/data';
 import { ALARM_PATH } from '../../../src/concepts/model-kaymasi/flow';
 import {
-  NOTE_CONCEPT, NOTE_INPUT, NOTE_THRESHOLD, ORDER_THRESHOLDS, THRESHOLD, modelKaymasiScenario as sc, psiNote,
+  NOTE_CONCEPT, NOTE_INPUT, NOTE_NOISE, NOTE_THRESHOLD, ORDER_THRESHOLDS, THRESHOLD, modelKaymasiScenario as sc, psiNote,
   type KaymaParams,
 } from '../../../src/concepts/model-kaymasi/scenario';
 import { deriveKaymaView, readout, shownThreshold } from '../../../src/concepts/model-kaymasi/view';
@@ -185,6 +185,24 @@ describe('model-kaymasi view', () => {
     const late = readout('ani', 'mean', 8);
     expect(late.accuracy.month).toBe('ay 15');
     expect(readout('yok', 'mean', 8).delayText).toBe('—');
+  });
+
+  it('with no drift chosen, a performance alarm gets the sampling-noise note', () => {
+    const noDrift = scenarioIndex('yok');
+    for (const id of ['aylik-izleme', 'esik-secimi']) {
+      const v = at(id, { scenario: noDrift }, true);
+      // the generator's accuracy noise does cross the line in the "kayma yok" scenario
+      expect(v.monitor!.readout!.acc, id).not.toBeNull();
+      expect(v.monitor!.readout!.falseAlarms, id).toBe(0);
+      expect(v.monitor!.note, id).toBe(NOTE_NOISE);
+      expect(v.note, id).toBe(NOTE_NOISE);
+    }
+    expect(NOTE_NOISE).toBe('Kayma yokken de aylık doğruluk örneklem dalgalanmasıyla payın altına inebilir: başarım alarmı da yanlış alarm olabilir.');
+    // a drifting scenario keeps its own note (or none)
+    expect(at('aylik-izleme', { scenario: scenarioIndex('ani') }, true).monitor!.note).toBeNull();
+    expect(at('aylik-izleme', { scenario: scenarioIndex('kavram') }, true).monitor!.note).toBe(NOTE_CONCEPT);
+    // the Ders draws no note
+    expect(at('aylik-izleme').monitor!.note).toBeNull();
   });
 
   it('step 7 shows the spread month: the mean stays, the std doubles', () => {

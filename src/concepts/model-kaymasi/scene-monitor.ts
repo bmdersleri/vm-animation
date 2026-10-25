@@ -185,8 +185,15 @@ class Block {
       .attr('class', 'acc-floor')
       .attr('x1', r1(left)).attr('x2', r1(left + width))
       .attr('y1', r1(y(m.accThreshold))).attr('y2', r1(y(m.accThreshold)));
-    // the two ticks are the series' own highest and lowest accuracy, written where those points are
-    for (const v of [Math.max(...accs), Math.min(...accs)]) {
+    // the ticks are the highest and lowest accuracy drawn so far (known and shown), written where those points are; the
+    // scale keeps the whole series, so a month whose label has not arrived is not given away; the lower tick is left out
+    // when it would sit on the upper one
+    const seen = s.accuracy.filter((a) => a.known && a.month <= s.shown).map((a) => a.value);
+    const ticks = seen.length === 0 ? [] : [Math.max(...seen)];
+    if (seen.length > 0 && y(Math.min(...seen)) - y(ticks[0]) >= fs) {
+      ticks.push(Math.min(...seen));
+    }
+    for (const v of ticks) {
       this.stripG.append('text')
         .attr('class', 'strip-tick tick')
         .attr('text-anchor', 'end')
