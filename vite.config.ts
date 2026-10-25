@@ -40,6 +40,7 @@ export default defineConfig({
         'tfidf-kosinus': resolve(root, 'tfidf-kosinus/index.html'),
         'duygu-analizi': resolve(root, 'duygu-analizi/index.html'),
         'shap-degerleri': resolve(root, 'shap-degerleri/index.html'),
+        'lime-yerel': resolve(root, 'lime-yerel/index.html'),
       },
     },
   },
