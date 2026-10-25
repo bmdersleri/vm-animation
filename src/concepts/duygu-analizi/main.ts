@@ -2,12 +2,13 @@ import '../../core/theme.css';
 import './duygu-analizi.css';
 import { mountConceptPage, type ConceptPage } from '../../core/shell';
 import { duyguAnaliziScenario, type SentimentParams } from './scenario';
+import { mountSentimentScene } from './scene';
 
 const duyguAnaliziPage: ConceptPage<SentimentParams> = {
   title: 'Duygu analizi: TF-IDF ve lojistik regresyon',
-  chapter: 'Bölüm ? · …',
+  chapter: 'Bölüm 12 · Metin madenciliğine giriş',
   scenario: duyguAnaliziScenario,
-  mountScene: () => ({ resize() {}, setMode() {}, destroy() {} }),
+  mountScene: mountSentimentScene,
   mountParams: () => {},
 };
 
