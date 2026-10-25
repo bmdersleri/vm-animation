@@ -109,6 +109,7 @@ export const concepts: ConceptEntry[] = [
   { id: 'boosting-ayarlari', chapter: 10, chapterTitle: CH[10], title: 'Boosting ayarları: öğrenme oranı, erken durdurma, arama', status: 'hazir', href: 'boosting-ayarlari/' },
   { id: 'dengesiz-veri', chapter: 11, chapterTitle: CH[11], title: 'Dengesiz veri: doğruluk tuzağı, SMOTE ve sınıf ağırlığı', status: 'hazir', href: 'dengesiz-veri/' },
   { id: 'smote-sizinti', chapter: 11, chapterTitle: CH[11], title: 'SMOTE sızıntısı ve PR-AUC', status: 'hazir', href: 'smote-sizinti/' },
-  soon('tfidf-kosinus', 12, 'TF-IDF ve kosinüs benzerliği'),
+  { id: 'tfidf-kosinus', chapter: 12, chapterTitle: CH[12], title: 'TF-IDF ve kosinüs benzerliği', status: 'hazir', href: 'tfidf-kosinus/' },
+  { id: 'duygu-analizi', chapter: 12, chapterTitle: CH[12], title: 'Duygu analizi: TF-IDF ve lojistik regresyon', status: 'hazir', href: 'duygu-analizi/' },
   soon('shap', 13, 'SHAP'),
 ];
