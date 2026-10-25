@@ -12,6 +12,12 @@ import type { PanelView, ResultView, SentimentView } from './view';
 /** z range of the sigmoid plot; a larger |z| puts the point on the edge (its label keeps the true p). */
 export const Z_RANGE = 4;
 
+/** Horizontal padding and border (px) of a score panel. */
+const PANEL_CHROME = 28;
+
+/** Smallest sigmoid plot height (px). */
+const SIG_MIN = 130;
+
 /** Panel width (px) from which the contribution bars and the sigmoid sit side by side. */
 const SIDE_BY_SIDE = 560;
 
@@ -51,6 +57,7 @@ class ScorePanel {
   private readonly body: HTMLElement;
   private readonly barBox: HTMLElement;
   private readonly sigBox: HTMLElement;
+  private readonly foot: HTMLElement;
   private readonly zLine: HTMLElement;
   private readonly probLine: HTMLElement;
   private readonly probValue: HTMLElement;
@@ -72,6 +79,7 @@ class ScorePanel {
     this.body = el(doc, 'div', 'panel-body');
     this.barBox = el(doc, 'div', 'contrib-box');
     this.sigBox = el(doc, 'div', 'sig-box');
+    this.foot = el(doc, 'div', 'panel-foot');
     this.zLine = el(doc, 'p', 'z-line');
     this.probLine = el(doc, 'p', 'prob-line');
     this.probValue = el(doc, 'strong', 'prob-value');
@@ -87,7 +95,8 @@ class ScorePanel {
     this.bars = new HBarsLayer(this.barSvg.append('g').attr('class', 'contrib-bars'), this.barMeasure);
     this.chart = new LineChartLayer(this.sigSvg.append('g').attr('class', 'sig-chart') as G, this.sigMeasure);
     this.body.append(this.barBox, this.sigBox);
-    this.el.append(this.title, this.chips, this.note, this.body, this.zLine, this.probLine, this.compare);
+    this.foot.append(this.zLine, this.probLine, this.compare);
+    this.el.append(this.title, this.chips, this.note, this.body, this.foot);
   }
 
   interrupt(): void {
@@ -100,7 +109,7 @@ class ScorePanel {
     this.el.remove();
   }
 
-  update(pv: PanelView, width: number, mode: Mode, ms: number): void {
+  update(pv: PanelView, width: number, room: number, mode: Mode, ms: number): void {
     const doc = this.el.ownerDocument;
     this.el.dataset.model = pv.model;
     this.title.textContent = pv.title;
@@ -123,11 +132,14 @@ class ScorePanel {
     this.sigBox.hidden = !hasP;
 
     const fonts = this.barMeasure.fonts(mode);
-    const side = width >= SIDE_BY_SIDE;
-    this.el.dataset.layout = side ? 'side' : 'stack';
+    // the panel's own padding and border (css) come off the width its plots may use
+    width -= PANEL_CHROME;
+    const solo = pv.bars.length === 0 && width >= SIDE_BY_SIDE;
+    const side = width >= SIDE_BY_SIDE && !solo;
+    this.el.dataset.layout = solo ? 'solo' : side ? 'side' : 'stack';
     const gap = 12;
     const barW = side ? Math.floor((width - gap) * 0.56) : width;
-    const sigW = side ? width - gap - barW : Math.min(width, 360);
+    const sigW = side ? width - gap - barW : solo ? Math.floor((width - gap) * 0.5) : Math.min(width, 360);
     const rowH = Math.round(fonts.tick * 1.7);
     const barH = rowH * pv.bars.length;
     this.barBox.hidden = pv.bars.length === 0;
@@ -144,16 +156,38 @@ class ScorePanel {
         ms,
       });
     } else {
+      this.barSvg.select('g.contrib-bar-none').remove();
       this.barSvg.select('g.contrib-bars').selectAll('*').remove();
     }
+    const fixed = this.overhead(pv, width, fonts.tick, fonts.axis, solo);
+    const fit = Math.round(room - fixed);
+    const cap = side || solo ? sigW * 0.85 : sigW * 0.6;
+    const sigH = Math.max(SIG_MIN, Math.min(260, cap, side ? Math.max(fit, barH) : fit));
     if (hasP) {
-      const sigH = Math.round(Math.max(150, Math.min(side ? sigW * 0.85 : sigW * 0.6, 260)));
-      this.sigSvg.attr('width', sigW).attr('height', sigH);
+      this.sigSvg.attr('width', sigW).attr('height', Math.round(sigH));
       const spec = sigmoidSpec(pv.z, pv.p);
-      const plot = this.chart.plotRect(sigW, sigH, spec);
+      const plot = this.chart.plotRect(sigW, Math.round(sigH), spec);
       this.chart.clear();
       this.chart.draw(spec, plot, ms);
     }
+  }
+
+  /** Height (px) of everything in the panel that is not the plot: padding, title, chip rows, note and the foot lines. */
+  private overhead(pv: PanelView, width: number, tick: number, axis: number, solo: boolean): number {
+    const chipW = pv.chips.map((c) => this.barMeasure.width(c.text, 'tick', tick) + 20);
+    let rows = pv.chips.length > 0 ? 1 : 0;
+    let used = 0;
+    for (const w of chipW) {
+      if (used > 0 && used + w > width - 24) {
+        rows += 1;
+        used = 0;
+      }
+      used += w + 6;
+    }
+    const chips = rows * (tick * 1.45 + 6);
+    const note = pv.note ? tick * 1.5 + 10 : 0;
+    const foot = solo ? 0 : axis * 1.45 + tick * 1.4 + (pv.compare ? tick * 1.4 : 0) + 8;
+    return 22 + axis * 1.5 + chips + note + foot + 18;
   }
 }
 
@@ -168,6 +202,7 @@ export class ScoreScene implements ViewScene {
   private readonly panels: HTMLDivElement;
   private readonly made = new Map<PanelView['id'], ScorePanel>();
   private w = 1;
+  private h = 1;
   private mode: Mode = 'ders';
 
   constructor(host: HTMLElement) {
@@ -181,8 +216,9 @@ export class ScoreScene implements ViewScene {
     host.append(this.root);
   }
 
-  resize(w: number, _h: number, mode: Mode): void {
+  resize(w: number, h: number, mode: Mode): void {
     this.w = Math.max(1, w);
+    this.h = Math.max(1, h);
     this.mode = mode;
   }
 
@@ -208,6 +244,9 @@ export class ScoreScene implements ViewScene {
     const two = s.panels.length > 1;
     this.root.dataset.panels = String(s.panels.length);
     const width = Math.max(200, two && this.w >= NARROW ? Math.floor((this.w - 36) / 2) : this.w - 24);
+    // room the panel may use: the stage less the comment line
+    const axis = parseFloat(getComputedStyle(this.comment).fontSize) || (this.mode === 'ders' ? 19 : 14);
+    const commentH = this.comment.hidden ? 0 : Math.round(axis * 1.5 + 20 + 8);
     const order: HTMLElement[] = [];
     for (const pv of s.panels) {
       let panel = this.made.get(pv.id);
@@ -216,7 +255,7 @@ export class ScoreScene implements ViewScene {
         this.made.set(pv.id, panel);
       }
       panel.el.hidden = false;
-      panel.update(pv, width, this.mode, ms);
+      panel.update(pv, width, this.h - commentH, this.mode, ms);
       order.push(panel.el);
     }
     const hidden = [...this.made.values()].filter((p) => p.el.hidden).map((p) => p.el);

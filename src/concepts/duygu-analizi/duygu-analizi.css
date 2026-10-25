@@ -48,8 +48,8 @@
 .label-tag.is-pos { background:#0B7473; }
 .label-tag.is-neg { background:#A85A00; }
 .sample-text { overflow-wrap:anywhere; }
-.code-lines { margin:0; padding:10px 12px; border-radius:10px; background:var(--bg); overflow-x:auto; font-size:var(--fs-tick); line-height:1.5; }
-.code-text { font-family:var(--mono, ui-monospace, Consolas, monospace); white-space:pre; }
+.code-lines { margin:0; padding:10px 12px; border-radius:10px; background:var(--bg); font-size:var(--fs-tick); line-height:1.5; }
+.code-text { font-family:var(--mono, ui-monospace, Consolas, monospace); white-space:pre-wrap; overflow-wrap:anywhere; }
 .flow-warning { margin:0; padding:8px 12px; border-left:4px solid #E07B00; border-radius:6px; background:#FBE3C4; font-weight:600; font-size:var(--fs-axis); }
 .flow-warning[hidden] { display:none; }
 @media (max-width:900px) {
@@ -81,8 +81,12 @@
 .panel-note { margin:0; padding:4px 10px; border-radius:6px; background:#FBE3C4; font-weight:600; }
 .panel-note[hidden] { display:none; }
 .panel-body { display:grid; gap:8px; align-items:start; }
+.score-panel[data-layout='solo'] { grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:12px; }
+.score-panel[data-layout='solo'] > .panel-heading, .score-panel[data-layout='solo'] > .token-chips, .score-panel[data-layout='solo'] > .panel-note { grid-column:1 / -1; }
+.score-panel[data-layout='solo'] .panel-foot { align-self:center; }
 .score-panel[data-layout='side'] .panel-body { grid-template-columns:minmax(0,.56fr) minmax(0,.44fr); gap:12px; }
 .contrib-box[hidden], .sig-box[hidden] { display:none; }
+.panel-foot { display:grid; gap:2px 16px; }
 .z-line, .prob-line, .compare-line { margin:0; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
 .z-line[hidden], .prob-line[hidden], .compare-line[hidden] { display:none; }
 .prob-line { font-size:var(--fs-axis); }
@@ -119,4 +123,7 @@
 .card-link { color:var(--navy); font-weight:600; }
 @media (max-width:900px) {
   .result-scene { grid-template-columns:minmax(0,1fr); }
+  /* five report columns in about 340 px: the dense table size and tighter cells */
+  .report-table { font-size:var(--fs-cell); }
+  .report-col, .report-name, .report-cell { padding:2px 4px; }
 }

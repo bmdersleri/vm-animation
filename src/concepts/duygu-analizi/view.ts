@@ -130,7 +130,8 @@ const empty = (kind: SentimentKind, stepId: string, strip = ''): SentimentView =
 
 const PIPE_LINES = (ngram: 1 | 2): string[] => [
   'duygu_boru_hatti = Pipeline(steps=[',
-  `    ("tfidf", TfidfVectorizer(ngram_range=(1, ${ngram}), preprocessor=temizle)),`,
+  '    ("tfidf", TfidfVectorizer(',
+  `        ngram_range=(1, ${ngram}), preprocessor=temizle)),`,
   '    ("siniflandirici", LogisticRegression(max_iter=1000)),',
   '])',
   'duygu_boru_hatti.fit(egitim_yorumlari, egitim_etiketleri)',
@@ -305,7 +306,7 @@ function scoreView(id: string, p: SentimentParams): SentimentView {
     panels = [main];
   }
   const lines = panels.flatMap((pn) =>
-    pn.p === null ? [pn.note ?? EMPTY_NOTE] : [`${pn.zText} → p = 1 / (1 + e^−z) = ${pn.pText}`],
+    pn.p === null || pn.z === null ? [pn.note ?? EMPTY_NOTE] : [`p = 1 / (1 + e^−z) = 1 / (1 + e^${f3(-pn.z)}) = ${pn.pText}`],
   );
   const strip = panels.length > 1 ? panels.map((pn, i) => `${i === 0 ? 'unigram' : 'bigram'}: ${lines[i]}`).join('\n') : lines.join('\n');
   return { ...empty('score', id, strip), score: { panels } };

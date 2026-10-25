@@ -111,7 +111,7 @@ describe('score scene', () => {
         expect(panel.getAttribute('data-layout')).toBe('stack');
         for (const svg of panel.querySelectorAll('svg')) {
           expect(num(svg, 'width')).toBeGreaterThan(0);
-          expect(num(svg, 'width')).toBeLessThanOrEqual(390 - 24);
+          expect(num(svg, 'width')).toBeLessThanOrEqual(390 - 24 - 28);
         }
         // the bar plot is as tall as its real row count, so no bar is cut
         const rows = [...panel.querySelectorAll('.contrib-bar')];
