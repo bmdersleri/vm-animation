@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { formatNumber as f } from '../../../src/core/plot/format';
 import { BINS, limeRun } from '../../../src/concepts/xai/data';
-import { go, num, setup, texts } from './harness';
+import { go, num, setup, texts, themeFonts } from './harness';
 
 const run = limeRun(301, 42, 5000);
 
@@ -86,6 +86,46 @@ describe('surrogate scene', () => {
       go(player, id);
       expect(el.querySelectorAll('.lime-host:not([hidden])')).toHaveLength(1);
       expect(el.querySelector('.lime-wait')).not.toBeNull();
+    }
+  });
+
+  it('the zero line is drawn per bar and crosses no rule name or value label', () => {
+    for (const [w, h, font] of [
+      [1280, 540, 'wide'],
+      [390, 450, 'narrow'],
+    ] as const) {
+      themeFonts(font);
+      const { el, player } = setup(w, h, font === 'wide' ? 'ders' : 'lab');
+      for (const id of ['vekil', 'sadakat']) {
+        go(player, id);
+        const zeros = [...el.querySelectorAll('.lime-zero')];
+        expect(zeros).toHaveLength(3);
+        const fs = font === 'wide' ? 18 : 13;
+        const boxes = [...el.querySelectorAll('text.rule-name tspan')].map((t) => ({
+          x0: num(t, 'x'),
+          x1: num(t, 'x') + t.textContent!.length * 0.62 * fs,
+          y0: num(t, 'y') - fs * 0.8,
+          y1: num(t, 'y') + fs * 0.25,
+        }));
+        for (const v of el.querySelectorAll('.lime-bar text.bar-value')) {
+          const x = num(v, 'x');
+          const wText = v.textContent!.length * 0.62 * fs;
+          const end = v.getAttribute('text-anchor') === 'end';
+          const y = num(v.parentElement!.querySelector('rect.bar')!, 'height') / 2;
+          const top = Number(/translate\(0,([\d.]+)\)/.exec(v.parentElement!.getAttribute('transform') ?? '')![1]);
+          boxes.push({ x0: end ? x - wText : x, x1: end ? x : x + wText, y0: top + y - fs * 0.6, y1: top + y + fs * 0.6 });
+        }
+        for (const z of zeros) {
+          const x = num(z, 'x1');
+          const y0 = num(z, 'y1');
+          const y1 = num(z, 'y2');
+          for (const b of boxes) {
+            const crossesX = x >= b.x0 && x <= b.x1;
+            const crossesY = y0 < b.y1 && y1 > b.y0;
+            expect(crossesX && crossesY, `${id} ${w}: zero ${x} ${y0}-${y1} vs ${JSON.stringify(b)}`).toBe(false);
+          }
+        }
+      }
     }
   });
 });

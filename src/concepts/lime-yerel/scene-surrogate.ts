@@ -2,11 +2,12 @@ import { select, type Selection } from 'd3-selection';
 import type { Mode } from '../../core/mode';
 import { HBarsLayer } from '../../core/plot/hbars';
 import { TextMeasure } from '../../core/plot/text-measure';
-import { el, NS, type ViewScene } from './scene-base';
+import { el, NARROW, NS, type ViewScene } from './scene-base';
 import type { FidelityView, LimeView, SurrogateView } from './view';
 
 /** Vertical metrics (px) of the scene, kept in step with the CSS: root padding, gap between parts, panel padding and border. */
 export const SURR_PAD_V = 16;
+export const SURR_PAD_V_NARROW = 8;
 export const SURR_GAP = 8;
 export const PANEL_PAD = 16;
 export const PANEL_ROW_GAP = 6;
@@ -129,7 +130,7 @@ export class SurrogateScene implements ViewScene {
     const interceptH = Math.ceil(fs * 1.3);
     this.intercept.style.height = `${interceptH}px`;
     const panelH = s.fidelity ? Math.ceil(3 * fonts.axis * PANEL_LINE + 2 * PANEL_ROW_GAP + PANEL_PAD + 4) : 0;
-    const around = SURR_PAD_V + interceptH + SURR_GAP + (panelH > 0 ? panelH + SURR_GAP : 0);
+    const around = (this.w < NARROW ? SURR_PAD_V_NARROW : SURR_PAD_V) + interceptH + SURR_GAP + (panelH > 0 ? panelH + SURR_GAP : 0);
     const natural = nameH + fs * 1.5 + 14;
     const groupH = Math.max(nameH + BAR_MIN + 8, Math.min(natural, (this.h - around) / s.bars.length));
     const height = Math.ceil(groupH * s.bars.length);
@@ -170,15 +171,17 @@ export class SurrogateScene implements ViewScene {
       g.select('rect.bar').attr('x', Math.round((zero - len) * 10) / 10).attr('width', Math.round(len * 10) / 10);
       g.select('text.bar-value').attr('text-anchor', 'end').attr('x', Math.round((zero - len - 6) * 10) / 10);
     });
+    // the zero line is drawn per bar, only across the bar bands, so it never crosses a rule name or a label
+    const barH = geo.barH;
     this.zeroG
       .selectAll<SVGLineElement, number>('line.lime-zero')
-      .data([zero])
+      .data(s.bars.map((_b, i) => geo.yOf(i, 0)))
       .join('line')
       .attr('class', 'lime-zero')
       .attr('x1', Math.round(zero * 10) / 10)
       .attr('x2', Math.round(zero * 10) / 10)
-      .attr('y1', 0)
-      .attr('y2', height);
+      .attr('y1', (y) => Math.round(y * 10) / 10)
+      .attr('y2', (y) => Math.round((y + barH + 1) * 10) / 10);
     this.nameG
       .selectAll<SVGTextElement, string[]>('text.rule-name')
       .data(lines)
@@ -186,7 +189,7 @@ export class SurrogateScene implements ViewScene {
       .attr('class', 'rule-name')
       .attr('data-feature', (_d, i) => i)
       .each(function (rows, i) {
-        const top = geo.yOf(i, 0) - 5 - (rows.length - 1) * nameFs * 1.25;
+        const top = geo.yOf(i, 0) - 7 - (rows.length - 1) * nameFs * 1.25;
         select(this)
           .selectAll<SVGTSpanElement, string>('tspan')
           .data(rows)

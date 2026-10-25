@@ -11,8 +11,9 @@ import type { KernelView, LimeView } from './view';
 
 /** Vertical room (px) kept by the kernel scene: root padding, gap to the stacked table, the smallest curve plot. */
 export const KERNEL_PAD_V = 16;
+export const KERNEL_PAD_V_NARROW = 8;
 export const KERNEL_GAP = 8;
-export const KERNEL_MIN_PLOT = 110;
+export const KERNEL_MIN_PLOT = 150;
 
 type G = Selection<SVGGElement, unknown, null, undefined>;
 
@@ -83,12 +84,14 @@ export class KernelScene implements ViewScene {
     const width = Math.max(240, narrow ? this.w - 8 : Math.floor(this.w * 0.5) - 12);
     // narrow: the table sits under the curve, so the curve takes what the stage has left
     const tableH = narrow ? narrowTableHeight(this.measure.fontPx('pattern-cell', 12)) : 0;
-    const room = Math.floor(this.h - KERNEL_PAD_V - (tableH > 0 ? tableH + KERNEL_GAP : 0));
+    const padV = narrow ? KERNEL_PAD_V_NARROW : KERNEL_PAD_V;
+    const room = Math.floor(this.h - padV - (tableH > 0 ? tableH + KERNEL_GAP : 0));
     const height = Math.round(Math.max(KERNEL_MIN_PLOT, Math.min(width * 0.7, 360, room)));
-    this.root.dataset.used = String(Math.ceil(height + KERNEL_PAD_V + (tableH > 0 ? tableH + KERNEL_GAP : 0)));
+    this.root.dataset.used = String(Math.ceil(height + padV + (tableH > 0 ? tableH + KERNEL_GAP : 0)));
     const left = Math.ceil(this.measure.width('0,00', 'tick', fs) + afs * 1.8 + 10);
     const top = fs * 0.8;
-    const bottom = fs * 1.4 + afs * 1.6 + 6;
+    // under the axis: tick line (d), weight line, then the axis title
+    const bottom = fs * 1.3 + fs * 1.25 + afs * 1.65 + 4;
     const plot = { left, top, width: width - left - 14, height: height - top - bottom };
     this.svg.attr('width', width).attr('height', height);
     // weights lie between 0 and 1; the distance axis ends at the data-given upper end
@@ -107,7 +110,7 @@ export class KernelScene implements ViewScene {
         yTicks,
         xFormat: (d) => labels.get(Math.round(d * d)) ?? f(d, 2),
         yFormat: (y) => f(y, 2),
-        xTitle: { x: plot.left + plot.width / 2, y: plot.top + plot.height + fs * 1.3 + afs * 1.35, text: 'uzaklık d' },
+        xTitle: { x: plot.left + plot.width / 2, y: plot.top + plot.height + fs * 2.55 + afs * 1.35, text: 'uzaklık d' },
         yTitle: { x: afs * 0.95, y: plot.top + plot.height / 2, lines: ['ağırlık'] },
       },
       ms,
@@ -141,16 +144,15 @@ export class KernelScene implements ViewScene {
       .attr('cx', (d) => r1(sc.x(d.d)))
       .attr('cy', (d) => r1(sc.y(d.w)))
       .attr('r', r1(r));
-    // labels sit right-below the first point and left-below the others (the curve falls, so both are free);
-    // a point near the axis puts its label above instead
-    const bottomY = plot.top + plot.height;
+    // the weights are written under their distance on the axis: no label meets the curve, a point or a tick
+    const baseY = plot.top + plot.height + fs * 2.55;
     pts.select<SVGTextElement>('text').each((d, i, nodes) => {
-      const first = d.d === 0;
-      const below = sc.y(d.w) + fs * 1.4;
+      const half = this.measure.width(d.wText, 'tick', fs) / 2 + 2;
+      const x = Math.min(width - half, Math.max(half, sc.x(d.d)));
       select(nodes[i])
-        .attr('text-anchor', first ? 'start' : 'end')
-        .attr('x', r1(sc.x(d.d) + (first ? r + 6 : -(r + 6))))
-        .attr('y', r1(below > bottomY - 2 ? sc.y(d.w) - r - 4 : below))
+        .attr('text-anchor', 'middle')
+        .attr('x', r1(x))
+        .attr('y', r1(baseY))
         .text(d.wText);
     });
   }

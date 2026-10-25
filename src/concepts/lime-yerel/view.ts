@@ -268,7 +268,8 @@ function kernelView(p: LimeParams, stepId: string): LimeView {
     const w = kernelWeight(d, p.width);
     return { d, dText: n === 0 ? '0' : n === 1 ? '1' : `√${n}`, w, wText: f3(w) };
   });
-  const domainD: [number, number] = [0, 2];
+  // the distance axis ends just after the largest distance
+  const domainD: [number, number] = [0, Math.max(...points.map((q) => q.d)) * 1.05];
   const curve = Array.from({ length: 41 }, (_, i) => {
     const d = (domainD[1] * i) / 40;
     return { d, w: kernelWeight(d, p.width) };

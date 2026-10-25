@@ -15,6 +15,8 @@
 .lime-scene .formula .term { display:inline; white-space:nowrap; }
 @media (max-width:900px) {
   .lime-scene .formula .term { white-space:normal; overflow-wrap:anywhere; }
+  /* a phone stage is ~380 px tall and holds a plot with its table: the scene uses the Lab text tokens (the strip keeps its own) */
+  .lime-stage { --fs-tick:13px; --fs-axis:14px; --fs-cell:12px; }
 }
 code.feature-name { font-family:var(--mono, ui-monospace, Consolas, monospace); font-weight:600; }
 .rule-name, .bin-name { font-family:var(--mono, ui-monospace, Consolas, monospace); font-weight:600; font-size:var(--fs-tick); }
@@ -37,7 +39,7 @@ code.feature-name { font-family:var(--mono, ui-monospace, Consolas, monospace); 
 }
 
 /* number lines (step 2) */
-.bins-scene { padding:6px 12px; }
+.bins-scene { padding:4px 12px; }
 .bins-plot { display:block; overflow:visible; max-width:100%; }
 .bins-plot text { font-size:var(--fs-tick); fill:var(--navy); font-variant-numeric:tabular-nums; }
 .bins-plot .nl-axis { stroke:var(--navy); stroke-width:2; }
@@ -77,14 +79,14 @@ code.feature-name { font-family:var(--mono, ui-monospace, Consolas, monospace); 
 .pattern-row.is-empty .pattern-n, .pattern-row.is-empty .pattern-mean { opacity:.6; }
 @media (max-width:900px) {
   .cloud-scene[data-part='color'] { grid-template-columns:minmax(0,1fr); }
-  .cloud-scene { padding:8px 4px; }
-  /* compact table: the heights in pattern-table.ts (line 1.2, padding 2, spacing 2) match these numbers */
-  .pattern-table { font-size:var(--fs-cell); line-height:1.2; border-spacing:2px; }
-  .pattern-caption { padding:0 4px 8px 4px; line-height:1.2; }
-  .pattern-head, .pattern-mark, .pattern-n, .pattern-mean, .pattern-weight { padding:2px; line-height:1.2; }
-  .pattern-head { overflow-wrap:normal; word-break:keep-all; }
+  .cloud-scene { padding:4px; }
+  /* compact table: the heights in pattern-table.ts (line 1.2, padding 1, spacing 1, header 1 px smaller) match these numbers */
+  .pattern-table { font-size:var(--fs-cell); line-height:1.2; border-spacing:1px; }
+  .pattern-caption { padding:0 4px 2px 4px; line-height:1.2; }
+  .pattern-head, .pattern-mark, .pattern-n, .pattern-mean, .pattern-weight { padding:1px 2px; line-height:1.2; }
+  .pattern-head { overflow-wrap:normal; word-break:keep-all; font-size:calc(var(--fs-cell) - 1px); }
   .pattern-head:nth-child(-n+3) { width:19%; }
-  .pattern-head .feature-name { font-family:var(--font); font-size:var(--fs-cell); }
+  .pattern-head .feature-name { font-family:var(--font); font-size:inherit; }
 }
 
 /* kernel curve (step 5) */
@@ -94,7 +96,7 @@ code.feature-name { font-family:var(--mono, ui-monospace, Consolas, monospace); 
 .kernel-drop { stroke:#6B7F96; stroke-width:1.5; stroke-dasharray:4 3; }
 .kernel-weight { font-weight:700; paint-order:stroke; stroke:var(--surface); stroke-width:4px; stroke-linejoin:round; }
 @media (max-width:900px) {
-  .kernel-scene { grid-template-columns:minmax(0,1fr); padding:8px 4px; }
+  .kernel-scene { grid-template-columns:minmax(0,1fr); padding:4px; }
 }
 
 /* surrogate bars and fidelity panel (steps 6-7) */
@@ -117,5 +119,5 @@ code.feature-name { font-family:var(--mono, ui-monospace, Consolas, monospace); 
 .fidelity-model, .fidelity-local, .fidelity-r2 { font-size:var(--fs-axis); font-variant-numeric:tabular-nums; }
 .fidelity-r2-row { grid-template-columns:minmax(0,1fr) auto; }
 @media (max-width:900px) {
-  .surrogate-scene { padding:8px 4px; }
+  .surrogate-scene { padding:4px; }
 }

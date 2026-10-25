@@ -4,8 +4,12 @@ import type { PatternRow } from './view';
 
 /** Narrow-table metrics (CSS keeps them: line-height 1.2, cell padding 2 px, border spacing 2 px). */
 export const TABLE_LINE = 1.2;
-export const TABLE_PAD = 2;
-export const TABLE_SPACING = 2;
+export const TABLE_PAD = 1;
+export const TABLE_SPACING = 1;
+/** The header runs one px under the cell font; caption padding below; slack for tall glyph line boxes (✓ ✗). */
+export const HEAD_FS_DELTA = 1;
+export const CAPTION_PAD = 2;
+export const TABLE_SLACK = 6;
 /** Rows of the table: one per binary pattern. */
 export const TABLE_ROWS = 8;
 
@@ -13,7 +17,8 @@ export const TABLE_ROWS = 8;
 export function narrowTableHeight(cellFs: number): number {
   const line = cellFs * TABLE_LINE;
   const row = line + 2 * TABLE_PAD + TABLE_SPACING;
-  return Math.ceil(line + 8 + (2 * line + 2 * TABLE_PAD + TABLE_SPACING) + TABLE_ROWS * row + TABLE_SPACING);
+  const head = 2 * (cellFs - HEAD_FS_DELTA) * TABLE_LINE + 2 * TABLE_PAD + TABLE_SPACING;
+  return Math.ceil(line + CAPTION_PAD + head + TABLE_ROWS * row + TABLE_SPACING + TABLE_SLACK);
 }
 
 /**

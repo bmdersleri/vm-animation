@@ -25,8 +25,9 @@ export function dotColor(p: number): string {
 
 /** Vertical room (px) the scene keeps: the root's top and bottom padding, the gap between stacked parts, the minimum plot. */
 export const CLOUD_PAD_V = 16;
+export const CLOUD_PAD_V_NARROW = 8;
 export const CLOUD_GAP = 8;
-export const CLOUD_MIN_PLOT = 90;
+export const CLOUD_MIN_PLOT = 150;
 /** Legend height in tick-font heights, and the line height of the note. */
 export const LEGEND_K = 1.7;
 export const NOTE_LINE = 1.3;
@@ -111,7 +112,6 @@ export class CloudScene implements ViewScene {
     this.root.dataset.part = c.part;
     const withTable = c.rows !== null;
     this.table.root.hidden = !withTable;
-    this.legend.hidden = c.part !== 'color';
     if (c.rows) {
       this.table.update(c.rows);
     }
@@ -126,7 +126,9 @@ export class CloudScene implements ViewScene {
     const withTable = c.rows !== null;
     const width = Math.max(240, narrow ? this.w - 8 : withTable ? Math.floor(this.w * 0.5) - 12 : this.w - 24);
     // what sits around the plot: legend (step 4), note (not beside a narrow table) and, narrow, the table itself
-    const legendH = c.part === 'color' ? Math.ceil(fs * LEGEND_K) : 0;
+    // a narrow stage drops the colour legend (the strip names the colour) to give the plot and table room
+    const legendH = c.part === 'color' && !narrow ? Math.ceil(fs * LEGEND_K) : 0;
+    this.legend.hidden = c.part !== 'color' || narrow;
     this.legend.style.height = legendH > 0 ? `${legendH}px` : '';
     const showNote = !(narrow && withTable);
     this.note.hidden = !showNote;
@@ -136,7 +138,7 @@ export class CloudScene implements ViewScene {
     const cellFs = this.measure.fontPx('pattern-cell', 12);
     const tableH = narrow && withTable ? narrowTableHeight(cellFs) : 0;
     const parts = [legendH, noteH].filter((h) => h > 0).length;
-    const around = CLOUD_PAD_V + legendH + noteH + parts * CLOUD_GAP + (tableH > 0 ? tableH + CLOUD_GAP : 0);
+    const around = (narrow ? CLOUD_PAD_V_NARROW : CLOUD_PAD_V) + legendH + noteH + parts * CLOUD_GAP + (tableH > 0 ? tableH + CLOUD_GAP : 0);
     const room = Math.floor(this.h - around);
     const cap = narrow ? width * 0.95 : width * 0.8;
     const height = Math.round(Math.max(CLOUD_MIN_PLOT, Math.min(cap, room)));

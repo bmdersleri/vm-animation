@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import fs from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { narrowTableHeight } from '../../../src/concepts/lime-yerel/pattern-table';
+import { narrowTableHeight, TABLE_LINE, TABLE_PAD, TABLE_SPACING } from '../../../src/concepts/lime-yerel/pattern-table';
 import { go, num, setup, themeFonts } from './harness';
 
 const css = fs.readFileSync('src/concepts/lime-yerel/lime-yerel.css', 'utf8');
@@ -19,7 +19,7 @@ describe('narrow layout', () => {
   it('every scene of steps 2-7 fits the narrow stage height', () => {
     // 470 px of scene minus the strip leaves a stage of about 380 px, as in the 390 x 844 screenshots
     themeFonts('narrow');
-    const { el, player } = setup(390, 470, 'lab');
+    const { el, player } = setup(390, 450, 'lab');
     for (const [id, sel] of SCENES) {
       go(player, id);
       const avail = Number(el.querySelector('.lime-stage')!.getAttribute('data-avail'));
@@ -43,12 +43,14 @@ describe('narrow layout', () => {
 
   it('narrow table height follows its metrics', () => {
     // caption + two-line header + eight rows of one line with padding and spacing
-    expect(narrowTableHeight(12)).toBe(Math.ceil(14.4 + 8 + (28.8 + 6) + 8 * (14.4 + 6) + 2));
+    expect(narrowTableHeight(12)).toBe(Math.ceil(14.4 + 2 + (2 * 11 * 1.2 + 3) + 8 * (14.4 + 3) + 1 + 6));
+    // a table row is at most 18 px with the 12 px font
+    expect(12 * TABLE_LINE + 2 * TABLE_PAD + TABLE_SPACING).toBeLessThanOrEqual(18);
   });
 
   it('the narrow css keeps the table metrics, the two-column flow and the camel-case header', () => {
-    expect(css).toMatch(/\.pattern-table \{[^}]*line-height:1\.2; border-spacing:2px/);
-    expect(css).toMatch(/\.pattern-head, \.pattern-mark[^}]*padding:2px/);
+    expect(css).toMatch(/\.pattern-table \{[^}]*line-height:1\.2; border-spacing:1px/);
+    expect(css).toMatch(/\.pattern-head, \.pattern-mark[^}]*padding:1px 2px/);
     expect(css).toMatch(/\.flow-scene \{ display:grid; grid-template-columns:repeat\(2/);
     expect(css).toMatch(/\.pattern-head \{ overflow-wrap:normal; word-break:keep-all/);
   });
@@ -79,6 +81,29 @@ describe('narrow layout', () => {
           }
         }
       }
+    }
+  });
+
+  it('the cloud and kernel plots keep at least 150 px at 390 px, and the kernel weights keep apart', () => {
+    themeFonts('narrow');
+    const { el, player } = setup(390, 450, 'lab');
+    for (const [id, sel] of [
+      ['ikili', '.cloud-plot'],
+      ['cekirdek', '.kernel-plot'],
+    ]) {
+      go(player, id);
+      expect(num(el.querySelector(sel)!, 'height'), id).toBeGreaterThanOrEqual(150);
+    }
+    const labels = [...el.querySelectorAll('.kernel-weight')].map((t) => ({ x: num(t, 'x'), w: t.textContent!.length * 0.62 * 13 }));
+    expect(labels).toHaveLength(4);
+    for (let i = 1; i < labels.length; i++) {
+      expect(labels[i].x - labels[i - 1].x).toBeGreaterThanOrEqual((labels[i].w + labels[i - 1].w) / 2);
+    }
+    // the colour legend is dropped on a narrow stage, the strip names the colour
+    go(player, 'ikili');
+    expect(el.querySelector('.cloud-legend')!.hasAttribute('hidden')).toBe(true);
+    for (const t of el.querySelectorAll('.kernel-weight')) {
+      expect(t.textContent).not.toMatch(/NaN/);
     }
   });
 });
