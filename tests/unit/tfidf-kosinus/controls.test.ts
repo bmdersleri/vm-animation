@@ -9,6 +9,7 @@ import { mountTfidfParams } from '../../../src/concepts/tfidf-kosinus/controls';
 import { mountTfidfExtra } from '../../../src/concepts/tfidf-kosinus/extra';
 import { tfidfKosinusScenario as sc } from '../../../src/concepts/tfidf-kosinus/scenario';
 import { mountTfidfScene } from '../../../src/concepts/tfidf-kosinus/scene';
+import { deriveTfidfView } from '../../../src/concepts/tfidf-kosinus/view';
 import { labTextTests } from '../lab-text';
 
 const css = fs.readFileSync('src/concepts/tfidf-kosinus/tfidf-kosinus.css', 'utf8');
@@ -173,6 +174,22 @@ describe('tfidf-kosinus Lab controls', () => {
     expect(el.querySelectorAll('.sim-row')).toHaveLength(3);
     // the query index 3 no longer exists: the page clamps it to the last comment
     expect(ctl<HTMLSelectElement>(host, 'query').value).toBe('2');
+  });
+
+  it('choosing the automatic second term first never gives two equal axes', () => {
+    const { host, player } = setup();
+    for (const id of ['kosinus', 'uzunluk-yon']) {
+      player.goto(step(id));
+      player.setParam('plane', ['', '']);
+      const terms = () => deriveTfidfView(player.state.index, player.state.params).vectors!.terms;
+      const auto = terms();
+      expect(auto[0]).not.toBe(auto[1]);
+      choose(ctl<HTMLSelectElement>(host, 'plane-0'), auto[1]);
+      expect(terms()[0]).toBe(auto[1]);
+      expect(terms()[1]).not.toBe(terms()[0]);
+      choose(ctl<HTMLSelectElement>(host, 'plane-1'), auto[1]);
+      expect(terms()[1]).not.toBe(terms()[0]);
+    }
   });
 
   it('a fourth document without terms gives cosine zero, never NaN', () => {

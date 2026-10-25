@@ -353,12 +353,22 @@ const degrees = (a: Arrow, b: Arrow): number | null => {
 
 /**
  * The plane's two terms: a chosen term that is in the vocabulary wins, an empty or unknown one is filled from the
- * automatic pair (so choosing only one of the two still works).
+ * automatic pair (so choosing only one of the two still works); the two terms are never the same one.
  */
 function planeOf(s: ReturnType<typeof similarity>, p: TfidfParams, from: 'neighbour' | 'query'): [string, string] {
   const auto = planeTerms(s, ['', ''], from);
-  const pick = (i: 0 | 1): string => (s.vocab.includes(p.plane[i]) ? p.plane[i] : auto[i]);
-  return [pick(0), pick(1)];
+  const chosen = (i: 0 | 1): string | null => (s.vocab.includes(p.plane[i]) ? p.plane[i] : null);
+  const x = chosen(0) ?? auto[0];
+  let y = chosen(1) ?? auto[1];
+  if (y === x) {
+    // two identical axes would put both arrows on the diagonal: take the next-best term instead
+    const nearest = s.order.find((i) => i !== s.query);
+    const weight = (t: string): number => Math.max(weightOf(s.vocab, s.rows[s.query] ?? [], t), nearest === undefined ? 0 : weightOf(s.vocab, s.rows[nearest], t));
+    const others = s.vocab.filter((t) => t !== x);
+    const best = others.reduce<string | null>((b, t) => (b === null || weight(t) > weight(b) ? t : b), null);
+    y = best ?? y;
+  }
+  return [x, y];
 }
 
 /** The documents of steps 8-9: the three comments plus the fourth one when its box is not blank. */

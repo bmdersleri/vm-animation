@@ -149,10 +149,7 @@ export function mountTfidfParams(host: HTMLElement, player: StepPlayer<TfidfPara
   // step 10
   const separate = addToggle('separate', 'Ayrı sözlük', SEPARATE_STEPS, (on) => player.setParam('separate', on));
 
-  // arrow keys, space and letters on a control belong to the control, not to the step shortcuts
-  wrap.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape' && e.key !== 'Tab') e.stopPropagation();
-  });
+  // key presses on the text boxes are stopped by addTextInput; bindKeys ignores the other form controls
 
   const sync = (): void => {
     const { index, params: p } = player.state;
