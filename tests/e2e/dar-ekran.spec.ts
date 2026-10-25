@@ -16,11 +16,12 @@ const stageSettled = (page: Page): Promise<void> => settled(() => page.evaluate(
   })));
 
 /**
- * `<page> <step id>` of steps that are HTML (flow strip, sample cards, vocabulary strip, code panel) with at most a
+ * `<page> <step id>` of steps that are HTML (flow strip, sample cards, vocabulary strip, customer card, text cards, code panel) with at most a
  * small bar svg: the scene root counts. Every other step of the page is still measured by its largest svg, so a
  * collapsed sigmoid or matrix fails.
  */
-const HTML_STEPS = new Set(['duygu-analizi gorev', 'duygu-analizi boru-hatti', 'duygu-analizi sizinti', 'duygu-analizi hata-ayiklama']);
+const HTML_STEPS = new Set(['duygu-analizi gorev', 'duygu-analizi boru-hatti', 'duygu-analizi sizinti', 'duygu-analizi hata-ayiklama',
+  'shap-degerleri kara-kutu', 'shap-degerleri sinirlar', 'lime-yerel yerel-soru', 'lime-yerel hata-ayiklama']);
 
 async function checkStep(page: Page, label: string): Promise<void> {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
