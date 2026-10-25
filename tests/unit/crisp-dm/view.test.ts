@@ -20,7 +20,8 @@ describe('crisp-dm view', () => {
     expect(v1.graph.current).toBe('d1');
     expect(v1.card).toBe('table');
     const v2 = at('veri-yeterli', { scan: 2 });
-    expect(v2.graph.path).toEqual(['d1-ia']);
+    // the end state of a stage keeps the whole route walked so far marked
+    expect(v2.graph.path).toEqual(['ia-va', 'va-d1', 'd1-ia']);
     expect(v2.graph.token).toEqual({ at: 'ia', via: 'd1-ia' });
     expect(v2.card).toBe('goal');
     expect(v2.goal?.extra).toContain('8 haftalık günlük kayıt');
@@ -40,7 +41,7 @@ describe('crisp-dm view', () => {
     expect(v2.graph.current).toBe('d2');
     expect(v2.results!.columns.map(c => c.id)).toEqual(['base', 'eval']);
     const v3 = at('degerlendirme', { scan: 3 });
-    expect(v3.graph.path).toEqual(['d2-va']);
+    expect(v3.graph.path).toEqual(['mo-de', 'de-d2', 'd2-va']);
     expect(v3.graph.token).toEqual({ at: 'va', via: 'd2-va' });
     const done = at('degerlendirme');
     expect(done.graph.current).toBe('va');
@@ -54,7 +55,7 @@ describe('crisp-dm view', () => {
     const stages = [1, 2, 3, 4, 5, 6, 7].map(scan => at('ikinci-tur', { scan }).graph.token!.at);
     expect(stages).toEqual(['va', 'vh', 'mo', 'de', 'd2', 'ya', 'ia']);
     const v7 = at('ikinci-tur');
-    expect(v7.graph.path).toEqual(['ya-ia']);
+    expect(v7.graph.path).toEqual(['va-d1', 'd1-vh', 'vh-mo', 'mo-de', 'de-d2', 'd2-ya', 'ya-ia']);
     expect(v7.graph.edges.find(e => e.id === 'ya-ia')!.tone).toBeUndefined();
     expect(v7.results!.columns.map(c => c.id)).toEqual(['base', 'eval', 'deploy']);
     expect(v7.results!.rule).toMatch(/^Sınav haftasında \d+, diğer günler \d+ sandviç$/);
@@ -145,5 +146,19 @@ describe('crisp-dm view', () => {
         expect(JSON.stringify(deriveCrispView(i, { ...sc.defaults, ...c }, false)), `step ${i + 1}`).toBe(plain);
       }
     });
+  });
+
+  it('the step 5 strip says that a missing record is not a zero sale', () => {
+    for (const lab of [false, true]) {
+      const strip = at('eksik-sifir-degil', {}, lab).strip;
+      expect(strip).not.toContain('sıfır olmaz');
+      expect(strip).toContain('fillna(0) eksik kaydı sıfır satışa çevirir: eksik ≠ sıfır');
+    }
+  });
+
+  it('the first decision card carries its answer as a boolean', () => {
+    expect(at('veri-yeterli', { scan: 3 }).summary!.enough).toBeNull();
+    expect(at('veri-yeterli', { scan: 4 }).summary!.enough).toBe(true);
+    expect(at('veri-yeterli', { days: 4 }, true).summary!.enough).toBe(false);
   });
 });

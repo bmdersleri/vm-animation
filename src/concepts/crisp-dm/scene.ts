@@ -22,8 +22,10 @@ const MS_STEP = 600;
 /** Gap between the cycle and the card, and the share of a narrow area the cycle may take. */
 const GAP = 12;
 const NARROW_CYCLE_SHARE = 0.48;
+/** A narrow cycle is at least this tall (px): the two decisions need the height to clear their neighbours; the card takes the rest and scrolls. */
+const NARROW_CYCLE_MIN = 340;
 /** Share of a wide stage's width the cycle takes. */
-const WIDE_CYCLE_SHARE = 0.46;
+const WIDE_CYCLE_SHARE = 0.5;
 /** Side padding of the card (CSS: .phase-card padding). */
 const CARD_PAD = 12;
 
@@ -188,7 +190,7 @@ export function mountCrispScene(
     const narrow = a.w < NARROW;
     stage.toggleAttribute('data-narrow', narrow);
     const cycleW = narrow ? a.w : Math.floor((a.w - GAP) * WIDE_CYCLE_SHARE);
-    const cycleH = narrow ? Math.floor(a.h * NARROW_CYCLE_SHARE) : a.h;
+    const cycleH = narrow ? Math.max(NARROW_CYCLE_MIN, Math.floor(a.h * NARROW_CYCLE_SHARE)) : a.h;
     stage.style.setProperty('--cycle-w', `${cycleW}px`);
     stage.style.setProperty('--cycle-h', `${cycleH}px`);
     cycle.resize(cycleW, cycleH, mode);

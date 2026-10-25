@@ -98,10 +98,16 @@ describe('FlowGraphLayer', () => {
     expect(svg.querySelector('path.flow-edge[data-edge="ab"]')!.classList.contains('tone-alarm')).toBe(false);
   });
 
-  it('token sits on the node it is at', () => {
+  it('token sits on the border of the node it is at, away from its text', () => {
     const { svg, layer } = setup();
     layer.draw(spec({ token: { at: 'b' } }), 0, 14);
-    expect(svg.querySelector('circle.flow-token')!.getAttribute('transform')).toBe('translate(300,100)');
+    // a box: its upper right corner
+    expect(svg.querySelector('circle.flow-token')!.getAttribute('transform')).toBe('translate(360,75)');
+    // a rhombus: its top vertex
+    layer.draw(spec({ token: { at: 'c' } }), 0, 14);
+    const c = nodes[2];
+    const fitted = layer.nodeBox('c');
+    expect(svg.querySelector('circle.flow-token')!.getAttribute('transform')).toBe(`translate(${c.x},${fitted.t})`);
     layer.draw(spec(), 0, 14);
     expect(svg.querySelector('circle.flow-token')).toBeNull();
   });
@@ -111,7 +117,7 @@ describe('FlowGraphLayer', () => {
     layer.draw(spec({ token: { at: 'a' } }), 0, 14);
     layer.draw(spec({ token: { at: 'b', via: 'ab' } }), 0, 14);
     expect(svg.querySelectorAll('circle.flow-token')).toHaveLength(1);
-    expect(svg.querySelector('circle.flow-token')!.getAttribute('transform')).toBe('translate(300,100)');
+    expect(svg.querySelector('circle.flow-token')!.getAttribute('transform')).toBe('translate(360,75)');
     expect(onBorder(nodes[1], edgeGeometry(nodes[0], nodes[1]).at(1))).toBe(true);
   });
 
@@ -162,5 +168,53 @@ describe('edgeGeometry', () => {
     expect(edgeGeometry(a, b, 0).mid[1]).toBeCloseTo(100, 5);
     expect(up.d).toMatch(/^M[-\d.]+,[-\d.]+Q[-\d.]+,[-\d.]+ [-\d.]+,[-\d.]+$/);
     expect(up.at(0.5)[1]).toBeCloseTo(up.mid[1], 5);
+  });
+
+  it('arrow heads keep their size whatever the stroke width', () => {
+    const { svg, layer } = setup();
+    layer.draw(spec({ path: ['ab'] }), 0, 14);
+    const markers = [...svg.querySelectorAll('marker')];
+    expect(markers).toHaveLength(4);
+    for (const m of markers) {
+      expect(m.getAttribute('markerUnits')).toBe('userSpaceOnUse');
+    }
+  });
+
+  it('a box grows to hold its label: widest line plus padding, every line', () => {
+    const { svg, layer } = setup();
+    const wide = { ...node('w', 200, 100, 'phase', ['Yaygınlaştırma ve izleme', 'ikinci satır']), w: 60, h: 20 };
+    layer.draw({ nodes: [wide], edges: [] }, 0, 14);
+    const box = layer.nodeBox('w');
+    const lines = [...svg.querySelectorAll('g.flow-node[data-node="w"] tspan')].map((t) => t.textContent!);
+    expect(lines.length).toBeGreaterThanOrEqual(2);
+    // jsdom measures 0.62 em per character
+    for (const l of lines) expect(l.length * 14 * 0.62 + 16).toBeLessThanOrEqual(box.r - box.l + 0.5);
+    expect(lines.length * 14 * 1.2).toBeLessThanOrEqual(box.b - box.t);
+    expect(box.r - box.l).toBeGreaterThanOrEqual(60);
+  });
+
+  it('a rhombus holds its text inside the inscribed rectangle', () => {
+    const { svg, layer } = setup();
+    const d = { ...node('d', 200, 100, 'decision', ['Veri', 'yeterli mi?']), w: 40, h: 20 };
+    layer.draw({ nodes: [d], edges: [] }, 0, 14);
+    const box = layer.nodeBox('d');
+    const w = box.r - box.l;
+    const h = box.b - box.t;
+    const lines = [...svg.querySelectorAll('g.flow-node[data-node="d"] tspan')].map((t) => t.textContent!);
+    const tw = Math.max(...lines.map((l) => l.length * 14 * 0.62));
+    const th = lines.length * 14 * 1.2;
+    expect(tw / w + th / h).toBeLessThanOrEqual(1);
+  });
+
+  it('an edge label can sit near its start', () => {
+    const { svg, layer } = setup();
+    const near: FlowEdge[] = [
+      { id: 'ab', from: 'a', to: 'b', kind: 'back', label: 'geri', labelAt: 0.2 },
+      { id: 'ba', from: 'b', to: 'a', kind: 'back', label: 'ileri', bend: 40 },
+    ];
+    layer.draw({ nodes: [node('a', 100, 100), node('b', 500, 100)], edges: near }, 0, 14);
+    const x = (id: string) => Number(svg.querySelector(`text.flow-edge-label[data-edge="${id}"]`)!.getAttribute('x'));
+    expect(x('ab')).toBeLessThan(250);
+    expect(x('ba')).toBeGreaterThan(250);
   });
 });

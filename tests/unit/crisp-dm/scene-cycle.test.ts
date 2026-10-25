@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { formatPercent } from '../../../src/core/plot/format';
+import { META, cellOf } from '../../../src/concepts/crisp-dm/data';
 import { go, setup, texts } from './harness';
 
 afterEach(() => {
@@ -7,6 +9,10 @@ afterEach(() => {
 });
 
 const edgeClasses = (el: Element, id: string): string => el.querySelector(`path.flow-edge[data-edge="${id}"]`)!.getAttribute('class')!;
+const point = (t: string): [number, number] => {
+  const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(t)!;
+  return [Number(m[1]), Number(m[2])];
+};
 const current = (el: Element): string | undefined => el.querySelector('.flow-node.is-current')?.getAttribute('data-node') ?? undefined;
 
 describe('cycle scene', () => {
@@ -62,24 +68,32 @@ describe('cycle scene', () => {
     vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
     const { el, player } = setup();
     go(player, 'veri-anlama');
-    const node = el.querySelector('.flow-node[data-node="va"]')!.getAttribute('transform');
-    expect(el.querySelector('circle.flow-token')!.getAttribute('transform')).toBe(node);
+    // the token rests on the node's upper right corner, away from the label text
+    const [nx, ny] = point(el.querySelector('.flow-node[data-node="va"]')!.getAttribute('transform')!);
+    const shape = el.querySelector('.flow-node[data-node="va"] .flow-shape')!;
+    const [tx, ty] = point(el.querySelector('circle.flow-token')!.getAttribute('transform')!);
+    expect(tx).toBeCloseTo(nx + Number(shape.getAttribute('width')) / 2, 1);
+    expect(ty).toBeCloseTo(ny - Number(shape.getAttribute('height')) / 2, 1);
     // a sweep step lands on its last value when entered
     go(player, 'veri-yeterli', false);
     expect(player.state.params.scan).toBe(4);
     expect(current(el)).toBe('d1');
   });
 
-  it('the Lab path writes the reason beside the sending node', () => {
+  it('the Lab reason line names the failed decision with numbers from the data', () => {
     const { el, player } = setup(745, 530, 'lab');
     go(player, 'veri-yeterli');
     player.setParams({ days: 14 });
+    const short = cellOf(14, 'cikar', 'soran', false);
     const r = el.querySelector('.path-reason')!;
-    expect(r.textContent).toBe('Veri yeterli mi? Hayır: sınav günü 0 < 5');
+    expect(r.textContent).toBe(`Veri yeterli mi? Hayır: sınav günü ${short.usable.sinav} < ${META.minGroup}`);
     expect(r.getAttribute('data-node')).toBe('d1');
     expect(current(el)).toBe('d1');
     player.setParams({ days: 56, missing: 'cikar', stock: 'satis' });
-    expect(el.querySelector('.path-reason')!.textContent).toMatch(/^Sonuç uygun mu\? Hayır: kaçan talep %[\d,]+ > %3$/);
+    const lost = cellOf(56, 'cikar', 'satis', false).eval.lostShare!;
+    expect(el.querySelector('.path-reason')!.textContent).toBe(
+      `Sonuç uygun mu? Hayır: kaçan talep ${formatPercent(lost)} > ${formatPercent(META.criteria.service, 0)}`,
+    );
     expect(el.querySelector('.path-reason')!.getAttribute('data-node')).toBe('d2');
     player.setParams({ stock: 'soran' });
     expect(el.querySelector('.path-reason')).toBeNull();

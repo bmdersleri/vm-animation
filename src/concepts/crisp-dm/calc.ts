@@ -80,8 +80,8 @@ export const CYCLE_EDGES: FlowEdge[] = [
   { id: 'de-d2', from: 'de', to: 'd2', kind: 'forward' },
   { id: 'd2-ya', from: 'd2', to: 'ya', kind: 'forward', label: 'Evet' },
   // bowed toward the circle's centre so the chord keeps clear of the phase it passes
-  { id: 'd1-ia', from: 'd1', to: 'ia', kind: 'back', label: 'Hayır', bend: -24 },
-  { id: 'd2-va', from: 'd2', to: 'va', kind: 'back', label: 'Hayır', bend: -12 },
+  { id: 'd1-ia', from: 'd1', to: 'ia', kind: 'back', label: 'Hayır', bend: -24, labelAt: 0.22 },
+  { id: 'd2-va', from: 'd2', to: 'va', kind: 'back', label: 'Hayır', bend: -12, labelAt: 0.22 },
   // clockwise travel: a negative bend bows the arc outward
   { id: 'ya-ia', from: 'ya', to: 'ia', kind: 'outer', bend: -36 },
 ];
@@ -137,28 +137,63 @@ export interface CycleNode {
 export interface CycleLayout {
   cx: number;
   cy: number;
-  r: number;
+  /** Horizontal and vertical radius of the ellipse the nodes sit on. */
+  rx: number;
+  ry: number;
   nodes: CycleNode[];
 }
 
-/** Clockwise angles from the top, in degrees: six phases every 60 degrees, the decisions half way between their neighbours. */
+/**
+ * Clockwise angles from the top, in degrees: the decisions at 3 and 9 o'clock, their neighbouring phases pulled
+ * away from them (52 / 128 / 232 / 308 instead of 60 / 120 / 240 / 300) so the edges into and out of a decision
+ * are long enough to carry their label.
+ */
 const ANGLES: [NodeId, number][] = [
-  ['ia', 0], ['va', 60], ['d1', 90], ['vh', 120], ['mo', 180], ['de', 240], ['d2', 270], ['ya', 300],
+  ['ia', 0], ['va', 52], ['d1', 90], ['vh', 128], ['mo', 180], ['de', 232], ['d2', 270], ['ya', 308],
 ];
 
-/** The eight nodes on a circle that fits the `w` x `h` area, clockwise from the top (`ia` at 12 o'clock). */
-export function cycleLayout(w: number, h: number, narrow: boolean): CycleLayout {
+/** Space kept between the cycle and the area's edge (px): the token and the arc of the outer loop reach past the boxes. */
+export const CYCLE_MARGIN = 12;
+
+/**
+ * The eight nodes on an ellipse that fits the `w` x `h` area, clockwise from the top (`ia` at 12 o'clock). The
+ * node sizes come from the labels (`sizes`, measured by the scene); without them the fixed fallbacks are used.
+ * The ellipse is as large as every box still stays `CYCLE_MARGIN` inside the area, so a tall narrow area gets a
+ * tall ellipse and the two decisions keep clear of their neighbours.
+ */
+export function cycleLayout(
+  w: number,
+  h: number,
+  narrow: boolean,
+  sizes: Partial<Record<NodeId, { w: number; h: number }>> = {},
+): CycleLayout {
   const phase = narrow ? { w: 88, h: 38 } : { w: 124, h: 44 };
   const decision = narrow ? { w: 84, h: 52 } : { w: 112, h: 60 };
+  const sizeOf = (id: NodeId): { w: number; h: number } => sizes[id] ?? (id === 'd1' || id === 'd2' ? decision : phase);
   const cx = w / 2;
   const cy = h / 2;
-  const r = Math.max(40, Math.min((w - phase.w) / 2, (h - phase.h) / 2) - 2);
-  const nodes = ANGLES.map(([id, deg]) => {
-    const size = id === 'd1' || id === 'd2' ? decision : phase;
+  let rx = Infinity;
+  let ry = Infinity;
+  for (const [id, deg] of ANGLES) {
     const a = (deg * Math.PI) / 180;
-    return { id, x: cx + r * Math.sin(a), y: cy - r * Math.cos(a), w: size.w, h: size.h };
+    const size = sizeOf(id);
+    const s = Math.abs(Math.sin(a));
+    const c = Math.abs(Math.cos(a));
+    if (s > 1e-6) {
+      rx = Math.min(rx, (w / 2 - CYCLE_MARGIN - size.w / 2) / s);
+    }
+    if (c > 1e-6) {
+      ry = Math.min(ry, (h / 2 - CYCLE_MARGIN - size.h / 2) / c);
+    }
+  }
+  rx = Math.max(40, rx);
+  ry = Math.max(40, ry);
+  const nodes = ANGLES.map(([id, deg]) => {
+    const a = (deg * Math.PI) / 180;
+    const size = sizeOf(id);
+    return { id, x: cx + rx * Math.sin(a), y: cy - ry * Math.cos(a), w: size.w, h: size.h };
   });
-  return { cx, cy, r, nodes };
+  return { cx, cy, rx, ry, nodes };
 }
 
 const TEST_DAYS = DAYS.filter(d => d.test);

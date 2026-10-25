@@ -1,6 +1,6 @@
 import { select, type Selection } from 'd3-selection';
 import type { Mode } from '../../core/mode';
-import { FlowGraphLayer, type FlowGraphSpec } from '../../core/plot/flow-graph';
+import { FlowGraphLayer, naturalSize, type FlowGraphSpec } from '../../core/plot/flow-graph';
 import { formatPercent } from '../../core/plot/format';
 import { TextMeasure } from '../../core/plot/text-measure';
 import { cycleLayout, projectPath } from './calc';
@@ -90,7 +90,11 @@ export class CycleScene {
   update(v: CrispView, ms: number, reason: { node: string; text: string } | null): void {
     this.svg.attr('width', this.w).attr('height', this.h);
     const narrow = this.w < NARROW;
-    const lay = cycleLayout(this.w, this.h, narrow);
+    // the label size the CSS gives (smaller in a narrow stage), not the theme token itself
+    const fontPx = this.measure.fontPx('flow-label', this.measure.fonts(this.mode).tick);
+    // every box is sized from its label, then the ellipse is fitted to the area
+    const sizes = Object.fromEntries(v.graph.nodes.map(n => [n.id, naturalSize(n, this.measure, fontPx)]));
+    const lay = cycleLayout(this.w, this.h, narrow, sizes);
     const at = new Map(lay.nodes.map(n => [n.id as string, n]));
     const spec: FlowGraphSpec = {
       ...v.graph,
@@ -99,7 +103,7 @@ export class CycleScene {
         return { ...n, x: p.x, y: p.y, w: p.w, h: p.h };
       }),
     };
-    this.layer.draw(spec, ms, this.measure.fonts(this.mode).tick);
+    this.layer.draw(spec, ms, fontPx);
     if (reason) {
       const box = this.reason ?? el(this.root.ownerDocument, 'div', 'path-reason');
       if (!this.reason) {
@@ -108,8 +112,10 @@ export class CycleScene {
       }
       box.textContent = reason.text;
       box.dataset.node = reason.node;
-      // inside the circle, between the two decisions; the room is the circle's width less the rhombi
-      const inner = Math.max(80, Math.min(280, 2 * lay.r - 2 * (narrow ? 84 : 112) + 24));
+      // inside the ellipse, between the two decisions: the room is the gap between their inner corners
+      const d1 = at.get('d1')!;
+      const d2 = at.get('d2')!;
+      const inner = Math.max(80, Math.min(280, d1.x - d1.w / 2 - (d2.x + d2.w / 2) - 8));
       box.style.left = `${Math.round(lay.cx)}px`;
       box.style.top = `${Math.round(lay.cy)}px`;
       box.style.width = `${Math.round(inner)}px`;

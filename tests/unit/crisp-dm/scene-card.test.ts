@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { formatNumber as f } from '../../../src/core/plot/format';
-import { BASELINE, BOOK, cellOf } from '../../../src/concepts/crisp-dm/data';
+import { formatNumber as f, formatPercent } from '../../../src/core/plot/format';
+import { BASELINE, BOOK, META, cellOf } from '../../../src/concepts/crisp-dm/data';
 import { go, num, setup, texts } from './harness';
 
 describe('phase cards', () => {
@@ -12,7 +12,7 @@ describe('phase cards', () => {
     const dict = el.querySelector('.goal-dict')!;
     expect(texts(dict, 'code.goal-key')).toEqual(['amac', 'basari_olcutu', 'veri_sorusu']);
     expect(dict.textContent).toContain(BOOK.isHedefi.basari_olcutu);
-    expect(el.querySelector('.service-row')!.textContent).toContain('kaçan talep en çok %3');
+    expect(el.querySelector('.service-row')!.textContent).toContain(`kaçan talep en çok ${formatPercent(META.criteria.service, 0)}`);
     expect(el.querySelector('.formula')!.textContent).toContain('En sık hata, modelleme evresinden başlamaktır.');
   });
 
@@ -23,7 +23,7 @@ describe('phase cards', () => {
     const rows = el.querySelectorAll('.cafe-table tr.row-stockout');
     expect(rows).toHaveLength(1);
     expect(rows[0].textContent).toContain('Kahve');
-    expect(rows[0].textContent).toContain('110');
+    expect(rows[0].textContent).toContain(String(BOOK.kafeVerisi.find((r) => r.stok_tukendi && r.urun === 'Kahve')!.satis_adedi));
     expect(el.querySelector('.table-note')!.textContent).toBe('satış, talebin alt sınırıdır');
   });
 

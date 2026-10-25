@@ -29,6 +29,8 @@ export interface FlowEdge {
   kind: 'forward' | 'back' | 'outer';
   label?: string;
   bend?: number;
+  /** Where along the curve the label sits, 0 = start (default 0.5); keeps labels of crossing edges apart. */
+  labelAt?: number;
   tone?: 'alarm';
 }
 
@@ -84,10 +86,54 @@ export function edgeGeometry(a: FlowNode, b: FlowNode, bend = 0): EdgeGeometry {
 }
 
 const PAD = 8;
+const PAD_Y = 6;
 const LINE_K = 1.2;
 const TOKEN_R = 6;
+
+/** A node's box (w, h in px) and, when fitted, the label lines it holds. */
+export interface FittedNode {
+  w: number;
+  h: number;
+  lines: string[];
+}
+
+/** Box of `lines`: as wide as the widest line plus padding and as tall as the lines, but at least minW x minH; a rhombus is sized so the text block fits the rectangle inscribed in it (text width / w + text height / h <= 1). */
+function boxFor(kind: FlowNodeKind, lines: string[], measure: TextMeasure, fontPx: number, minW: number, minH: number): FittedNode {
+  const lh = fontPx * LINE_K;
+  const widest = measure.maxWidth(lines, 'flow-label', fontPx);
+  if (kind === 'decision') {
+    const tw = widest + 8;
+    const th = lines.length * lh + 4;
+    const w = Math.max(minW, 1.6 * tw);
+    return { w, h: Math.max(minH, th / (1 - tw / w)), lines };
+  }
+  return { w: Math.max(minW, widest + 2 * PAD), h: Math.max(minH, lines.length * lh + 2 * PAD_Y), lines };
+}
+
+/**
+ * The box a node needs for its label at `fontPx`: label lines wrap to the width the page asked for (`n.w`), the box
+ * grows in height (and in width for a word wider than that) so that every line fits; never smaller than (n.w, n.h).
+ */
+export function fitNode(n: FlowNode, measure: TextMeasure, fontPx: number): FittedNode {
+  const room = n.kind === 'decision' ? n.w / 1.6 - 8 : n.w - 2 * PAD;
+  const lines = n.label.flatMap((l) => measure.wrap(l, room, 'flow-label', fontPx));
+  return boxFor(n.kind, lines, measure, fontPx, n.w, n.h);
+}
+
+/** The smallest box that holds the label lines as given, without wrapping (for pages that lay the nodes out from their labels). */
+export function naturalSize(n: Pick<FlowNode, 'kind' | 'label'>, measure: TextMeasure, fontPx: number): { w: number; h: number } {
+  const { w, h } = boxFor(n.kind, n.label, measure, fontPx, 0, 0);
+  return { w, h };
+}
+
+/** The token rests on a node's border, away from its text: a box's upper right corner, a rhombus's top vertex. */
+function tokenPoint(n: FlowNode): [number, number] {
+  return n.kind === 'decision' ? [n.x, n.y - n.h / 2] : [n.x + n.w / 2, n.y - n.h / 2];
+}
 let layerCount = 0;
 
+const LABEL_CLEAR = 5;
+const grow = (b: Box, m: number): Box => ({ l: b.l - m, t: b.t - m, r: b.r + m, b: b.b + m });
 const boxOf = (n: FlowNode): Box => ({ l: n.x - n.w / 2, t: n.y - n.h / 2, r: n.x + n.w / 2, b: n.y + n.h / 2 });
 const translate = (p: readonly [number, number]): string => `translate(${r1(p[0])},${r1(p[1])})`;
 
@@ -124,8 +170,10 @@ export class FlowGraphLayer {
         .attr('viewBox', '0 0 10 10')
         .attr('refX', 9)
         .attr('refY', 5)
-        .attr('markerWidth', 7)
-        .attr('markerHeight', 7)
+        // fixed-size heads: the default marker units would scale them with the (path) stroke width
+        .attr('markerUnits', 'userSpaceOnUse')
+        .attr('markerWidth', 11)
+        .attr('markerHeight', 11)
         .attr('orient', 'auto-start-reverse')
         .append('path')
         .attr('class', `flow-arrow arrow-${k}`)
@@ -133,7 +181,10 @@ export class FlowGraphLayer {
     }
   }
 
-  draw(spec: FlowGraphSpec, ms: number, fontPx: number): void {
+  draw(input: FlowGraphSpec, ms: number, fontPx: number): void {
+    const fitted = input.nodes.map((n) => fitNode(n, this.measure, fontPx));
+    const lineOf = new Map(input.nodes.map((n, i) => [n.id, fitted[i].lines]));
+    const spec: FlowGraphSpec = { ...input, nodes: input.nodes.map((n, i) => ({ ...n, w: fitted[i].w, h: fitted[i].h })) };
     const byId = new Map(spec.nodes.map((n) => [n.id, n]));
     this.boxes = new Map(spec.nodes.map((n) => [n.id, boxOf(n)]));
     const path = new Set(spec.path ?? []);
@@ -159,12 +210,12 @@ export class FlowGraphLayer {
         .attr('marker-end', `url(#${this.prefix}-${marker})`);
     }
 
-    for (const n of spec.nodes) this.drawNode(n, spec.current === n.id, dim.has(n.id), fontPx);
+    for (const n of spec.nodes) this.drawNode(n, lineOf.get(n.id)!, spec.current === n.id, dim.has(n.id), fontPx);
     this.placeLabels(drawn, geos, spec.nodes, fontPx);
     this.drawToken(spec, byId, geos, ms);
   }
 
-  private drawNode(n: FlowNode, current: boolean, dim: boolean, fontPx: number): void {
+  private drawNode(n: FlowNode, lines: string[], current: boolean, dim: boolean, fontPx: number): void {
     const g = this.nodesG.append('g')
       .attr('class', `flow-node${current ? ' is-current' : ''}${dim ? ' is-dim' : ''}`)
       .attr('data-node', n.id)
@@ -183,9 +234,6 @@ export class FlowGraphLayer {
         .attr('height', n.h)
         .attr('rx', n.kind === 'end' ? n.h / 2 : 6);
     }
-    // a rhombus is only half as wide at the text's height, so its lines wrap narrower
-    const room = (n.kind === 'decision' ? n.w / 2 : n.w) - 2 * PAD;
-    const lines = n.label.flatMap((l) => this.measure.wrap(l, room, 'flow-label', fontPx));
     const lh = fontPx * LINE_K;
     const text = g.append('text').attr('class', 'flow-label').attr('text-anchor', 'middle');
     lines.forEach((line, i) => {
@@ -197,13 +245,14 @@ export class FlowGraphLayer {
   }
 
   private placeLabels(edges: FlowEdge[], geos: Map<string, EdgeGeometry>, nodes: FlowNode[], fontPx: number): void {
-    const taken: Box[] = nodes.map(boxOf);
+    // labels keep a few px clear of every node border
+    const taken: Box[] = nodes.map((n) => grow(boxOf(n), LABEL_CLEAR));
     const area = this.area(taken, 60);
     const cands = offsets(3, 4, fontPx);
     this.labels = [];
     for (const e of edges) {
       if (!e.label) continue;
-      const [x, y] = geos.get(e.id)!.mid;
+      const [x, y] = e.labelAt === undefined ? geos.get(e.id)!.mid : geos.get(e.id)!.at(e.labelAt);
       const before = taken.length;
       const o = chooseOffset({ x, y, chars: e.label.length, cands, fs: fontPx, taken, area });
       if (taken.length > before) this.labels.push(taken[taken.length - 1]);
@@ -234,7 +283,7 @@ export class FlowGraphLayer {
       this.tokenAt = null;
       return;
     }
-    const end: [number, number] = [at.x, at.y];
+    const end = tokenPoint(at);
     let c = this.tokenG.select<SVGCircleElement>('circle.flow-token');
     if (c.empty()) {
       c = this.tokenG.append('circle').attr('class', 'flow-token').attr('r', TOKEN_R);

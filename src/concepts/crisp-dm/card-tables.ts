@@ -53,10 +53,9 @@ export function summaryCard(doc: Document, c: SummaryCard): HTMLElement {
     list.append(row);
   }
   box.append(list);
-  if (c.decision) {
-    const ok = c.decision === 'Evet';
-    const d = el(doc, 'p', 'summary-decision', `Veri yeterli mi? ${ok ? '✓' : '✗'} ${c.decision}`);
-    d.dataset.ok = String(ok);
+  if (c.decision && c.enough !== null) {
+    const d = el(doc, 'p', 'summary-decision', `Veri yeterli mi? ${c.enough ? '✓' : '✗'} ${c.decision}`);
+    d.dataset.ok = String(c.enough);
     box.append(d);
   }
   if (c.note) {

@@ -26,21 +26,65 @@ describe('narrow layout', () => {
       expect(m).toMatch(/\.formula \.term/);
       expect(m).not.toMatch(/crisp-stage|phase-card|result-board|cafe-table/);
     }
-    expect(css).toMatch(/\.crisp-stage\[data-narrow\] \{[^}]*grid-template-rows:var\(--cycle-h\) minmax\(0,1fr\)/);
+    expect(css).toMatch(/\.crisp-stage\[data-narrow\] \{[^}]*grid-template-rows:var\(--cycle-h\) minmax\(var\(--card-min, 140px\),1fr\)/);
     expect(css).toMatch(/\.phase-card \{[^}]*overflow:auto/);
   });
 
-  it('the cycle takes at most 48 percent of a narrow area', () => {
+  it('a narrow cycle takes 48 percent of the area but never less than 340 px', () => {
     const { el, player } = setup(390, 520, 'lab');
     go(player, 'modelleme');
     const stage = el.querySelector<HTMLElement>('.crisp-stage')!;
     const h = parseFloat(stage.style.getPropertyValue('--cycle-h'));
-    expect(h).toBeGreaterThan(0);
-    expect(h).toBeLessThanOrEqual(0.48 * 520);
+    expect(h).toBeGreaterThanOrEqual(340);
     const svg = el.querySelector('svg.crisp-cycle')!;
     expect(num(svg, 'width')).toBeLessThanOrEqual(390);
-    expect(num(svg, 'height')).toBeLessThanOrEqual(h);
+    expect(num(svg, 'height')).toBe(h);
   });
+
+  for (const [w, h, mode] of [[390, 520, 'lab'], [745, 530, 'lab'], [1280, 540, 'ders']] as const) {
+    it(`no two node boxes overlap and every label line fits its box at ${w} px`, () => {
+      // jsdom has no theme: give the cycle text the sizes the CSS gives it (Ders 1280: 18 px, a narrow stage: --fs-cell)
+      const [tick, cell] = mode === 'ders' ? [18, 15] : [13, 12];
+      const style = document.createElement('style');
+      style.textContent = `.flow-label, .flow-edge-label { font-size:${tick}px; } .crisp-stage[data-narrow] .flow-label, .crisp-stage[data-narrow] .flow-edge-label { font-size:${cell}px; }`;
+      document.head.append(style);
+      const { el, player } = setup(w, h, mode);
+      const fs = w < 900 ? cell : tick;
+      for (const id of ['sorun', 'veri-yeterli', 'degerlendirme']) {
+        go(player, id);
+        const boxes = [...el.querySelectorAll('.flow-node')].map((n) => {
+          const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(n.getAttribute('transform')!)!;
+          const shape = n.querySelector('.flow-shape')!;
+          const d = shape.getAttribute('d') ?? '';
+          const rect = shape.tagName === 'rect';
+          const bw = rect ? num(shape, 'width') : 2 * Math.max(...[...d.matchAll(/(-?[\d.]+),0/g)].map((x) => Math.abs(Number(x[1]))));
+          const bh = rect ? num(shape, 'height') : 2 * Math.abs(Number(/M0,(-?[\d.]+)/.exec(d)![1]));
+          const lines = [...n.querySelectorAll('tspan')].map((t) => t.textContent ?? '');
+          const tw = Math.max(...lines.map((l) => l.length * fs * 0.62));
+          const th = lines.length * fs * 1.2;
+          const name = `${id} ${n.getAttribute('data-node')}`;
+          // the text block sits inside the box (a rhombus: inside its inscribed rectangle)
+          if (rect) {
+            expect(tw + 16, name).toBeLessThanOrEqual(bw + 0.5);
+            expect(th, name).toBeLessThanOrEqual(bh);
+          } else {
+            expect(tw / bw + th / bh, name).toBeLessThanOrEqual(1);
+          }
+          return { name, x: Number(m[1]), y: Number(m[2]), bw, bh };
+        });
+        expect(boxes).toHaveLength(8);
+        for (let i = 0; i < boxes.length; i += 1) {
+          for (let j = i + 1; j < boxes.length; j += 1) {
+            const a = boxes[i];
+            const b = boxes[j];
+            const apart = Math.abs(a.x - b.x) >= (a.bw + b.bw) / 2 || Math.abs(a.y - b.y) >= (a.bh + b.bh) / 2;
+            expect(apart, `${a.name} / ${b.name} at ${w}`).toBe(true);
+          }
+        }
+      }
+      style.remove();
+    });
+  }
 
   for (const [w, h, mode] of [[390, 520, 'lab'], [1280, 540, 'ders']] as const) {
     it(`cycle and card fit ${w} px`, () => {

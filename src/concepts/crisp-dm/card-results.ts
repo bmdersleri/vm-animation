@@ -7,8 +7,6 @@ import { META } from './data';
 import { el, NS } from './scene-base';
 import type { GroupsCard, ResultColumn, ResultsCard } from './view';
 
-const PAD_X = 28;
-
 /** The two group means as `HBarsLayer` bars (`.group-bar[data-group]`), the order rule and the orders of each group. */
 export class GroupsPlot {
   readonly root: HTMLDivElement;
@@ -35,7 +33,7 @@ export class GroupsPlot {
   }
 
   resize(w: number, mode: Mode): void {
-    this.w = Math.max(120, Math.floor(w) - PAD_X);
+    this.w = Math.max(120, Math.floor(w));
     this.mode = mode;
   }
 

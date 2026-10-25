@@ -102,17 +102,27 @@ describe('crisp-dm Lab controls', () => {
     for (const id of ['sorun', 'is-anlama', 'veri-anlama']) {
       go(player, id);
       expect(host.hasAttribute('data-off'), id).toBe(true);
+      expect(host.querySelector('.crisp-params')!.hasAttribute('data-off'), id).toBe(true);
       expect(visible(host)).toEqual([]);
     }
     go(player, 'modelleme');
     expect(host.hasAttribute('data-off')).toBe(false);
+    expect(host.querySelector('.crisp-params')!.hasAttribute('data-off')).toBe(false);
   });
 
-  it('the fixed switch redraws the code and keeps its state', () => {
+  it('the fixed switch redraws the code and the controls follow the player state', () => {
     const { host, el, player } = setup(745, 530, 'lab');
     go(player, 'hata-ayiklama');
     toggle(box(host, 'fixed'), true);
     expect(player.state.params.fixed).toBe(true);
     expect(el.querySelector('.code-output')).not.toBeNull();
+    // the controls are rewritten from the state on every change, also when the state moves without them
+    player.setParams({ fixed: false });
+    expect(box(host, 'fixed').checked).toBe(false);
+    player.setParams({ days: 28, missing: 'sifir', stock: 'satis', leak: true });
+    expect(select(host, 'days').value).toBe('28');
+    expect(select(host, 'missing').value).toBe('sifir');
+    expect(select(host, 'stock').value).toBe('satis');
+    expect(box(host, 'leak').checked).toBe(true);
   });
 });

@@ -138,11 +138,29 @@ describe('crisp-dm calc', () => {
   });
 
   describe('cycleLayout', () => {
-    const sizes: [number, number, boolean][] = [[390, 300, true], [390, 360, true], [560, 440, false], [640, 540, false], [1280, 540, false]];
+    // wide Ders stage, Lab stage beside the controls, a phone; measured sizes of 13 and 18 px labels
+    const fallback: [number, number, boolean][] = [[390, 360, true], [560, 440, false], [640, 540, false], [1280, 540, false]];
+    const label = (fs: number) => (id: NodeId) => {
+      const lines = PHASE_LABELS[id];
+      const widest = Math.max(...lines.map(l => l.length * fs * 0.62));
+      const decision = id === 'd1' || id === 'd2';
+      const tw = widest + 8;
+      const th = lines.length * fs * 1.2 + 4;
+      const w = decision ? 1.6 * tw : widest + 16;
+      return { w, h: decision ? th / (1 - tw / w) : th + 12 };
+    };
+    const measured = (fs: number): Partial<Record<NodeId, { w: number; h: number }>> =>
+      Object.fromEntries(ORDER.map(id => [id, label(fs)(id)]));
+    const cases: [number, number, boolean, Partial<Record<NodeId, { w: number; h: number }>> | undefined][] = [
+      ...fallback.map(([w, h, n]) => [w, h, n, undefined] as [number, number, boolean, undefined]),
+      [390, 360, true, measured(13)],
+      [745, 360, true, measured(13)],
+      [560, 450, false, measured(18)],
+    ];
 
-    it('cycleLayout nodes do not overlap at 390 and 1280', () => {
-      for (const [w, h, narrow] of sizes) {
-        const { nodes } = cycleLayout(w, h, narrow);
+    it('cycleLayout nodes do not overlap and keep inside the area', () => {
+      for (const [w, h, narrow, sizes] of cases) {
+        const { nodes } = cycleLayout(w, h, narrow, sizes);
         expect(nodes).toHaveLength(8);
         for (const n of nodes) {
           expect(n.x - n.w / 2, `${n.id} ${w}`).toBeGreaterThanOrEqual(0);
@@ -162,8 +180,8 @@ describe('crisp-dm calc', () => {
     });
 
     it('cycleLayout goes clockwise from the top', () => {
-      for (const [w, h, narrow] of sizes) {
-        const { cx, cy, nodes } = cycleLayout(w, h, narrow);
+      for (const [w, h, narrow, sizes] of cases) {
+        const { cx, cy, nodes } = cycleLayout(w, h, narrow, sizes);
         const by = Object.fromEntries(nodes.map(n => [n.id, n]));
         expect(nodes.map(n => n.id)).toEqual(ORDER);
         expect(by.ia.x).toBeCloseTo(cx, 6);
@@ -179,10 +197,10 @@ describe('crisp-dm calc', () => {
       }
     });
 
-    it('all nodes sit on the circle', () => {
-      const { cx, cy, r, nodes } = cycleLayout(1280, 540, false);
+    it('all nodes sit on the ellipse', () => {
+      const { cx, cy, rx, ry, nodes } = cycleLayout(1280, 540, false);
       for (const n of nodes) {
-        expect(Math.hypot(n.x - cx, n.y - cy)).toBeCloseTo(r, 6);
+        expect(((n.x - cx) / rx) ** 2 + ((n.y - cy) / ry) ** 2).toBeCloseTo(1, 9);
       }
     });
   });

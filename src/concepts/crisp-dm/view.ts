@@ -33,6 +33,8 @@ export interface SummaryCard {
   items: { label: string; value: string }[];
   /** "Veri yeterli mi?" answer once it is shown. */
   decision: 'Evet' | 'Hayır' | null;
+  /** True when the first decision says Evet, false for Hayır, null before it is shown. */
+  enough: boolean | null;
   note: string | null;
 }
 
@@ -246,6 +248,7 @@ function windowSummary(days: number, normal: number, exam: number, decision: Sum
       { label: 'Eksik kayıt', value: String(window.filter(d => d.satis === null).length) },
     ],
     decision,
+    enough: decision === null ? null : decision === 'Evet',
     note,
   };
 }
@@ -322,6 +325,9 @@ function routeOf(cell: Cell): Route {
   return { end: path.end, stopAt: path.stopAt, text };
 }
 
+/** The edges of stages 1..stage together (each stage lists the edges it walks): the end state keeps the whole route marked. */
+const walked = (stages: readonly (readonly string[])[], stage: number): string[] => [...new Set(stages.slice(0, stage).flat())];
+
 const clampStage = (scan: number, n: number): number => Math.max(1, Math.min(n, Math.floor(scan)));
 
 function empty(id: string, card: CardKind, graph: FlowGraphSpec, strip: string): CrispView {
@@ -351,7 +357,7 @@ function storyView(index: number, p: CrispParams): CrispView {
     case 'veri-yeterli':
       return dataEnoughView(id, p);
     case 'eksik-sifir-degil': {
-      const v = empty(id, 'clean', graphOf({ current: 'vh', path: ['d1-vh'], token: { at: 'vh', via: 'd1-vh' } }), 'ham["urun"].str.strip().str.title() · eksik değer fillna(0) ile sıfır olmaz');
+      const v = empty(id, 'clean', graphOf({ current: 'vh', path: ['d1-vh'], token: { at: 'vh', via: 'd1-vh' } }), 'ham["urun"].str.strip().str.title() · fillna(0) eksik kaydı sıfır satışa çevirir: eksik ≠ sıfır');
       v.clean = cleanCard(56, 'soran');
       return v;
     }
@@ -381,30 +387,36 @@ function storyView(index: number, p: CrispParams): CrispView {
   }
 }
 
+/** The edges each stage of step 4's sweep walks: to the first decision, back to İş anlama, then the second tour to ◇1 and on. */
+const ENOUGH_STAGES: readonly (readonly string[])[] = [['ia-va', 'va-d1'], ['d1-ia'], ['ia-va'], ['va-d1', 'd1-vh']];
+
 function dataEnoughView(id: string, p: CrispParams): CrispView {
   const stage = clampStage(p.scan, 4);
   const strip = `Veri yeterli mi? Her grupta en az ${META.minGroup} gün gerekir.`;
   const normal = NORMAL_COUNT;
   const exam = EXAM_COUNT;
   if (stage === 1) {
-    const v = empty(id, 'table', graphOf({ current: 'd1', path: ['ia-va', 'va-d1'], token: { at: 'd1', via: 'va-d1' } }), strip);
+    const v = empty(id, 'table', graphOf({ current: 'd1', path: walked(ENOUGH_STAGES, 1), token: { at: 'd1', via: 'va-d1' } }), strip);
     const sandwich = BOOK.kafeVerisi.filter(r => r.urun === 'Sandvic');
     v.table = bookTable(`sandviç: ${sandwich.length} kayıt, sınav haftasında ${sandwich.filter(r => r.sinav_haftasi).length}`, false);
     return v;
   }
   if (stage === 2) {
-    const v = empty(id, 'goal', graphOf({ current: 'ia', path: ['d1-ia'], token: { at: 'ia', via: 'd1-ia' } }), strip);
+    const v = empty(id, 'goal', graphOf({ current: 'ia', path: walked(ENOUGH_STAGES, 2), token: { at: 'ia', via: 'd1-ia' } }), strip);
     v.goal = goalCard('veri sorusu: 8 haftalık günlük kayıt');
     return v;
   }
   const v = empty(id, 'summary', graphOf({
     current: stage === 3 ? 'va' : 'd1',
-    path: stage === 3 ? ['ia-va'] : ['va-d1', 'd1-vh'],
+    path: walked(ENOUGH_STAGES, stage),
     token: stage === 3 ? { at: 'va', via: 'ia-va' } : { at: 'd1', via: 'va-d1' },
   }), strip);
   v.summary = windowSummary(POOL.length, normal, exam, stage === 4 ? 'Evet' : null, null);
   return v;
 }
+
+/** The edges each stage of step 8's sweep walks: into the evaluation, to the second decision, back to data understanding. */
+const EVAL_STAGES: readonly (readonly string[])[] = [['mo-de'], ['de-d2'], ['d2-va']];
 
 function evaluationView(id: string, p: CrispParams): CrispView {
   const stage = clampStage(p.scan, 3);
@@ -412,7 +424,7 @@ function evaluationView(id: string, p: CrispParams): CrispView {
   const strip = stripOf(cell.eval);
   const note = examStockNote();
   if (stage === 1) {
-    const v = empty(id, 'table', graphOf({ current: 'de', path: ['mo-de'], token: { at: 'de', via: 'mo-de' } }), strip);
+    const v = empty(id, 'table', graphOf({ current: 'de', path: walked(EVAL_STAGES, 1), token: { at: 'de', via: 'mo-de' } }), strip);
     const tests = DAYS.filter(d => d.test);
     v.table = {
       columns: ['Gün', 'Talep', `Sabit ${META.oldOrder}`, 'Kural'],
@@ -425,8 +437,8 @@ function evaluationView(id: string, p: CrispParams): CrispView {
     return v;
   }
   const v = empty(id, 'results', stage === 2
-    ? graphOf({ current: 'd2', path: ['de-d2'], token: { at: 'd2', via: 'de-d2' } })
-    : graphOf({ current: 'va', path: ['d2-va'], token: { at: 'va', via: 'd2-va' } }), strip);
+    ? graphOf({ current: 'd2', path: walked(EVAL_STAGES, 2), token: { at: 'd2', via: 'de-d2' } })
+    : graphOf({ current: 'va', path: walked(EVAL_STAGES, 3), token: { at: 'va', via: 'd2-va' } }), strip);
   v.results = resultsCard(cell, false, false, stage === 3 ? note : null, null);
   return v;
 }
@@ -445,7 +457,7 @@ function secondRoundView(id: string, p: CrispParams): CrispView {
   const stage = clampStage(p.scan, 7);
   const cell = STORY.second;
   const s = SECOND_ROUND[stage - 1];
-  const graph = graphOf({ current: s.current, path: s.path, token: { at: s.current, ...(s.via ? { via: s.via } : {}) } });
+  const graph = graphOf({ current: s.current, path: walked(SECOND_ROUND.map(r => r.path), stage), token: { at: s.current, ...(s.via ? { via: s.via } : {}) } });
   const strip = stripOf(stage >= 6 ? cell.deploy : cell.eval);
   const rule = ruleText(orderText(cell, true, 'deploy'), orderText(cell, false, 'deploy'));
   if (stage === 1) {
@@ -485,7 +497,7 @@ function labView(index: number, p: CrispParams): CrispView {
       return v;
     }
     case 'eksik-sifir-degil': {
-      const v = base('clean', 'ham["urun"].str.strip().str.title() · eksik değer fillna(0) ile sıfır olmaz');
+      const v = base('clean', 'ham["urun"].str.strip().str.title() · fillna(0) eksik kaydı sıfır satışa çevirir: eksik ≠ sıfır');
       v.clean = cleanCard(p.days, p.stock);
       return v;
     }
