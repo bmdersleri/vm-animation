@@ -24,6 +24,10 @@ const GAP = 12;
 const NARROW_CYCLE_SHARE = 0.48;
 /** A narrow cycle is at least this tall (px): the two decisions need the height to clear their neighbours; the card takes the rest and scrolls. */
 const NARROW_CYCLE_MIN = 340;
+/** Below this stage width (px) the stage is tall: it grows to its content (cycle, then the whole card) and the page scrolls. */
+const TALL = 600;
+/** A stacked cycle on a stage that cannot grow (the Lab beside its controls): flat rhombi keep it low. */
+const STACKED_CYCLE_MIN = 250;
 /** Share of a wide stage's width the cycle takes. */
 const WIDE_CYCLE_SHARE = 0.5;
 /** Side padding of the card (CSS: .phase-card padding). */
@@ -188,9 +192,17 @@ export function mountCrispScene(
     const a = area();
     // the layout follows the stage's own width, not the window: the Lab stage is narrow in a wide window
     const narrow = a.w < NARROW;
+    const tall = a.w < TALL;
     stage.toggleAttribute('data-narrow', narrow);
+    stage.toggleAttribute('data-tall', tall);
     const cycleW = narrow ? a.w : Math.floor((a.w - GAP) * WIDE_CYCLE_SHARE);
-    const cycleH = narrow ? Math.max(NARROW_CYCLE_MIN, Math.floor(a.h * NARROW_CYCLE_SHARE)) : a.h;
+    // a tall stage takes its height from the content, so the cycle's height must not depend on the area's
+    let cycleH = a.h;
+    if (tall) {
+      cycleH = NARROW_CYCLE_MIN;
+    } else if (narrow) {
+      cycleH = Math.max(STACKED_CYCLE_MIN, Math.floor(a.h * NARROW_CYCLE_SHARE));
+    }
     stage.style.setProperty('--cycle-w', `${cycleW}px`);
     stage.style.setProperty('--cycle-h', `${cycleH}px`);
     cycle.resize(cycleW, cycleH, mode);

@@ -98,13 +98,13 @@ export interface FittedNode {
 }
 
 /** Box of `lines`: as wide as the widest line plus padding and as tall as the lines, but at least minW x minH; a rhombus is sized so the text block fits the rectangle inscribed in it (text width / w + text height / h <= 1). */
-function boxFor(kind: FlowNodeKind, lines: string[], measure: TextMeasure, fontPx: number, minW: number, minH: number): FittedNode {
+function boxFor(kind: FlowNodeKind, lines: string[], measure: TextMeasure, fontPx: number, minW: number, minH: number, wide = 1.6): FittedNode {
   const lh = fontPx * LINE_K;
   const widest = measure.maxWidth(lines, 'flow-label', fontPx);
   if (kind === 'decision') {
     const tw = widest + 8;
     const th = lines.length * lh + 4;
-    const w = Math.max(minW, 1.6 * tw);
+    const w = Math.max(minW, wide * tw);
     return { w, h: Math.max(minH, th / (1 - tw / w)), lines };
   }
   return { w: Math.max(minW, widest + 2 * PAD), h: Math.max(minH, lines.length * lh + 2 * PAD_Y), lines };
@@ -120,9 +120,12 @@ export function fitNode(n: FlowNode, measure: TextMeasure, fontPx: number): Fitt
   return boxFor(n.kind, lines, measure, fontPx, n.w, n.h);
 }
 
-/** The smallest box that holds the label lines as given, without wrapping (for pages that lay the nodes out from their labels). */
-export function naturalSize(n: Pick<FlowNode, 'kind' | 'label'>, measure: TextMeasure, fontPx: number): { w: number; h: number } {
-  const { w, h } = boxFor(n.kind, n.label, measure, fontPx, 0, 0);
+/**
+ * The smallest box that holds the label lines as given, without wrapping (for pages that lay the nodes out from
+ * their labels). A rhombus is `wide` times its text width (default 1.6): wider rhombi are lower.
+ */
+export function naturalSize(n: Pick<FlowNode, 'kind' | 'label'>, measure: TextMeasure, fontPx: number, wide = 1.6): { w: number; h: number } {
+  const { w, h } = boxFor(n.kind, n.label, measure, fontPx, 0, 0, wide);
   return { w, h };
 }
 
@@ -248,6 +251,14 @@ export class FlowGraphLayer {
     // labels keep a few px clear of every node border
     const taken: Box[] = nodes.map((n) => grow(boxOf(n), LABEL_CLEAR));
     const area = this.area(taken, 60);
+    // and clear of the edge lines: points along every curve count as taken
+    for (const e of edges) {
+      const geo = geos.get(e.id)!;
+      for (let t = 0; t <= 1.001; t += 0.1) {
+        const [px, py] = geo.at(t);
+        taken.push({ l: px - 3, t: py - 3, r: px + 3, b: py + 3 });
+      }
+    }
     const cands = offsets(3, 4, fontPx);
     this.labels = [];
     for (const e of edges) {

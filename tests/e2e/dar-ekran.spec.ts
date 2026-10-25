@@ -6,7 +6,11 @@ test.use({ viewport: { width: 390, height: 844 } });
 
 const ready = concepts.filter((c) => c.status === 'hazir' && c.href);
 /** `<id> <mode>` whose page CSS sets its own narrow-screen stage height. */
-const TALL_STAGES = new Set(['capraz-dogrulama ders', 'capraz-dogrulama lab', 'roc-esik lab']);
+/**
+ * crisp-dm: on a phone the stage is tall (the cycle on top, the whole phase card under it); it grows to its
+ * content and the page scrolls past the player bar, like capraz-dogrulama.
+ */
+const TALL_STAGES = new Set(['capraz-dogrulama ders', 'capraz-dogrulama lab', 'roc-esik lab', 'crisp-dm ders', 'crisp-dm lab']);
 
 /** Boxes of the stage and every svg / canvas in it, read until they stop moving. */
 const stageSettled = (page: Page): Promise<void> => settled(() => page.evaluate(() =>

@@ -2,7 +2,11 @@
 .crisp-scene { width:100%; height:100%; min-height:0; display:flex; flex-direction:column; gap:10px; font-family:var(--font); color:var(--navy); }
 .crisp-stage { flex:1 1 0; min-height:0; overflow:hidden; display:grid; grid-template-columns:var(--cycle-w, 46%) minmax(0,1fr); grid-template-rows:minmax(0,1fr); gap:12px; }
 /* a narrow stage (a phone, or the Lab beside its controls): the cycle on top (at most 48 percent of the area), the card under it */
-.crisp-stage[data-narrow] { grid-template-columns:minmax(0,1fr); grid-template-rows:var(--cycle-h) minmax(var(--card-min, 140px),1fr); gap:8px; overflow-x:hidden; overflow-y:auto; }
+.crisp-stage[data-narrow] { grid-template-columns:minmax(0,1fr); grid-template-rows:var(--cycle-h) minmax(0,1fr); gap:8px; }
+/* a phone: the stage is tall, it grows to the cycle plus the whole card and the page scrolls (as capraz-dogrulama and roc-esik) */
+.stage:has(.crisp-stage[data-tall]) { height:auto; overflow:visible; }
+.stage:has(.crisp-stage[data-tall]) .crisp-scene { height:auto; }
+.crisp-stage[data-tall] { flex:0 0 auto; overflow:visible; grid-template-rows:var(--cycle-h) auto; }
 /* smaller cycle text in a narrow stage: the diamonds need less height to clear their neighbours */
 .crisp-stage[data-narrow] .flow-label, .crisp-stage[data-narrow] .flow-edge-label { font-size:var(--fs-cell); }
 .crisp-cycle-host { min-width:0; min-height:0; overflow:hidden; }

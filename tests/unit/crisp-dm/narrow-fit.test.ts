@@ -26,19 +26,29 @@ describe('narrow layout', () => {
       expect(m).toMatch(/\.formula \.term/);
       expect(m).not.toMatch(/crisp-stage|phase-card|result-board|cafe-table/);
     }
-    expect(css).toMatch(/\.crisp-stage\[data-narrow\] \{[^}]*grid-template-rows:var\(--cycle-h\) minmax\(var\(--card-min, 140px\),1fr\)/);
+    expect(css).toMatch(/\.crisp-stage\[data-narrow\] \{[^}]*grid-template-rows:var\(--cycle-h\) minmax\(0,1fr\)/);
+    // a phone's stage is tall: it grows to its content and the page scrolls
+    expect(css).toMatch(/\.stage:has\(\.crisp-stage\[data-tall\]\) \{ height:auto; overflow:visible; \}/);
+    expect(css).toMatch(/\.crisp-stage\[data-tall\] \{[^}]*grid-template-rows:var\(--cycle-h\) auto/);
     expect(css).toMatch(/\.phase-card \{[^}]*overflow:auto/);
   });
 
-  it('a narrow cycle takes 48 percent of the area but never less than 340 px', () => {
-    const { el, player } = setup(390, 520, 'lab');
-    go(player, 'modelleme');
-    const stage = el.querySelector<HTMLElement>('.crisp-stage')!;
-    const h = parseFloat(stage.style.getPropertyValue('--cycle-h'));
-    expect(h).toBeGreaterThanOrEqual(340);
-    const svg = el.querySelector('svg.crisp-cycle')!;
-    expect(num(svg, 'width')).toBeLessThanOrEqual(390);
-    expect(num(svg, 'height')).toBe(h);
+  it('a phone stage is tall: the cycle keeps 340 px whatever the area, the card follows at its own height', () => {
+    for (const h of [300, 520, 900]) {
+      const { el, player } = setup(390, h, 'lab');
+      go(player, 'modelleme');
+      const stage = el.querySelector<HTMLElement>('.crisp-stage')!;
+      expect(stage.hasAttribute('data-tall'), String(h)).toBe(true);
+      expect(parseFloat(stage.style.getPropertyValue('--cycle-h')), String(h)).toBe(340);
+      expect(num(el.querySelector('svg.crisp-cycle')!, 'height')).toBe(340);
+    }
+    const lab = setup(745, 530, 'lab');
+    go(lab.player, 'modelleme');
+    const stacked = lab.el.querySelector<HTMLElement>('.crisp-stage')!;
+    // a stacked Lab stage cannot grow: it is not tall, and its cycle leaves the card at least half of the area
+    expect(stacked.hasAttribute('data-tall')).toBe(false);
+    expect(stacked.hasAttribute('data-narrow')).toBe(true);
+    expect(parseFloat(stacked.style.getPropertyValue('--cycle-h'))).toBeLessThanOrEqual(0.5 * 530);
   });
 
   for (const [w, h, mode] of [[390, 520, 'lab'], [745, 530, 'lab'], [1280, 540, 'ders']] as const) {

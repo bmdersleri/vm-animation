@@ -93,7 +93,9 @@ export class CycleScene {
     // the label size the CSS gives (smaller in a narrow stage), not the theme token itself
     const fontPx = this.measure.fontPx('flow-label', this.measure.fonts(this.mode).tick);
     // every box is sized from its label, then the ellipse is fitted to the area
-    const sizes = Object.fromEntries(v.graph.nodes.map(n => [n.id, naturalSize(n, this.measure, fontPx)]));
+    // rhombi are flat where the width allows it (a stacked stage that cannot grow), steeper on a phone
+    const wide = this.w >= 600 && narrow ? 2.2 : 1.6;
+    const sizes = Object.fromEntries(v.graph.nodes.map(n => [n.id, naturalSize(n, this.measure, fontPx, wide)]));
     const lay = cycleLayout(this.w, this.h, narrow, sizes);
     const at = new Map(lay.nodes.map(n => [n.id as string, n]));
     const spec: FlowGraphSpec = {
