@@ -3,7 +3,7 @@ import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
 import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { renderStrip } from '../../core/plot/strip';
-import type { SentimentParams } from './scenario';
+import { duyguAnaliziScenario, type SentimentParams } from './scenario';
 import type { ViewScene } from './scene-base';
 import { CoefScene } from './scene-coef';
 import { DebugCodeScene } from './scene-code';
@@ -117,7 +117,17 @@ export function mountSentimentScene(
     if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(id);
     else clearTimeout(id);
   };
+  let lastIndex = player.state.index;
   const unsubscribe = player.subscribe((s, cause) => {
+    // Reduced motion: entering a sweep step (step 10) lands on the sweep's last value at once (this also ends the player's sweep).
+    const entered = s.index !== lastIndex;
+    lastIndex = s.index;
+    const sweep = duyguAnaliziScenario.steps[s.index].sweep;
+    if (entered && sweep && reducedMotion()) {
+      const n = sweep.count ? Math.max(1, Math.min(sweep.values.length, sweep.count(s.params))) : sweep.values.length;
+      player.setParams({ [sweep.key]: sweep.values[n - 1] });
+      return;
+    }
     const merged = pending && causeRank[pending.cause] > causeRank[cause] ? pending.cause : cause;
     pending = { s, cause: merged };
     if (ds === 0) flush();

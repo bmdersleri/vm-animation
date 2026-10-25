@@ -1,11 +1,19 @@
 // @vitest-environment jsdom
 import fs from 'node:fs';
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { StepPlayer, stepIndex } from '../../../src/core/player';
+import { duyguAnaliziScenario as sc } from '../../../src/concepts/duygu-analizi/scenario';
+import { mountSentimentScene } from '../../../src/concepts/duygu-analizi/scene';
 import { HATALAR } from '../../../src/concepts/duygu-analizi/calc';
 import { go, setup, texts } from './harness';
 
 // badges sit on their lines, so the DOM order is the line order (bug 4's line comes before bugs 2 and 3)
 const badges = (el: HTMLElement) => [...el.querySelectorAll('.bug-badge')].map((b) => b.getAttribute('data-bug')).sort();
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
 
 describe('code scene (step 10)', () => {
   it('step 10 sweep marks four bugs', () => {
@@ -54,6 +62,30 @@ describe('code scene (step 10)', () => {
     expect(el.querySelectorAll('.is-fix').length).toBeGreaterThanOrEqual(4);
     player.setParam('fixed', false);
     expect(el.querySelectorAll('.code-fixed')).toHaveLength(0);
+  });
+
+  it('under prefers-reduced-motion entering step 10 shows the corrected code at once and plays no sweep', () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q }));
+    const el = document.createElement('div');
+    document.body.append(el);
+    const player = new StepPlayer(sc);
+    const scene = mountSentimentScene(el, player, 'ders');
+    scene.resize(1280, 540);
+    player.goto(stepIndex(sc, 'hata-ayiklama'));
+    expect(el.querySelector('.code-title')!.textContent).toBe('Düzeltilmiş kod');
+    expect(el.querySelectorAll('.bug-badge')).toHaveLength(0);
+    expect(el.querySelector('.formula')!.textContent).toMatch(/^düzeltilmiş:/);
+    // the sweep was ended by the landing: nothing changes later
+    const html = el.innerHTML;
+    vi.advanceTimersByTime(1400 * 6);
+    expect(el.innerHTML).toBe(html);
+    // leaving and coming back lands again
+    player.goto(stepIndex(sc, 'sozluk-kaymasi'));
+    player.goto(stepIndex(sc, 'hata-ayiklama'));
+    expect(el.querySelector('.code-title')!.textContent).toBe('Düzeltilmiş kod');
+    scene.destroy();
+    player.destroy();
   });
 
   it('the page CSS leaves the shared code panel rules to core/plot/code-panel.css', () => {
