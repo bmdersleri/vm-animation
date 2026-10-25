@@ -1,0 +1,197 @@
+import { select, type Selection } from 'd3-selection';
+import type { Mode } from '../../core/mode';
+import { r1 } from '../../core/plot/marks';
+import { TextMeasure } from '../../core/plot/text-measure';
+import { tr } from '../../core/plot/transition';
+import { el, NARROW, NS, type ViewScene } from './scene-base';
+import { OrdersTable } from './scene-orders';
+import type { LatticeEdge, LatticeNode, LatticeView, ShapView } from './view';
+
+type G = Selection<SVGGElement, unknown, null, undefined>;
+
+/** Layer of the lattice (number of features in the coalition) to the masks drawn in it, left to right. */
+const LAYERS: number[][] = [[0], [1, 2, 4], [3, 5, 6], [7]];
+
+/** Where a node sits (px, top-left corner and size). */
+interface Place {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * The coalition lattice (steps 3-5): eight `.lattice-node[data-mask]` in four layers (the empty set on top, all
+ * features at the bottom) with the full feature names and v(S) to three decimals, and the twelve
+ * `.lattice-edge[data-from][data-to]` (one feature joins). In step 4 the ordering path is `.is-path` with its
+ * marginal contributions in `.edge-label`; in step 5 the ordering table sits beside the lattice (under it in
+ * one column). A lattice or table wider than the stage scrolls inside its own wrapper, never the page.
+ */
+export class LatticeScene implements ViewScene {
+  private readonly root: HTMLDivElement;
+  private readonly wrap: HTMLDivElement;
+  private readonly svg: Selection<SVGSVGElement, unknown, null, undefined>;
+  private readonly edgeG: G;
+  private readonly nodeG: G;
+  private readonly labelG: G;
+  private readonly orders: OrdersTable;
+  private readonly measure: TextMeasure;
+  private w = 1;
+  private mode: Mode = 'ders';
+
+  constructor(host: HTMLElement) {
+    const doc = host.ownerDocument;
+    this.root = el(doc, 'div', 'lattice-scene');
+    this.wrap = el(doc, 'div', 'lattice-wrap');
+    const root = doc.createElementNS(NS, 'svg');
+    this.wrap.append(root);
+    this.svg = select(root).attr('class', 'lattice-plot').attr('role', 'img').attr('aria-label', 'Özellik koalisyonlarının kafesi');
+    this.edgeG = this.svg.append('g').attr('class', 'lattice-edges');
+    this.nodeG = this.svg.append('g').attr('class', 'lattice-nodes');
+    this.labelG = this.svg.append('g').attr('class', 'lattice-labels');
+    const probe = this.svg.append('text').attr('class', 'probe').attr('visibility', 'hidden').attr('aria-hidden', 'true');
+    this.measure = new TextMeasure(probe.node()!);
+    this.orders = new OrdersTable(doc);
+    this.root.append(this.wrap, this.orders.root);
+    host.append(this.root);
+  }
+
+  resize(w: number, _h: number, mode: Mode): void {
+    this.w = Math.max(1, w);
+    this.mode = mode;
+  }
+
+  interrupt(): void {
+    this.svg.selectAll('*').interrupt('lat');
+  }
+
+  destroy(): void {
+    this.interrupt();
+    this.orders.destroy();
+    this.root.remove();
+  }
+
+  update(v: ShapView, ms: number): void {
+    const view = v.lattice;
+    if (!view) {
+      return;
+    }
+    this.root.dataset.part = view.part;
+    this.orders.root.hidden = view.part !== 'orders';
+    if (view.part === 'orders') {
+      this.orders.update(view);
+    }
+    this.draw(view, ms);
+  }
+
+  private draw(view: LatticeView, ms: number): void {
+    const fs = this.measure.fonts(this.mode).tick;
+    const lh = fs * 1.3;
+    const wide = this.w >= NARROW;
+    const avail = Math.max(120, view.part === 'orders' && wide ? Math.floor(this.w * 0.54) - 12 : this.w - 24);
+    const texts = view.nodes.flatMap((n) => [...n.names, '∅', `v = ${n.v}`]);
+    const nodeW = Math.ceil(this.measure.maxWidth(texts, 'tick', fs)) + 8;
+    const gapX = 6;
+    const width = Math.max(avail, 3 * nodeW + 2 * gapX + 8);
+    const gapY = lh * 2;
+    const lines = (layer: number): number => (layer === 0 ? 1 : layer) + 1;
+    const places = new Map<number, Place>();
+    let y = 4;
+    LAYERS.forEach((masks, layer) => {
+      const h = lines(layer) * lh + 10;
+      masks.forEach((mask, i) => {
+        const cx = ((i + 0.5) * width) / masks.length;
+        places.set(mask, { x: cx - nodeW / 2, y, w: nodeW, h });
+      });
+      y += h + gapY;
+    });
+    const height = Math.ceil(y - gapY + 4);
+    this.svg.attr('width', r1(width)).attr('height', height);
+
+    // edges: a line from the bottom of the smaller coalition to the top of the larger one
+    const edges = view.edges.filter((e) => e.visible);
+    const edgeKey = (e: LatticeEdge): string => `${e.from}-${e.to}`;
+    const line = (e: LatticeEdge) => {
+      const a = places.get(e.from)!;
+      const b = places.get(e.to)!;
+      return { x1: a.x + a.w / 2, y1: a.y + a.h, x2: b.x + b.w / 2, y2: b.y };
+    };
+    const edgeSel = this.edgeG
+      .selectAll<SVGLineElement, LatticeEdge>('line.lattice-edge')
+      .data(edges, edgeKey)
+      .join(
+        (enter) => enter.append('line').attr('opacity', 0),
+        (update) => update,
+        (exit) => exit.remove(),
+      )
+      .attr('class', (e) => `lattice-edge${e.path ? ' is-path' : ''}`)
+      .attr('data-from', (e) => e.from)
+      .attr('data-to', (e) => e.to)
+      .attr('data-feature', (e) => e.feature)
+      .attr('x1', (e) => r1(line(e).x1))
+      .attr('y1', (e) => r1(line(e).y1))
+      .attr('x2', (e) => r1(line(e).x2))
+      .attr('y2', (e) => r1(line(e).y2));
+    tr(edgeSel, 'lat', ms).attr('opacity', 1);
+    edgeSel.filter((e) => e.path).raise();
+
+    // nodes
+    const onPath = new Set(view.path ?? []);
+    const nodeSel = this.nodeG
+      .selectAll<SVGGElement, LatticeNode>('g.lattice-node')
+      .data(view.nodes, (n) => n.mask)
+      .join((enter) => {
+        const g = enter.append('g');
+        g.append('rect').attr('class', 'node-box').attr('rx', 8);
+        g.append('text').attr('class', 'node-v');
+        return g;
+      })
+      .attr('class', (n) => `lattice-node${n.filled ? '' : ' is-empty'}${onPath.has(n.mask) ? ' is-path' : ''}`)
+      .attr('data-mask', (n) => n.mask)
+      .attr('data-layer', (n) => n.layer);
+    nodeSel
+      .select('rect.node-box')
+      .attr('x', (n) => r1(places.get(n.mask)!.x))
+      .attr('y', (n) => r1(places.get(n.mask)!.y))
+      .attr('width', (n) => r1(places.get(n.mask)!.w))
+      .attr('height', (n) => r1(places.get(n.mask)!.h));
+    nodeSel
+      .selectAll<SVGTextElement, string>('text.node-name')
+      .data(
+        (n) => (n.names.length > 0 ? n.names : ['∅']),
+        (name) => name,
+      )
+      .join('text')
+      .attr('class', 'node-name')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .text((name) => name);
+    nodeSel.each(function (n) {
+      const p = places.get(n.mask)!;
+      const g = select(this);
+      g.selectAll<SVGTextElement, string>('text.node-name')
+        .attr('x', r1(p.x + p.w / 2))
+        .attr('y', (_, i) => r1(p.y + 5 + lh * (i + 0.5)));
+      g.select('text.node-v')
+        .attr('text-anchor', 'middle')
+        .attr('dy', '0.35em')
+        .attr('x', r1(p.x + p.w / 2))
+        .attr('y', r1(p.y + 5 + lh * (Math.max(1, n.names.length) + 0.5)))
+        .text(n.filled ? n.v : '');
+    });
+    tr(nodeSel, 'lat', ms).attr('opacity', (n) => (n.filled ? 1 : 0.4));
+
+    // marginal contributions on the path edges
+    const labelEdges = edges.filter((e) => e.path && e.delta !== null);
+    this.labelG
+      .selectAll<SVGTextElement, LatticeEdge>('text.edge-label')
+      .data(labelEdges, edgeKey)
+      .join('text')
+      .attr('class', 'edge-label')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .attr('x', (e) => r1((line(e).x1 + line(e).x2) / 2))
+      .attr('y', (e) => r1((line(e).y1 + line(e).y2) / 2))
+      .text((e) => e.delta ?? '');
+  }
+}
