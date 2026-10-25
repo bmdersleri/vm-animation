@@ -13,11 +13,14 @@ afterEach(() => {
 });
 
 /** Mounts the scene in jsdom with no animation; `w` x `h` is the size the shell would give it. */
-export function setup(w = 1280, h = 540, mode: Mode = 'ders') {
+export function setup(w = 1280, h = 540, mode: Mode = 'ders', opts: { durationScale?: number; at?: string } = {}) {
   const el = document.createElement('div');
   document.body.append(el);
   const player = new StepPlayer(sc);
-  const scene = mountLimeScene(el, player, mode, { durationScale: 0 });
+  if (opts.at) {
+    player.goto(stepIndex(sc, opts.at));
+  }
+  const scene = mountLimeScene(el, player, mode, { durationScale: opts.durationScale ?? 0 });
   scene.resize(w, h);
   clean.push(() => {
     scene.destroy();

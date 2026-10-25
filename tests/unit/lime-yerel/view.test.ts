@@ -27,6 +27,13 @@ describe('lime view', () => {
     expect(v.strip).toContain('0,146 + 0,540 + 0,074 − 0,023 = 0,737');
   });
 
+  it('step 1 strip carries both kod05 lines of the book', () => {
+    const lines = at('yerel-soru').strip.split('\n');
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toBe('lime_aciklayici = LimeTabularExplainer(…, mode="classification", random_state=42)');
+    expect(lines[1]).toBe('lime_aciklamasi = lime_aciklayici.explain_instance(musteri, predict_proba, num_features=3)');
+  });
+
   it('kinds follow the steps and later steps are placeholders', () => {
     const kinds = sc.steps.map((_s, i) => deriveLimeView(i, sc.defaults).kind);
     expect(kinds).toEqual(['flow', 'bins', 'cloud', 'cloud', 'kernel', 'surrogate', 'surrogate', 'stability', 'compare', 'code']);

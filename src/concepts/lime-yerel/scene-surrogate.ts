@@ -2,6 +2,7 @@ import { select, type Selection } from 'd3-selection';
 import type { Mode } from '../../core/mode';
 import { HBarsLayer } from '../../core/plot/hbars';
 import { TextMeasure } from '../../core/plot/text-measure';
+import { tr } from '../../core/plot/transition';
 import { el, NARROW, NS, type ViewScene } from './scene-base';
 import type { FidelityView, LimeView, SurrogateView } from './view';
 
@@ -95,7 +96,7 @@ export class SurrogateScene implements ViewScene {
     this.root.remove();
   }
 
-  update(v: LimeView): void {
+  update(v: LimeView, ms: number): void {
     const s = v.surrogate;
     if (!s) {
       return;
@@ -106,7 +107,7 @@ export class SurrogateScene implements ViewScene {
     if (s.fidelity) {
       this.fill(s.fidelity);
     }
-    this.draw(s);
+    this.draw(s, ms);
   }
 
   private fill(fid: FidelityView): void {
@@ -117,7 +118,7 @@ export class SurrogateScene implements ViewScene {
     this.localFill.style.width = `${Math.round(fid.localRatio * 100)}%`;
   }
 
-  private draw(s: SurrogateView): void {
+  private draw(s: SurrogateView, ms: number): void {
     const fonts = this.measure.fonts(this.mode);
     const fs = fonts.tick;
     const width = Math.max(240, this.w - 24);
@@ -154,7 +155,7 @@ export class SurrogateScene implements ViewScene {
         max,
         itemCls: 'lime-bar',
         valueSample: '+0,000',
-        ms: 0,
+        ms,
       });
     // the layer starts its bars `lead` px right of rect.x; a first draw tells how far
     const lead = draw(0, width, 1).x0;
@@ -168,7 +169,14 @@ export class SurrogateScene implements ViewScene {
       }
       const g = select(this);
       const len = d.value * scale;
-      g.select('rect.bar').attr('x', Math.round((zero - len) * 10) / 10).attr('width', Math.round(len * 10) / 10);
+      // a negative bar grows leftward: it starts at zero with no width, then x and width move together
+      const rect = g.select<SVGRectElement>('rect.bar');
+      if (ms > 0) {
+        rect.attr('x', Math.round(zero * 10) / 10).attr('width', 0);
+      }
+      tr(rect, 'bars', ms)
+        .attr('x', Math.round((zero - len) * 10) / 10)
+        .attr('width', Math.round(len * 10) / 10);
       g.select('text.bar-value').attr('text-anchor', 'end').attr('x', Math.round((zero - len - 6) * 10) / 10);
     });
     // the zero line is drawn per bar, only across the bar bands, so it never crosses a rule name or a label

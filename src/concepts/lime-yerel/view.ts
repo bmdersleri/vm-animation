@@ -129,7 +129,10 @@ const f3 = (v: number): string => (Number.isFinite(v) ? f(v, 3) : '—');
 const signed = (v: number): string => (v > 0 ? `+${f3(v)}` : f3(v));
 
 /** The book's code 05 lines (explainer), shown in the strip of step 1. */
-export const KOD05_LINES = ['lime_aciklayici = LimeTabularExplainer(…, mode="classification", random_state=42)'];
+export const KOD05_LINES = [
+  'lime_aciklayici = LimeTabularExplainer(…, mode="classification", random_state=42)',
+  'lime_aciklamasi = lime_aciklayici.explain_instance(musteri, predict_proba, num_features=3)',
+];
 
 /** Row order of the pattern tables: by distance from the customer (all three marks first). */
 export const PATTERN_ORDER = [7, 6, 5, 3, 4, 2, 1, 0];

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { formatNumber as f } from '../../../src/core/plot/format';
 import { BINS, limeRun } from '../../../src/concepts/xai/data';
 import { go, num, setup, texts, themeFonts } from './harness';
@@ -80,13 +80,15 @@ describe('surrogate scene', () => {
     }
   });
 
-  it('steps 8-10 render a quiet placeholder', () => {
-    const { el, player } = setup();
-    for (const id of ['kararlilik', 'shap-lime', 'hata-ayiklama']) {
-      go(player, id);
-      expect(el.querySelectorAll('.lime-host:not([hidden])')).toHaveLength(1);
-      expect(el.querySelector('.lime-wait')).not.toBeNull();
-    }
+  it('bars grow with the normal transition, and reduced motion draws them at once', () => {
+    // the first render of a step animates: the bar starts at width 0 and only a timer tick would widen it
+    const grown = setup(1280, 540, 'ders', { durationScale: 1, at: 'vekil' });
+    expect([...grown.el.querySelectorAll('.lime-bar rect.bar')].map((b) => num(b, 'width'))).toEqual([0, 0, 0]);
+    document.body.replaceChildren();
+    vi.stubGlobal('matchMedia', () => ({ matches: true }));
+    const still = setup(1280, 540, 'ders', { durationScale: 1, at: 'vekil' });
+    expect([...still.el.querySelectorAll('.lime-bar rect.bar')].every((b) => num(b, 'width') > 1)).toBe(true);
+    vi.unstubAllGlobals();
   });
 
   it('the zero line is drawn per bar and crosses no rule name or value label', () => {
