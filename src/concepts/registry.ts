@@ -22,7 +22,8 @@ const CH: Record<number, string> = {
   13: 'Açıklanabilir Yapay Zekâ ve Model Yorumlanabilirliği (XAI)',
 };
 
-function soon(id: string, chapter: number, title: string): ConceptEntry {
+/** Placeholder for a page that is planned but not built; unused while every chapter is ready, kept exported for the next one. */
+export function soon(id: string, chapter: number, title: string): ConceptEntry {
   return { id, chapter, chapterTitle: CH[chapter], title, status: 'yakinda' };
 }
 
@@ -111,5 +112,6 @@ export const concepts: ConceptEntry[] = [
   { id: 'smote-sizinti', chapter: 11, chapterTitle: CH[11], title: 'SMOTE sızıntısı ve PR-AUC', status: 'hazir', href: 'smote-sizinti/' },
   { id: 'tfidf-kosinus', chapter: 12, chapterTitle: CH[12], title: 'TF-IDF ve kosinüs benzerliği', status: 'hazir', href: 'tfidf-kosinus/' },
   { id: 'duygu-analizi', chapter: 12, chapterTitle: CH[12], title: 'Duygu analizi: TF-IDF ve lojistik regresyon', status: 'hazir', href: 'duygu-analizi/' },
-  soon('shap', 13, 'SHAP'),
+  { id: 'shap-degerleri', chapter: 13, chapterTitle: CH[13], title: 'SHAP: Shapley değerleriyle katkı', status: 'hazir', href: 'shap-degerleri/' },
+  { id: 'lime-yerel', chapter: 13, chapterTitle: CH[13], title: 'LIME: yerel vekil model ve SHAP ile karşılaştırma', status: 'hazir', href: 'lime-yerel/' },
 ];
