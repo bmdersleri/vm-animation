@@ -55,6 +55,18 @@ describe('keyboard', () => {
     }
     expect(player.state.index).toBe(0);
   });
+  it('ignores step keys and letter shortcuts when focus is in a text box', () => {
+    const { player, actions } = setup();
+    for (const box of [el('input', { type: 'text' }), el('textarea')]) {
+      for (const k of ['ArrowRight', ' ', 'Home', 'End', 'ArrowLeft', 'p', 'f', '?']) {
+        expect(press(k, {}, box).defaultPrevented, k).toBe(false);
+      }
+    }
+    expect(player.state.index).toBe(0);
+    expect(player.state.playing).toBe(false);
+    expect(actions.toggleFullscreen).not.toHaveBeenCalled();
+    expect(actions.toggleHelp).not.toHaveBeenCalled();
+  });
   it('Space on a button does not advance', () => {
     const { player } = setup();
     const ev = press(' ', {}, el('button'));
