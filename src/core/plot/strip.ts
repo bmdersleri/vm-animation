@@ -24,7 +24,7 @@ export function renderStrip(p: HTMLElement, text: string): void {
 }
 
 /**
- * Lets a long code term of the strip wrap after "(" and between the parts of a dotted name, so an identifier such as
+ * Lets a long code term of the strip wrap after the "(" of a call and between the parts of a dotted name, so an identifier such as
  * "musteri" is never cut mid-word (the term wraps at spaces otherwise). Call it after `renderStrip`; a page whose
  * strip carries code keeps `overflow-wrap:normal` on its terms so the browser breaks only at these points.
  */
@@ -35,11 +35,12 @@ export function allowCodeBreaks(strip: HTMLElement): void {
   strip.dataset.breaks = strip.dataset.strip;
   for (const term of strip.querySelectorAll('.term')) {
     const text = term.textContent ?? '';
-    if (!/\(\S|[A-Za-z_]\.[A-Za-z_]/.test(text)) {
+    // a call bracket follows a name ("fit("); a bracket of prose follows a space and is left alone
+    if (!/[A-Za-z_0-9]\(\S|[A-Za-z_]\.[A-Za-z_]/.test(text)) {
       continue;
     }
     const doc = term.ownerDocument;
-    const parts = text.split(/(?<=\()(?=\S)|(?<=[A-Za-z_]\.)(?=[A-Za-z_])/);
+    const parts = text.split(/(?<=[A-Za-z_0-9]\()(?=\S)|(?<=[A-Za-z_]\.)(?=[A-Za-z_])/);
     term.replaceChildren(...parts.flatMap((part, i) => (i === 0 ? [doc.createTextNode(part)] : [doc.createElement('wbr'), doc.createTextNode(part)])));
   }
 }

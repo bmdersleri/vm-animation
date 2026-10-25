@@ -16,9 +16,9 @@ describe('allowCodeBreaks', () => {
     expect(p.textContent).toBe('olasilik = model.predict_proba(musteri)[0, 1]');
   });
 
-  it('plain terms, numbers with a dot and "( " stay untouched', () => {
+  it('plain terms, numbers with a dot and a bracket of prose stay untouched', () => {
     const p = document.createElement('p');
-    renderStrip(p, 'p = 0.945 · ( a + b ) · tenure');
+    renderStrip(p, 'p = 0.945 · ( a + b ) · renk = özellik değeri (düşük mavi) · (1 − p)');
     allowCodeBreaks(p);
     expect(p.querySelectorAll('wbr')).toHaveLength(0);
   });
