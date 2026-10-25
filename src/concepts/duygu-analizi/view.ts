@@ -41,6 +41,8 @@ export interface FlowView {
 /** Step 3: the strongest terms of both signs, each side sorted by |coefficient|. */
 export interface CoefView {
   model: ModelKey;
+  /** The heading over both groups, naming the model. */
+  title: string;
   pos: HBar[];
   neg: HBar[];
   max: number;
@@ -100,6 +102,8 @@ export interface ReportRow {
 /** Step 5: the test matrix with its metric row, and the book's 2-comment report. */
 export interface ResultView {
   model: ModelKey;
+  /** The matrix heading, naming the model. */
+  title: string;
   matrix: Confusion;
   /** Accuracy and the olumsuz class's precision and recall, as text. */
   metrics: { id: 'accuracy' | 'precision' | 'recall'; label: string; value: string }[];
@@ -118,6 +122,8 @@ export interface VocabView {
   /** The chosen vectoriser: fitted on all the data (leaky) or on the training part. */
   leaky: boolean;
   model: ModelKey;
+  /** The strip heading, naming the model. */
+  title: string;
   trainSize: number;
   allSize: number;
   testOnlyCount: number;
@@ -187,6 +193,9 @@ const empty = (kind: SentimentKind, stepId: string, strip = ''): SentimentView =
   drift: null,
   code: null,
 });
+
+/** The model's name as the page writes it in headings: "unigram" or "unigram + bigram", plus ', "değil" süzülür'. */
+export const modelName = (key: ModelKey): string => (MODELS[key].ngram === 2 ? 'unigram + bigram' : 'unigram') + (MODELS[key].dropDegil ? ', "değil" süzülür' : '');
 
 // ---- steps 1-2: flow strip ----
 
@@ -282,7 +291,7 @@ function coefView(id: string, p: SentimentParams): SentimentView {
     `katsayı > 0: terim yorumu olumluya çeker · katsayı < 0: olumsuza çeker (çubuk uzunluğu = |katsayı|)`,
     `en olumlu: ${pos[0] ? `${pos[0].term} ${signed(pos[0].coef, 2)}` : '-'} · en olumsuz: ${neg[0] ? `${neg[0].term} ${signed(neg[0].coef, 2)}` : '-'} · ${model.vocabSize} terimden ${n} + ${n} gösterilir`,
   ].join('\n');
-  return { ...empty('coef', id, strip), coef: { model: model.key, pos: pos.map(bar('pos')), neg: neg.map(bar('neg')), max, n } };
+  return { ...empty('coef', id, strip), coef: { model: model.key, title: `Katsayılar (${modelName(model.key)})`, pos: pos.map(bar('pos')), neg: neg.map(bar('neg')), max, n } };
 }
 
 // ---- steps 4, 6, 7, 9: score panels ----
@@ -347,8 +356,6 @@ export function panelOf(panelId: PanelView['id'], key: ModelKey, title: string, 
     accuracy: null,
   };
 }
-
-const modelName = (key: ModelKey): string => (MODELS[key].ngram === 2 ? 'unigram + bigram' : 'unigram') + (MODELS[key].dropDegil ? ', "değil" süzülür' : '');
 
 /** The negation-subset accuracy line of a panel; with "değil" dropped it also names the accuracy without the drop. */
 function negationLine(key: ModelKey): string {
@@ -420,7 +427,7 @@ function vocabView(id: string, p: SentimentParams): SentimentView {
   const train = MODELS[cleanKey];
   const terms: VocabTerm[] = all.testOnly.slice(0, MAX_VOCAB_CHIPS).map((term) => ({
     term,
-    idf: s.leaky ? f2(all.idf[all.vocab.indexOf(term)]) : null,
+    idf: s.leaky ? f3(all.idf[all.vocab.indexOf(term)]) : null,
   }));
   const gap = gapSentence(all.accuracy, train.accuracy);
   const strip = [
@@ -432,6 +439,7 @@ function vocabView(id: string, p: SentimentParams): SentimentView {
     vocab: {
       leaky: s.leaky,
       model: s.leaky ? leakyKey : cleanKey,
+      title: `Sözlük (${modelName(cleanKey)}): yalnız eğitimden mi, tüm veriden mi?`,
       trainSize: train.vocabSize,
       allSize: all.vocabSize,
       testOnlyCount: all.testOnly.length,
@@ -499,6 +507,7 @@ function resultView(id: string, p: SentimentParams): SentimentView {
     ...empty('result', id, strip),
     result: {
       model: model.key,
+      title: `Test karışıklık matrisi (${modelName(model.key)})`,
       matrix: m,
       metrics: [
         { id: 'accuracy', label: 'doğruluk', value: pct(acc, 1) },

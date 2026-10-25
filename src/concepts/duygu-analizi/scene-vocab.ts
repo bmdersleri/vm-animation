@@ -11,6 +11,7 @@ import type { DriftView, SentimentView, VocabView } from './view';
  */
 export class VocabScene implements ViewScene {
   private readonly root: HTMLDivElement;
+  private readonly title: HTMLHeadingElement;
   private readonly counts: HTMLUListElement;
   private readonly lead: HTMLParagraphElement;
   private readonly chips: HTMLDivElement;
@@ -25,7 +26,8 @@ export class VocabScene implements ViewScene {
     this.chips = el(doc, 'div', 'vocab-chips');
     this.accs = el(doc, 'div', 'vocab-accs');
     this.gap = el(doc, 'p', 'vocab-gap');
-    this.root.append(el(doc, 'h3', 'panel-heading', 'Sözlük: yalnız eğitimden mi, tüm veriden mi?'), this.counts, this.lead, this.chips, this.accs, this.gap);
+    this.title = el(doc, 'h3', 'panel-heading');
+    this.root.append(this.title, this.counts, this.lead, this.chips, this.accs, this.gap);
     host.append(this.root);
   }
 
@@ -43,6 +45,7 @@ export class VocabScene implements ViewScene {
     const doc = this.root.ownerDocument;
     this.root.dataset.leaky = String(vocab.leaky);
     this.root.dataset.model = vocab.model;
+    this.title.textContent = vocab.title;
     this.counts.replaceChildren(
       ...(
         [

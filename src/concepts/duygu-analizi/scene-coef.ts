@@ -40,13 +40,14 @@ class Side {
 }
 
 /**
- * Step 3: the strongest positive and negative terms as two bar groups (`HBarsLayer`, `.coef-bar` with
+ * Step 3: under a heading naming the model (`.coef-model`), the strongest positive and negative terms as two bar groups (`HBarsLayer`, `.coef-bar` with
  * `data-sign` pos or neg), each sorted by |coefficient| with the strongest on top. Bar length is |coefficient|,
  * the value text carries the sign; term names are in the code font. The groups sit side by side on a wide stage
  * and one above the other on a narrow one.
  */
 export class CoefScene implements ViewScene {
   private readonly root: HTMLDivElement;
+  private readonly title: HTMLHeadingElement;
   private readonly pos: Side;
   private readonly neg: Side;
   private w = 1;
@@ -55,9 +56,10 @@ export class CoefScene implements ViewScene {
   constructor(host: HTMLElement) {
     const doc = host.ownerDocument;
     this.root = el(doc, 'div', 'coef-scene');
+    this.title = el(doc, 'h3', 'panel-heading coef-model');
     this.pos = new Side(doc, 'pos', 'olumluya çeken');
     this.neg = new Side(doc, 'neg', 'olumsuza çeken');
-    this.root.append(this.pos.box, this.neg.box);
+    this.root.append(this.title, this.pos.box, this.neg.box);
     host.append(this.root);
   }
 
@@ -80,6 +82,7 @@ export class CoefScene implements ViewScene {
     const c = v.coef;
     if (!c) return;
     this.root.dataset.model = c.model;
+    this.title.textContent = c.title;
     const wide = isWide(this.w);
     this.root.dataset.wide = String(wide);
     const tick = this.pos.measure.fonts(this.mode).tick;

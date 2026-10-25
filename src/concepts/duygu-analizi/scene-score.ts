@@ -283,6 +283,7 @@ export class ScoreScene implements ViewScene {
  */
 export class ResultScene implements ViewScene {
   private readonly root: HTMLDivElement;
+  private readonly title: HTMLHeadingElement;
   private readonly svg: Selection<SVGSVGElement, unknown, null, undefined>;
   private readonly measure: TextMeasure;
   private readonly matrix: MatrixLayer;
@@ -295,7 +296,8 @@ export class ResultScene implements ViewScene {
     const doc = host.ownerDocument;
     this.root = el(doc, 'div', 'result-scene');
     const main = el(doc, 'section', 'result-main');
-    main.append(el(doc, 'h3', 'panel-heading', 'Test karışıklık matrisi'));
+    this.title = el(doc, 'h3', 'panel-heading');
+    main.append(this.title);
     const m = mountSvg(main, 'matrix-plot', 'Test yorumlarının karışıklık matrisi');
     this.svg = m.svg;
     this.measure = m.measure;
@@ -325,6 +327,7 @@ export class ResultScene implements ViewScene {
     const r = v.result;
     if (!r) return;
     this.root.dataset.model = r.model;
+    this.title.textContent = r.title;
     this.root.dataset.wide = String(isWide(this.w));
     this.drawMatrix(r, ms);
     const doc = this.root.ownerDocument;

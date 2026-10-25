@@ -35,15 +35,20 @@ export function keyOf(s: Settings): ModelKey {
   return `${s.bigram ? 'bi' : 'uni'}-${s.degilStop ? 'drop' : 'keep'}-${s.leaky ? 'all' : 'train'}`;
 }
 
-/** The step's model settings with the Lab choices laid over the step's own. */
+/**
+ * The step's model settings with the Lab choices laid over the step's own. A Lab choice reaches only steps that
+ * show its switch or name the model on screen: step 8 (leak) shows only the leaky switch, so it keeps its own
+ * unigram model whatever bigram or "değil" choice was made elsewhere, and the leaky switch belongs to step 8 alone.
+ */
 export function settingsOf(stepId: string, p: ModelChoice): Settings {
   const base = STEP_SETTINGS[stepId];
   if (!base) throw new RangeError(`no model settings for step "${stepId}"`);
+  if (stepId === 'sizinti') return { ...base, leaky: p.leaky ?? base.leaky };
   return {
     bigram: p.bigram ?? base.bigram,
     degilStop: p.degilStop ?? base.degilStop,
-    // the leaky switch belongs to step 8 alone; every other step trains the vectoriser on the training part
-    leaky: stepId === 'sizinti' ? (p.leaky ?? base.leaky) : false,
+    // every step but 8 trains the vectoriser on the training part
+    leaky: false,
   };
 }
 

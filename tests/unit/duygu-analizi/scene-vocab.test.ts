@@ -4,6 +4,10 @@ import { formatNumber as f } from '../../../src/core/plot/format';
 import { DRIFT, MODELS } from '../../../src/concepts/metin/data';
 import { score, sigmoid } from '../../../src/concepts/metin/score';
 import { driftRates, DRIFT_COMMENT } from '../../../src/concepts/duygu-analizi/calc';
+import { stepIndex } from '../../../src/core/player';
+import { duyguAnaliziScenario as sc } from '../../../src/concepts/duygu-analizi/scenario';
+import { VocabScene } from '../../../src/concepts/duygu-analizi/scene-vocab';
+import { deriveSentimentView, MAX_VOCAB_CHIPS } from '../../../src/concepts/duygu-analizi/view';
 import { go, setup, texts } from './harness';
 
 const leaky = MODELS['uni-keep-all'];
@@ -16,10 +20,10 @@ describe('vocabulary strip (steps 8-9)', () => {
     expect(el.querySelector('.sa-stage')!.getAttribute('data-view')).toBe('vocab');
     expect(texts(el, '.vocab-test-only .vocab-term')).toEqual(leaky.testOnly);
     expect(el.querySelectorAll('.vocab-test-only.is-oov')).toHaveLength(0);
-    // the IDF of each is the leaky model's
+    // the IDF of each is the leaky model's, with three decimals like page 1
     const first = el.querySelector('.vocab-test-only')!;
     const j = leaky.vocab.indexOf(leaky.testOnly[0]);
-    expect(first.querySelector('.vocab-idf')!.textContent).toContain(f(leaky.idf[j], 2));
+    expect(first.querySelector('.vocab-idf')!.textContent).toBe(` IDF ${f(leaky.idf[j], 3)}`);
     expect(el.querySelector('.vocab-count[data-count="train"]')!.textContent).toContain(String(clean.vocabSize));
     expect(el.querySelector('.vocab-count[data-count="all"]')!.textContent).toContain(String(leaky.vocabSize));
     expect(el.querySelector('.vocab-count[data-count="test-only"]')!.textContent).toContain(String(leaky.testOnly.length));
@@ -29,13 +33,18 @@ describe('vocabulary strip (steps 8-9)', () => {
   });
 
   it('step 8 caps the chips at 24 and counts the rest', () => {
-    const { el, player } = setup();
-    player.setParam('bigram', true);
-    go(player, 'sizinti');
+    // step 8 keeps its unigram model (7 test-only terms), so the cap is checked on a longer list drawn by the scene
+    const host = document.createElement('div');
+    document.body.append(host);
+    const scene = new VocabScene(host);
     const all = MODELS['bi-keep-all'].testOnly;
-    expect(all.length).toBeGreaterThan(24);
-    expect(el.querySelectorAll('.vocab-test-only')).toHaveLength(24);
-    expect(el.querySelector('.vocab-more')!.textContent).toContain(`ve ${all.length - 24} terim daha`);
+    expect(all.length).toBeGreaterThan(MAX_VOCAB_CHIPS);
+    const v = deriveSentimentView(stepIndex(sc, 'sizinti'), sc.defaults);
+    const terms = all.slice(0, MAX_VOCAB_CHIPS).map((term) => ({ term, idf: null }));
+    scene.update({ ...v, vocab: { ...v.vocab!, terms, more: all.length - terms.length } }, 0);
+    expect(host.querySelectorAll('.vocab-test-only')).toHaveLength(24);
+    expect(host.querySelector('.vocab-more')!.textContent).toBe(`ve ${all.length - 24} terim daha`);
+    scene.destroy();
   });
 
   it('step 9 unknown-only comment uses the intercept', () => {

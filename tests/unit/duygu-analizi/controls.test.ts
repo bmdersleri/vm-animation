@@ -224,6 +224,30 @@ describe('duygu-analizi Lab controls', () => {
     expect(el.querySelector('.score-panel')!.getAttribute('data-model')).toBe('uni-keep-train');
   });
 
+  it('a bigram or "değil" choice from another step does not reach step 8, and the headings name the model', () => {
+    const { host, el, player } = setup();
+    player.goto(step('boru-hatti'));
+    flip(ctl(host, 'bigram'));
+    player.goto(step('yorum-skor'));
+    flip(ctl(host, 'degilStop'));
+    // step 8 shows only the leaky switch: it keeps its own unigram model
+    player.goto(step('sizinti'));
+    const uni = MODELS['uni-keep-train'];
+    const uniLeaky = MODELS['uni-keep-all'];
+    const count = (key: string) => el.querySelector(`.vocab-count[data-count="${key}"] .vocab-count-value`)!.textContent;
+    expect(el.querySelector('.vocab-scene')!.getAttribute('data-model')).toBe('uni-keep-all');
+    expect(count('train')).toBe(String(uni.vocabSize));
+    expect(count('test-only')).toBe(String(uniLeaky.testOnly.length));
+    expect(el.querySelector('.vocab-scene .panel-heading')!.textContent).toBe('Sözlük (unigram): yalnız eğitimden mi, tüm veriden mi?');
+    // steps 3 and 5 show the bigram switch, so the Lab model holds there and the heading names it (with "değil")
+    player.goto(step('kelime-agirlik'));
+    expect(el.querySelector('.coef-scene')!.getAttribute('data-model')).toBe('bi-drop-train');
+    expect(el.querySelector('.coef-model')!.textContent).toBe('Katsayılar (unigram + bigram, "değil" süzülür)');
+    player.goto(step('test-sonuc'));
+    expect(el.querySelector('.result-scene')!.getAttribute('data-model')).toBe('bi-drop-train');
+    expect(el.querySelector('.result-main .panel-heading')!.textContent).toBe('Test karışıklık matrisi (unigram + bigram, "değil" süzülür)');
+  });
+
   it('empty text shows the empty-comment note', () => {
     const { host, el, player } = setup();
     player.goto(step('yorum-skor'));
