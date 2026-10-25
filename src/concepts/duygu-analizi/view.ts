@@ -4,7 +4,7 @@ import { metrics, type Confusion } from '../degerlendirme/metrics';
 import { BOOK, CORPUS, MODELS, type ModelKey } from '../metin/data';
 import { score } from '../metin/score';
 import { DEGIL_STOP, tokenize } from '../metin/tokenize';
-import { asNegative, corpusCounts, DRIFT_COMMENT, keyOf, modelOf, NEGATION, NEW_COMMENT, rankTerms, settingsOf } from './calc';
+import { asNegative, corpusCounts, explainLean, f2, f3, lean, signed, DRIFT_COMMENT, keyOf, modelOf, NEGATION, NEW_COMMENT, rankTerms, settingsOf } from './calc';
 import { duyguAnaliziScenario as scenario, type SentimentParams } from './scenario';
 
 /** Which scene area draws the step. */
@@ -111,10 +111,6 @@ export interface SentimentView {
   result: ResultView | null;
 }
 
-const f2 = (v: number): string => f(v, 2);
-const f3 = (v: number): string => f(v, 3);
-const signed = (v: number, d: number): string => `${v < 0 ? '−' : '+'}${f(Math.abs(v), d)}`;
-const lean = (p: number): string => (p > 0.5 ? 'olumlu yönde eğilimli' : p < 0.5 ? 'olumsuz yönde eğilimli' : 'tam ortada');
 
 const empty = (kind: SentimentKind, stepId: string, strip = ''): SentimentView => ({
   kind,
@@ -299,7 +295,10 @@ function scoreView(id: string, p: SentimentParams): SentimentView {
     const main = panelOf('main', key, modelName(key), text);
     if (id === 'yorum-skor') {
       const book = score(BOOK.kod04.model, text);
-      main.compare = main.p === null ? null : { label: `Kitabın ${BOOK.kod04.docs.length} yorumluk modeli`, p: f3(book.p) };
+      // both lines read the step's own comment; a learner's text gets neither
+      const own = p.text === null && main.p !== null;
+      main.compare = own ? { label: `Kitabın ${BOOK.kod04.docs.length} yorumluk modeli`, p: f3(book.p) } : null;
+      if (own && main.note === null) main.note = explainLean(MODELS[key], text);
     } else if (id === 'degil-tuzagi' && s.degilStop && main.p !== null) {
       main.compare = { label: '"değil" süzülmeden', p: f3(score(MODELS[keyOf({ ...s, degilStop: false })], text).p) };
     }

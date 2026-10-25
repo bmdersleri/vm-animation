@@ -4,7 +4,7 @@ import { metrics } from '../degerlendirme/metrics';
 import { BOOK, DRIFT, MODELS } from '../metin/data';
 import { score } from '../metin/score';
 import { tokenize } from '../metin/tokenize';
-import { asNegative, corpusCounts, degilBigram, DRIFT_COMMENT, HATALAR, NEGATION, NEW_COMMENT } from './calc';
+import { asNegative, corpusCounts, degilBigram, DRIFT_COMMENT, f2, f3, HATALAR, lean, NEGATION, NEW_COMMENT, rankTerms, signed } from './calc';
 
 /**
  * Parameters of the sentiment page. The three model settings are `null` while the learner has not chosen:
@@ -21,10 +21,6 @@ export interface SentimentParams {
   fixed: boolean;
 }
 
-const f3 = (v: number): string => f(v, 3);
-const f2 = (v: number): string => f(v, 2);
-const signed = (v: number, d: number): string => `${v < 0 ? '−' : '+'}${f(Math.abs(v), d)}`;
-const lean = (p: number): string => (p > 0.5 ? 'olumlu' : p < 0.5 ? 'olumsuz' : 'tam ortada');
 const pc = (v: number): string => pct(v, 1);
 
 const counts = corpusCounts();
@@ -34,12 +30,7 @@ const bi = MODELS['bi-keep-train'];
 const biDrop = MODELS['bi-drop-train'];
 const k4 = BOOK.kod04;
 
-const top = (() => {
-  const idx = uni.coef.map((c, j) => [c, j] as const);
-  const hi = idx.reduce((a, b) => (b[0] > a[0] ? b : a));
-  const lo = idx.reduce((a, b) => (b[0] < a[0] ? b : a));
-  return { pos: { term: uni.vocab[hi[1]], coef: hi[0] }, neg: { term: uni.vocab[lo[1]], coef: lo[0] } };
-})();
+const top = { pos: rankTerms(uni, 1).pos[0], neg: rankTerms(uni, 1).neg[0] };
 
 const newScore = score(uni, NEW_COMMENT);
 const negUni = score(uni, NEGATION.text);
@@ -85,7 +76,7 @@ export const duyguAnaliziScenario: Scenario<SentimentParams> = {
       id: 'yorum-skor',
       title: 'Bir yorumu skorlamak',
       term: 'sigmoid',
-      text: `Kitabın yeni yorumu "${NEW_COMMENT}": ${newScore.terms.length} terim sözlükte. Her terimin katkısı = TF-IDF ağırlığı × katsayı. z = Σ katkı + b = ${f3(newScore.z)}; p = 1 / (1 + e^−z) = ${f3(newScore.p)}: model ${lean(newScore.p)} yönde eğilimli. Kitabın ${k4.docs.length} yorumluk modeli aynı yorum için p = ${f3(k4.pNew)}.`,
+      text: `Kitabın yeni yorumu "${NEW_COMMENT}": ${newScore.terms.length} terim sözlükte. Her terimin katkısı = TF-IDF ağırlığı × katsayı. z = Σ katkı + b = ${f3(newScore.z)}; p = 1 / (1 + e^−z) = ${f3(newScore.p)}: model ${lean(newScore.p)}. Kitabın ${k4.docs.length} yorumluk modeli aynı yorum için p = ${f3(k4.pNew)}. Sözlükte olmayan kelimeler yok sayılır; sözlük kayması adımında bunun bedeli görülür.`,
     },
     {
       id: 'test-sonuc',
@@ -97,12 +88,12 @@ export const duyguAnaliziScenario: Scenario<SentimentParams> = {
       id: 'bigram',
       title: 'Bigram ve olumsuzlama',
       term: 'bigram',
-      text: `"${NEGATION.text}" (olumsuzlama): unigram modelde p = ${f3(negUni.p)} (${lean(negUni.p)} yönde eğilimli), unigram+bigram modelde p = ${f3(negBi.p)} (${lean(negBi.p)} yönde eğilimli)${degilTerm ? `; "${degilTerm.term}" bigram'ının katsayısı ${signed(degilTerm.coef, 2)}` : ''}. Olumsuzlama içeren ${uni.negN} test yorumunda doğruluk ${pc(uni.negAccuracy)} iken bigram modelde ${pc(bi.negAccuracy)}.`,
+      text: `"${NEGATION.text}" (olumsuzlama): unigram modelde p = ${f3(negUni.p)} (${lean(negUni.p)}), unigram+bigram modelde p = ${f3(negBi.p)} (${lean(negBi.p)})${degilTerm ? `; "${degilTerm.term}" bigram'ının katsayısı ${signed(degilTerm.coef, 2)}` : ''}. Olumsuzlama içeren ${uni.negN} test yorumunda doğruluk ${pc(uni.negAccuracy)} iken bigram modelde ${pc(bi.negAccuracy)}.`,
     },
     {
       id: 'degil-tuzagi',
       title: '"değil" stop-word olursa',
-      text: `Aynı yorum, "değil" süzülmüş bigram modelde: [${stopFree.join(', ')}] kalır, p = ${f3(negDrop.p)}, model ${lean(negDrop.p)} yönde eğilimli (süzülmeden ${f3(negBi.p)}). Olumsuzlama içeren ${biDrop.negN} test yorumunda doğruluk ${pc(bi.negAccuracy)} iken ${pc(biDrop.negAccuracy)} olur. Kitabın "${bookSentence}" cümlesi de [${bookKept.join(', ')}] kalır.`,
+      text: `Aynı yorum, "değil" süzülmüş bigram modelde: [${stopFree.join(', ')}] kalır, p = ${f3(negDrop.p)}, model ${lean(negDrop.p)} (süzülmeden ${f3(negBi.p)}). Olumsuzlama içeren ${biDrop.negN} test yorumunda doğruluk ${pc(bi.negAccuracy)} iken ${pc(biDrop.negAccuracy)} olur. Kitabın "${bookSentence}" cümlesi de [${bookKept.join(', ')}] kalır.`,
     },
     {
       id: 'sizinti',

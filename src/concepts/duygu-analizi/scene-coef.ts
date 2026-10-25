@@ -1,6 +1,6 @@
 import type { Selection } from 'd3-selection';
 import type { Mode } from '../../core/mode';
-import { HBarsLayer, type HBar } from '../../core/plot/hbars';
+import { HBarsLayer, type HBar, type HBarsGeometry } from '../../core/plot/hbars';
 import type { TextMeasure } from '../../core/plot/text-measure';
 import { el, mountSvg, NARROW, type ViewScene } from './scene-base';
 import type { SentimentView } from './view';
@@ -22,11 +22,11 @@ class Side {
     this.layer = new HBarsLayer(this.svg.append('g').attr('class', 'coef-bars'), this.measure);
   }
 
-  draw(bars: HBar[], max: number, w: number, tick: number, ms: number): void {
+  draw(bars: HBar[], max: number, w: number, tick: number, ms: number): HBarsGeometry {
     const rowH = Math.round(tick * 1.75);
     const height = rowH * Math.max(1, bars.length);
     this.svg.attr('width', w).attr('height', height);
-    this.layer.draw(bars, {
+    return this.layer.draw(bars, {
       rect: { x: 0, y: 0, w, h: height },
       tick,
       rows: Math.max(1, bars.length),
@@ -82,7 +82,16 @@ export class CoefScene implements ViewScene {
     this.root.dataset.model = c.model;
     const tick = this.pos.measure.fonts(this.mode).tick;
     const width = Math.max(180, this.w >= NARROW ? Math.floor((this.w - 36) / 2) : this.w - 24);
-    this.pos.draw(c.pos, c.max, width, tick, ms);
-    this.neg.draw(c.neg, c.max, width, tick, ms);
+    const gp = this.pos.draw(c.pos, c.max, width, tick, ms);
+    const gn = this.neg.draw(c.neg, c.max, width, tick, ms);
+    // the name columns differ in width, so the two groups would scale differently: the longer group is
+    // redrawn with a larger maximum so both share one px-per-coefficient scale
+    const sp = gp.xOf(c.max) - gp.x0;
+    const sn = gn.xOf(c.max) - gn.x0;
+    const span = Math.min(sp, sn);
+    if (span > 0 && Math.abs(sp - sn) > 0.5) {
+      if (sp > sn) this.pos.draw(c.pos, (c.max * sp) / span, width, tick, ms);
+      else this.neg.draw(c.neg, (c.max * sn) / span, width, tick, ms);
+    }
   }
 }

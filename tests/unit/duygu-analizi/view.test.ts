@@ -116,4 +116,26 @@ describe('duygu-analizi view', () => {
       }
     }
   });
+
+  it('step 4 explains the lean from the score: out-of-vocabulary words and the strongest negative terms', () => {
+    const sc = score(MODELS['uni-keep-train'], BOOK.kod04.newComment);
+    const pn = at('yorum-skor').score!.panels[0];
+    const note = pn.note!;
+    expect(sc.oov.length).toBeGreaterThan(0);
+    for (const t of [...new Set(sc.oov)].slice(0, 2)) expect(note).toContain(`"${t}"`);
+    expect(note).toContain('sözlük dışı');
+    const neg = sc.terms.filter((t) => t.contribution < 0).sort((a, b) => a.contribution - b.contribution).slice(0, 2);
+    expect(neg.length).toBeGreaterThan(0);
+    for (const t of neg) expect(note).toContain(`"${t.term}"`);
+    expect(note).not.toMatch(/NaN|undefined|emin/);
+    // a learner's own text gets neither the explanation nor the book comparison
+    const own = at('yorum-skor', { text: 'harika memnunum' }).score!.panels[0];
+    expect(own.note).toBeNull();
+    expect(own.compare).toBeNull();
+  });
+
+  it('step 7 text claims a fall only while the data shows one', () => {
+    expect(MODELS['bi-drop-train'].negAccuracy).toBeLessThan(MODELS['bi-keep-train'].negAccuracy);
+  });
 });
+

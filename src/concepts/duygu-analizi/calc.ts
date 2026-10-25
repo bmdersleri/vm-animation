@@ -1,3 +1,4 @@
+import { formatNumber as f } from '../../core/plot/format';
 import { BOOK, CORPUS, DRIFT, MODELS, type Model, type ModelKey } from '../metin/data';
 import { score } from '../metin/score';
 
@@ -127,4 +128,30 @@ export function corpusCounts(): { all: number; pos: number; neg: number; train: 
     train: [n(1, 'train'), n(0, 'train')],
     test: [n(1, 'test'), n(0, 'test')],
   };
+}
+
+/** Number formats shared by the page's texts. */
+export const f2 = (v: number): string => f(v, 2);
+export const f3 = (v: number): string => f(v, 3);
+
+/** "+1,78" / "−1,47": the value with an explicit sign. */
+export const signed = (v: number, d: number): string => `${v < 0 ? '−' : '+'}${f(Math.abs(v), d)}`;
+
+/** Which way a probability leans, in the page's one wording. */
+export const lean = (p: number): string => (p > 0.5 ? 'olumlu yönde eğilimli' : p < 0.5 ? 'olumsuz yönde eğilimli' : 'tam ortada');
+
+const quoted = (xs: string[]): string => (xs.length < 2 ? xs.map((x) => `"${x}"`).join('') : `${xs.slice(0, -1).map((x) => `"${x}"`).join(', ')} ve "${xs[xs.length - 1]}"`);
+
+/**
+ * Step 4's explanation of a lean: the comment's out-of-vocabulary words (the model never saw them, so they
+ * are ignored) and its two strongest negative terms with their contributions; null when there is neither.
+ */
+export function explainLean(model: Model, text: string): string | null {
+  const sc = score(model, text);
+  const oov = [...new Set(sc.oov)].slice(0, 2);
+  const neg = sc.terms.filter((t) => t.contribution < 0).sort((a, b) => a.contribution - b.contribution).slice(0, 2);
+  const parts: string[] = [];
+  if (oov.length > 0) parts.push(`Model ${quoted(oov)} ${oov.length > 1 ? 'kelimelerini' : 'kelimesini'} hiç görmedi (sözlük dışı), bu yüzden yok sayar`);
+  if (neg.length > 0) parts.push(`${neg.map((t) => `"${t.term}" (${signed(t.contribution, 3)})`).join(' ve ')} olumsuza çeker`);
+  return parts.length > 0 ? `${parts.join('; ')}.` : null;
 }

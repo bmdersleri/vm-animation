@@ -31,9 +31,10 @@ describe('coefficient scene', () => {
       const ys = bars.map((b) => Number(/translate\(0,([\d.]+)\)/.exec(b.getAttribute('transform')!)![1]));
       expect(ys).toEqual([...ys].sort((a, b) => a - b));
     }
-    // positive and negative sides share one scale: the longest bar of both sides is as long as the other's longest or shorter
-    const longest = (sign: string) => Math.max(...[...el.querySelectorAll(`.coef-bar[data-sign="${sign}"] rect.bar`)].map((r) => num(r, 'width')));
-    expect(Math.max(longest('pos'), longest('neg'))).toBeGreaterThan(0);
+    // one scale for both sides: bar width is proportional to |coef| across the two groups
+    const rows = [...el.querySelectorAll('.coef-bar')].map((b) => ({ w: num(b.querySelector('rect.bar')!, 'width'), c: Math.abs(Number(b.getAttribute('data-coef'))) }));
+    const ref = rows[0];
+    for (const r of rows) expect(r.w / ref.w).toBeCloseTo(r.c / ref.c, 1);
   });
 
   it('term labels are written in the code font', () => {

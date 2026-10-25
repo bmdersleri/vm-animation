@@ -185,7 +185,8 @@ class ScorePanel {
       used += w + 6;
     }
     const chips = rows * (tick * 1.45 + 6);
-    const note = pv.note ? tick * 1.5 + 10 : 0;
+    const noteLines = pv.note ? Math.ceil((pv.note.length * tick * 0.55) / Math.max(120, width - 24)) : 0;
+    const note = noteLines > 0 ? noteLines * tick * 1.4 + 10 : 0;
     const foot = solo ? 0 : axis * 1.45 + tick * 1.4 + (pv.compare ? tick * 1.4 : 0) + 8;
     return 22 + axis * 1.5 + chips + note + foot + 18;
   }
