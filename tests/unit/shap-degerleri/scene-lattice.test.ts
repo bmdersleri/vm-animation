@@ -84,7 +84,8 @@ describe('lattice scene', () => {
     // narrow layout stacks lattice and table; the real width is checked in the browser pass
     expect(/\.lattice-wrap\s*\{[^}]*overflow-x:\s*auto/.test(css)).toBe(true);
     expect(/\.orders-wrap\s*\{[^}]*overflow-x:\s*auto/.test(css)).toBe(true);
-    expect(/@media \(max-width:900px\) \{[^@]*\.lattice-scene\[data-part='orders'\] \{ grid-template-columns:minmax\(0,1fr\)/.test(css)).toBe(true);
+    expect(/\.shap-stage\[data-narrow\] \.lattice-scene\[data-part='orders'\] \{ grid-template-columns:minmax\(0,1fr\)/.test(css)).toBe(true);
+    expect(el.querySelector('.shap-stage')!.hasAttribute('data-narrow')).toBe(true);
   });
 
   it('the whole lattice fits the stage height in steps 3 to 5', () => {

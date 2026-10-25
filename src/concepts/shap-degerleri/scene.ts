@@ -2,9 +2,9 @@ import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
 import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
 import { BODY_FALLBACK } from '../../core/plot/text-measure';
-import { renderStrip } from '../../core/plot/strip';
+import { allowCodeBreaks, renderStrip } from '../../core/plot/strip';
 import { shapDegerleriScenario, type ShapParams } from './scenario';
-import type { ViewScene } from './scene-base';
+import { NARROW, type ViewScene } from './scene-base';
 import { CardScene } from './scene-card';
 import { CardsScene } from './scene-cards';
 import { ForceScene } from './scene-force';
@@ -120,7 +120,10 @@ export function mountShapScene(
     }
     lastStrip = v.strip;
     renderStrip(strip, v.strip);
+    allowCodeBreaks(strip);
     const a = area();
+    // the layout follows the stage's own width, not the window: the Lab stage is narrow in a wide window
+    stage.toggleAttribute('data-narrow', a.w < NARROW);
     scenes[target].resize(a.w, a.h, mode);
     scenes[target].update(v, ms);
     rendered = true;

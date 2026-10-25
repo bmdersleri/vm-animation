@@ -2,7 +2,7 @@ import type { ChangeCause, PlayerState, StepPlayer } from '../../core/player';
 import type { SceneHandle } from '../../core/shell';
 import type { Mode } from '../../core/mode';
 import { BODY_FALLBACK } from '../../core/plot/text-measure';
-import { renderStrip } from '../../core/plot/strip';
+import { allowCodeBreaks, renderStrip } from '../../core/plot/strip';
 import { limeYerelScenario, type LimeParams } from './scenario';
 import { NARROW, type ViewScene } from './scene-base';
 import { BinsScene } from './scene-bins';
@@ -16,26 +16,6 @@ import { SurrogateScene } from './scene-surrogate';
 import { deriveLimeView, type LimeKind } from './view';
 
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-/**
- * Lets a long code term of the strip wrap after "(" and between the parts of a dotted name, so an identifier such as
- * "musteri" is never cut mid-word (the term wraps at spaces otherwise).
- */
-function allowCodeBreaks(strip: HTMLElement): void {
-  if (strip.dataset.breaks === strip.dataset.strip) {
-    return;
-  }
-  strip.dataset.breaks = strip.dataset.strip;
-  for (const term of strip.querySelectorAll('.term')) {
-    const text = term.textContent ?? '';
-    if (!/\(\S|[A-Za-z_]\.[A-Za-z_]/.test(text)) {
-      continue;
-    }
-    const doc = term.ownerDocument;
-    const parts = text.split(/(?<=\()(?=\S)|(?<=[A-Za-z_]\.)(?=[A-Za-z_])/);
-    term.replaceChildren(...parts.flatMap((part, i) => (i === 0 ? [doc.createTextNode(part)] : [doc.createElement('wbr'), doc.createTextNode(part)])));
-  }
-}
 
 const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 
