@@ -13,10 +13,13 @@ const SCENES: [string, string][] = [
   ['cekirdek', '.kernel-scene'],
   ['vekil', '.surrogate-scene'],
   ['sadakat', '.surrogate-scene'],
+  ['kararlilik', '.stability-scene'],
+  ['shap-lime', '.compare-scene'],
+  ['hata-ayiklama', '.codeview-scene'],
 ];
 
 describe('narrow layout', () => {
-  it('every scene of steps 2-7 fits the narrow stage height', () => {
+  it('every scene of steps 2-10 fits the narrow stage height', () => {
     // 470 px of scene minus the strip leaves a stage of about 380 px, as in the 390 x 844 screenshots
     themeFonts('narrow');
     const { el, player } = setup(390, 450, 'lab');
@@ -30,7 +33,7 @@ describe('narrow layout', () => {
     }
   });
 
-  it('every scene of steps 2-7 fits the 1280 px stage height', () => {
+  it('every scene of steps 2-10 fits the 1280 px stage height', () => {
     themeFonts('wide');
     const { el, player } = setup(1280, 540, 'ders');
     for (const [id, sel] of SCENES) {

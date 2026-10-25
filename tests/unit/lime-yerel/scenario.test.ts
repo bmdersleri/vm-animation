@@ -77,6 +77,9 @@ describe('lime-yerel scenario', () => {
   it('step 3 sweeps five groups of a hundred dots', () => {
     expect(step('komsuluk').sweep?.key).toBe('scan');
     expect(step('komsuluk').sweep?.values).toHaveLength(5);
-    expect(sc.steps.filter((s) => s.sweep)).toHaveLength(1);
+    expect(sc.steps.filter((s) => s.sweep).map((s) => s.id)).toEqual(['komsuluk', 'shap-lime', 'hata-ayiklama']);
+    // step 9: the book customer, then the pair; step 10: five bugs, then the corrected code
+    expect(step('shap-lime').sweep?.values).toEqual([1, 2]);
+    expect(step('hata-ayiklama').sweep?.values).toEqual([1, 2, 3, 4, 5, 6]);
   });
 });

@@ -4,11 +4,14 @@ import type { Mode } from '../../core/mode';
 import { BODY_FALLBACK } from '../../core/plot/text-measure';
 import { renderStrip } from '../../core/plot/strip';
 import { limeYerelScenario, type LimeParams } from './scenario';
-import { el, type ViewScene } from './scene-base';
+import type { ViewScene } from './scene-base';
 import { BinsScene } from './scene-bins';
 import { CloudScene } from './scene-cloud';
+import { CodeScene } from './scene-code';
+import { CompareScene } from './scene-compare';
 import { FlowScene } from './scene-flow';
 import { KernelScene } from './scene-kernel';
+import { StabilityScene } from './scene-stability';
 import { SurrogateScene } from './scene-surrogate';
 import { deriveLimeView, type LimeKind } from './view';
 
@@ -19,43 +22,13 @@ const causeRank: Record<ChangeCause, number> = { param: 0, sweep: 1, step: 2 };
 /** Milliseconds a step change animates. */
 const MS_STEP = 600;
 
-/** The scene areas; steps 8-10 share the `wait` area until their scenes are built. */
-type Area = 'flow' | 'bins' | 'cloud' | 'kernel' | 'surrogate' | 'wait';
-const AREAS: Area[] = ['flow', 'bins', 'cloud', 'kernel', 'surrogate', 'wait'];
-const AREA_OF: Record<LimeKind, Area> = {
-  flow: 'flow',
-  bins: 'bins',
-  cloud: 'cloud',
-  kernel: 'kernel',
-  surrogate: 'surrogate',
-  stability: 'wait',
-  compare: 'wait',
-  code: 'wait',
-};
-
-/** Placeholder of the steps whose scenes come later: a quiet note, no broken layout. */
-class WaitScene implements ViewScene {
-  private readonly root: HTMLParagraphElement;
-
-  constructor(host: HTMLElement) {
-    this.root = el(host.ownerDocument, 'p', 'lime-wait', 'Bu adımın görünümü hazırlanıyor.');
-    host.append(this.root);
-  }
-
-  resize(): void {}
-
-  update(): void {}
-
-  interrupt(): void {}
-
-  destroy(): void {
-    this.root.remove();
-  }
-}
+/** The scene areas: one per view kind. */
+type Area = LimeKind;
+const AREAS: Area[] = ['flow', 'bins', 'cloud', 'kernel', 'surrogate', 'stability', 'compare', 'code'];
 
 /**
  * Scene host of the LIME page: a stage with view areas above the formula strip. Step 1 is the flow area, step 2
- * the bins area, steps 3-4 the cloud area, step 5 the kernel area, steps 6-7 the surrogate area. Updates coalesce
+ * the bins area, steps 3-4 the cloud area, step 5 the kernel area, steps 6-7 the surrogate area, step 8 the stability strip, step 9 the SHAP / LIME panels and step 10 the code panel. Updates coalesce
  * into one frame; controls render without interpolation.
  */
 export function mountLimeScene(
@@ -87,7 +60,9 @@ export function mountLimeScene(
     cloud: new CloudScene(hosts.cloud),
     kernel: new KernelScene(hosts.kernel),
     surrogate: new SurrogateScene(hosts.surrogate),
-    wait: new WaitScene(hosts.wait),
+    stability: new StabilityScene(hosts.stability),
+    compare: new CompareScene(hosts.compare),
+    code: new CodeScene(hosts.code),
   };
 
   let mode = initialMode;
@@ -133,7 +108,7 @@ export function mountLimeScene(
     const v = deriveLimeView(state.index, state.params);
     // slider and shortcut tweaks are instant; steps and sweep stops animate
     const ms = ds > 0 && !instant && cause !== 'param' ? MS_STEP * ds : 0;
-    const target = AREA_OF[v.kind];
+    const target: Area = v.kind;
     stage.dataset.view = v.kind;
     stage.dataset.step = v.stepId;
     for (const a of AREAS) {

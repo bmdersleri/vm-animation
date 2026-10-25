@@ -1,10 +1,40 @@
 import { formatNumber as f } from '../../core/plot/format';
 import type { HBar } from '../../core/plot/hbars';
-import { BINS, CLOUD, FEATURES, customerByRow, limeRun, type LimeResult, type Pattern } from '../xai/data';
+import type { WaterfallSpec } from '../../core/plot/waterfall';
+import {
+  BINS,
+  BOOK,
+  CLOUD,
+  CUSTOMERS,
+  FEATURES,
+  LIME_ALL,
+  LIME_RUNS,
+  MODEL,
+  PRESETS,
+  SAMPLE_SIZES,
+  SEEDS,
+  customerByRow,
+  limeRun,
+  type Customer,
+  type LimeResult,
+  type Pattern,
+  type Triple,
+} from '../xai/data';
 import { kernelWeight, limeFit, patternDistance } from '../xai/lime';
-import { BOOK_SEED, DOTS_PER_GROUP, cutTexts, limeYerelScenario as scenario, plainCharge, sumExpr, type LimeParams } from './scenario';
+import {
+  BOOK_SAMPLES,
+  BOOK_SEED,
+  DOTS_PER_GROUP,
+  cutTexts,
+  limeYerelScenario as scenario,
+  plainCharge,
+  sumExpr,
+  type LimeParams,
+} from './scenario';
+import { BUGS, BUGGY_CODE, FIXED_CODE } from './code-text';
+import type { CodeBug, CodeLine } from '../../core/plot/code-panel';
 
-/** Which scene area draws the step (the last three are placeholders until the later steps are built). */
+/** Which scene area draws the step. */
 export type LimeKind = 'flow' | 'bins' | 'cloud' | 'kernel' | 'surrogate' | 'stability' | 'compare' | 'code';
 
 /** One box of the flow strip (step 1). */
@@ -112,6 +142,77 @@ export interface SurrogateView {
   fit: LimeResult;
 }
 
+/** One seed's coefficient on a stability row. */
+export interface StabDot {
+  seed: number;
+  value: number;
+  text: string;
+  /** The book run (seed 42), drawn with a ring. */
+  book: boolean;
+}
+
+/** One row of step 8: the coefficient of one feature over the eleven seeds at one sample size. */
+export interface StabRow {
+  samples: number;
+  label: string;
+  dots: StabDot[];
+  min: number;
+  max: number;
+  rangeText: string;
+  /** The sample size chosen in the Lab (the 5000 run in the Ders). */
+  selected: boolean;
+}
+
+/** One feature of step 8: two rows (5000 samples and the other size) on one shared coefficient axis. */
+export interface StabGroup {
+  feature: 0 | 1 | 2;
+  name: string;
+  rows: StabRow[];
+  domain: [number, number];
+}
+
+/** Step 8: the stability strip. */
+export interface StabilityView {
+  groups: StabGroup[];
+  /** The sample size drawn next to the 5000 run. */
+  other: number;
+}
+
+/** One row of the book's kod06 table. */
+export interface CompareRow {
+  rank: number;
+  shap: string;
+  rule: string;
+}
+
+/** Step 9: SHAP and LIME of one customer side by side. `stage` 'book' adds the kod06 table, 'pair' the two panels. */
+export interface CompareView {
+  stage: 'book' | 'pair';
+  customer: number;
+  agree: boolean;
+  agreeText: string;
+  table: CompareRow[] | null;
+  spec: WaterfallSpec;
+  bars: HBar[];
+  rules: string[];
+  max: number;
+  modelText: string;
+  localText: string;
+  counterText: string;
+  noteText: string;
+}
+
+/** Step 10: the debugging code with its marks. */
+export interface CodeView {
+  marked: number;
+  fixed: boolean;
+  faulty: readonly CodeLine[];
+  fixedLines: readonly CodeLine[];
+  bugs: readonly CodeBug[];
+  tip: string;
+  links: { href: string; text: string }[];
+}
+
 /** Everything a scene draws for one (step, parameters) pair. */
 export interface LimeView {
   kind: LimeKind;
@@ -123,6 +224,9 @@ export interface LimeView {
   cloud: CloudView | null;
   kernel: KernelView | null;
   surrogate: SurrogateView | null;
+  stability: StabilityView | null;
+  compare: CompareView | null;
+  code: CodeView | null;
 }
 
 const f3 = (v: number): string => (Number.isFinite(v) ? f(v, 3) : '—');
@@ -147,6 +251,9 @@ const empty = (kind: LimeKind, stepId: string, strip: string, customer: number):
   cloud: null,
   kernel: null,
   surrogate: null,
+  stability: null,
+  compare: null,
+  code: null,
 });
 
 /** The prepared run of the customer at seed 42 and `samples` samples. */
@@ -336,6 +443,167 @@ function surrogateView(p: LimeParams, stepId: string): LimeView {
   return view;
 }
 
+/** Sample size drawn next to the book's 5000 run: the Lab's choice, or 50 while the choice is 5000 itself. */
+export function otherSamples(samples: number): number {
+  return samples === BOOK_SAMPLES ? SAMPLE_SIZES[0] : samples;
+}
+
+function stabilityView(p: LimeParams, stepId: string): LimeView {
+  const c = customerByRow(p.customer);
+  const other = otherSamples(p.samples);
+  const sizes = [BOOK_SAMPLES, other];
+  const groups = ([0, 1, 2] as const).map((feature): StabGroup => {
+    const rows = sizes.map((samples): StabRow => {
+      const dots = SEEDS.map((seed): StabDot => {
+        const run = LIME_RUNS.find((r) => r.row === p.customer && r.seed === seed && r.samples === samples)!;
+        const value = run.fit.coef[feature];
+        return { seed, value, text: f3(value), book: seed === BOOK_SEED };
+      });
+      const values = dots.map((d) => d.value);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      return {
+        samples,
+        label: `${samples} örnek`,
+        dots,
+        min,
+        max,
+        rangeText: `${f3(min)}–${f3(max)}`,
+        selected: samples === p.samples,
+      };
+    });
+    const all = rows.flatMap((r) => r.dots.map((d) => d.value));
+    return { feature, name: FEATURES[feature], rows, domain: paddedRange(all, 0.08) };
+  });
+  const strip = `her nokta bir tohum (${SEEDS.length}) · halkalı nokta = tohum ${BOOK_SEED} (kitabın çalıştırması) · müşteri ${c.row}`;
+  const view = empty('stability', stepId, strip, c.row);
+  view.stability = { groups, other };
+  return view;
+}
+
+/** Domain that holds `values` with `frac` of their span at each end (the coefficients may be negative). */
+function paddedRange(values: readonly number[], frac: number): [number, number] {
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const pad = (hi - lo || 0.01) * frac;
+  return [lo - pad, hi + pad];
+}
+
+const absOrder = (v: Triple): number[] => [0, 1, 2].sort((a, b) => Math.abs(v[b]) - Math.abs(v[a]));
+const LIME_BY_ROW = new Map(LIME_ALL.map((r) => [r.row, r]));
+
+/** The LIME fit (seed 42, 5000 samples) and customer bins of any of the 100 test customers. */
+export function limeOfRow(row: number): { fit: LimeResult; bins: Triple } {
+  const entry = LIME_BY_ROW.get(row);
+  if (!entry) {
+    throw new RangeError(`no LIME run for customer ${row}`);
+  }
+  return entry;
+}
+
+/** Axis domain of a force bar: [0, 1] widened outward to 0,1 steps so the stacked parts are inside it. */
+function forceDomain(c: Customer): [number, number] {
+  const pos = c.shap.filter((v) => v >= 0).reduce((s, v) => s + v, 0);
+  const neg = c.shap.filter((v) => v < 0).reduce((s, v) => s + v, 0);
+  const values = [c.p - pos, c.p - neg, MODEL.base, c.p];
+  return [
+    Math.min(0, ...values.map((v) => Math.floor(v * 10 + 1e-9) / 10)),
+    Math.max(1, ...values.map((v) => Math.ceil(v * 10 - 1e-9) / 10)),
+  ];
+}
+
+/** Step 9 of one customer: SHAP force bar, LIME bars, the agreement of the most influential feature. */
+export function compareOf(row: number, stage: 'book' | 'pair'): CompareView {
+  const c = customerByRow(row);
+  const { fit, bins } = limeOfRow(row);
+  const rules = FEATURES.map((_, j) => BINS.names[j][bins[j]]);
+  const shapOrder = absOrder(c.shap);
+  const limeOrder = absOrder(fit.coef);
+  const agree = shapOrder[0] === limeOrder[0];
+  const bars: HBar[] = fit.coef.map((v, j) => ({
+    id: `cmp-${j}`,
+    row: j,
+    slot: 0,
+    cls: v >= 0 ? 'is-pos' : 'is-neg',
+    value: Math.abs(v),
+    text: signed(v),
+    label: '',
+    attrs: { feature: j, sign: v >= 0 ? 'pos' : 'neg' },
+  }));
+  return {
+    stage,
+    customer: c.row,
+    agree,
+    agreeText: agree
+      ? `en etkili özellik aynı: ${FEATURES[shapOrder[0]]}`
+      : `en etkili özellik farklı: SHAP ${FEATURES[shapOrder[0]]}, LIME ${FEATURES[limeOrder[0]]}`,
+    table: stage === 'book' ? shapOrder.map((_, k) => ({ rank: k + 1, shap: FEATURES[shapOrder[k]], rule: rules[limeOrder[k]] })) : null,
+    spec: {
+      base: MODEL.base,
+      parts: FEATURES.map((name, i) => ({ id: name, label: name, value: c.shap[i] })),
+      total: c.p,
+      domain: forceDomain(c),
+      mode: 'force',
+      title: 'SHAP katkıları',
+      baseLabel: 'temel',
+      totalLabel: 'p',
+      axis: true,
+    },
+    bars,
+    rules,
+    max: Math.max(1e-9, ...fit.coef.map((v) => Math.abs(v))),
+    modelText: f3(c.p),
+    localText: f3(fit.localPred),
+    counterText: `${CUSTOMERS.length} müşterinin ${MODEL.topDisagree} tanesinde en etkili özellik farklı`,
+    noteText: 'Uyuşmazlık modeli hatalı yapmaz; veri, bağımlılık ve örnekleme incelenir.',
+  };
+}
+
+function compareView(p: LimeParams, stepId: string): LimeView {
+  const stage = p.scan < 2 ? 'book' : 'pair';
+  const row = stage === 'book' ? PRESETS[0] : p.compare;
+  const cmp = compareOf(row, stage);
+  const strip =
+    stage === 'book'
+      ? `kitabın kod06 tablosu · müşteri ${row} · ${cmp.agreeText}`
+      : [`müşteri ${row} · model p = ${cmp.modelText} · vekil tahmini ${cmp.localText}`, `${cmp.agreeText} · ${cmp.counterText}`].join('\n');
+  const view = empty('compare', stepId, strip, row);
+  view.compare = cmp;
+  return view;
+}
+
+/** Closing tip of the book's chapter summary. */
+export const BOOK_TIP =
+  'Tahmin performansı, veri kalitesi, açıklama tutarlılığı ve insan denetimi birlikte değerlendirildiğinde model daha güvenli biçimde kullanılabilir.';
+
+/** Bugs marked at sweep position `scan` (1-5), and whether the corrected code shows (sweep position 6 or the Lab switch). */
+export function codeState(p: LimeParams): { marked: number; fixed: boolean } {
+  const marked = Math.max(1, Math.min(BUGS.length, p.scan));
+  return { marked, fixed: p.fixed || (Number.isFinite(p.scan) && p.scan > BUGS.length) };
+}
+
+function codeView(p: LimeParams, stepId: string): LimeView {
+  const { marked, fixed } = codeState(p);
+  const bug = BUGS[marked - 1];
+  const strip = fixed
+    ? `düzeltilmiş kod · müşteri ${PRESETS[0]} için p(ayrılma) = ${f3(BOOK.fixedCodeP)}`
+    : `hata ${bug.n} / ${BUGS.length} · ${bug.kind} · ${bug.what}`;
+  const view = empty('code', stepId, strip, p.customer);
+  view.code = {
+    marked,
+    fixed,
+    faulty: BUGGY_CODE,
+    fixedLines: FIXED_CODE,
+    bugs: BUGS,
+    tip: BOOK_TIP,
+    links: [
+      { href: '../shap-degerleri/', text: 'SHAP sayfası' },
+      { href: '../smote-sizinti/', text: 'Veri sızıntısı sayfası' },
+    ],
+  };
+  return view;
+}
+
 /** Everything a scene draws for step `index` with parameters `p`. */
 export function deriveLimeView(index: number, p: LimeParams): LimeView {
   const id = scenario.steps[index].id;
@@ -360,11 +628,11 @@ export function deriveLimeView(index: number, p: LimeParams): LimeView {
     case 'sadakat':
       return surrogateView(p, id);
     case 'kararlilik':
-      return empty('stability', id, '', p.customer);
+      return stabilityView(p, id);
     case 'shap-lime':
-      return empty('compare', id, '', p.customer);
+      return compareView(p, id);
     case 'hata-ayiklama':
-      return empty('code', id, '', p.customer);
+      return codeView(p, id);
     default:
       throw new RangeError(`no view for step "${id}"`);
   }

@@ -1,9 +1,8 @@
 import { select, type Selection } from 'd3-selection';
 import type { Mode } from '../../core/mode';
-import { HBarsLayer } from '../../core/plot/hbars';
 import { TextMeasure } from '../../core/plot/text-measure';
-import { tr } from '../../core/plot/transition';
 import { el, NARROW, NS, type ViewScene } from './scene-base';
+import { SignedBars } from './signed-bars';
 import type { FidelityView, LimeView, SurrogateView } from './view';
 
 /** Vertical metrics (px) of the scene, kept in step with the CSS: root padding, gap between parts, panel padding and border. */
@@ -27,10 +26,7 @@ export class SurrogateScene implements ViewScene {
   private readonly intercept: HTMLParagraphElement;
   private readonly interceptValue: HTMLElement;
   private readonly svg: Selection<SVGSVGElement, unknown, null, undefined>;
-  private readonly barG: Selection<SVGGElement, unknown, null, undefined>;
-  private readonly zeroG: Selection<SVGGElement, unknown, null, undefined>;
-  private readonly nameG: Selection<SVGGElement, unknown, null, undefined>;
-  private readonly layer: HBarsLayer;
+  private readonly signed: SignedBars;
   private readonly panel: HTMLElement;
   private readonly modelValue: HTMLElement;
   private readonly localValue: HTMLElement;
@@ -50,12 +46,9 @@ export class SurrogateScene implements ViewScene {
     this.intercept.append('kesişim ', this.interceptValue);
     const root = doc.createElementNS(NS, 'svg');
     this.svg = select(root).attr('class', 'lime-plot').attr('role', 'img').attr('aria-label', 'Vekil modelin üç kuralının katsayıları');
-    this.barG = this.svg.append('g').attr('class', 'lime-bars');
-    this.zeroG = this.svg.append('g').attr('class', 'lime-zeros');
-    this.nameG = this.svg.append('g').attr('class', 'lime-names');
     const probe = this.svg.append('text').attr('class', 'probe').attr('visibility', 'hidden').attr('aria-hidden', 'true');
     this.measure = new TextMeasure(probe.node()!);
-    this.layer = new HBarsLayer(this.barG, this.measure);
+    this.signed = new SignedBars(this.svg, this.measure);
 
     this.panel = el(doc, 'section', 'fidelity-panel');
     const row = (label: string, cls: string, fillCls: string) => {
@@ -88,7 +81,7 @@ export class SurrogateScene implements ViewScene {
   }
 
   interrupt(): void {
-    this.svg.selectAll('*').interrupt('bars');
+    this.signed.interrupt();
   }
 
   destroy(): void {
@@ -123,10 +116,8 @@ export class SurrogateScene implements ViewScene {
     const fs = fonts.tick;
     const width = Math.max(240, this.w - 24);
     // rule names above their bars; a name wider than the stage wraps (the same line count for every row)
-    const nameFs = this.measure.fontPx('rule-name', fs);
-    const lines = s.rules.map((rule) => this.measure.wrap(rule, width - 8, 'rule-name', nameFs));
-    const nameLines = Math.max(...lines.map((l) => l.length));
-    const nameH = nameLines * nameFs * 1.25;
+    const names = this.signed.names(s.rules, width, fs);
+    const nameH = names.nameH;
     // what the stage holds besides the bars: the intercept line and, in step 7, the fidelity panel
     const interceptH = Math.ceil(fs * 1.3);
     this.intercept.style.height = `${interceptH}px`;
@@ -138,73 +129,6 @@ export class SurrogateScene implements ViewScene {
     this.root.dataset.used = String(Math.ceil(height + around));
     this.svg.attr('width', width).attr('height', height);
 
-    // diverging bars: zero sits where the longest negative bar and the longest positive bar leave room for their labels
-    const valueW = this.measure.width('+0,000', 'tick', fs) + 8;
-    const maxPos = Math.max(0, ...s.bars.filter((b) => b.attrs?.sign === 'pos').map((b) => b.value));
-    const maxNeg = Math.max(0, ...s.bars.filter((b) => b.attrs?.sign === 'neg').map((b) => b.value));
-    const edge = 8;
-    const labels = (maxPos > 0 ? valueW : 0) + (maxNeg > 0 ? valueW : 0);
-    const scale = (width - 2 * edge - labels) / Math.max(1e-9, maxPos + maxNeg);
-    const zero = edge + maxNeg * scale + (maxNeg > 0 ? valueW : 0);
-    const draw = (x: number, w: number, max: number) =>
-      this.layer.draw(s.bars, {
-        rect: { x, y: 0, w, h: height },
-        tick: fs,
-        rows: s.bars.length,
-        slots: 1,
-        max,
-        itemCls: 'lime-bar',
-        valueSample: '+0,000',
-        ms,
-      });
-    // the layer starts its bars `lead` px right of rect.x; a first draw tells how far
-    const lead = draw(0, width, 1).x0;
-    const ref = Math.max(maxPos, maxNeg, 1e-9);
-    // the full-length bar ends `12 + valueW` px before the rect's right edge: the rect is sized so its length is ref * scale
-    const geo = draw(zero - lead, lead + ref * scale + 12 + valueW, ref);
-    // negative bars grow left from zero, their label sits left of the bar end
-    this.barG.selectAll<SVGGElement, { value: number; attrs?: Record<string, string | number> }>('g.lime-bar').each(function (d) {
-      if (d.attrs?.sign !== 'neg') {
-        return;
-      }
-      const g = select(this);
-      const len = d.value * scale;
-      // a negative bar grows leftward: it starts at zero with no width, then x and width move together
-      const rect = g.select<SVGRectElement>('rect.bar');
-      if (ms > 0) {
-        rect.attr('x', Math.round(zero * 10) / 10).attr('width', 0);
-      }
-      tr(rect, 'bars', ms)
-        .attr('x', Math.round((zero - len) * 10) / 10)
-        .attr('width', Math.round(len * 10) / 10);
-      g.select('text.bar-value').attr('text-anchor', 'end').attr('x', Math.round((zero - len - 6) * 10) / 10);
-    });
-    // the zero line is drawn per bar, only across the bar bands, so it never crosses a rule name or a label
-    const barH = geo.barH;
-    this.zeroG
-      .selectAll<SVGLineElement, number>('line.lime-zero')
-      .data(s.bars.map((_b, i) => geo.yOf(i, 0)))
-      .join('line')
-      .attr('class', 'lime-zero')
-      .attr('x1', Math.round(zero * 10) / 10)
-      .attr('x2', Math.round(zero * 10) / 10)
-      .attr('y1', (y) => Math.round(y * 10) / 10)
-      .attr('y2', (y) => Math.round((y + barH + 1) * 10) / 10);
-    this.nameG
-      .selectAll<SVGTextElement, string[]>('text.rule-name')
-      .data(lines)
-      .join('text')
-      .attr('class', 'rule-name')
-      .attr('data-feature', (_d, i) => i)
-      .each(function (rows, i) {
-        const top = geo.yOf(i, 0) - 7 - (rows.length - 1) * nameFs * 1.25;
-        select(this)
-          .selectAll<SVGTSpanElement, string>('tspan')
-          .data(rows)
-          .join('tspan')
-          .attr('x', 6)
-          .attr('y', (_r, k) => Math.round((top + k * nameFs * 1.25) * 10) / 10)
-          .text((r) => r);
-      });
+    this.signed.draw(s.bars, names, { width, height, fs, ms, itemCls: 'lime-bar' });
   }
 }

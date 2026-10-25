@@ -20,7 +20,6 @@
 }
 code.feature-name { font-family:var(--mono, ui-monospace, Consolas, monospace); font-weight:600; }
 .rule-name, .bin-name { font-family:var(--mono, ui-monospace, Consolas, monospace); font-weight:600; font-size:var(--fs-tick); }
-.lime-wait { margin:0; padding:16px; opacity:.7; }
 
 /* flow strip (step 1) */
 .flow-scene { display:flex; align-items:stretch; gap:10px; padding:14px 12px; font-size:var(--fs-tick); }
@@ -120,4 +119,73 @@ code.feature-name { font-family:var(--mono, ui-monospace, Consolas, monospace); 
 .fidelity-r2-row { grid-template-columns:minmax(0,1fr) auto; }
 @media (max-width:900px) {
   .surrogate-scene { padding:4px; }
+}
+
+/* stability strip (step 8): dots are navy, the sign of a coefficient is read from the axis; the ring marks the book run */
+.stability-scene { padding:8px 12px; font-size:var(--fs-tick); }
+.stab-plot { display:block; overflow:visible; max-width:100%; }
+.stab-plot text { font-size:var(--fs-tick); fill:var(--navy); font-variant-numeric:tabular-nums; }
+.stab-name { font-family:var(--mono, ui-monospace, Consolas, monospace); font-weight:700; }
+.stab-range { font-weight:700; }
+.stab-tick { fill:#3f526a; }
+.stab-axis { stroke:#C9D5E3; stroke-width:1.5; }
+.stab-band { fill:transparent; }
+.stab-row.is-selected .stab-band { fill:var(--navy-soft); opacity:.6; }
+.stab-span { stroke:#9AA5B1; stroke-width:3; stroke-linecap:round; }
+.stab-dot { fill:var(--navy); fill-opacity:.55; }
+.stab-dot.is-book { fill-opacity:1; }
+.stab-ring { fill:none; stroke:var(--navy); stroke-width:2; }
+@media (max-width:900px) {
+  .stability-scene { padding:4px; }
+}
+
+/* SHAP and LIME side by side (step 9): the badge and the counter are navy / neutral, orange and blue only sign the bars */
+.compare-scene { display:grid; gap:8px; padding:8px 12px; align-content:start; font-size:var(--fs-tick); }
+.compare-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px; }
+.agree-badge { margin:0; padding:5px 12px; border:2px solid var(--navy); border-radius:999px; background:var(--navy-soft); font-weight:700; line-height:1.3; overflow-wrap:anywhere; }
+.agree-badge[data-agree='false'] { background:var(--surface); border-style:dashed; border-width:3px; padding:4px 11px; }
+.compare-numbers { margin:0; line-height:1.3; font-variant-numeric:tabular-nums; }
+.compare-model, .compare-local { font-size:var(--fs-axis); }
+.compare-table-wrap[hidden], .compare-panels[hidden], .compare-note[hidden] { display:none; }
+.compare-table-wrap { min-width:0; }
+.compare-table { border-collapse:separate; border-spacing:2px; width:100%; table-layout:fixed; }
+.compare-table th { padding:2px 8px; text-align:left; font-weight:600; opacity:.8; }
+.compare-table th:nth-child(1), .compare-table td:nth-child(1) { width:12%; }
+.compare-table th:nth-child(2), .compare-table td:nth-child(2) { width:30%; }
+.compare-table td { padding:4px 8px; border-radius:4px; background:var(--bg); line-height:1.3; }
+.compare-rule { font-family:var(--mono, ui-monospace, Consolas, monospace); font-weight:600; overflow-wrap:anywhere; }
+.compare-panels { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px; align-items:start; min-width:0; }
+.compare-shap, .compare-lime { min-width:0; }
+.compare-shap-plot, .compare-lime-plot { display:block; overflow:visible; max-width:100%; }
+.compare-lime-plot text { font-size:var(--fs-tick); fill:var(--navy); font-variant-numeric:tabular-nums; }
+.compare-lime-plot .compare-title { font-size:var(--fs-axis); font-weight:700; }
+.compare-bar.is-pos rect.bar { fill:#E07B00; }
+.compare-bar.is-neg rect.bar { fill:#2F6FB2; }
+.compare-bar .bar-value { font-weight:700; }
+.compare-counter, .compare-note { margin:0; line-height:1.3; }
+.compare-counter { font-weight:600; }
+.compare-note { opacity:.85; }
+@media (max-width:900px) {
+  .compare-scene { padding:4px; gap:6px; }
+  .compare-panels { grid-template-columns:minmax(0,1fr); gap:8px; }
+  .compare-table td, .compare-table th { padding:2px 4px; }
+  .agree-badge { padding:3px 10px; }
+  .agree-badge[data-agree='false'] { padding:2px 9px; }
+}
+
+/* debugging code (step 10): bug marks are navy / neutral (orange is the sign of a positive contribution) */
+.codeview-scene { position:relative; display:grid; grid-template-columns:minmax(0,1.9fr) minmax(0,1fr); gap:12px; padding:8px 12px; align-items:start; font-size:var(--fs-tick); }
+.codeview-scene > svg { position:absolute; width:0; height:0; }
+.codeview-scene .code-pre { font-size:var(--fs-cell); line-height:1.35; overflow-x:auto; overflow-y:auto; }
+.codeview-scene .code-line.is-bug { background:#E9ECF0; border-left-color:var(--navy); font-weight:700; }
+.codeview-scene .code-line.is-current { background:#CFDAE8; }
+.codeview-scene .bug-badge { color:var(--navy); border-color:var(--navy); font-size:var(--fs-cell); }
+.code-side { display:grid; gap:8px; align-content:start; padding:10px 0; min-width:0; }
+.code-tip { margin:0; line-height:1.35; }
+.code-links { display:flex; flex-direction:column; gap:6px; }
+.code-links a { color:var(--navy); font-weight:600; }
+@media (max-width:900px) {
+  .codeview-scene { grid-template-columns:minmax(0,1fr); gap:8px; padding:4px; }
+  .code-side { padding:0 4px; }
+  .code-links { flex-direction:row; flex-wrap:wrap; gap:4px 18px; }
 }
