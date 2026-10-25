@@ -12,6 +12,10 @@ type G = Selection<SVGGElement, unknown, null, undefined>;
 /** Layer of the lattice (number of features in the coalition) to the masks drawn in it, left to right. */
 const LAYERS: number[][] = [[0], [1, 2, 4], [3, 5, 6], [7]];
 
+/** `.lattice-scene` vertical padding (10 + 10) and row gap (12), kept in step with the CSS. */
+const SCENE_PAD_V = 20;
+const ROW_GAP = 12;
+
 /** Where a node sits (px, top-left corner and size). */
 interface Place {
   x: number;
@@ -83,10 +87,13 @@ export class LatticeScene implements ViewScene {
     if (view.part === 'orders') {
       this.orders.update(view);
     }
-    this.draw(view, ms);
+    // a narrow stage stacks the ordering table under the lattice: the lattice gets the height the table leaves
+    const stacked = view.part === 'orders' && this.w < NARROW;
+    const below = stacked ? Math.ceil(this.orders.root.getBoundingClientRect().height) + ROW_GAP : 0;
+    this.draw(view, ms, below);
   }
 
-  private draw(view: LatticeView, ms: number): void {
+  private draw(view: LatticeView, ms: number, below: number): void {
     const narrow = this.w < NARROW;
     const fs = this.measure.fontPx('node-name', this.measure.fonts(this.mode).tick);
     const avail = Math.max(120, view.part === 'orders' && !narrow ? Math.floor(this.w * 0.54) - 12 : this.w - (narrow ? 8 : 24));
@@ -119,9 +126,13 @@ export class LatticeScene implements ViewScene {
     );
     const lineCount = (mask: number): number => wrapped.get(mask)!.reduce((sum, ps) => sum + ps.length, 0) + 1;
     const lines = (layer: number): number => Math.max(...LAYERS[layer].map(lineCount));
-    // line height and tier gap shrink in steps until the four tiers fit the stage height
+    // the tier gap shrinks first, then the line height, until the four tiers fit the stage height (below 1.3 the
+    // line boxes of a node's names touch, so that is the last resort of a very short stage)
     const tiers = [
       { lh: 1.3, gap: 2 },
+      { lh: 1.3, gap: 1.5 },
+      { lh: 1.3, gap: 1.1 },
+      { lh: 1.3, gap: 0.8 },
       { lh: 1.2, gap: 1.6 },
       { lh: 1.1, gap: 1.3 },
       { lh: 1.05, gap: 1.1 },
@@ -130,7 +141,7 @@ export class LatticeScene implements ViewScene {
       const lh = fs * t.lh;
       return [0, 1, 2, 3].reduce((sum, l) => sum + lines(l) * lh + 10, 0) + 3 * lh * t.gap + 8;
     };
-    const pick = tiers.find((t) => need(t) <= this.h - 20) ?? tiers[tiers.length - 1];
+    const pick = tiers.find((t) => need(t) <= this.h - SCENE_PAD_V - below) ?? tiers[tiers.length - 1];
     const lh = fs * pick.lh;
     const gapY = lh * pick.gap;
     const places = new Map<number, Place>();
