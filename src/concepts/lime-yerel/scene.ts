@@ -142,6 +142,7 @@ export function mountLimeScene(
     lastStrip = v.strip;
     renderStrip(strip, v.strip);
     const a = area();
+    stage.dataset.avail = String(a.h);
     scenes[target].resize(a.w, a.h, mode);
     scenes[target].update(v, ms);
     rendered = true;

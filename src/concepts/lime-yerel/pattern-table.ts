@@ -2,6 +2,20 @@ import { FEATURES } from '../xai/data';
 import { el, featureName } from './scene-base';
 import type { PatternRow } from './view';
 
+/** Narrow-table metrics (CSS keeps them: line-height 1.2, cell padding 2 px, border spacing 2 px). */
+export const TABLE_LINE = 1.2;
+export const TABLE_PAD = 2;
+export const TABLE_SPACING = 2;
+/** Rows of the table: one per binary pattern. */
+export const TABLE_ROWS = 8;
+
+/** Height (px) of the narrow table with the caption, a two-line header and the eight rows, for a cell font of `cellFs` px. */
+export function narrowTableHeight(cellFs: number): number {
+  const line = cellFs * TABLE_LINE;
+  const row = line + 2 * TABLE_PAD + TABLE_SPACING;
+  return Math.ceil(line + 8 + (2 * line + 2 * TABLE_PAD + TABLE_SPACING) + TABLE_ROWS * row + TABLE_SPACING);
+}
+
 /**
  * The pattern table of steps 4 and 5: one `.pattern-row[data-mask]` per binary pattern (three "same bin as the
  * customer" marks, the sample count `.pattern-n`, the mean p `.pattern-mean`) and, in step 5, the kernel weight

@@ -35,21 +35,49 @@ describe('surrogate scene', () => {
     expect(el.querySelector('.formula')!.textContent).toContain('0,146 + 0,540 + 0,074 − 0,023 = 0,737');
   });
 
-  it('surrogate panel fits 390 px', () => {
-    const { el, player } = setup(390, 700);
-    go(player, 'sadakat');
-    const svg = el.querySelector('.lime-plot')!;
-    expect(num(svg, 'width')).toBeLessThanOrEqual(390);
-    for (const b of el.querySelectorAll('.lime-bar rect.bar')) {
-      expect(num(b, 'x') + num(b, 'width')).toBeLessThanOrEqual(num(svg, 'width'));
+  it('negative bars grow left of the zero line, positive ones right', () => {
+    const { el, player } = setup();
+    go(player, 'vekil');
+    const zx = num(el.querySelector('.lime-zero')!, 'x1');
+    const [tenure, monthly, total] = [...el.querySelectorAll('.lime-bar rect.bar')];
+    expect(num(tenure, 'x')).toBeCloseTo(zx, 0);
+    expect(num(monthly, 'x')).toBeCloseTo(zx, 0);
+    expect(num(total, 'x') + num(total, 'width')).toBeCloseTo(zx, 0);
+    expect(num(total, 'x')).toBeLessThan(zx);
+    // one scale for both directions: the widths keep the ratio of the coefficients
+    expect(num(tenure, 'width') / num(total, 'width')).toBeCloseTo(run.fit.coef[0] / -run.fit.coef[2], 0);
+    // the negative label sits left of its bar, the positive one right of its bar end
+    const values = [...el.querySelectorAll('.lime-bar text.bar-value')];
+    expect(num(values[2], 'x')).toBeLessThan(num(total, 'x'));
+    expect(num(values[0], 'x')).toBeGreaterThan(num(tenure, 'x') + num(tenure, 'width'));
+  });
+
+  it('bars and labels stay inside the svg at 390 and 1280 px', () => {
+    for (const [w, h] of [
+      [390, 470],
+      [1280, 540],
+    ]) {
+      const { el, player } = setup(w, h, 'lab');
+      for (const id of ['vekil', 'sadakat']) {
+        go(player, id);
+        const svg = el.querySelector('.lime-plot')!;
+        const width = num(svg, 'width');
+        expect(width).toBeLessThanOrEqual(w);
+        // a value text is about as wide as "+0,000" at the 13 px fallback font
+        const textW = 6 * 0.62 * 13;
+        for (const b of el.querySelectorAll('.lime-bar rect.bar')) {
+          expect(num(b, 'x')).toBeGreaterThanOrEqual(0);
+          expect(num(b, 'x') + num(b, 'width')).toBeLessThanOrEqual(width);
+        }
+        for (const t of el.querySelectorAll('.lime-bar text.bar-value')) {
+          const x = num(t, 'x');
+          const end = t.getAttribute('text-anchor') === 'end';
+          expect(end ? x - textW : x).toBeGreaterThanOrEqual(0);
+          expect(end ? x : x + textW).toBeLessThanOrEqual(width);
+        }
+        expect(svg.innerHTML).not.toMatch(/NaN|Infinity/);
+      }
     }
-    for (const t of el.querySelectorAll('text.rule-name tspan')) {
-      expect(num(t, 'x')).toBeGreaterThanOrEqual(0);
-      expect(num(t, 'y')).toBeGreaterThan(0);
-      expect(t.textContent!.length * 0.62 * 13).toBeLessThanOrEqual(num(svg, 'width') + 80);
-    }
-    expect(num(svg, 'height')).toBeGreaterThan(0);
-    expect(svg.innerHTML).not.toMatch(/NaN|Infinity/);
   });
 
   it('steps 8-10 render a quiet placeholder', () => {

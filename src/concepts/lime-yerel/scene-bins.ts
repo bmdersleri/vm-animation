@@ -8,6 +8,9 @@ import type { BinsRow, LimeView } from './view';
 
 type G = Selection<SVGGElement, unknown, null, undefined>;
 
+/** Vertical padding (px) of the scene: top and bottom together. */
+export const BINS_PAD_V = 8;
+
 /** Horizontal room kept at both ends of a number line for the end labels. */
 const EDGE = 20;
 
@@ -23,6 +26,7 @@ export class BinsScene implements ViewScene {
   private readonly rows: { g: G; line: NumberLineLayer; bandG: G; cutG: G; markG: G; nameG: G }[];
   private readonly measure: TextMeasure;
   private w = 1;
+  private h = 1;
   private mode: Mode = 'ders';
 
   constructor(host: HTMLElement) {
@@ -45,8 +49,9 @@ export class BinsScene implements ViewScene {
     host.append(this.root);
   }
 
-  resize(w: number, _h: number, mode: Mode): void {
+  resize(w: number, h: number, mode: Mode): void {
     this.w = Math.max(1, w);
+    this.h = Math.max(1, h);
     this.mode = mode;
   }
 
@@ -66,27 +71,44 @@ export class BinsScene implements ViewScene {
     const fs = this.measure.fonts(this.mode).tick;
     const width = Math.max(240, this.w - 24);
     const lh = fs * 1.25;
-    let top = 4;
+    // a roomy layout first; when the three rows do not fit the stage, the compact one (tighter gaps)
+    const heightOf = (compact: boolean): number =>
+      v.bins!.reduce((sum, row) => sum + this.rowLayout(row, fs, lh, width, compact).height + this.gap(fs, compact), BINS_PAD_V);
+    const compact = heightOf(false) > this.h;
+    let top = BINS_PAD_V / 2;
     v.bins.forEach((row, i) => {
-      top += this.drawRow(this.rows[i], row, fs, lh, width, top, ms) + fs * 0.8;
+      top += this.drawRow(this.rows[i], row, fs, lh, width, top, ms, compact) + this.gap(fs, compact);
     });
-    this.svg.attr('width', width).attr('height', Math.ceil(top));
+    this.root.dataset.used = String(Math.ceil(heightOf(compact)));
+    this.svg.attr('width', width).attr('height', Math.ceil(top - this.gap(fs, compact) + 2));
+  }
+
+  /** Gap between two rows. */
+  private gap(fs: number, compact: boolean): number {
+    return compact ? 2 : fs * 0.8;
+  }
+
+  /** Heights inside one row: rule name, cut labels (staggered), band, ticks and title. */
+  private rowLayout(row: BinsRow, fs: number, lh: number, width: number, compact: boolean) {
+    const sc = lineScale({ min: row.domain[0], max: row.domain[1] }, [EDGE, width - EDGE]);
+    const active = row.rules[row.active];
+    const nameLines = this.measure.wrap(active, width - 8, 'rule-name', fs);
+    const headH = nameLines.length * lh;
+    const labelW = row.cuts.map((c) => this.measure.width(c.text, 'tick', fs) + 6);
+    const levels = staggerRows(row.cuts.map((c, k) => ({ x: sc(c.value), w: labelW[k] })), 0);
+    const tiers = Math.max(...levels) + 1;
+    const bandH = fs * 1.1;
+    const tick = compact ? 1.3 : 1.5;
+    const height = headH + 2 + tiers * lh + 2 + bandH + fs * tick + fs * tick + fs * 0.4;
+    return { sc, active, nameLines, headH, levels, tiers, bandH, tick, height };
   }
 
   /** Draws one feature; returns the height it used. */
-  private drawRow(r: (typeof this.rows)[number], row: BinsRow, fs: number, lh: number, width: number, top: number, ms: number): number {
-    const sc = lineScale({ min: row.domain[0], max: row.domain[1] }, [EDGE, width - EDGE]);
-    const active = row.rules[row.active];
-    // rule name of the customer's bin: wraps when the stage is narrower than the name
-    const nameLines = this.measure.wrap(active, width - 8, 'rule-name', fs);
-    const headH = nameLines.length * lh;
-    // cut labels: staggered so neighbours never overlap
-    const labelW = row.cuts.map((c) => this.measure.width(c.text, 'tick', fs) + 6);
-    const levels = staggerRows(row.cuts.map((c, k) => ({ x: sc(c.value), w: labelW[k] })), 4);
-    const tiers = Math.max(...levels) + 1;
+  private drawRow(r: (typeof this.rows)[number], row: BinsRow, fs: number, lh: number, width: number, top: number, ms: number, compact: boolean): number {
+    const L = this.rowLayout(row, fs, lh, width, compact);
+    const { sc, active, nameLines, headH, levels, tiers, bandH } = L;
     const cutsTop = top + headH + 2;
     const bandTop = cutsTop + tiers * lh + 2;
-    const bandH = fs * 1.1;
     const y = bandTop + bandH;
 
     // bins as bands between the cuts (the open ends run to the domain)
@@ -154,8 +176,8 @@ export class BinsScene implements ViewScene {
       .attr('y', (_d, k) => r1(top + lh * k + fs))
       .text((d) => d);
 
-    const tickY = y + fs * 1.5;
-    r.line.draw(sc, y, { tickCount: 5, tickY, title: `${row.name} = ${row.valueText}`, titleY: tickY + fs * 1.5 }, ms, `bins-${row.feature}-${row.domain[0]}`);
-    return y + fs * 1.5 + fs * 1.5 + fs * 0.4 - top;
+    const tickY = y + fs * L.tick;
+    r.line.draw(sc, y, { tickCount: 5, tickY, title: `${row.name} = ${row.valueText}`, titleY: tickY + fs * L.tick }, ms, `bins-${row.feature}-${row.domain[0]}`);
+    return L.height;
   }
 }

@@ -129,10 +129,7 @@ const f3 = (v: number): string => (Number.isFinite(v) ? f(v, 3) : '—');
 const signed = (v: number): string => (v > 0 ? `+${f3(v)}` : f3(v));
 
 /** The book's code 05 lines (explainer), shown in the strip of step 1. */
-export const KOD05_LINES = [
-  'lime_aciklayici = LimeTabularExplainer(…, mode="classification", random_state=42)',
-  'lime_aciklamasi = lime_aciklayici.explain_instance(musteri, predict_proba, num_features=3)',
-];
+export const KOD05_LINES = ['lime_aciklayici = LimeTabularExplainer(…, mode="classification", random_state=42)'];
 
 /** Row order of the pattern tables: by distance from the customer (all three marks first). */
 export const PATTERN_ORDER = [7, 6, 5, 3, 4, 2, 1, 0];
@@ -161,6 +158,17 @@ function paddedDomain(values: readonly number[]): [number, number] {
   const span = hi - lo || 1;
   const step = 10 ** Math.floor(Math.log10(span));
   return [Math.floor((lo - span / 2) / step) * step, Math.ceil((hi + span / 2) / step) * step];
+}
+
+/**
+ * Domain that holds `values` with a small margin (`frac` of their span at each end): the drawn data decide the
+ * axis. A quantity that is never negative in the data does not get a negative end.
+ */
+export function tightDomain(values: readonly number[], frac = 0.04): [number, number] {
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const pad = (hi - lo || 1) * frac;
+  return [lo >= 0 ? Math.max(0, lo - pad) : lo - pad, hi + pad];
 }
 
 function valueText(feature: number, v: number): string {
@@ -221,8 +229,8 @@ function cloudView(p: LimeParams, stepId: string): LimeView {
   const groups = Math.min(Math.ceil(dots.length / DOTS_PER_GROUP), Math.max(1, p.scan));
   const shown = part === 'sample' ? Math.min(dots.length, groups * DOTS_PER_GROUP) : dots.length;
   const run = runOf(p, 5000);
-  const domainX = paddedDomain([...dots.map((d) => d.x), ...BINS.cuts[0], c.values[0]]);
-  const domainY = paddedDomain([...dots.map((d) => d.y), ...BINS.cuts[1], c.values[1]]);
+  const domainX = tightDomain([...dots.map((d) => d.x), ...BINS.cuts[0], c.values[0]]);
+  const domainY = tightDomain([...dots.map((d) => d.y), ...BINS.cuts[1], c.values[1]]);
   // the customer's cell: the bin edges, open ends running to the domain
   const edge = (feature: 0 | 1, domain: [number, number]): [number, number] => {
     const k = run.bins[feature];

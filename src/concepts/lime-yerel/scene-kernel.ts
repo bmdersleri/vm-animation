@@ -5,9 +5,14 @@ import { formatNumber as f } from '../../core/plot/format';
 import { NAVY, r1 } from '../../core/plot/marks';
 import { TextMeasure } from '../../core/plot/text-measure';
 import { fitViewport } from '../../core/plot/viewport';
-import { PatternTable } from './pattern-table';
+import { narrowTableHeight, PatternTable } from './pattern-table';
 import { el, NARROW, NS, type ViewScene } from './scene-base';
 import type { KernelView, LimeView } from './view';
+
+/** Vertical room (px) kept by the kernel scene: root padding, gap to the stacked table, the smallest curve plot. */
+export const KERNEL_PAD_V = 16;
+export const KERNEL_GAP = 8;
+export const KERNEL_MIN_PLOT = 110;
 
 type G = Selection<SVGGElement, unknown, null, undefined>;
 
@@ -26,6 +31,7 @@ export class KernelScene implements ViewScene {
   private readonly table: PatternTable;
   private readonly measure: TextMeasure;
   private w = 1;
+  private h = 1;
   private mode: Mode = 'ders';
 
   constructor(host: HTMLElement) {
@@ -45,8 +51,9 @@ export class KernelScene implements ViewScene {
     host.append(this.root);
   }
 
-  resize(w: number, _h: number, mode: Mode): void {
+  resize(w: number, h: number, mode: Mode): void {
     this.w = Math.max(1, w);
+    this.h = Math.max(1, h);
     this.mode = mode;
   }
 
@@ -74,16 +81,20 @@ export class KernelScene implements ViewScene {
     const fs = fonts.tick;
     const afs = fonts.axis;
     const width = Math.max(240, narrow ? this.w - 8 : Math.floor(this.w * 0.5) - 12);
-    const height = Math.round(Math.max(220, Math.min(width * 0.7, 360)));
+    // narrow: the table sits under the curve, so the curve takes what the stage has left
+    const tableH = narrow ? narrowTableHeight(this.measure.fontPx('pattern-cell', 12)) : 0;
+    const room = Math.floor(this.h - KERNEL_PAD_V - (tableH > 0 ? tableH + KERNEL_GAP : 0));
+    const height = Math.round(Math.max(KERNEL_MIN_PLOT, Math.min(width * 0.7, 360, room)));
+    this.root.dataset.used = String(Math.ceil(height + KERNEL_PAD_V + (tableH > 0 ? tableH + KERNEL_GAP : 0)));
     const left = Math.ceil(this.measure.width('0,00', 'tick', fs) + afs * 1.8 + 10);
-    const top = fs * 1.2;
+    const top = fs * 0.8;
     const bottom = fs * 1.4 + afs * 1.6 + 6;
     const plot = { left, top, width: width - left - 14, height: height - top - bottom };
     this.svg.attr('width', width).attr('height', height);
     // weights lie between 0 and 1; the distance axis ends at the data-given upper end
     const sc = fitViewport({ x: k.domainD, y: [0, 1] }, plot, false);
     const labels = new Map(k.points.map((p) => [Math.round(p.d * p.d), p.dText]));
-    const yTicks = [0, 0.25, 0.5, 0.75, 1];
+    const yTicks = plot.height < fs * 9 ? [0, 0.5, 1] : [0, 0.25, 0.5, 0.75, 1];
     this.axes.draw(
       sc,
       plot,

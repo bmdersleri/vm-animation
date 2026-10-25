@@ -5,7 +5,7 @@ import { NAVY, r1 } from '../../core/plot/marks';
 import { TextMeasure } from '../../core/plot/text-measure';
 import { tr } from '../../core/plot/transition';
 import { fitViewport } from '../../core/plot/viewport';
-import { PatternTable } from './pattern-table';
+import { narrowTableHeight, PatternTable } from './pattern-table';
 import { el, NARROW, NS, type ViewScene } from './scene-base';
 import type { CloudDot, CloudView, LimeView } from './view';
 
@@ -22,6 +22,14 @@ export function dotColor(p: number): string {
   const c = LOW_RGB.map((lo, i) => Math.round(lo + (HIGH_RGB[i] - lo) * t));
   return `rgb(${c[0]},${c[1]},${c[2]})`;
 }
+
+/** Vertical room (px) the scene keeps: the root's top and bottom padding, the gap between stacked parts, the minimum plot. */
+export const CLOUD_PAD_V = 16;
+export const CLOUD_GAP = 8;
+export const CLOUD_MIN_PLOT = 90;
+/** Legend height in tick-font heights, and the line height of the note. */
+export const LEGEND_K = 1.7;
+export const NOTE_LINE = 1.3;
 
 /** Points of a five-pointed star of outer radius `r` around the origin. */
 export function starPoints(r: number): string {
@@ -117,15 +125,30 @@ export class CloudScene implements ViewScene {
     const afs = fonts.axis;
     const withTable = c.rows !== null;
     const width = Math.max(240, narrow ? this.w - 8 : withTable ? Math.floor(this.w * 0.5) - 12 : this.w - 24);
-    const height = Math.round(Math.max(240, Math.min(narrow ? width * 0.95 : this.h - 64, width * 0.8)));
+    // what sits around the plot: legend (step 4), note (not beside a narrow table) and, narrow, the table itself
+    const legendH = c.part === 'color' ? Math.ceil(fs * LEGEND_K) : 0;
+    this.legend.style.height = legendH > 0 ? `${legendH}px` : '';
+    const showNote = !(narrow && withTable);
+    this.note.hidden = !showNote;
+    this.note.style.lineHeight = String(NOTE_LINE);
+    const noteLines = showNote ? this.measure.wrap(this.note.textContent ?? '', width - 4, 'tick', fs).length : 0;
+    const noteH = Math.ceil(noteLines * fs * NOTE_LINE);
+    const cellFs = this.measure.fontPx('pattern-cell', 12);
+    const tableH = narrow && withTable ? narrowTableHeight(cellFs) : 0;
+    const parts = [legendH, noteH].filter((h) => h > 0).length;
+    const around = CLOUD_PAD_V + legendH + noteH + parts * CLOUD_GAP + (tableH > 0 ? tableH + CLOUD_GAP : 0);
+    const room = Math.floor(this.h - around);
+    const cap = narrow ? width * 0.95 : width * 0.8;
+    const height = Math.round(Math.max(CLOUD_MIN_PLOT, Math.min(cap, room)));
+    this.root.dataset.used = String(Math.ceil(height + around));
     // the y title runs along the left edge; two lines when the name is longer than the plot
     const yName = 'MonthlyCharges';
-    const plotH0 = height - 8 - (fs * 1.4 + afs * 1.6 + 6);
+    const bottom = fs * 1.4 + afs * 1.6 + 6;
+    const plotH0 = height - 8 - bottom;
     const split = this.measure.width(yName, 'axis-title', afs) > plotH0 - 8;
     const yLines = split ? ['Monthly', 'Charges'] : [yName];
     const left = Math.ceil(this.measure.width('000', 'tick', fs) + afs * (split ? 2.8 : 1.8) + 8);
     const top = 8;
-    const bottom = fs * 1.4 + afs * 1.6 + 6;
     const plot = { left, top, width: width - left - 10, height: height - top - bottom };
     this.svg.attr('width', width).attr('height', height);
     const sc = fitViewport({ x: c.domainX, y: c.domainY }, plot, false);
@@ -133,8 +156,8 @@ export class CloudScene implements ViewScene {
       sc,
       plot,
       {
-        xTickCount: 6,
-        yTickCount: 6,
+        xTickCount: Math.max(2, Math.floor(plot.width / (fs * 5))),
+        yTickCount: Math.max(2, Math.floor(plot.height / (fs * 2.4))),
         xTickY: plot.top + plot.height + fs * 1.3,
         yTickX: plot.left - 6,
         xTitle: { x: plot.left + plot.width / 2, y: plot.top + plot.height + fs * 1.3 + afs * 1.35, text: 'tenure' },
