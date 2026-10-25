@@ -373,7 +373,7 @@ function driftView(key: ModelKey): DriftView {
   return {
     model: key,
     title: 'Sözlük dışı token oranı',
-    rows: [row('test', 'eğitim dönemi · test yorumları', r.test), row('new', 'yeni dönem yorumları', r.new)],
+    rows: [row('test', 'sözlük dışı · eğitim dönemi testi', r.test), row('new', 'sözlük dışı · yeni dönem', r.new)],
   };
 }
 
@@ -445,11 +445,19 @@ function vocabView(id: string, p: SentimentParams): SentimentView {
 
 // ---- step 10: debugging code ----
 
-/** Bugs marked at the sweep position `bug` (0-4); the sweep value 5 or the Lab switch brings the corrected code. */
+/** Whether step 10 shows the corrected code: the Lab switch, or the sweep's last value (5). The one condition the view and the switch share. */
+export function showsFixed(p: Pick<SentimentParams, 'fixed' | 'bug'>): boolean {
+  return p.fixed || (Number.isFinite(p.bug) && Math.trunc(p.bug) > HATALAR.length);
+}
+
+/** Params that show the faulty code with all four bugs marked (and cancel a running sweep): the switch unticked. */
+export const FAULTY_ALL: Pick<SentimentParams, 'fixed' | 'bug'> = { fixed: false, bug: HATALAR.length };
+
+/** Bugs marked at the sweep position `bug` (0-4); `showsFixed` brings the corrected code. */
 function codeView(id: string, p: SentimentParams): SentimentView {
   const bug = Number.isFinite(p.bug) ? Math.trunc(p.bug) : 0;
   const marked = Math.max(0, Math.min(HATALAR.length, bug));
-  const fixed = p.fixed || bug > HATALAR.length;
+  const fixed = showsFixed(p);
   const strip = fixed
     ? 'düzeltilmiş: liste · yalnız anlamlı belgelerle fit_transform · geçerli satır · doğrulanmış stop-word listesi'
     : `işaretlenen hata: ${marked} / ${HATALAR.length}`;

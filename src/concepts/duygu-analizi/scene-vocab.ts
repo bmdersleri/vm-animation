@@ -88,7 +88,7 @@ export class VocabScene implements ViewScene {
 
 /** Heights (px) the drift strip needs, so the score panel below it can be sized. */
 export function driftHeight(tick: number): number {
-  return Math.round(tick * 1.5 * 3 + 24);
+  return Math.round(tick * 1.5 * 2 + 20);
 }
 
 /**
@@ -105,6 +105,8 @@ export class DriftStrip {
     this.el = el(doc, 'div', 'drift-strip');
     this.title = el(doc, 'p', 'drift-title');
     this.rows = el(doc, 'div', 'drift-rows');
+    // the title is the strip's accessible name; the rows carry their own labels, so it takes no line
+    this.title.hidden = true;
     this.el.append(this.title, this.rows);
     this.el.hidden = true;
     parent.append(this.el);

@@ -1,9 +1,9 @@
 import { stepIndex, type StepPlayer } from '../../core/player';
 import { addTextInput, type TextPreset } from '../../core/text-input';
 import { DRIFT } from '../metin/data';
-import { NEGATION, NEW_COMMENT, settingsOf } from './calc';
+import { HATALAR, NEGATION, NEW_COMMENT, settingsOf } from './calc';
 import { duyguAnaliziScenario as scenario, type SentimentParams } from './scenario';
-import { commentOf, TOP_RANGE } from './view';
+import { commentOf, FAULTY_ALL, showsFixed, TOP_RANGE } from './view';
 
 let uid = 0;
 
@@ -111,7 +111,7 @@ export function mountSentimentParams(host: HTMLElement, player: StepPlayer<Senti
   const degil = addToggle('degilStop', '"değil" stop-word olsun', DEGIL_STEPS, (on) => player.setParam('degilStop', on));
   const topN = addSlider('topN', 'Her yönde gösterilen terim', TOPN_STEPS, (v) => player.setParam('topN', v));
   const leaky = addToggle('leaky', 'Vektörleştirici tüm veride öğrenilsin (sızıntılı)', LEAKY_STEPS, (on) => player.setParam('leaky', on));
-  const fixed = addToggle('fixed', 'Düzeltilmiş kodu göster', FIXED_STEPS, (on) => player.setParam('fixed', on));
+  const fixed = addToggle('fixed', 'Düzeltilmiş kodu göster', FIXED_STEPS, (on) => player.setParams(on ? { fixed: true, bug: HATALAR.length } : FAULTY_ALL));
 
   // key presses on the text boxes are stopped by addTextInput; bindKeys ignores the other form controls
 
@@ -125,7 +125,7 @@ export function mountSentimentParams(host: HTMLElement, player: StepPlayer<Senti
     bigram.checked = own.bigram;
     degil.checked = own.degilStop;
     leaky.checked = settingsOf('sizinti', p).leaky;
-    fixed.checked = p.fixed;
+    fixed.checked = showsFixed(p);
     const n = Math.max(TOP_RANGE.min, Math.min(TOP_RANGE.max, Math.round(Number.isFinite(p.topN) ? p.topN : 10)));
     topN.input.value = String(n);
     topN.output.textContent = String(n);

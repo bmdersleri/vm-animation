@@ -56,6 +56,10 @@ describe('duygu-analizi scenario', () => {
 
   it('no step resets the lab model choice', () => {
     // a step's `params` would overwrite a Lab choice on entry; the page keeps every Ders model in the view instead
-    for (const s of sc.steps) expect(s.params, s.id).toBeUndefined();
+    // (step 10 only clears the corrected-code switch, so the Ders sweep starts on the faulty code)
+    for (const s of sc.steps) {
+      if (s.id === 'hata-ayiklama') expect(s.params).toEqual({ fixed: false });
+      else expect(s.params, s.id).toBeUndefined();
+    }
   });
 });

@@ -243,15 +243,40 @@ describe('duygu-analizi Lab controls', () => {
     expect(el.textContent).not.toMatch(/NaN|undefined|Infinity/);
   });
 
-  it('the fixed switch shows the corrected code', () => {
+  it('the fixed switch follows the real sequence: sweep ends, untick, tick', () => {
     const { host, el, player } = setup();
     player.goto(step('hata-ayiklama'));
-    player.setParam('bug', 4);
-    expect(ctl(host, 'fixed').checked).toBe(false);
-    expect(el.querySelectorAll('.code-fixed')).toHaveLength(0);
+    const box = ctl(host, 'fixed');
+    const shown = () => el.querySelector('.code-title')!.textContent === 'Düzeltilmiş kod';
+    const check = (fixed: boolean, bugs: number) => {
+      expect(shown()).toBe(fixed);
+      expect(box.checked).toBe(fixed);
+      expect(el.querySelectorAll('.bug-badge')).toHaveLength(bugs);
+    };
+    check(false, 1);
+    // the sweep plays to its end: the corrected code, and the switch reads ticked
+    vi.advanceTimersByTime(1400 * 6);
+    check(true, 0);
+    // untick: the faulty code with all four bugs marked, sweep stays cancelled
+    flip(box);
+    check(false, 4);
+    vi.advanceTimersByTime(1400 * 6);
+    check(false, 4);
+    flip(box);
+    check(true, 0);
+    flip(box);
+    check(false, 4);
+  });
+
+  it('a Lab tick does not leak into the Ders sweep of step 10', () => {
+    const { host, el, player } = setup();
+    player.goto(step('hata-ayiklama'));
     flip(ctl(host, 'fixed'));
-    expect(el.querySelectorAll('.code-fixed').length).toBeGreaterThan(5);
-    expect(el.querySelector('.code-title')!.textContent).toBe('Düzeltilmiş kod');
+    player.goto(step('sozluk-kaymasi'));
+    player.goto(step('hata-ayiklama'));
+    expect(player.state.params.fixed).toBe(false);
+    expect(el.querySelector('.code-title')!.textContent).toBe('Hatalı kod');
+    expect(el.querySelectorAll('.bug-badge')).toHaveLength(1);
   });
 
   it('the Lab note names the three-class sentiment and the emoji in one sentence each', async () => {

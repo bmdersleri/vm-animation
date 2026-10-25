@@ -127,6 +127,8 @@ export const duyguAnaliziScenario: Scenario<SentimentParams> = {
       text: `Kitabın DuyguHata kodunda ${HATALAR.length} hata var: ${HATALAR.join(', ')}. Hatalar sırayla işaretlenir, sonra düzeltilmiş kod gelir. Kitabın sınav notu: "'Model çalıştı' ifadesi, modelin güvenilir olduğu anlamına gelmez."`,
       labText:
         'Düzeltilmiş kodu göster anahtarıyla hatalı ve düzeltilmiş hâli arasında geçiş yapın.',
+      // the Ders sweep always starts on the faulty code: entering the step clears a Lab tick of the switch
+      params: { fixed: false },
       sweep: { key: 'bug', values: [1, 2, 3, 4, 5], intervalMs: 1400 },
     },
   ],
