@@ -178,7 +178,7 @@ olabilir, yapıcı karar verir). Panelin yanında ya da altında formül şeridi
    `sigAgac.fit(girisDegerleri, artikHata)`.
 5. **Küçük adım.** F₁ = F₀ + 0,3 · h₁: üst paneldeki çizgi düzeltmenin yalnız %30'u kadar
    oynar; hata 0,2952. Formül şeridinde kitabın elle örneği: gerçek [3; 5], tahmin [2; 4],
-   düzeltme [2; 0], ν = 0,1 → [2 + 0,1 · 2; 4 + 0,1 · 0] = [2,2; 4].
+   düzeltme [1; 1], ν = 0,1 → [2 + 0,1 · 1; 4 + 0,1 · 1] = [2,1; 4,1] (kitap v0.2; eski [2; 0] artıklardan öğrenilemezdi).
 6. **Tekrar.** Tarama m = 2 → 5: her adımda yeni artıklar, yeni ağaç, yeni ekleme; yanda kitabın
    tablosu satır satır dolar (0,2138; 0,1587; 0,1201; 0,0933). "Beşinci adımda hata birincinin
    yaklaşık üçte biri" (oran veriden).

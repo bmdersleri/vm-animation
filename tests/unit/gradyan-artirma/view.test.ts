@@ -46,7 +46,7 @@ describe('gradyan-artirma view', () => {
       expect(at(p.f!, x)).toBeCloseTo(REG.mean + 0.3 * at(p.h!, x), 9);
     }
     expect(p.fPrev![0].y).toBeCloseTo(REG.mean, 9);
-    expect(view('kucuk-adim').strip).toContain('[2 + 0,1 · 2; 4 + 0,1 · 0] = [2,2; 4]');
+    expect(view('kucuk-adim').strip).toContain('[2 + 0,1 · 1; 4 + 0,1 · 1] = [2,1; 4,1]');
     expect(view('kucuk-adim').strip).toContain('F₁ = F₀ + 0,3 · h₁');
   });
 

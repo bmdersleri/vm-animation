@@ -65,7 +65,7 @@ describe('panel scene', () => {
     const { el, player } = setup();
     go(player, 'kucuk-adim');
     const text = el.querySelector('.formula')!.textContent!;
-    expect(text).toContain('[2 + 0,1 · 2; 4 + 0,1 · 0] = [2,2; 4]');
+    expect(text).toContain('[2 + 0,1 · 1; 4 + 0,1 · 1] = [2,1; 4,1]');
     expect(text).toContain('F₁ = F₀ + 0,3 · h₁');
     expect(text).toContain('0,2952');
     expect(count(el, 'path.f-prev')).toBe(1);

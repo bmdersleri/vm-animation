@@ -25,7 +25,7 @@ export const X_DOMAIN: [number, number] = [0, 10];
 export const BOOK_ROWS = 5;
 
 /** The book's hand example (gerçek, tahmin, düzeltme and ν are the book's own, not data of this page). */
-const HAND = 'Kitabın elle örneği: [3; 5] gerçek · [2; 4] tahmin · [2; 0] düzeltme · ν = 0,1 → [2 + 0,1 · 2; 4 + 0,1 · 0] = [2,2; 4]';
+const HAND = 'Kitabın elle örneği: [3; 5] gerçek · [2; 4] tahmin · [1; 1] düzeltme · ν = 0,1 → [2 + 0,1 · 1; 4 + 0,1 · 1] = [2,1; 4,1]';
 
 /** One training or validation point. */
 export interface GbPoint {
