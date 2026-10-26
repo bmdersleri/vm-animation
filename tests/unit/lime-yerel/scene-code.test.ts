@@ -16,16 +16,18 @@ describe('code scene', () => {
     go(player, 'hata-ayiklama', false);
     expect(el.querySelector('.lime-stage')!.getAttribute('data-view')).toBe('code');
     const lines = [...el.querySelectorAll('.code-line')];
-    expect(lines).toHaveLength(17);
+    expect(lines).toHaveLength(15);
     expect(lines.map((l) => l.querySelector('.code-no')!.textContent)).toEqual(lines.map((_, i) => String(i + 1)));
     // the book's code, comments included
-    expect(texts(el, '.code-text').slice(0, 4)).toEqual([
-      '# File: HataAyiklama.python',
-      '# Bu kod, yerel açıklama hazırlarken çeşitli mantık ve tür hataları içermektedir.',
-      '# Amaç hataları tanımlamak ve güvenilir bir açıklama üretmektir.',
-      '# Çıktı satırı ayrıca yanlış değişken kullanmaktadır.',
+    const faulty = texts(el, '.code-text');
+    expect(faulty.slice(0, 2)).toEqual([
+      '# File: HataAyiklama.py',
+      '# Bu kod, yerel açıklama hazırlarken çeşitli mantık ve tür hataları içerir.',
     ]);
-    const kinds = ['tür hatası', 'mantık hatası', 'indeksleme hatası', 'mantık hatası', 'veri biçimi hatası'];
+    expect(faulty).toContain('from ch13_kara_kutu_model import egitim_hedefi, egitim_ozellikleri, test_ozellikleri');
+    // the book's output comment: the code stops at the uninstantiated class
+    expect(faulty[faulty.length - 1]).toBe("# Çıktı: AttributeError: 'DataFrame' object has no attribute '_validate_params'");
+    const kinds = ['tür hatası', 'boyut hatası', 'indeksleme hatası', 'ad hatası', 'veri biçimi hatası'];
     const bugLine = ['model = RandomForestClassifier', 'test_ozellikleri.iloc[0]', 'predict_proba(musteri)[1]', 'tahmin_olasiligi', 'shap_values(musteri)'];
     for (let n = 1; n <= 5; n++) {
       player.setParams({ scan: n });
@@ -52,23 +54,29 @@ describe('code scene', () => {
     go(player, 'hata-ayiklama');
     player.setParam('fixed', true);
     const lines = [...el.querySelectorAll('.code-line.code-fixed')];
-    expect(lines).toHaveLength(20);
+    expect(lines).toHaveLength(17);
     expect(el.querySelectorAll('.bug-badge')).toHaveLength(0);
     const code = texts(el, '.code-text');
     expect(code).toContain('model = RandomForestClassifier(n_estimators=100, random_state=42)');
     expect(code).toContain('musteri = test_ozellikleri.iloc[[0]]');
     expect(code).toContain('olasilik = model.predict_proba(musteri)[0, 1]');
+    expect(code[0]).toBe('# File: HataAyiklamaDuzeltildi.py');
+    expect(code).toContain('aciklama = shap.Explainer(model)(musteri)[0, :, 1]');
     expect(code).toContain('print(f"Olasılık: %{olasilik * 100:.1f}")');
-    // the output comment carries this data's probability, not the book's printed number
-    expect(code[code.length - 1]).toBe(`# Çıktı: Olasılık: %${(BOOK.fixedCodeP * 100).toFixed(1)}`);
+    // the output comments carry this data's numbers, which equal the book's printed ones
+    expect(code.slice(-2)).toEqual([
+      `# Çıktı: Olasılık: %${(BOOK.fixedCodeP * 100).toFixed(1)}`,
+      `# Çıktı: SHAP katkıları: [${BOOK.fixedCodeShap.map((v) => v.toFixed(3)).join(' ')}]`,
+    ]);
+    expect(code.slice(-2)).toEqual(['# Çıktı: Olasılık: %96.0', '# Çıktı: SHAP katkıları: [0.563 0.107 0.042]']);
     expect(el.querySelectorAll('.code-line.is-fix')).toHaveLength(4);
     // each changed line carries the bug number and type it fixes (the iloc[[0]] line fixes bugs 2 and 5)
     const tags = [...el.querySelectorAll('.code-line.is-fix')].map((l) => [...l.querySelectorAll('.fix-badge')].map((b) => b.textContent));
     expect(tags).toEqual([
       ['1 · tür hatası: sınıf örneklenmemiş'],
-      ['2 · mantık hatası: tek satır iki boyutlu değil', '5 · veri biçimi hatası: DataFrame yerine Series'],
+      ['2 · boyut hatası: tek satır iki boyutlu değil', '5 · veri biçimi hatası: DataFrame yerine Series'],
       ['3 · indeksleme hatası: predict_proba eksenleri eksik'],
-      ['4 · mantık hatası: tanımsız tahmin_olasiligi'],
+      ['4 · ad hatası: tanımsız tahmin_olasiligi'],
     ]);
     expect(el.querySelectorAll('.code-line:not(.is-fix) .fix-badge')).toHaveLength(0);
     expect(css).not.toMatch(/\.fix-badge[^{]*\{[^}]*#E07B00/i);
@@ -78,7 +86,7 @@ describe('code scene', () => {
     expect(el.querySelectorAll('.code-line.is-bug')).toHaveLength(5);
     // sweep position six brings the corrected code in the Ders as well, with the same bug tags (the end state under reduced motion)
     player.setParams({ scan: 6 });
-    expect(el.querySelectorAll('.code-fixed')).toHaveLength(20);
+    expect(el.querySelectorAll('.code-fixed')).toHaveLength(17);
     expect(el.querySelectorAll('.fix-badge')).toHaveLength(5);
   });
 
@@ -123,6 +131,6 @@ describe('code scene', () => {
     expect(Number.parseFloat(pre.style.maxHeight)).toBeGreaterThanOrEqual(Math.ceil((lines + badges) * lh + PRE_PAD));
     // the faulty code with all five bug badges gets the same room
     player.setParams({ scan: 5 });
-    expect(Number.parseFloat(pre.style.maxHeight)).toBeGreaterThanOrEqual(Math.ceil((17 + 5) * lh + PRE_PAD));
+    expect(Number.parseFloat(pre.style.maxHeight)).toBeGreaterThanOrEqual(Math.ceil((15 + 5) * lh + PRE_PAD));
   });
 });

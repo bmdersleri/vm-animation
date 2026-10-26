@@ -133,5 +133,5 @@ export const CLOUD: Record<number, Cloud> = Object.fromEntries(
   Object.entries(generated.cloud).map(([row, c]) => [Number(row), c as Cloud]),
 );
 
-/** The book corrected debugging code (n_estimators=100): p of customer 301. */
-export const BOOK = { fixedCodeP: generated.book.fixedCodeP };
+/** The book corrected debugging code (n_estimators=100): p and SHAP (tenure, MonthlyCharges, TotalCharges) of customer 301. */
+export const BOOK = { fixedCodeP: generated.book.fixedCodeP, fixedCodeShap: generated.book.fixedCodeShap as Triple };

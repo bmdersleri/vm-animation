@@ -28,7 +28,7 @@ Data (xai.json; display numbers 6 decimals, numbers that enter a calculation ful
              kernel width.
   all        The 100 test customers at seed 42 / 5000 samples: bins and the same fit.
   cloud      Per preset customer, the first 500 samples of the seed 42 / 5000 run (values, mask, p).
-  book       The fixed debugging code of the book (n_estimators=100): p of customer 301.
+  book       The fixed debugging code of the book (n_estimators=100): p and SHAP of customer 301.
 
 Fixture (xai_shap_lime.json), full precision:
   customers  row, p, v, shap of the 100 test customers.
@@ -38,7 +38,8 @@ Fixture (xai_shap_lime.json), full precision:
 Checks (SystemExit with the failing check named; the generator never bends data to pass):
   - the book numbers: p(301) 0.945, accuracy 0.94, importances 0.546 / 0.231 / 0.223, mean
     |SHAP| 0.221060 / 0.064580 / 0.035807, SHAP of customer 301 0.567064 / 0.092737 / 0.039599,
-    LIME seed 42 coefficients 0.540 / 0.074 / -0.023;
+    LIME seed 42 coefficients 0.540 / 0.074 / -0.023; fixed code p(301) 0.960, SHAP of
+    customer 301 0.563 / 0.107 / 0.042;
   - v(all) = p and base + sum(phi) = p for every customer (1e-12);
   - the Ridge solved from the 8 pattern summaries equals sklearn Ridge on the samples (1e-9) for
     every run at the three widths;
@@ -378,6 +379,12 @@ def generate():
         fail("customer 77: SHAP and LIME should disagree on the most influential feature")
 
     book_p = float(fixed.predict_proba(xte.loc[[301]])[0, 1])
+    fixed_trees = [tree_arrays(e) for e in fixed.estimators_]
+    book_shap = shapley(coalitions(fixed_trees, xte.loc[301].values.astype(np.float32)))
+    if round(book_p, 3) != 0.960:
+        fail("fixed code p(301) 0.960")
+    if [round(v, 3) for v in book_shap] != [0.563, 0.107, 0.042]:
+        fail("fixed code SHAP of customer 301 0.563 / 0.107 / 0.042")
     model_out = {
         "nTrain": len(xtr), "nTest": len(xte),
         "trainCounts": [int((ytr == 0).sum()), int((ytr == 1).sum())],
@@ -391,7 +398,8 @@ def generate():
     for row in PRESETS:
         c = by_row[row]
         print("customer", row, "p", round(c["p"], 6), "shap", [round(v, 6) for v in c["shap"]])
-    print("topDisagree", model_out["topDisagree"], "fixedCodeP", book_p)
+    print("topDisagree", model_out["topDisagree"], "fixedCodeP", book_p,
+          "fixedCodeShap", [round(v, 6) for v in book_shap])
     for n in (5000, 50):
         ts = [run["fit"]["coef"][0] for run in runs if run["row"] == 301 and run["samples"] == n]
         print(f"tenure coef, customer 301, {n} samples: {min(ts):.4f} .. {max(ts):.4f}")
@@ -401,7 +409,7 @@ def generate():
         "model": model_out,
         "customers": customers,
         "bins": bins, "runs": runs, "all": all_fits, "cloud": cloud,
-        "book": {"fixedCodeP": book_p},
+        "book": {"fixedCodeP": book_p, "fixedCodeShap": book_shap},
     }
     fixture = {
         "customers": [{"row": c["row"], "p": c["p"], "v": c["v"], "shap": c["shap"]}

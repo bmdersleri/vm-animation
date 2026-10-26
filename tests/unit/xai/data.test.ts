@@ -20,6 +20,7 @@ describe('xai data', () => {
     expect(round(fit.localPred, 3)).toBe(0.737);
     expect(round(fit.score as number, 3)).toBe(0.693);
     expect(round(BOOK.fixedCodeP, 2)).toBe(0.96);
+    expect(BOOK.fixedCodeShap.map((v) => round(v, 3))).toEqual([0.563, 0.107, 0.042]);
     expect(MODEL.topDisagree).toBe(24);
     expect(MODEL.nEstimators).toBe(200);
     expect(round(KERNEL_WIDTH, 3)).toBe(1.299);
