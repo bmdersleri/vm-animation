@@ -102,10 +102,10 @@ export function baseStrip(tx: readonly Basket[], y: Itemset): string {
   return `taban oran = destek(${label}) = ${fraction(cy, tx.length)} = ${tx.length === 0 ? UNDEFINED : ratioText(cy / tx.length)}`;
 }
 
-/** "kaldıraç(Ekmek → Süt) = 0,636 / 0,667 = 0,955"; undefined when confidence or the base rate is. */
+/** "lift(Ekmek → Süt) = 0,636 / 0,667 = 0,955"; undefined when confidence or the base rate is. */
 export function liftStrip(tx: readonly Basket[], x: Itemset, y: Itemset): string {
   const m = measures(tx, x, y);
-  const head = `kaldıraç(${rule(x, y)})`;
+  const head = `lift(${rule(x, y)})`;
   if (m.lift === null) return `${head} = ${UNDEFINED}`;
   return `${head} = ${ratioText(m.confidence)} / ${ratioText(m.base)} = ${ratioText(m.lift)}`;
 }

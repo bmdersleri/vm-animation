@@ -48,9 +48,9 @@ export function mountRuleScatter(host: HTMLElement, onPick: (rule: Rule) => void
   const legend = document.createElement('p');
   legend.className = 'bk-rule-legend';
   legend.innerHTML =
-    `<span class="bk-key">${LEGEND_FILLED} dolu daire: kaldıraç 1'den büyük</span>` +
-    `<span class="bk-key">${LEGEND_HOLLOW} içi boş daire: kaldıraç 1 ya da daha küçük</span>` +
-    '<span class="bk-key">daire boyu kaldıraçla büyür</span>';
+    `<span class="bk-key">${LEGEND_FILLED} dolu daire: lift 1'den büyük</span>` +
+    `<span class="bk-key">${LEGEND_HOLLOW} içi boş daire: lift 1 ya da daha küçük</span>` +
+    '<span class="bk-key">daire boyu lift ile büyür</span>';
   const plotHost = document.createElement('div');
   plotHost.className = 'bk-plot-host';
   const svg = document.createElementNS(SVG_NS, 'svg');
@@ -200,7 +200,7 @@ export function mountRuleScatter(host: HTMLElement, onPick: (rule: Rule) => void
         g.removeAttribute('role');
         g.removeAttribute('tabindex');
       }
-      g.setAttribute('aria-label', `${ruleText(rule)}: destek ${ratioText(rule.support)}, güven ${ratioText(rule.confidence)}, kaldıraç ${ratioText(rule.lift)}`);
+      g.setAttribute('aria-label', `${ruleText(rule)}: destek ${ratioText(rule.support)}, güven ${ratioText(rule.confidence)}, lift ${ratioText(rule.lift)}`);
       const [ring, dot] = [g.children[0], g.children[1]];
       ring.setAttribute('r', String(r1(r + 4)));
       ring.setAttribute('visibility', key === selKey ? 'visible' : 'hidden');

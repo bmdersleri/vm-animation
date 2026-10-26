@@ -105,7 +105,7 @@ export function mountBirliktelikOlculeriParams(host: HTMLElement, player: StepPl
   };
   const sSup = slider('minSupport', 'min_support', SUPPORT.min, SUPPORT.max, (v) => player.setParams({ minSupport: snapSupport(v) }));
   const sConf = slider('minConfidence', 'min güven', CONFIDENCE.min, CONFIDENCE.max, (v) => player.setParams({ minConfidence: snapConfidence(v) }));
-  const sLift = slider('minLift', 'min kaldıraç', LIFT.min, LIFT.max, (v) => player.setParams({ minLift: snapLift(v) }));
+  const sLift = slider('minLift', 'min lift', LIFT.min, LIFT.max, (v) => player.setParams({ minLift: snapLift(v) }));
 
   // ---- reset ----
   const reset = el('button', { type: 'button', class: 'bk-reset', 'data-ctl': 'reset' }, 'Sıfırla');
@@ -150,7 +150,7 @@ export function mountBirliktelikOlculeriParams(host: HTMLElement, player: StepPl
     if (Number(sLift.input.value) !== liftPos) sLift.input.value = String(liftPos);
     setText(sSup.out, `min_support = ${formatNumber(sup, 2)}`);
     setText(sConf.out, `min güven = ${formatNumber(conf, 2)}`);
-    setText(sLift.out, lift === 0 ? 'min kaldıraç: kapalı' : `min kaldıraç = ${formatNumber(lift, 2)}`);
+    setText(sLift.out, lift === 0 ? 'min lift: kapalı' : `min lift = ${formatNumber(lift, 2)}`);
   }
   sync();
   player.subscribe(sync);

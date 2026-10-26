@@ -105,7 +105,7 @@ export const concepts: ConceptEntry[] = [
   { id: 'k-secimi', chapter: 7, chapterTitle: CH[7], title: 'k sayısının seçimi', status: 'hazir', href: 'k-secimi/' },
   { id: 'dbscan', chapter: 7, chapterTitle: CH[7], title: 'DBSCAN', status: 'hazir', href: 'dbscan/' },
   { id: 'dendrogram', chapter: 7, chapterTitle: CH[7], title: 'Hiyerarşik kümeleme ve dendrogram', status: 'hazir', href: 'dendrogram/' },
-  { id: 'birliktelik-olculeri', chapter: 8, chapterTitle: CH[8], title: 'Destek, güven ve kaldıraç', status: 'hazir', href: 'birliktelik-olculeri/' },
+  { id: 'birliktelik-olculeri', chapter: 8, chapterTitle: CH[8], title: 'Destek, güven ve lift', status: 'hazir', href: 'birliktelik-olculeri/' },
   { id: 'apriori', chapter: 8, chapterTitle: CH[8], title: 'Apriori ve FP-Growth', status: 'hazir', href: 'apriori/' },
   { id: 'bagging', chapter: 9, chapterTitle: CH[9], title: 'Bootstrap ve bagging', status: 'hazir', href: 'bagging/' },
   { id: 'random-forest', chapter: 9, chapterTitle: CH[9], title: 'Random Forest, OOB ve öznitelik önemi', status: 'hazir', href: 'random-forest/' },

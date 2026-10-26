@@ -96,7 +96,7 @@ describe('birliktelik-olculeri scene', () => {
     expect((host.querySelector('.bk-gauge-fill') as HTMLElement).style.width).toBe('63.6%');
     expect(Number(attr(host, '[data-base-line]', 'data-base-line'))).toBeCloseTo(12 / 18, 9);
     expect((host.querySelector('.bk-gauge-base') as HTMLElement).style.left).toBe('66.7%');
-    expect(host.querySelector('[data-lift="forward"]')!.textContent).toBe('kaldıraç(Ekmek → Süt) = 0,636 / 0,667 = 0,955');
+    expect(host.querySelector('[data-lift="forward"]')!.textContent).toBe('lift(Ekmek → Süt) = 0,636 / 0,667 = 0,955');
     expect(host.querySelector('[data-lift="backward"]')).toBeNull();
     fin(scene, player);
   });

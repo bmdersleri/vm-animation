@@ -33,7 +33,7 @@ describe('birliktelik-olculeri scenario', () => {
     expect(text('tuzak')).toContain(`${c('sut')} / ${n} = 0,667`);
     expect(text('tuzak')).toContain('0,636 / 0,667 = 0,955');
     expect(text('gercek')).toContain(`${c('yumurta', 'sut')} / ${c('yumurta')} = 0,900`);
-    expect(text('gercek')).toContain('kaldıraç 1,350');
+    expect(text('gercek')).toContain('lift 1,350');
     expect(text('gercek')).toContain('için de 1,350 (güveni 0,750');
     const all = rules(tx, 0.2, 0.5);
     const kept = all.filter((r) => r.lift > 1.1 + 1e-9);
@@ -44,7 +44,7 @@ describe('birliktelik-olculeri scenario', () => {
     expect(text('kurallar')).toContain(`${all.length} kural ${spots} noktada`);
     expect(text('suzgec')).toContain(`${kept.length} kuralı bırakır`);
     expect(text('suzgec')).toContain(`${all.length - kept.length} kural soluklaşır`);
-    expect(text('suzgec')).toContain('{Ekmek, Yumurta} → Süt (güven 1,000, kaldıraç 1,500)');
+    expect(text('suzgec')).toContain('{Ekmek, Yumurta} → Süt (güven 1,000, lift 1,500)');
   });
 
   it('steps choose the rules the spec names', () => {

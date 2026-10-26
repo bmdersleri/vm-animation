@@ -15,20 +15,20 @@ describe('birliktelik-olculeri view', () => {
     expect(confidenceStrip(tx, ['ekmek'], ['sut'])).toBe('güven(Ekmek → Süt) = 7 / 11 = 0,636');
     expect(confidenceStrip(tx, ['sut'], ['ekmek'])).toBe('güven(Süt → Ekmek) = 7 / 12 = 0,583');
     expect(baseStrip(tx, ['sut'])).toBe('taban oran = destek(Süt) = 12 / 18 = 0,667');
-    expect(liftStrip(tx, ['ekmek'], ['sut'])).toBe('kaldıraç(Ekmek → Süt) = 0,636 / 0,667 = 0,955');
+    expect(liftStrip(tx, ['ekmek'], ['sut'])).toBe('lift(Ekmek → Süt) = 0,636 / 0,667 = 0,955');
     expect(liftStrip(tx, ['yumurta'], ['sut'])).toContain('= 1,350');
-    expect(liftStrip(tx, ['sut'], ['yumurta'])).toBe('kaldıraç(Süt → Yumurta) = 0,750 / 0,556 = 1,350');
+    expect(liftStrip(tx, ['sut'], ['yumurta'])).toBe('lift(Süt → Yumurta) = 0,750 / 0,556 = 1,350');
   });
 
   it('undefined confidence shows — (tanımsız)', () => {
     const noBread = tx.map((b) => b.filter((i) => i !== 'ekmek'));
     expect(confidenceStrip(noBread, ['ekmek'], ['sut'])).toBe(`güven(Ekmek → Süt) = 0 / 0 = ${UNDEFINED}`);
-    expect(liftStrip(noBread, ['ekmek'], ['sut'])).toBe(`kaldıraç(Ekmek → Süt) = ${UNDEFINED}`);
+    expect(liftStrip(noBread, ['ekmek'], ['sut'])).toBe(`lift(Ekmek → Süt) = ${UNDEFINED}`);
     // an unknown consequent has no base rate, so the lift is undefined while the confidence is 0
     const m = measures(noBread, ['sut'], ['ekmek']);
     expect(m.confidence).toBe(0);
     expect(m.lift).toBeNull();
-    expect(liftStrip(noBread, ['sut'], ['ekmek'])).toBe(`kaldıraç(Süt → Ekmek) = ${UNDEFINED}`);
+    expect(liftStrip(noBread, ['sut'], ['ekmek'])).toBe(`lift(Süt → Ekmek) = ${UNDEFINED}`);
     for (const s of [confidenceStrip([], ['ekmek'], ['sut']), supportStrip([], ['ekmek']), baseStrip([], ['sut'])]) {
       expect(s).not.toMatch(/NaN|Infinity|undefined/);
     }

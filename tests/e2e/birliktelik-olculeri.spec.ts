@@ -17,7 +17,7 @@ const sceneSettled = (page: Page) => settled(() => page.evaluate(() => [
 
 test('birliktelik-olculeri: page opens', async ({ page }) => {
   await page.goto(PAGE);
-  await expect(page.locator('h1.title')).toHaveText('Destek, güven ve kaldıraç');
+  await expect(page.locator('h1.title')).toHaveText('Destek, güven ve lift');
   await expect(stepCount(page)).toHaveText(`Adım 1 / ${STEPS}`);
 });
 

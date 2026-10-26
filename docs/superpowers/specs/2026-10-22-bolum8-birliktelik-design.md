@@ -233,6 +233,10 @@ başlık tablosu (ürün, toplam sayı); eklenen fişin yolu vurgulu.
 - Kitabın alternatifler tablosu conviction ve "leverage"ı "kaldıracın farklı formülasyonları"
   diye anar; mlxtend'de `leverage` = destek(X∪Y) − destek(X)·destek(Y) farktır, `lift`
   (kitabın kaldıracı) oran. Sayfa "kaldıraç (lift)" yazar.
+  **2026-10-26 (kitap v0.2):** kitap artık lift = "lift (ilgi oranı)", leverage = "kaldıraç"
+  der. Sayfa buna göre güncellendi: başlık "Destek, güven ve lift", terim "lift (ilgi
+  oranı)", sonra "lift"; Lab notu leverage'ı kaldıraç diye tanıtır. Bu belgenin geri kalanında
+  "kaldıraç" lift anlamındadır.
 - Sayfa Apriori'yi min_support 0,2 ile adım adım gösterir; kitap 0,5 / 0,3 / 0,15 sayılarını
   verir (sayfanın eşik taramasında hepsi var).
 - Sayfa FP-ağacını çizer ve koşullu örüntü tabanını bir örnekle gösterir; kitapta yalnız akış

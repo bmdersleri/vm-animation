@@ -175,7 +175,7 @@ describe('birliktelik-olculeri controls', () => {
     expect(player.state.params.minLift).toBe(1.2);
     move(lift, 0.5);
     expect(player.state.params.minLift).toBe(0);
-    expect(params.textContent).toContain('min kaldıraç: kapalı');
+    expect(params.textContent).toContain('min lift: kapalı');
     expect(snapLift(1.1)).toBe(1.1);
     scene.destroy();
   });

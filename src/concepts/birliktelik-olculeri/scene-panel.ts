@@ -125,7 +125,7 @@ export function drawPanel(panel: HTMLElement, spec: PanelSpec): void {
         el('p', 'bk-note', `Seçili kural: ${ruleText({ x: xs, y: ys })}`),
         row('Destek', ratioText(m.support), { 'data-sel-support': String(m.support) }),
         row('Güven', ratioText(m.confidence), { 'data-sel-confidence': String(m.confidence) }),
-        row('Kaldıraç', ratioText(m.lift), { 'data-sel-lift': String(m.lift) }),
+        row('Lift', ratioText(m.lift), { 'data-sel-lift': String(m.lift) }),
       );
     }
     appendCode(panel, spec.code);

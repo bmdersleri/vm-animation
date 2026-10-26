@@ -6,7 +6,7 @@ import { mountBirliktelikOlculeriParams } from './controls';
 import { mountBirliktelikOlculeriScene } from './scene';
 
 export const birliktelikOlculeriPage: ConceptPage<BirliktelikOlculeriParams> = {
-  title: 'Destek, güven ve kaldıraç',
+  title: 'Destek, güven ve lift',
   chapter: 'Bölüm 8 · Birliktelik Kuralı Madenciliği',
   scenario: birliktelikOlculeriScenario,
   mountScene: mountBirliktelikOlculeriScene,
