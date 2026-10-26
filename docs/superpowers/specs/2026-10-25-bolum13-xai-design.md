@@ -33,7 +33,8 @@
     karekökü, çekirdek √exp(−d² / w²), w = 0,75 · √3, `Ridge(alpha=1)`); geçici ortamdaki
     `lime`'la tohum 42, 0, 1, 7'de 1e-15 içinde aynı. Kesişim 0,146; vekilin bu müşteri için
     tahmini 0,737 (model 0,945); ağırlıklı R² 0,693.
-  - Tohum değişince LIME katsayısı (tenure) 0,533–0,547 arasında oynar (5000 örnek).
+  - Tohum değişince LIME katsayısı (tenure) 11 tohumda (42 ve 0–9) 0,525–0,551 arasında oynar
+    (5000 örnek), 50 örnekle 0,404–0,554 (kitap v0.2 `bolum13_kod09` ile aynı; sayfa veriden okur).
   - 100 test müşterisinde SHAP ile LIME'ın (tohum 42) en etkili özelliği 24 müşteride farklı.
     Örnek: satır 77 (test sırası 12): p = 0,055; SHAP tenure +0,200, MonthlyCharges −0,273,
     TotalCharges −0,118; LIME tenure +0,472 (en etkili), vekilin tahmini 0,602.
@@ -256,8 +257,8 @@ Adım 10'da **kod paneli** (`core/plot/code-panel.ts`).
 7. **Vekil modelin kendisi değil.** Vekilin bu müşteri için tahmini 0,146 + 0,540 + 0,074 − 0,023
    = 0,737; model 0,945; ağırlıklı R² 0,693 (veriden). Kitabın "Yaygın hata"sı: "`tenure > 41.25`
    ormanın kuralı değil, vekilin bölmesidir."
-8. **Kararlılık.** 11 tohumda tenure katsayısı: 5000 örnekle dar aralık (ör. 0,533–0,547), 50
-   örnekle geniş aralık (veriden); iki satırlık nokta şeridi, aralıklar yazılı. Kitabın üçüncü
+8. **Kararlılık.** 11 tohumda tenure katsayısı: 5000 örnekle dar aralık (0,525–0,551), 50
+   örnekle geniş aralık (0,404–0,554; ikisi de veriden, kitabın `bolum13_kod09` çıktısıyla aynı); iki satırlık nokta şeridi, aralıklar yazılı. Kitabın üçüncü
    tuzağı: `random_state` sabitlenmezse aynı müşteri farklı açıklama alır.
 9. **SHAP ile LIME.** Önce müşteri 301: kitabın kod06 tablosu (iki yöntemde aynı sıra:
    tenure, MonthlyCharges, TotalCharges). Sonra müşteri 77: SHAP'ta en büyük katkı
