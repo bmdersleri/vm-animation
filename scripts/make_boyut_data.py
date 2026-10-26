@@ -29,6 +29,7 @@ from sklearn.decomposition import PCA
 from sklearn.feature_selection import RFE, SelectKBest, VarianceThreshold, f_classif
 from sklearn.linear_model import LogisticRegression
 from sklearn.manifold import TSNE
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 REPO = Path(__file__).resolve().parent.parent
@@ -298,7 +299,30 @@ def ex004() -> tuple[dict, dict]:
     expect("round1 |beta|", rfe_page["yok"]["rounds"][0]["coef"],
            [0.0022, 0.0000, 0.0219, 0.0939, 0.0033, 0.1511, 0.6286, 0.0266], 4)
     inter = sorted(set(kbest[4]) & set(rfe_fix["yok"]["support"]["4"]), key=COLS.index)
-    check("intersection", inter == ["musteriKidemAy", "destekTaleplerinSayisi", "odemeGecikmesi"], inter)
+    check("intersection k=4 yok", inter == ["musteriKidemAy", "destekTaleplerinSayisi", "odemeGecikmesi"], inter)
+
+    # The book's setup (v0.2): k = 2 from the F-score gap; scaled RFE in a Pipeline on the
+    # 7 columns VarianceThreshold kept. The page's 8-column scaled path drops sabitDeger
+    # (all zeros after scaling, |beta| = 0) in round 1 and then plays the same rounds.
+    book_pair = ["musteriKidemAy", "destekTaleplerinSayisi"]
+    check("kbest2", kbest[2] == book_pair, kbest[2])
+    check("rfe std 2", rfe_fix["standard"]["support"]["2"] == book_pair, rfe_fix["standard"]["support"]["2"])
+    kept = df[vt[0.01]]
+    pipe = Pipeline([("olcekleyici", StandardScaler()),
+                     ("rfe", RFE(estimator=LogisticRegression(max_iter=1000), n_features_to_select=2))])
+    pipe.fit(kept, y)
+    book_rfe = pipe.named_steps["rfe"]
+    check("book pipeline rfe 2", list(kept.columns[book_rfe.get_support()]) == book_pair,
+          list(kept.columns[book_rfe.get_support()]))
+    book_rank = dict(zip(kept.columns, (int(v) for v in book_rfe.ranking_)))
+    check("book ranking", book_rank == {"musteriKidemAy": 1, "destekTaleplerinSayisi": 1, "gurultuluOznitelik": 2,
+                                        "hizmetSayisi": 3, "odemeGecikmesi": 4, "aylikUcret": 5, "toplamUcret": 6},
+          book_rank)
+    page_tail = [COLS[c] for c in rfe_page["standard"]["order"][1:]]
+    book_tail = sorted(book_rank, key=lambda c: (-book_rank[c], kept.columns.get_loc(c)))
+    check("scaled path = book path after sabitDeger", page_tail[:5] == book_tail[:5], (page_tail, book_tail))
+    inter2 = sorted(set(kbest[2]) & set(rfe_fix["standard"]["support"]["2"]), key=COLS.index)
+    check("intersection book", inter2 == book_pair, inter2)
 
     page = {"columns": COLS, "values": [df[c].tolist() for c in COLS], "churn": churn,
             "variance": fls(var.variances_), "rfe": rfe_page}

@@ -74,7 +74,8 @@ describe('mountSecimParams', () => {
     player.goto(8);
     expect(checked(host, 'scaling')).toBe('standard');
     player.goto(9);
-    expect(checked(host, 'scaling')).toBe('yok');
+    expect(checked(host, 'scaling')).toBe('standard');
+    expect(slider(host, 'nSelect').value).toBe('2');
     for (let i = 0; i < 10; i++) {
       player.goto(i);
       for (const g of Object.values(groups(host))) {

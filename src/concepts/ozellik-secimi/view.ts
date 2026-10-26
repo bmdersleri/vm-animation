@@ -124,7 +124,7 @@ export function deriveSecimView(index: number, p: SecimParams): SecimView {
       rfe: rfeNames,
       both: kbestNames.filter((n) => rfeNames.includes(n)),
       kbestTitle: `SelectKBest (k = ${p.k})`,
-      rfeTitle: `RFE (n = ${p.nSelect})`,
+      rfeTitle: `RFE (n = ${p.nSelect}${p.scaling === 'standard' ? ', ölçekli' : ''})`,
     }
     : null;
 
@@ -180,7 +180,7 @@ export function deriveSecimView(index: number, p: SecimParams): SecimView {
         return `${finished ? `${head} → ${join(rfeNames)}` : `${head}: turlar yeniden oynuyor`}\n${rounds()}`;
       }
       default:
-        return `SelectKBest ∩ RFE → ${join(intersect!.both)}`;
+        return `SelectKBest ∩ ${p.scaling === 'standard' ? 'StandardScaler + RFE' : 'RFE'} → ${join(intersect!.both)}`;
     }
   }
 

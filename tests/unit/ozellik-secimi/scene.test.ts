@@ -38,13 +38,13 @@ describe('secim scene', () => {
     const { el, player } = setup();
     player.goto(9);
     expect(one(el, '.secim-scene').getAttribute('data-view')).toBe('intersect');
-    expect(texts(el, 'div.intersect ul.kbest li')).toEqual(
-      ['hizmetSayisi', 'musteriKidemAy', 'destekTaleplerinSayisi', 'odemeGecikmesi']);
-    expect(texts(el, 'div.intersect ul.both li')).toEqual(['musteriKidemAy', 'destekTaleplerinSayisi', 'odemeGecikmesi']);
-    expect(all(el, 'div.intersect ul.rfe li')).toHaveLength(4);
-    expect(one(el, 'section.sel-kbest h3').textContent).toBe('SelectKBest (k = 4)');
+    const pair = ['musteriKidemAy', 'destekTaleplerinSayisi'];
+    expect(texts(el, 'div.intersect ul.kbest li')).toEqual(pair);
+    expect(texts(el, 'div.intersect ul.both li')).toEqual(pair);
+    expect(texts(el, 'div.intersect ul.rfe li')).toEqual(pair);
+    expect(one(el, 'section.sel-kbest h3').textContent).toBe('SelectKBest (k = 2)');
     expect(one(el, 'section.sel-both h3').textContent).toBe('ortak');
-    expect(one(el, 'section.sel-rfe h3').textContent).toBe('RFE (n = 4)');
+    expect(one(el, 'section.sel-rfe h3').textContent).toBe('RFE (n = 2, ölçekli)');
     expect(one(el, 'p.rule').textContent).toContain('PCA sıkıştırır');
     expect(one(el, 'p.rule').textContent).toContain('yalnızca eğitim verisiyle');
     expect((one(el, 'div.intersect') as HTMLElement).hidden).toBe(false);

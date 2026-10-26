@@ -163,7 +163,9 @@ describe('ozellikSecimiScenario', () => {
     p.goto(8);
     expect(p.state.params.scaling).toBe('standard');
     p.goto(9);
-    expect(p.state.params.scaling).toBe('yok');
+    expect(p.state.params.scaling).toBe('standard');
+    expect(p.state.params.k).toBe(2);
+    expect(p.state.params.nSelect).toBe(2);
     expect(p.state.params.rounds).toBe(ROUNDS_ALL);
   });
 

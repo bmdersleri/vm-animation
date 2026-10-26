@@ -28,6 +28,8 @@ export const RFE_STEPS: readonly number[] = [5, 6, 7, 8, 9];
 
 const B = { vt: 0.01 as VtThreshold, k: 4, nSelect: 4 };
 const YOK = { ...B, scaling: 'yok' as Scaling };
+/** The book's setup (ch04, 004): k = 2 from the F-score gap, scaled RFE with the same n. */
+const BOOK = { ...B, k: 2, nSelect: 2, scaling: 'standard' as Scaling };
 
 export const ozellikSecimiScenario: Scenario<SecimParams> = {
   defaults: { ...YOK, rounds: 0 },
@@ -108,10 +110,10 @@ export const ozellikSecimiScenario: Scenario<SecimParams> = {
     {
       id: 'kesisim',
       title: 'Kesişim ve kural',
-      text: 'Birden fazla yöntemin kesişimi (intersection) daha güvenilir: SelectKBest ile RFE’nin ortak seçtikleri musteriKidemAy, destekTaleplerinSayisi ve odemeGecikmesi. Seçim de yalnız eğitim verisiyle fit edilir.',
+      text: 'Kitap k’yı F-skorlarındaki boşluktan seçer: 94,66’dan sonra 2,86 gelir, k = 2. Ölçekli RFE (Pipeline + StandardScaler) de aynı iki sütunu seçer: musteriKidemAy ve destekTaleplerinSayisi. Yöntemlerin kesişimi (intersection) daha güvenilir. Seçim de yalnız eğitim verisiyle fit edilir.',
       labText: `Tutulacak sütun sayısını ve ölçeklemeyi değiştir. SelectKBest ile RFE'nin ortak seçtikleri sahnede canlı okunur.`,
       term: 'kesişim (intersection)',
-      params: { ...YOK, rounds: ROUNDS_ALL },
+      params: { ...BOOK, rounds: ROUNDS_ALL },
     },
   ],
 };

@@ -50,7 +50,8 @@ describe('secim view', () => {
       'StandardScaler + RFE → hizmetSayisi · musteriKidemAy · gurultuluOznitelik · destekTaleplerinSayisi\ntur 1: sabitDeger · tur 2: toplamUcret · tur 3: aylikUcret · tur 4: odemeGecikmesi',
     );
     expect(V(8, { rounds: 2 }).strip.split('\n')[0]).toBe('StandardScaler + RFE: turlar yeniden oynuyor');
-    expect(V(9).strip).toBe(
+    expect(V(9).strip).toBe('SelectKBest ∩ StandardScaler + RFE → musteriKidemAy · destekTaleplerinSayisi');
+    expect(V(9, { k: 4, nSelect: 4, scaling: 'yok' }).strip).toBe(
       'SelectKBest ∩ RFE → musteriKidemAy · destekTaleplerinSayisi · odemeGecikmesi',
     );
   });
@@ -65,7 +66,7 @@ describe('secim view', () => {
     expect(V(4).note).toBe('k = 4: hizmetSayisi, musteriKidemAy, destekTaleplerinSayisi, odemeGecikmesi.');
     expect(V(5).note).toBe('n = 4, ölçeksiz: musteriKidemAy, gurultuluOznitelik, destekTaleplerinSayisi, odemeGecikmesi.');
     expect(V(8).note).toBe('n = 4, StandardScaler: hizmetSayisi, musteriKidemAy, gurultuluOznitelik, destekTaleplerinSayisi.');
-    expect(V(9).note).toBe('Kesişim: musteriKidemAy, destekTaleplerinSayisi, odemeGecikmesi.');
+    expect(V(9).note).toBe('Kesişim: musteriKidemAy, destekTaleplerinSayisi.');
   });
 
   it('step 1: eight rows in book order', () => {
@@ -207,20 +208,26 @@ describe('secim view', () => {
     expect(V(8, { rounds: 0 }).rows[4].value).toBe('0,0000');
   });
 
-  it('step 10: intersection of three', () => {
+  it("step 10: the book's setup, k = 2 and scaled RFE pick the same pair", () => {
     const v = V(9);
     expect(v.rows.every((r) => r.hidden)).toBe(true);
+    const pair = ['musteriKidemAy', 'destekTaleplerinSayisi'];
     expect(v.intersect).toEqual({
-      kbest: ['hizmetSayisi', 'musteriKidemAy', 'destekTaleplerinSayisi', 'odemeGecikmesi'],
-      rfe: ['musteriKidemAy', 'gurultuluOznitelik', 'destekTaleplerinSayisi', 'odemeGecikmesi'],
-      both: ['musteriKidemAy', 'destekTaleplerinSayisi', 'odemeGecikmesi'],
-      kbestTitle: 'SelectKBest (k = 4)',
-      rfeTitle: 'RFE (n = 4)',
+      kbest: pair,
+      rfe: pair,
+      both: pair,
+      kbestTitle: 'SelectKBest (k = 2)',
+      rfeTitle: 'RFE (n = 2, ölçekli)',
     });
+    expect(secim.kbest['2']).toEqual(pair);
+    expect(secim.rfe.standard.support['2']).toEqual(pair);
     expect(v.rule).toBe(true);
     expect(V(8).rule).toBe(false);
-    expect(V(9, { k: 2, nSelect: 2 }).intersect!.both).toEqual(['destekTaleplerinSayisi']);
-    expect(V(9, { k: 2, nSelect: 2 }).intersect!.kbestTitle).toBe('SelectKBest (k = 2)');
+    expect(V(9, { scaling: 'yok' }).intersect!.both).toEqual(['destekTaleplerinSayisi']);
+    expect(V(9, { scaling: 'yok' }).intersect!.rfeTitle).toBe('RFE (n = 2)');
+    const four = V(9, { k: 4, nSelect: 4, scaling: 'yok' }).intersect!;
+    expect(four.both).toEqual(['musteriKidemAy', 'destekTaleplerinSayisi', 'odemeGecikmesi']);
+    expect(four.rfe).toEqual(['musteriKidemAy', 'gurultuluOznitelik', 'destekTaleplerinSayisi', 'odemeGecikmesi']);
   });
 
   it('nSelect 1–7 and both scalings match the fixture', () => {

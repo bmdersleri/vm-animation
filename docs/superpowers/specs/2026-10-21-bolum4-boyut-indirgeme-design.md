@@ -181,7 +181,7 @@ Kontrol değerleri (testlerde sabit; kitabın çıktısıyla aynı):
   - Kalan dört: musteriKidemAy, **gurultuluOznitelik**, destekTaleplerinSayisi, odemeGecikmesi. Sıra, sklearn'ün `ranking_`'i ile aynı (toplamUcret 5, sabitDeger 4, aylikUcret 3, hizmetSayisi 2).
   - Tur 1'in katsayıları: destek 0,6286 · gürültü 0,1511 · kıdem 0,0939 · ödeme 0,0266 · hizmet 0,0219 · sabit 0,0033 · aylık 0,0022 · toplam 0,0000.
 - **RFE, `StandardScaler` sonrası:** hizmetSayisi, musteriKidemAy, gurultuluOznitelik, destekTaleplerinSayisi (sıra: sabitDeger 5, toplamUcret 4, aylikUcret 3, odemeGecikmesi 2). Gürültü yine seçilir.
-- **Kesişim** (`SelectKBest` ∩ kitabın RFE'si): musteriKidemAy, destekTaleplerinSayisi, odemeGecikmesi.
+- **Kesişim** (kitap v0.2'nin kurulumu: F-skorlarındaki boşluktan `k = 2`, `Pipeline` + `StandardScaler` içinde RFE `n_features_to_select=2`): `SelectKBest` ve RFE ikisi de musteriKidemAy, destekTaleplerinSayisi'ni seçer; kesişim bu ikisidir. (`k = 4`, ölçeksiz RFE ile kesişim: musteriKidemAy, destekTaleplerinSayisi, odemeGecikmesi.)
 
 ### Adımlar (Ders) — 10 adım
 
@@ -199,7 +199,7 @@ Kontrol değerleri (testlerde sabit; kitabın çıktısıyla aynı):
 7. **Turlar 2–4.** Her turda model yeniden eğitilir, çubuklar yeni katsayılarla yeniden boylanır, en kısası elenir: sabitDeger → aylikUcret → hizmetSayisi. Turlar bir adım içinde sırayla oynar. Terim: RFE.
 8. **Gürültü seçildi.** Kalan dört çubuk: kıdem, **gürültü**, destek, ödeme. `gurultuluOznitelik` vurgulanır. Mesaj: ölçeksiz veride katsayı sütunun birimine bağlıdır; gürültünün standart sapması 1, kıdeminki ≈ 17 olduğu için gürültünün katsayısı büyük görünür (kitabın Hata 2'si). Terim: ölçek (scale).
 9. **Ölçekleyince.** `StandardScaler` sonrası RFE yeniden oynar; seçim hizmetSayisi, musteriKidemAy, gurultuluOznitelik, destekTaleplerinSayisi olur. Gürültü yine içeride. Mesaj (kitabın cümlesi): sarmalayıcı yöntemler de kusursuz değil. Terim: `StandardScaler`.
-10. **Kesişim ve kural.** İki sütun yan yana: `SelectKBest` seçimi ve RFE seçimi; ortak üç sütun ortada birleşir. Kitabın önerisi: birden fazla yöntemin kesişimine bakın. Altında bölümün kuralı: "PCA sıkıştırır, özellik seçimi eler, t-SNE yalnızca gösterir"; seçim de yalnızca eğitim verisiyle `fit` edilir (kitabın seçim Hata 1'i). Terim: kesişim (intersection).
+10. **Kesişim ve kural.** İki sütun yan yana: `SelectKBest` (k = 2) seçimi ve ölçekli RFE (n = 2) seçimi; ikisi de aynı iki sütunu seçer, ortak sütun ortada (kitap v0.2'nin sonucu). Kitabın önerisi: birden fazla yöntemin kesişimine bakın. Altında bölümün kuralı: "PCA sıkıştırır, özellik seçimi eler, t-SNE yalnızca gösterir"; seçim de yalnızca eğitim verisiyle `fit` edilir (kitabın seçim Hata 1'i). Terim: kesişim (intersection).
 
 Adım başlıklarının ve metinlerin son hâli builder'ın işidir. Akış ve her adımın göstermesi gereken an bağlayıcıdır. Her adıma Ders'te görünen bir `term` verilir.
 
@@ -209,10 +209,15 @@ Adım başlıklarının ve metinlerin son hâli builder'ın işidir. Akış ve h
 |---|---|---|
 | Varyans eşiği (adım 2) | 0 / 0,01 / 1 / 10 | 0,01 |
 | k (adım 3–5) | 1–7, kaydırıcı | 4 |
-| Seçilecek sütun sayısı (adım 6–10) | 1–7, kaydırıcı | 4 |
-| Ölçekleme (adım 6–10) | Yok / StandardScaler | Adıma bağlı (6–8: yok; 9: StandardScaler; 10: yok, kesişim kitabın ölçeksiz RFE'siyle) |
+| Seçilecek sütun sayısı (adım 6–10) | 1–7, kaydırıcı | 4 (adım 10: 2) |
+| Ölçekleme (adım 6–10) | Yok / StandardScaler | Adıma bağlı (6–8: yok; 9–10: StandardScaler; adım 10'da k = 2, kitabın kurulumu) |
 
 RFE tek tek eler; `n_features_to_select`'in her değeri için seçim, betiğin kaydettiği tam eleme sırasından okunur (ölçeksiz ve ölçekli iki sıra). Betik, her değer için sklearn'ün `RFE` sonucunun bu sırayla aynı olduğunu doğrular.
+
+### Kitapla farklar (kitap v0.2, 2026-10-26)
+
+- Kitabın 004 örneği RFE'yi varyans filtresinden geçen 7 sütunla (`filtreliCerceve`) çalıştırır; sayfa 8 sütunla başlar. Ölçekli yolda `sabitDeger` ölçeklemeden sonra hep 0 olduğu için tur 1'de elenir, sonraki turlar kitabın sırasıyla aynıdır (betik bunu denetler); bu yüzden sayfadaki tur numaraları kitabın `ranking_`'inden bir fazladır.
+- Kitap `k = 2` seçer; sayfa 4.–9. adımlarda `k = 4` / `n = 4` ile gürültünün nasıl seçildiğini gösterir (kitap bu durumu metinde anlatır), son adımda kitabın `k = 2` kurulumuna döner.
 
 ### Lab modu
 

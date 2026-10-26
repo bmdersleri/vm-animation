@@ -35,8 +35,8 @@ test('ders keyboard walkthrough', async ({ page }) => {
     await page.waitForTimeout(settleFor(i + 1, 500));
   }
   await page.waitForTimeout(1000);
-  await expect(page.locator('ul.both li')).toHaveCount(3);
-  await expect(page.locator('.formula')).toContainText('SelectKBest ∩ RFE');
+  await expect(page.locator('ul.both li')).toHaveText(['musteriKidemAy', 'destekTaleplerinSayisi']);
+  await expect(page.locator('.formula')).toContainText('SelectKBest ∩ StandardScaler + RFE');
   await page.keyboard.press('ArrowLeft');
   await expect(stepCount(page)).toHaveText(`Adım ${STEPS - 1} / ${STEPS}`);
 });
@@ -212,7 +212,7 @@ test('lab: no large empty band in the stage', async ({ page }, info) => {
       };
       let top = Infinity;
       let bottom = -Infinity;
-      for (const el of document.querySelectorAll('.secim-scene :is(.col-name, rect.bar, path.dots, .intersect li)')) {
+      for (const el of document.querySelectorAll('.secim-scene :is(.col-name, rect.bar, path.dots, .intersect li, .intersect p.rule)')) {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0 || faded(el)) continue;
         if (r.top >= f.top - 1) continue; // the strip itself
