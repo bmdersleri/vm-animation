@@ -127,7 +127,7 @@ describe('mountIqrExtra', () => {
     const ps = [...host.querySelectorAll<HTMLElement>('.iqr-extra p')].filter((p) => !p.hidden);
     const t = ps.map((p) => p.textContent);
     expect(t).toEqual([
-      'Bıyıklar sınırın kendisinde değil, sınırın içindeki en uç gözlemde biter: 29,85 ve 60,20 (matplotlib’in kuralı). Kitabın Şekil 3.2 açıklaması bıyığı sınıra kadar anlatır.',
+      'Bıyıklar sınıra kadar uzamaz; sınırların içinde kalan en uç gözlemde biter: alt bıyık 29,85’te, üst bıyık 60,20’de (matplotlib ve seaborn bu kuralı izler; kitabın Şekil 3.2’si).',
       'Sekiz gözlemde, ddof = 0 ile hiçbir z değeri √7 ≈ 2,65’i geçemez; bu yüzden |z| > 3 kuralı burada hiçbir şeyi yakalayamaz.',
       'Kitabın hata alıştırmasında üst sınır q3 + 1.5 * q1 diye yazılmış; doğrusu q3 + 1.5 * (q3 - q1).',
       host.querySelector('p.live-note')!.textContent,

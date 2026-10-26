@@ -398,7 +398,7 @@ ${ID_NAME}: MDI ${f(RF.withId.mdi[idAt], 3)} (${rank(RF.withId.mdi)}) · permüt
               { id: 'cv', label: `${OOB_CV.cv.length} katlı CV`, value: cvMean, text: f(cvMean, 3) },
             ],
             folds: [...OOB_CV.cv],
-            sentence: `OOB modeli 1 kez eğitir: ${f(OOB_CV.seconds.oob, 2)} s · CV ${OOB_CV.cv.length} kez eğitir: ${f(OOB_CV.seconds.cv, 2)} s`,
+            sentence: `OOB modeli 1 kez eğitir: yaklaşık ${f(OOB_CV.seconds.oob, 2)} s · CV ${OOB_CV.cv.length} kez eğitir: yaklaşık ${f(OOB_CV.seconds.cv, 2)} s`,
           },
           chart: null,
         }

@@ -299,9 +299,6 @@ hatalı kodu, satır numaralı; hatalı satırlar sırayla işaretlenir. Adım 1
   0,184. Örüntü aynı.
 - Kitabın `bolum11_kod02` ve `kod04`'ündeki `LogisticRegression(max_iter=1000)` ölçeksiz veride
   yakınsamıyor (lbfgs uyarısı); kod03 ve kod05 ölçekli.
-- Kitap sızıntılı skorun neden yüksek olduğunu "komşuluk bilgisi" ile açıklar; testin pozitif
-  oranının %6'dan %47'ye çıkması (PR-AUC'nin tabanı) ikinci, daha büyük nedendir. Sayfa ikisini de
-  gösterir.
 - Kitabın Şekil 11.1 açıklaması (1313 / 87 → 1313 / 1313) doğru; sayfa aynı sayıları kullanır.
 
 ## Arayüzler

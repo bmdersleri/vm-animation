@@ -26,7 +26,7 @@ const line = (text: string, extra: Partial<CodeLine> = {}): CodeLine => ({ text,
 
 /** The book's faulty code, verbatim. Bug 1 sits on the text assignment, bug 4 on the unexplained threshold. */
 export const BUGGY_CODE: readonly CodeLine[] = [
-  line('# File: HataAyiklama.python'),
+  line('# File: HataAyiklama.py'),
   line('# Eşik karşılaştırmasında veri türü hatası vardır.'),
   line('# Bölme işlemi sıfıra bölme riski taşır.'),
   line('# Gizli bilgi doğrudan ekrana yazdırılmamalıdır.'),
@@ -40,13 +40,13 @@ export const BUGGY_CODE: readonly CodeLine[] = [
   line('    print("UYARI:", musteri_telefonu)', { bugs: [3] }),
   line(''),
   line('print(risk_orani_hesapla(3, 0))'),
-  line('# Çıktı: Program hata vermeden güvenli uyarı üretmelidir.'),
-  line('# Çıktı: Telefon numarası görünmemelidir.'),
+  line('# Sonuç: Program hata vermeden güvenli uyarı üretmelidir.'),
+  line('# Sonuç: Telefon numarası görünmemelidir.'),
 ];
 
 /** The book's corrected code; each changed line lists the bugs it fixes, once per bug; bug 4 (the missing rationale) sits on the unchanged threshold line, as a note that the fix is outside the code. */
 export const FIXED_CODE: readonly CodeLine[] = [
-  line('# File: HataAyiklama.python'),
+  line('# File: HataAyiklama.py'),
   line('# Sayısal değer açıkça float türüne dönüştürülür.'),
   line('# Sıfır payda için güvenli sonuç üretilir.'),
   line('# Kişisel veri yerine anonim müşteri kodu kullanılır.'),

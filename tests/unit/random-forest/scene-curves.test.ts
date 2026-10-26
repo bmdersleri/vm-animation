@@ -38,8 +38,8 @@ describe('curve scene', () => {
     // the five CV folds sit on the CV bar as small dots
     expect(host(el).querySelectorAll('circle.fold-dot')).toHaveLength(OOB_CV.cv.length);
     const sentence = host(el).querySelector('text.time-note')!.textContent!;
-    expect(sentence).toContain('0,27 s');
-    expect(sentence).toContain('1,23 s');
+    expect(sentence).toContain('yaklaşık 0,27 s');
+    expect(sentence).toContain('yaklaşık 1,33 s');
     expect(host(el).querySelectorAll('path.lc-series')).toHaveLength(0);
   });
 

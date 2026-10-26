@@ -108,7 +108,7 @@ Kontrol değerleri (pandas `quantile` doğrusal ara değer):
 - **Sınırlar, 1,5 katsayısıyla:** alt **16,73**, üst **82,38**.
 - **Sınırlar, 3,0 katsayısıyla (Lab):** alt −7,89, üst 107,00.
 - **Aykırı gözlem:** yalnızca 480,00.
-- **Bıyıklar:** sınırın içindeki en uç gözlemlerde biter, 29,85 ve 60,20 (matplotlib'in kuralı). Lab metni bunu bir cümleyle söyler, çünkü kitabın Şekil 3.2 açıklaması bıyığı sınıra kadar anlatır.
+- **Bıyıklar:** sınırın içindeki en uç gözlemlerde biter, 29,85 ve 60,20 (matplotlib'in kuralı). Lab metni bunu bir cümleyle söyler (kitap v0.2'nin Şekil 3.2 açıklamasıyla aynı: "Bıyıklar sınıra kadar uzamaz").
 - **Medyan** 48,05. **Ortalama** 100,49. Standart sapma, `ddof=0` ile (`scipy.stats.zscore` varsayılanı), 143,74.
 - **z(480):** (480 − 100,49) / 143,74 = **2,64**. Bu değer 3'ün altındadır. Sekiz gözlemde `ddof=0` ile hiçbir z değeri √7 ≈ 2,65'i geçemez. Lab metni bunu belirtir.
 - **Müdahale sonrası ortalama:**
@@ -339,7 +339,7 @@ Düzeltme:
 - **Veri:** Kitabın 002, 003, 004 ve 006 kod örnekleri aynen kullanıldı. Sayılar kitapla birebir aynı.
 - **Kırık eksen:** 0–100 TL doğrusal; 100'ün ötesi kırık eksende.
 - **Z-score adımı (10):** Kitabın IQR–Z-score karşılaştırma tablosunu, sekiz gözlemde z'nin 3'e ulaşamadığı somut bir anla gösterir. Standart sapma `ddof=0` ile alınır, `scipy.stats.zscore` varsayılanı gibi.
-- **Bıyık kuralı:** matplotlib'deki gibi sınır içindeki en uç gözleme kadar. Kitabın Şekil 3.2 cümlesiyle olan fark Lab metninde söylenir.
+- **Bıyık kuralı:** matplotlib'deki gibi sınır içindeki en uç gözleme kadar. Kitap v0.2'nin Şekil 3.2 açıklaması da aynı kuralı söyler; Lab metni onu izler.
 - **Birim gösterimi (3. ve 7. adımlar):** Ay → yıl → gün. Kitabın verisinde en yakın komşuyu üç kez değiştiren tek gösterim budur; kitabın kendi cümlesindeki iddia (final.md 462), bu veride en somut bu yolla görünür.
 - **Sızıntı adımı:** Kitabın 006 verisi ve `random_state=42`. Fit kapsamı farkı μ'yü 58,63'ten 52,69'a kaydırır.
 - **Ek düzeltme:** Naive Bayes şeridi bu dalda düzeltilir. Ayrı bir dal açılmaz.

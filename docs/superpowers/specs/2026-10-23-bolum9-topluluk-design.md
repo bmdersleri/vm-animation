@@ -233,7 +233,7 @@ ve permütasyon iki sütun.
 6. **OOB skoru.** 50 ağaç: her müşteri kendi OOB çoğunluğuyla tahmin edilir; doğru olanlar
    işaretlenir: OOB skoru = 21 / 25 = 0,840 (veriden). "Ayrı test kümesi ayırmadan."
 7. **OOB ≈ çapraz doğrulama.** Kitabın verisi (1000 gözlem, 15 öznitelik, 300 ağaç): OOB 0,899,
-   5 katlı CV 0,896. "OOB modeli bir kez eğitir; CV beş kez" (kitabın ölçtüğü 0,27 s / 1,23 s
+   5 katlı CV 0,896. "OOB modeli bir kez eğitir; CV beş kez" (kitabın bir çalıştırmada ölçtüğü yaklaşık 0,27 s / 1,33 s; kitap v0.2
    bir cümlede). `oob_score=True` satırı.
 8. **Kaç ağaç?** OOB – ağaç sayısı eğrisi 10 → 500: 10 ağaçta 0,798, 100–150 civarında ≈ 0,90'da
    doyar. "Bir noktadan sonra ağaç eklemek yalnız süre ekler."

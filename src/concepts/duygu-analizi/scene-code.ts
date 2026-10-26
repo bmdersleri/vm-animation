@@ -5,9 +5,9 @@ import type { SentimentView } from './view';
 
 /** The four bugs of the book's `DuyguHata` code, in the order the sweep marks them (kinds as the book's "Hata türleri" list). */
 export const BUGS: readonly CodeBug[] = [
-  { n: 1, kind: 'Mantık hatası', what: 'yorumlar liste yerine demet' },
+  { n: 1, kind: 'Niyet hatası (hata vermez)', what: 'yorumlar liste yerine demet' },
   { n: 2, kind: 'Tür ve veri hatası', what: 'boş metinle fit_transform' },
-  { n: 3, kind: 'Mantık hatası', what: 'olmayan satıra erişim (tek örnek var)' },
+  { n: 3, kind: 'Mantık hatası', what: 'olmayan satıra erişim (yalnızca 0 ve 1 var)' },
   { n: 4, kind: 'Tasarım hatası', what: 'stop-word listesi doğrulanmadan kullanılmış' },
 ];
 
@@ -20,7 +20,7 @@ export const BUGGY_CODE: readonly CodeLine[] = [
   { text: 'vektorlestirici = TfidfVectorizer(stop_words=durak_kelimeler)', bugs: [] },
   { text: 'matris = vektorlestirici.fit_transform("")', bugs: [2] },
   { text: 'print(matris[2])', bugs: [3] },
-  { text: '# Çıktı: Kod hata üretir.', bugs: [] },
+  { text: '# Çıktı: ValueError: Iterable over raw text documents expected, string object received.', bugs: [] },
 ];
 
 /** The book's corrected code (`DuyguDuzeltildi`, file header left out). */
@@ -37,7 +37,7 @@ export const FIXED_CODE: readonly CodeLine[] = [
   { text: 'matris = vektorlestirici.fit_transform(yorumlar)', bugs: [], fix: true },
   { text: '', bugs: [] },
   { text: 'print(matris[0].toarray())', bugs: [], fix: true },
-  { text: '# Çıktı: İlk yorumun TF-IDF vektörü yazdırılır.', bugs: [] },
+  { text: '# Çıktı: [[0.         0.70710678 0.         0.70710678]]', bugs: [] },
 ];
 
 /**

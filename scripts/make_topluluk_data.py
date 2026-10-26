@@ -21,7 +21,8 @@ Data (topluluk.json):
   bookBoot    the book's ch09_kod01 bootstrap (default_rng(42).choice on ids 0-9).
   experiment  ch09_kod02: 10 splits, single tree vs BaggingClassifier(50 trees) accuracy.
   oobCv       ch09_kod04: OOB score and the 5 CV scores of a 300-tree forest; the seconds
-              are the book's measured 0.27 / 1.23 (written as constants).
+              are the book's measured 0.27 / 1.33 from one run (book v0.2; written as
+              constants, the page reads them as approximate).
   oobCurve    OOB score of RandomForestClassifier(oob_score=True, random_state=3) for
               n_estimators = 10, 20, ..., 500 on the ch09_kod04 data.
   rf          ch09_kod05 data (600 x 8). byMf: max_features 1..8 with 250 trees:
@@ -222,7 +223,7 @@ def oob_cv():
     if round(float(cv.mean()), 3) != 0.896:
         fail(f"ch09_kod04 CV mean {cv.mean()}")
     return {"oob": r6(forest.oob_score_), "cv": [r6(c) for c in cv],
-            "seconds": {"oob": 0.27, "cv": 1.23}}, X, y
+            "seconds": {"oob": 0.27, "cv": 1.33}}, X, y
 
 
 def oob_curve(X, y):

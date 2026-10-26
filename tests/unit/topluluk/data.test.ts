@@ -18,7 +18,7 @@ describe('topluluk data', () => {
     expect([r3(b.mean), r3(b.std)]).toEqual([0.835, 0.028]);
     expect(r3(OOB_CV.oob)).toBe(0.899);
     expect(r3(meanStd(OOB_CV.cv).mean)).toBe(0.896);
-    expect(OOB_CV.seconds).toEqual({ oob: 0.27, cv: 1.23 });
+    expect(OOB_CV.seconds).toEqual({ oob: 0.27, cv: 1.33 });
     expect(OOB_CURVE[0]).toEqual({ n: 10, oob: 0.798 });
     expect(OOB_CURVE).toHaveLength(50);
     const order = RF.names

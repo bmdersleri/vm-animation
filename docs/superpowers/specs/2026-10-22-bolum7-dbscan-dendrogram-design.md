@@ -247,11 +247,12 @@ JSON'u `src/concepts/dbscan/data/` ve `src/concepts/dendrogram/data/` altına ya
 
 ## Kitapla farklar (kitap düzeltmesi için liste)
 
-- DBSCAN: kitap `make_moons(300, noise=0.07)` kullanır ve eps = 0,3, min_samples = 5 ile
-  "2 küme, 0 gürültü" bulur; sayfa 200 nokta + 10 aykırı nokta kullanır ve aynı değerlerle
-  2 küme, ≈8 sınır, ≈11 gürültü gösterir (gürültü ve sınırın görünmesi için).
-- DBSCAN: sayfa min_samples'ın noktanın kendisini de saydığını açıkça söyler (sklearn tanımı);
-  kitapta bu açık değil.
+- DBSCAN: ~~kitap `make_moons(300, noise=0.07)` kullanır ve "2 küme, 0 gürültü" bulur~~ —
+  kitap v0.2 (2026-10-26) artık sayfanın verisini kullanır: `make_moons(200, noise=0.08,
+  random_state=42)` + 10 aykırı nokta, eps = 0,3, min_samples = 5 → 191 çekirdek, 8 sınır,
+  11 gürültü. Fark kalmadı.
+- DBSCAN: ~~kitapta min_samples'ın noktanın kendisini saydığı açık değil~~ — kitap v0.2 de
+  "kendin dahil, en az 5 nokta" der. Fark kalmadı.
 - Dendrogram: kitap Iris (150 nokta, `truncate_mode="lastp"`) kullanır; sayfa 17 noktalık el
   yapımı veri kullanır. "En uzun dikey boşluk = doğal kesim" fikri aynıdır.
 - Kitabın bağlantı tablosu (Ward / complete / single) sayfada average ile birlikte Lab'de

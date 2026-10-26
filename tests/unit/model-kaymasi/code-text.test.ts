@@ -4,7 +4,7 @@ import { BUGGY_CODE, BUGS, FIXED_CODE, OUTPUT, RUN_ERROR } from '../../../src/co
 describe('model-kaymasi code text', () => {
   it('the faulty code is the book text', () => {
     expect(BUGGY_CODE.map(l => l.text)).toEqual([
-      '# File: HataAyiklama.python',
+      '# File: HataAyiklama.py',
       '# Eşik karşılaştırmasında veri türü hatası vardır.',
       '# Bölme işlemi sıfıra bölme riski taşır.',
       '# Gizli bilgi doğrudan ekrana yazdırılmamalıdır.',
@@ -18,14 +18,14 @@ describe('model-kaymasi code text', () => {
       '    print("UYARI:", musteri_telefonu)',
       '',
       'print(risk_orani_hesapla(3, 0))',
-      '# Çıktı: Program hata vermeden güvenli uyarı üretmelidir.',
-      '# Çıktı: Telefon numarası görünmemelidir.',
+      '# Sonuç: Program hata vermeden güvenli uyarı üretmelidir.',
+      '# Sonuç: Telefon numarası görünmemelidir.',
     ]);
   });
 
   it('the corrected code is the book text', () => {
     expect(FIXED_CODE.map(l => l.text)).toEqual([
-      '# File: HataAyiklama.python',
+      '# File: HataAyiklama.py',
       '# Sayısal değer açıkça float türüne dönüştürülür.',
       '# Sıfır payda için güvenli sonuç üretilir.',
       '# Kişisel veri yerine anonim müşteri kodu kullanılır.',

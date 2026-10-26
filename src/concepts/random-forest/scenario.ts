@@ -151,7 +151,7 @@ export const randomForestScenario: Scenario<RfParams> = {
     {
       id: 'oob-cv',
       title: 'OOB ≈ çapraz doğrulama',
-      text: `Kitabın verisi (1000 gözlem, 15 öznitelik, 300 ağaç): OOB skoru ${f(OOB_CV.oob, 3)}, ${OOB_CV.cv.length} katlı CV ortalaması ${f(cvMean, 3)}. OOB modeli bir kez eğitir, CV ${OOB_CV.cv.length} kez: kitabın ölçtüğü süre ${f(OOB_CV.seconds.oob, 2)} s ve ${f(OOB_CV.seconds.cv, 2)} s.`,
+      text: `Kitabın verisi (1000 gözlem, 15 öznitelik, 300 ağaç): OOB skoru ${f(OOB_CV.oob, 3)}, ${OOB_CV.cv.length} katlı CV ortalaması ${f(cvMean, 3)}. OOB modeli bir kez eğitir, CV ${OOB_CV.cv.length} kez: kitabın bir çalıştırmada ölçtüğü süre yaklaşık ${f(OOB_CV.seconds.oob, 2)} s ve ${f(OOB_CV.seconds.cv, 2)} s (donanıma göre değişir).`,
     },
     {
       id: 'agac-sayisi',
